@@ -1,0 +1,519 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>El componente despachador de eventos &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../index.html" />
+    <link rel="up" title="Componentes" href="index.html" />
+    <link rel="next" title="El componente Finder" href="finder.html" />
+    <link rel="prev" title="El componente de inyección de dependencias" href="dependency_injection.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../index.html"><img src=".././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src=".././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="finder.html" title="El componente Finder"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="dependency_injection.html" title="El componente de inyección de dependencias"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Componentes</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="el-componente-despachador-de-eventos">
+<span id="index-0"></span><h1>El componente despachador de eventos<a class="headerlink" href="#el-componente-despachador-de-eventos" title="Enlazar permanentemente con este título">¶</a></h1>
+<div class="section" id="introduccion">
+<h2>Introducción<a class="headerlink" href="#introduccion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El paradigma orientado a objetos ha recorrido un largo camino para garantizar la extensibilidad del código. Al crear clases que tienen responsabilidades bien definidas, el código se vuelve más flexible y un desarrollador lo puede extender con subclases para modificar su comportamiento. Pero si quieres compartir tus cambios con otros desarrolladores que también han hecho sus propias subclases, es discutible que la herencia de código sea la respuesta.</p>
+<p>Consideremos un ejemplo del mundo real en el que deseas proporcionar un sistema de complementos a tu proyecto. Un complemento debe ser capaz de agregar métodos, o hacer algo antes o después de ejecutar un método, sin interferir con otros complementos. Este no es un problema fácil de resolver con la herencia simple y herencia múltiple (en caso de que fuera posible con <em>PHP</em>) tiene sus propios inconvenientes.</p>
+<p>El despachador de eventos de <em>Symfony2</em> implementa el patrón <a class="reference external" href="http://en.wikipedia.org/wiki/Observer_pattern">observador</a> en una manera sencilla y efectiva para hacer todo esto posible y para realmente hacer extensibles tus proyectos.</p>
+<p>Tomemos un ejemplo simple desde el <a class="reference external" href="https://github.com/symfony/HttpKernel">componente HttpKernel de Symfony2</a>. Una vez creado un objeto <tt class="docutils literal"><span class="pre">Respuesta</span></tt>, puede ser útil permitir que otros elementos en el sistema lo modifiquen (por ejemplo, añadan algunas cabeceras de caché) antes de utilizarlo realmente. Para hacer esto posible, el núcleo de <em>Symfony2</em> lanza un evento &#8212;<tt class="docutils literal"><span class="pre">kernel.response</span></tt>&#8212;. Así es como funciona:</p>
+<ul class="simple">
+<li>Un <em>escucha</em> (objeto <em>PHP</em>) le dice a un objeto <em>despachador</em> central que quiere escuchar el evento <tt class="docutils literal"><span class="pre">kernel.response</span></tt>;</li>
+<li>En algún momento, el núcleo de <em>Symfony2</em> dice al objeto <em>despachador</em> que difunda el evento <tt class="docutils literal"><span class="pre">kernel.response</span></tt>, pasando con este un objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> que tiene acceso al objeto <tt class="docutils literal"><span class="pre">Respuesta</span></tt>;</li>
+<li>El despachador notifica a (es decir, llama a un método en) todos los escuchas del evento <tt class="docutils literal"><span class="pre">kernel.response</span></tt>, permitiendo que cada uno de ellos haga modificaciones al objeto <tt class="docutils literal"><span class="pre">Respuesta</span></tt>.</li>
+</ul>
+</div>
+<div class="section" id="instalando">
+<span id="index-1"></span><h2>Instalando<a class="headerlink" href="#instalando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes instalar el componente de varias maneras diferentes:</p>
+<ul class="simple">
+<li>Usando el repositorio <em>Git</em> oficial (<a class="reference external" href="https://github.com/symfony/EventDispatcher">https://github.com/symfony/EventDispatcher</a>);</li>
+<li>Instalándolo a través de <em>PEAR</em> ( <cite>pear.symfony.com/EventDispatcher</cite>);</li>
+<li>Instalándolo vía <tt class="docutils literal"><span class="pre">Composer</span></tt> (<cite>symfony/event-dispatcher</cite> en Packagist).</li>
+</ul>
+</div>
+<div class="section" id="usando">
+<h2>Usando<a class="headerlink" href="#usando" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="eventos">
+<h3>Eventos<a class="headerlink" href="#eventos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Cuando se envía un evento, es identificado por un nombre único (por ejemplo, <tt class="docutils literal"><span class="pre">kernel.response</span></tt>), al que cualquier cantidad de escuchas podría estar atento. También se crea una instancia de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt> y se pasa a todos los escuchas. Como veremos más adelante, el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> mismo, a menudo contiene datos sobre cuando se despachó el evento.</p>
+<div class="section" id="convenciones-de-nomenclatura">
+<span id="index-2"></span><h4>Convenciones de nomenclatura<a class="headerlink" href="#convenciones-de-nomenclatura" title="Enlazar permanentemente con este título">¶</a></h4>
+<p>El nombre único del evento puede ser cualquier cadena, pero opcionalmente sigue una serie de convenciones de nomenclatura simples:</p>
+<ul class="simple">
+<li>Sólo usa letras minúsculas, números, puntos (<tt class="docutils literal"><span class="pre">.</span></tt>) y guiones bajos (<tt class="docutils literal"><span class="pre">_</span></tt>);</li>
+<li>Prefija los nombres con un espacio de nombres seguido de un punto (por ejemplo, <tt class="docutils literal"><span class="pre">kernel.</span></tt>);</li>
+<li>Termina los nombres con un verbo que indica qué acción se está tomando (por ejemplo, <tt class="docutils literal"><span class="pre">request</span></tt>).</li>
+</ul>
+<p>Estos son algunos ejemplos de nombres de evento aceptables:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">kernel.response</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">form.pre_set_data</span></tt></li>
+</ul>
+</div>
+<div class="section" id="nombres-de-evento-y-objetos-evento">
+<span id="index-3"></span><h4>Nombres de evento y objetos evento<a class="headerlink" href="#nombres-de-evento-y-objetos-evento" title="Enlazar permanentemente con este título">¶</a></h4>
+<p>Cuando el despachador notifica a los escuchas, este pasa un objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> real a los escuchas. La clase base <tt class="docutils literal"><span class="pre">Evento</span></tt> es muy simple: contiene un método para detener la <a class="reference internal" href="#event-dispatcher-event-propagation"><em>propagación del evento</em></a>, pero no mucho más.</p>
+<p>Muchas veces, los datos acerca de un evento específico se tienen que pasar junto con el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> para que los escuchas tengan la información necesaria. En el caso del evento <tt class="docutils literal"><span class="pre">kernel.response</span></tt>, el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> creado y pasado a cada escucha realmente es de tipo <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\Event\FilterResponseEvent</span></tt>, una subclase del objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> base. Esta clase contiene métodos como <tt class="docutils literal"><span class="pre">getResponse</span></tt> y <tt class="docutils literal"><span class="pre">setResponse</span></tt>, que permiten a los escuchas recibir e incluso sustituir el objeto <tt class="docutils literal"><span class="pre">Respuesta</span></tt>.</p>
+<p>La moraleja de la historia es la siguiente: Cuando creas un escucha para un evento, el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> que se pasa al escucha puede ser una subclase especial que tiene métodos adicionales para recuperar información desde y para responder al evento.</p>
+</div>
+</div>
+<div class="section" id="el-despachador">
+<h3>El despachador<a class="headerlink" href="#el-despachador" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El despachador es el objeto central del sistema despachador de eventos. En general, se crea un único despachador, el cual mantiene un registro de escuchas. Cuando se difunde un evento a través del despachador, este notifica a todos los escuchas registrados a ese evento:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventDispatcher</span><span class="p">;</span>
+
+<span class="nv">$dispatcher</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">EventDispatcher</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="conectando-escuchas">
+<span id="index-4"></span><h3>Conectando escuchas<a class="headerlink" href="#conectando-escuchas" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Para aprovechar las ventajas de un evento existente, es necesario conectar un escucha con el despachador para que pueda ser notificado cuando se despache el evento. Una llamada al método despachador <tt class="docutils literal"><span class="pre">addListener()</span></tt> asocia cualquier objeto <em>PHP</em> ejecutable a un evento:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$listener</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AcmeListener</span><span class="p">();</span>
+<span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">addListener</span><span class="p">(</span><span class="s1">&#39;foo.action&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="nv">$listener</span><span class="p">,</span> <span class="s1">&#39;onFooAction&#39;</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>El método <tt class="docutils literal"><span class="pre">addListener()</span></tt> toma hasta tres argumentos:</p>
+<ul class="simple">
+<li>El nombre del evento (cadena) que este escucha quiere atender;</li>
+<li>Un objeto <em>PHP</em> ejecutable que será notificado cuando se produzca un evento al que está atento;</li>
+<li>Un entero de prioridad opcional (mayor es igual a más importante) que determina cuando un escucha se activa frente a otros escuchas (por omisión es <tt class="docutils literal"><span class="pre">0</span></tt>). Si dos escuchas tienen la misma prioridad, se ejecutan en el orden en que se agregaron al despachador.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>Un <a class="reference external" href="http://www.php.net/manual/es/language.pseudo-types.php#language.types.callback">PHP ejecutable</a> es una variable <em>PHP</em> que la función <tt class="docutils literal"><span class="pre">call_user_func()</span></tt> puede utilizar y devuelve <tt class="docutils literal"><span class="pre">true</span></tt> cuando pasa a la función <tt class="docutils literal"><span class="pre">is_callable()</span></tt>. Esta puede ser una instancia de <tt class="docutils literal"><span class="pre">\Closure</span></tt>, un objeto que implementa un método <tt class="docutils literal"><span class="pre">__invoke</span></tt> (que es lo que &#8212;de hecho&#8212; hacen los cierres), una cadena que representa una función, o una matriz que representa a un método de un objeto o a un método de clase.</p>
+<p>Hasta ahora, hemos visto cómo los objetos <em>PHP</em> se pueden registrar como escuchas. También puedes registrar <a class="reference external" href="http://www.php.net/manual/es/functions.anonymous.php">Cierres</a> <em>PHP</em> como escuchas de eventos:</p>
+<div class="last highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
+
+<span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">addListener</span><span class="p">(</span><span class="s1">&#39;foo.action&#39;</span><span class="p">,</span> <span class="k">function</span> <span class="p">(</span><span class="nx">Event</span> <span class="nv">$event</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// se debe ejecutar al despachar el evento foo.action</span>
+<span class="p">});</span>
+</pre></div>
+</div>
+</div>
+<p>Una vez que se registra el escucha en el despachador, este espera hasta que el evento sea notificado. En el ejemplo anterior, cuando se despacha el evento <tt class="docutils literal"><span class="pre">foo.action</span></tt>, el despachador llama al método <tt class="docutils literal"><span class="pre">AcmeListener::onFooAction</span></tt> y le pasa el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> como único argumento:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AcmeListener</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">onFooAction</span><span class="p">(</span><span class="nx">Event</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// Hace algo</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>En muchos casos, una subclase especial <tt class="docutils literal"><span class="pre">Evento</span></tt> específica para el evento dado es pasada al escucha. Esto le da al escucha acceso a información especial sobre el evento. Consulta la documentación o la implementación de cada evento para determinar la instancia exacta de <tt class="docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt> que se ha pasado. Por ejemplo, el evento <tt class="docutils literal"><span class="pre">kernel.event</span></tt> pasa una instancia de <tt class="docutils literal"><span class="pre">Symfony\Component\HttpKernel\Event\FilterResponseEvent</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Event\FilterResponseEvent</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">onKernelResponse</span><span class="p">(</span><span class="nx">FilterResponseEvent</span> <span class="nv">$event</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$response</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getResponse</span><span class="p">();</span>
+    <span class="nv">$request</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">();</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<span class="target" id="event-dispatcher-closures-as-listeners"></span></div>
+<div class="section" id="creando-y-despachando-un-evento">
+<span id="index-5"></span><h3>Creando y despachando un evento<a class="headerlink" href="#creando-y-despachando-un-evento" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Además de registrar escuchas con eventos existentes, puedes crear y despachar tus propios eventos. Esto es útil cuando creas bibliotecas compartidas y también cuando deseas mantener flexibles y disociados de tu propio sistema diferentes componentes.</p>
+<div class="section" id="la-clase-estatica-events">
+<h4>La clase estática <tt class="docutils literal"><span class="pre">Events</span></tt><a class="headerlink" href="#la-clase-estatica-events" title="Enlazar permanentemente con este título">¶</a></h4>
+<p>Supongamos que deseas crear un nuevo evento &#8212;<tt class="docutils literal"><span class="pre">store.order</span></tt>&#8212; el cual se despacha cada vez que es creada una orden dentro de tu aplicación. Para mantener las cosas organizadas, empieza por crear una clase <tt class="docutils literal"><span class="pre">StoreEvents</span></tt> dentro de tu aplicación que sirva para definir y documentar tu evento:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\StoreBundle</span><span class="p">;</span>
+
+<span class="k">final</span> <span class="k">class</span> <span class="nc">StoreEvents</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * El evento &#39;store.order&#39; es lanzado cada vez que se crea una orden</span>
+<span class="sd">     * en el sistema.</span>
+<span class="sd">     *</span>
+<span class="sd">     * El escucha del evento recibe una instancia de</span>
+<span class="sd">     * Acme\StoreBundle\Event\FilterOrderEvent.</span>
+<span class="sd">     *</span>
+<span class="sd">     * @var string</span>
+<span class="sd">     */</span>
+    <span class="k">const</span> <span class="no">onStoreOrder</span> <span class="o">=</span> <span class="s1">&#39;store.order&#39;</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ten en cuenta que esta clase en realidad <em>no hace</em> nada. El propósito de la clase <tt class="docutils literal"><span class="pre">StoreEvents</span></tt> sólo es ser un lugar donde se pueda centralizar la información sobre los eventos comunes. Observa también que se pasará una clase especial <tt class="docutils literal"><span class="pre">FilterOrderEvent</span></tt> a cada escucha de este evento.</p>
+</div>
+<div class="section" id="creando-un-objeto-evento">
+<h4>Creando un objeto <tt class="docutils literal"><span class="pre">Evento</span></tt><a class="headerlink" href="#creando-un-objeto-evento" title="Enlazar permanentemente con este título">¶</a></h4>
+<p>Más tarde, cuando despaches este nuevo evento, debes crear una instancia del <tt class="docutils literal"><span class="pre">Evento</span></tt> y pasarla al despachador. Entonces el despachador pasa esta misma instancia a cada uno de los escuchas del evento. Si no necesitas pasar alguna información a tus escuchas, puedes utilizar la clase predeterminada <tt class="docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt>. La mayoría de las veces, sin embargo, <em>necesitarás</em> pasar información sobre el evento a cada escucha. Para lograrlo, vamos a crear una nueva clase que extiende a <tt class="docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt>.</p>
+<p>En este ejemplo, cada escucha tendrá acceso a algún objeto <tt class="docutils literal"><span class="pre">Order</span></tt>. Crea una clase <tt class="docutils literal"><span class="pre">Evento</span></tt> que lo hace posible:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\StoreBundle\Event</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Order</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">FilterOrderEvent</span> <span class="k">extends</span> <span class="nx">Event</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$order</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">Order</span> <span class="nv">$order</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">order</span> <span class="o">=</span> <span class="nv">$order</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getOrder</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">order</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ahora, cada escucha tiene acceso al objeto <tt class="docutils literal"><span class="pre">Order</span></tt> a través del método <tt class="docutils literal"><span class="pre">getOrder</span></tt>.</p>
+</div>
+<div class="section" id="despachando-el-evento">
+<h4>Despachando el evento<a class="headerlink" href="#despachando-el-evento" title="Enlazar permanentemente con este título">¶</a></h4>
+<p>El método <a href="#id1"><span class="problematic" id="id2">:method:`Symfony\\Component\\EventDispatcher\\EventDispatcher::dispatch`</span></a> notifica a todos los escuchas que el evento ha ocurrido. Este toma dos argumentos: el nombre del evento a despachar, y la instancia del <tt class="docutils literal"><span class="pre">Evento</span></tt> a pasar a cada escucha de ese evento:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Acme\StoreBundle\StoreEvents</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Order</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Event\FilterOrderEvent</span><span class="p">;</span>
+
+<span class="c1">// la orden de alguna manera es creada o recuperada</span>
+<span class="nv">$order</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Order</span><span class="p">();</span>
+<span class="c1">// ...</span>
+
+<span class="c1">// crea el FilterOrderEvent y lo despacha</span>
+<span class="nv">$event</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">FilterOrderEvent</span><span class="p">(</span><span class="nv">$order</span><span class="p">);</span>
+<span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="nx">StoreEvents</span><span class="o">::</span><span class="na">onStoreOrder</span><span class="p">,</span> <span class="nv">$event</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Ten en cuenta que el objeto especial <tt class="docutils literal"><span class="pre">FilterOrderEvent</span></tt> se crea y pasa al método <tt class="docutils literal"><span class="pre">dispatch</span></tt>. Ahora, cualquier escucha del evento <tt class="docutils literal"><span class="pre">store.order</span></tt> recibirá el <tt class="docutils literal"><span class="pre">FilterOrderEvent</span></tt> y tendrá acceso al objeto <tt class="docutils literal"><span class="pre">Order</span></tt> a través del método <tt class="docutils literal"><span class="pre">getOrder</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// alguna clase escucha que se ha registrado para onStoreOrder</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Event\FilterOrderEvent</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">onStoreOrder</span><span class="p">(</span><span class="nx">FilterOrderEvent</span> <span class="nv">$event</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$order</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getOrder</span><span class="p">();</span>
+    <span class="c1">// haz algo para o con la orden</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="usando-suscriptores-de-evento">
+<span id="index-6"></span><h3>Usando suscriptores de evento<a class="headerlink" href="#usando-suscriptores-de-evento" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La forma más común para escuchar a un evento es registrar un <em>escucha de evento</em> con el despachador. Este escucha puede estar atento a uno o más eventos y ser notificado cada vez que se envían los eventos.</p>
+<p>Otra forma de escuchar eventos es a través de un <em>suscriptor de eventos</em>. Un suscriptor de eventos es una clase <em>PHP</em> que es capaz de decir al despachador exactamente a cuales eventos debe estar suscrito. Este implementa la interfaz <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\EventDispatcher\EventSubscriberInterface</span></tt>, que requiere un solo método estático llamado <tt class="docutils literal"><span class="pre">getSubscribedEvents</span></tt>. Considera el siguiente ejemplo de un suscriptor que está inscrito a los eventos <tt class="docutils literal"><span class="pre">kernel.response</span></tt> y <tt class="docutils literal"><span class="pre">store.order</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\StoreBundle\Event</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventSubscriberInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Event\FilterResponseEvent</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">StoreSubscriber</span> <span class="k">implements</span> <span class="nx">EventSubscriberInterface</span>
+<span class="p">{</span>
+    <span class="k">static</span> <span class="k">public</span> <span class="k">function</span> <span class="nf">getSubscribedEvents</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;kernel.response&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+                <span class="k">array</span><span class="p">(</span><span class="s1">&#39;onKernelResponsePre&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+                <span class="k">array</span><span class="p">(</span><span class="s1">&#39;onKernelResponseMid&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+                <span class="k">array</span><span class="p">(</span><span class="s1">&#39;onKernelResponsePost&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;store.order&#39;</span>     <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;onStoreOrder&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">onKernelResponsePre</span><span class="p">(</span><span class="nx">FilterResponseEvent</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// ...</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">onKernelResponseMid</span><span class="p">(</span><span class="nx">FilterResponseEvent</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// ...</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">onKernelResponsePost</span><span class="p">(</span><span class="nx">FilterResponseEvent</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// ...</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">onStoreOrder</span><span class="p">(</span><span class="nx">FilterOrderEvent</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// ...</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Esto es muy similar a una clase escucha, salvo que la propia clase puede decir al despachador cuales eventos debe escuchar. Para registrar un suscriptor al despachador, utiliza el método <a href="#id3"><span class="problematic" id="id4">:method:`Symfony\\Component\\EventDispatcher\\EventDispatcher::addSubscriber`</span></a>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Acme\StoreBundle\Event\StoreSubscriber</span><span class="p">;</span>
+
+<span class="nv">$subscriber</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">StoreSubscriber</span><span class="p">();</span>
+<span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">addSubscriber</span><span class="p">(</span><span class="nv">$subscriber</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>El despachador registrará automáticamente al suscriptor para cada evento devuelto por el método <tt class="docutils literal"><span class="pre">getSubscribedEvents</span></tt>. Este método devuelve una matriz indexada por el nombre del evento y cuyos valores son el nombre del método a llamar o una matriz compuesta por el nombre del método a llamar y la prioridad. El ejemplo anterior muestra cómo registrar varios métodos escucha para el mismo evento en un suscriptor, y, además muestra cómo transmitir la prioridad de cada uno de los métodos escucha.</p>
+</div>
+<div class="section" id="deteniendo-el-flujo-propagacion-del-evento">
+<span id="event-dispatcher-event-propagation"></span><span id="index-7"></span><h3>Deteniendo el flujo/propagación del evento<a class="headerlink" href="#deteniendo-el-flujo-propagacion-del-evento" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>En algunos casos, puede tener sentido que un escucha evite que se llame a otros escuchas. En otras palabras, el escucha tiene que poder decirle al despachador detenga la propagación del evento a todos los escuchas en el futuro (es decir, no notificar a más escuchas). Esto se puede lograr desde el interior de un escucha a través del método <a href="#id5"><span class="problematic" id="id6">:method:`Symfony\\Component\\EventDispatcher\\Event::stopPropagation`</span></a>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Acme\StoreBundle\Event\FilterOrderEvent</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">onStoreOrder</span><span class="p">(</span><span class="nx">FilterOrderEvent</span> <span class="nv">$event</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">stopPropagation</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ahora, cualquier escucha de <tt class="docutils literal"><span class="pre">store.order</span></tt> que no haya llamado aún, <em>no</em> será invocado.</p>
+<p>Es posible detectar si un evento se ha detenido usando el método <a href="#id7"><span class="problematic" id="id8">:method:`Symfony\\Component\\EventDispatcher\\Event::isStoppedPropagation`</span></a> el cual devuelve un valor booleano:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;foo.event&#39;</span><span class="p">,</span> <span class="nv">$event</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$event</span><span class="o">-&gt;</span><span class="na">isStoppedPropagation</span><span class="p">())</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="el-eventdispatcher-esta-consiente-de-eventos-y-escuchas">
+<span id="event-dispatcher-dispatcher-aware-events"></span><span id="index-8"></span><h3>El <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> está consiente de eventos y escuchas<a class="headerlink" href="#el-eventdispatcher-esta-consiente-de-eventos-y-escuchas" title="Enlazar permanentemente con este título">¶</a></h3>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>El objeto <tt class="docutils literal"><span class="pre">Event</span></tt> contiene una referencia al despachador que lo invocó desde <em>Symfony 2.1</em></p>
+<p>El <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> siempre inyecta una referencia a sí mismo en el objeto evento que se le pasa.  Esto significa que todos los escuchas tienen acceso directo al objeto <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> que notifica al escucha a través del método <a href="#id9"><span class="problematic" id="id10">:method:`Symfony\\Component\\EventDispatcher\\Event::getDispatcher`</span></a> del objeto <tt class="docutils literal"><span class="pre">Event</span></tt> transmitido.</p>
+<p>Esto puede llevar a algunas aplicaciones avanzadas del <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> incluyendo dejar que los escuchas envíen otros eventos, encadenando eventos o incluso cargando escuchas de manera diferida en el objeto <tt class="docutils literal"><span class="pre">Despachador</span></tt>. Algunos ejemplos:</p>
+<p>Cargando escuchas de manera diferida:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Event\StoreSubscriber</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$started</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">myLazyListener</span><span class="p">(</span><span class="nx">Event</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">false</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">started</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$subscriber</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">StoreSubscriber</span><span class="p">();</span>
+            <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getDispatcher</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">addSubscriber</span><span class="p">(</span><span class="nv">$subscriber</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">started</span> <span class="o">=</span> <span class="k">true</span><span class="p">;</span>
+
+        <span class="c1">// ... más código</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Despachando otro event desde un escucha:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">myFooListener</span><span class="p">(</span><span class="nx">Event</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getDispatcher</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="nv">$event</span><span class="p">);</span>
+
+        <span class="c1">// ... más código</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Si bien lo anterior es suficiente para la mayoría de los casos, si tu aplicación utiliza múltiples
+instancias del <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt>, posiblemente tengas que inyectar específicamente una
+instancia conocida del <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> en tus escuchas.  Esto se podría hacer inyectándolo en el constructor o con un definidor de la siguiente manera:</p>
+<p>Inyección en el constructor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventDispatcherInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$dispatcher</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">EventDispatcherInterface</span> <span class="nv">$dispatcher</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dispatcher</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>O inyección en el definidor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventDispatcherInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$dispatcher</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEventDispatcher</span><span class="p">(</span><span class="nx">EventDispatcherInterface</span> <span class="nv">$dispatcher</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dispatcher</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>La elección entre los dos realmente es cuestión de gusto. Muchos tienden a preferir el constructor de inyección porque los objetos son totalmente iniciados en tiempo de construcción. Pero cuando tienes una larga lista de dependencias, la inyección de definidores puede ser el camino a seguir, especialmente para dependencias opcionales.</p>
+</div>
+<div class="section" id="atajos-del-despachador">
+<span id="event-dispatcher-shortcuts"></span><span id="index-9"></span><h3>Atajos del despachador<a class="headerlink" href="#atajos-del-despachador" title="Enlazar permanentemente con este título">¶</a></h3>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>El método <tt class="docutils literal"><span class="pre">EventDispatcher::dispatch()</span></tt> devuelve el evento desde <em>Symfony 2.1</em>.</p>
+<p>El Método <a href="#id11"><span class="problematic" id="id12">:method:`EventDispatcher::dispatch &lt;Symfony\\Component\\EventDispatcher\\EventDispatcher::dispatch&gt;`</span></a> siempre devuelve un objeto <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt>. Este permite varios atajos. Por ejemplo, si uno no necesita un objeto evento personalizado, simplemente puedes confiar en un simple objeto <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt>. Ni siquiera lo tienes que pasar al despachador ya que de manera predeterminada creará uno a menos que específicamente le pases uno:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;foo.event&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Por otra parte, el <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> siempre devuelve cualquier objeto <tt class="docutils literal"><span class="pre">evento</span></tt> que le hayas enviado, es decir, ya sea el evento que le hayas pasado o la instancia que internamente haya creado el despachador. Esto da pie a bonitos accesos directos:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;foo.event&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">isStoppedPropagation</span><span class="p">())</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>O:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$barEvent</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">BarEvent</span><span class="p">();</span>
+<span class="nv">$bar</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;bar.event&#39;</span><span class="p">,</span> <span class="nv">$barEvent</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">getBar</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>O:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$response</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;bar.event&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">BarEvent</span><span class="p">())</span><span class="o">-&gt;</span><span class="na">getBar</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>y así sucesivamente...</p>
+</div>
+<div class="section" id="averiguando-el-nombre-del-evento">
+<span id="event-dispatcher-event-name-introspection"></span><span id="index-10"></span><h3>Averiguando el nombre del evento<a class="headerlink" href="#averiguando-el-nombre-del-evento" title="Enlazar permanentemente con este título">¶</a></h3>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>El nombre del evento se añadió al objeto <tt class="docutils literal"><span class="pre">Event</span></tt> desde <em>Symfony 2.1</em></p>
+<p>Puesto que el <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> ya sabe el nombre del evento cuando se despacha, el nombre del evento también se inyecta en los objetos <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt>, haciéndolos disponibles a los escuchas de eventos a través del método <a href="#id13"><span class="problematic" id="id14">:method:`Symfony\\Component\\EventDispatcher\\Event::getName`</span></a>.</p>
+<p>El nombre del evento, (como con cualquier otro dato en un objeto evento personalizado) se puede utilizar como parte de la lógica de procesamiento del escucha:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">myEventListener</span><span class="p">(</span><span class="nx">Event</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">echo</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src=".././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="finder.html" title="El componente Finder"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="dependency_injection.html" title="El componente de inyección de dependencias"
+             >anterior</a> |</li>
+        <li><a href="../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="index.html" >Componentes</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

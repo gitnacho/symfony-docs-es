@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo utiliza Doctrine la capa DBAL &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo trabajar con varios gestores de entidad" href="multiple_entity_managers.html" />
+    <link rel="prev" title="Cómo generar entidades desde una base de datos existente" href="reverse_engineering.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="multiple_entity_managers.html" title="Cómo trabajar con varios gestores de entidad"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="reverse_engineering.html" title="Cómo generar entidades desde una base de datos existente"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-utiliza-doctrine-la-capa-dbal">
+<span id="index-0"></span><h1>Cómo utiliza <em>Doctrine</em> la capa <em>DBAL</em><a class="headerlink" href="#como-utiliza-doctrine-la-capa-dbal" title="Enlazar permanentemente con este título">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Este artículo es sobre la capa <em>DBAL</em> de <em>Doctrine</em>. Normalmente, vas a trabajar con el nivel superior de la capa <em>ORM</em> de <em>Doctrine</em>, la cual simplemente utiliza <em>DBAL</em> detrás del escenario para comunicarse realmente con la base de datos. Para leer más sobre el <em>ORM</em> de <em>Doctrine</em>, consulta &#8220;<a class="reference internal" href="../../book/doctrine.html"><em>Bases de datos y Doctrine (&#8220;El modelo&#8221;)</em></a>&#8221;.</p>
+</div>
+<p><a class="reference external" href="http://www.doctrine-project.org">Doctrine</a> la capa de abstracción de base de datos (<em>DataBase Abstraction Layer</em> &#8212; <em>DBAL</em>) es una capa que se encuentra en la parte superior de <a class="reference external" href="http://www.php.net/pdo">PDO</a> y ofrece una <em>API</em> intuitiva y flexible para comunicarse con las bases de datos relacionales más populares. En otras palabras, la biblioteca <em>DBAL</em> facilita la ejecución de consultas y realización de otras acciones de base de datos.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Lee la <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-dbal/en/latest/index.html">documentación oficial de DBAL</a> para conocer todos los detalles y las habilidades de la biblioteca <em>DBAL</em> de <em>Doctrine</em>.</p>
+</div>
+<p>Para empezar, configura los parámetros de conexión a la base de datos:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">doctrine</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">dbal</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">driver</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">pdo_mysql</span>
+        <span class="l-Scalar-Plain">dbname</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">Symfony2</span>
+        <span class="l-Scalar-Plain">user</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">root</span>
+        <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">null</span>
+        <span class="l-Scalar-Plain">charset</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">UTF8</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre>// app/config/config.xml
+<span class="nt">&lt;doctrine:config&gt;</span>
+    <span class="nt">&lt;doctrine:dbal</span>
+        <span class="na">name=</span><span class="s">&quot;default&quot;</span>
+        <span class="na">dbname=</span><span class="s">&quot;Symfony2&quot;</span>
+        <span class="na">user=</span><span class="s">&quot;root&quot;</span>
+        <span class="na">password=</span><span class="s">&quot;null&quot;</span>
+        <span class="na">driver=</span><span class="s">&quot;pdo_mysql&quot;</span>
+    <span class="nt">/&gt;</span>
+<span class="nt">&lt;/doctrine:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;doctrine&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;dbal&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;driver&#39;</span>    <span class="o">=&gt;</span> <span class="s1">&#39;pdo_mysql&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;dbname&#39;</span>    <span class="o">=&gt;</span> <span class="s1">&#39;Symfony2&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;user&#39;</span>      <span class="o">=&gt;</span> <span class="s1">&#39;root&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;password&#39;</span>  <span class="o">=&gt;</span> <span class="k">null</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Para ver todas las opciones de configuración <em>DBAL</em>, consulta <a class="reference internal" href="../../reference/configuration/doctrine.html#reference-dbal-configuration"><em>Configurando DBAL de Doctrine</em></a>.</p>
+<p>A continuación, puedes acceder a la conexión <em>Doctrine DBAL</em> accediendo al servicio <tt class="docutils literal"><span class="pre">database_connection</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">UserController</span> <span class="k">extends</span> <span class="nx">Controller</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">indexAction</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$conn</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;database_connection&#39;</span><span class="p">);</span>
+        <span class="nv">$users</span> <span class="o">=</span> <span class="nv">$conn</span><span class="o">-&gt;</span><span class="na">fetchAll</span><span class="p">(</span><span class="s1">&#39;SELECT * FROM users&#39;</span><span class="p">);</span>
+
+        <span class="c1">// ...</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="section" id="registrando-tipos-de-asignacion-personalizados">
+<h2>Registrando tipos de asignación personalizados<a class="headerlink" href="#registrando-tipos-de-asignacion-personalizados" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes registrar tipos de asignación personalizados a través de la configuración de <em>Symfony</em>. Ellos se sumarán a todas las conexiones configuradas. Para más información sobre los tipos de asignación personalizados, lee la sección <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/types.html#custom-mapping-types">Tipos de asignación personalizados</a> de la documentación de <em>Doctrine</em>.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">doctrine</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">dbal</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">types</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">custom_first</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Acme\HelloBundle\Type\CustomFirst</span>
+            <span class="l-Scalar-Plain">custom_second</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Acme\HelloBundle\Type\CustomSecond</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xmlns:doctrine=</span><span class="s">&quot;http://symfony.com/schema/dic/doctrine&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd</span>
+<span class="s">                        http://symfony.com/schema/dic/doctrine http://symfony.com/schema/dic/doctrine/doctrine-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;doctrine:config&gt;</span>
+        <span class="nt">&lt;doctrine:dbal&gt;</span>
+        <span class="nt">&lt;doctrine:dbal</span> <span class="na">default-connection=</span><span class="s">&quot;default&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;doctrine:connection&gt;</span>
+                <span class="nt">&lt;doctrine:mapping-type</span> <span class="na">name=</span><span class="s">&quot;enum&quot;</span><span class="nt">&gt;</span>string<span class="nt">&lt;/doctrine:mapping-type&gt;</span>
+            <span class="nt">&lt;/doctrine:connection&gt;</span>
+        <span class="nt">&lt;/doctrine:dbal&gt;</span>
+    <span class="nt">&lt;/doctrine:config&gt;</span>
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;doctrine&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;dbal&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;connections&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;default&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+                <span class="s1">&#39;mapping_types&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+                    <span class="s1">&#39;enum&#39;</span>  <span class="o">=&gt;</span> <span class="s1">&#39;string&#39;</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="registrando-tipos-de-asignacion-personalizados-en-schematool">
+<h2>Registrando tipos de asignación personalizados en <em>SchemaTool</em><a class="headerlink" href="#registrando-tipos-de-asignacion-personalizados-en-schematool" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La <em>SchemaTool</em> se utiliza al inspeccionar la base de datos para comparar el esquema. Para lograr esta tarea, es necesario saber qué tipo de asignación se debe utilizar para cada tipo de la base de datos. Por medio de la configuración puedes registrar nuevos tipos.</p>
+<p>Vamos a asignar el tipo <tt class="docutils literal"><span class="pre">ENUM</span></tt> (por omisión no apoyado por <em>DBAL</em>) al tipo <tt class="docutils literal"><span class="pre">string</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">doctrine</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">dbal</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">connections</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">default</span><span class="p-Indicator">:</span>
+                <span class="l-Scalar-Plain">// otros parámetros de conexión</span>
+                <span class="l-Scalar-Plain">mapping_types</span><span class="p-Indicator">:</span>
+                    <span class="l-Scalar-Plain">enum</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">string</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xmlns:doctrine=</span><span class="s">&quot;http://symfony.com/schema/dic/doctrine&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd</span>
+<span class="s">                        http://symfony.com/schema/dic/doctrine http://symfony.com/schema/dic/doctrine/doctrine-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;doctrine:config&gt;</span>
+        <span class="nt">&lt;doctrine:dbal&gt;</span>
+            <span class="nt">&lt;doctrine:type</span> <span class="na">name=</span><span class="s">&quot;custom_first&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\HelloBundle\Type\CustomFirst&quot;</span> <span class="nt">/&gt;</span>
+            <span class="nt">&lt;doctrine:type</span> <span class="na">name=</span><span class="s">&quot;custom_second&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\HelloBundle\Type\CustomSecond&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;/doctrine:dbal&gt;</span>
+    <span class="nt">&lt;/doctrine:config&gt;</span>
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;doctrine&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;dbal&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;types&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;custom_first&#39;</span>  <span class="o">=&gt;</span> <span class="s1">&#39;Acme\HelloBundle\Type\CustomFirst&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;custom_second&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\HelloBundle\Type\CustomSecond&#39;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="multiple_entity_managers.html" title="Cómo trabajar con varios gestores de entidad"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="reverse_engineering.html" title="Cómo generar entidades desde una base de datos existente"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

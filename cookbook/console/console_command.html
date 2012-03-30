@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo crear una orden de consola &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo optimizar tu entorno de desarrollo para depuración" href="../debugging.html" />
+    <link rel="prev" title="Cómo configurar Monolog para reportar errores por correo electrónico" href="../logging/monolog_email.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../debugging.html" title="Cómo optimizar tu entorno de desarrollo para depuración"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="../logging/monolog_email.html" title="Cómo configurar Monolog para reportar errores por correo electrónico"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-crear-una-orden-de-consola">
+<h1>Cómo crear una orden de consola<a class="headerlink" href="#como-crear-una-orden-de-consola" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>La página <tt class="docutils literal"><span class="pre">Console</span></tt> de la sección de Componentes (<a class="reference internal" href="../../components/console.html"><em>El componente Console</em></a>) explica cómo crear una orden de consola. Este artículo trata sobre las diferencias cuando creas ordenes de consola en la plataforma <em>Symfony2</em>.</p>
+<div class="section" id="registrando-ordenes-automaticamente">
+<h2>Registrando ordenes automáticamente<a class="headerlink" href="#registrando-ordenes-automaticamente" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para hacer que las ordenes de consola estén disponibles automáticamente en <em>Symfony2</em>, crea un directorio <tt class="docutils literal"><span class="pre">Command</span></tt> dentro de tu paquete y crea un archivo <em>PHP</em> con el sufijo <tt class="file docutils literal"><span class="pre">Command.php</span></tt> para cada orden que deses proveer. Por ejemplo, si deseas ampliar el <tt class="docutils literal"><span class="pre">AcmeDemoBundle</span></tt> (disponible en la <em>edición estándar de Symfony</em>) para darnos la bienvenida desde la línea de ordenes, crea el archivo <tt class="file docutils literal"><span class="pre">GreetCommand.php</span></tt> y agrégale lo siguiente:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Command/GreetCommand.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Command</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Console\Input\InputArgument</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Console\Input\InputInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Console\Input\InputOption</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Console\Output\OutputInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">GreetCommand</span> <span class="k">extends</span> <span class="nx">ContainerAwareCommand</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">configure</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span>
+            <span class="o">-&gt;</span><span class="na">setName</span><span class="p">(</span><span class="s1">&#39;demo:greet&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">setDescription</span><span class="p">(</span><span class="s1">&#39;Greet someone&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">addArgument</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="nx">InputArgument</span><span class="o">::</span><span class="na">OPTIONAL</span><span class="p">,</span> <span class="s1">&#39;Who do you want to greet?&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">addOption</span><span class="p">(</span><span class="s1">&#39;yell&#39;</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="nx">InputOption</span><span class="o">::</span><span class="na">VALUE_NONE</span><span class="p">,</span> <span class="s1">&#39;If set, the task will yell in uppercase letters&#39;</span><span class="p">)</span>
+        <span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">execute</span><span class="p">(</span><span class="nx">InputInterface</span> <span class="nv">$input</span><span class="p">,</span> <span class="nx">OutputInterface</span> <span class="nv">$output</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$name</span> <span class="o">=</span> <span class="nv">$input</span><span class="o">-&gt;</span><span class="na">getArgument</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$text</span> <span class="o">=</span> <span class="s1">&#39;Hello &#39;</span><span class="o">.</span><span class="nv">$name</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="nv">$text</span> <span class="o">=</span> <span class="s1">&#39;Hello&#39;</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$input</span><span class="o">-&gt;</span><span class="na">getOption</span><span class="p">(</span><span class="s1">&#39;yell&#39;</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nv">$text</span> <span class="o">=</span> <span class="nb">strtoupper</span><span class="p">(</span><span class="nv">$text</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="nv">$output</span><span class="o">-&gt;</span><span class="na">writeln</span><span class="p">(</span><span class="nv">$text</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ahora, automáticamente, esta orden estará disponible para funcionar:</p>
+<div class="highlight-bash"><div class="highlight"><pre>app/console demo:greet Fabien
+</pre></div>
+</div>
+</div>
+<div class="section" id="probando-ordenes">
+<h2>Probando ordenes<a class="headerlink" href="#probando-ordenes" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuando pruebes ordenes utilizadas como parte de la plataforma completa debes utilizar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Bundle\FrameworkBundle\Console\Application</span></tt> en lugar de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Console\Application</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Console\Tester\CommandTester</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Bundle\FrameworkBundle\Console\Application</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\DemoBundle\Command\GreetCommand</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">ListCommandTest</span> <span class="k">extends</span> <span class="nx">\PHPUnit_Framework_TestCase</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">testExecute</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// simula el Kernel o crea uno dependiendo de tus necesidades</span>
+        <span class="nv">$application</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Application</span><span class="p">(</span><span class="nv">$kernel</span><span class="p">);</span>
+        <span class="nv">$application</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="k">new</span> <span class="nx">GreetCommand</span><span class="p">());</span>
+
+        <span class="nv">$command</span> <span class="o">=</span> <span class="nv">$application</span><span class="o">-&gt;</span><span class="na">find</span><span class="p">(</span><span class="s1">&#39;demo:greet&#39;</span><span class="p">);</span>
+        <span class="nv">$commandTester</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">CommandTester</span><span class="p">(</span><span class="nv">$command</span><span class="p">);</span>
+        <span class="nv">$commandTester</span><span class="o">-&gt;</span><span class="na">execute</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;command&#39;</span> <span class="o">=&gt;</span> <span class="nv">$command</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">()));</span>
+
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertRegExp</span><span class="p">(</span><span class="s1">&#39;/.../&#39;</span><span class="p">,</span> <span class="nv">$commandTester</span><span class="o">-&gt;</span><span class="na">getDisplay</span><span class="p">());</span>
+
+        <span class="c1">// ...</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="obteniendo-servicios-del-contenedor-de-servicios">
+<h2>Obteniendo servicios del contenedor de servicios<a class="headerlink" href="#obteniendo-servicios-del-contenedor-de-servicios" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Al usar <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand</span></tt> como la clase base para la orden (en lugar del más básico <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Console\Command\Command</span></tt>), tienes acceso al contenedor de servicios. En otras palabras, tienes acceso a cualquier servicio configurado.
+Por ejemplo, fácilmente podrías extender la tarea para que sea traducible:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">protected</span> <span class="k">function</span> <span class="nf">execute</span><span class="p">(</span><span class="nx">InputInterface</span> <span class="nv">$input</span><span class="p">,</span> <span class="nx">OutputInterface</span> <span class="nv">$output</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$name</span> <span class="o">=</span> <span class="nv">$input</span><span class="o">-&gt;</span><span class="na">getArgument</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span>
+    <span class="nv">$translator</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getContainer</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nv">$output</span><span class="o">-&gt;</span><span class="na">writeln</span><span class="p">(</span><span class="nv">$translator</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;Hello %name%!&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%name%&#39;</span> <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">)));</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nv">$output</span><span class="o">-&gt;</span><span class="na">writeln</span><span class="p">(</span><span class="nv">$translator</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;Hello!&#39;</span><span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../debugging.html" title="Cómo optimizar tu entorno de desarrollo para depuración"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="../logging/monolog_email.html" title="Cómo configurar Monolog para reportar errores por correo electrónico"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

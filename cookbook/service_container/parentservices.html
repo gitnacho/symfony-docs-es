@@ -1,0 +1,630 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo gestionar dependencias comunes con servicios padre &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo trabajar con ámbitos" href="scopes.html" />
+    <link rel="prev" title="Cómo utilizar el patrón fábrica para crear servicios" href="factories.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="scopes.html" title="Cómo trabajar con ámbitos"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="factories.html" title="Cómo utilizar el patrón fábrica para crear servicios"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-gestionar-dependencias-comunes-con-servicios-padre">
+<h1>Cómo gestionar dependencias comunes con servicios padre<a class="headerlink" href="#como-gestionar-dependencias-comunes-con-servicios-padre" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>A medida que agregas más funcionalidad a tu aplicación, puedes comenzar a tener clases relacionadas que comparten algunas de las mismas dependencias. Por ejemplo, puedes tener un gestor de <tt class="docutils literal"><span class="pre">boletines</span></tt> que utiliza inyección para definir sus dependencias:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Mail</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Acme\HelloBundle\Mailer</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\HelloBundle\EmailFormatter</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">NewsletterManager</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="k">protected</span> <span class="nv">$emailFormatter</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setMailer</span><span class="p">(</span><span class="nx">Mailer</span> <span class="nv">$mailer</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">mailer</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEmailFormatter</span><span class="p">(</span><span class="nx">EmailFormatter</span> <span class="nv">$emailFormatter</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">emailFormatter</span> <span class="o">=</span> <span class="nv">$emailFormatter</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>y también una clase para tus <tt class="docutils literal"><span class="pre">Tarjetas</span> <span class="pre">de</span> <span class="pre">saludo</span></tt> que comparte las mismas dependencias:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Mail</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Acme\HelloBundle\Mailer</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\HelloBundle\EmailFormatter</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">GreetingCardManager</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="k">protected</span> <span class="nv">$emailFormatter</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setMailer</span><span class="p">(</span><span class="nx">Mailer</span> <span class="nv">$mailer</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">mailer</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEmailFormatter</span><span class="p">(</span><span class="nx">EmailFormatter</span> <span class="nv">$emailFormatter</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">emailFormatter</span> <span class="o">=</span> <span class="nv">$emailFormatter</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>La configuración del servicio de estas clases se vería algo como esto:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
+parameters:
+    # ...
+    newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
+    greeting_card_manager.class: Acme\HelloBundle\Mail\GreetingCardManager
+services:
+    my_mailer:
+        # ...
+    my_email_formatter:
+        # ...
+    newsletter_manager:
+        class:     %newsletter_manager.class%
+        calls:
+            - [ setMailer, [ @my_mailer ] ]
+            - [ setEmailFormatter, [ @my_email_formatter] ]
+
+    greeting_card_manager:
+        class:     %greeting_card_manager.class%
+        calls:
+            - [ setMailer, [ @my_mailer ] ]
+            - [ setEmailFormatter, [ @my_email_formatter] ]</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;
+&lt;parameters&gt;
+    &lt;!-- ... --&gt;
+    &lt;parameter key="newsletter_manager.class"&gt;Acme\HelloBundle\Mail\NewsletterManager&lt;/parameter&gt;
+    &lt;parameter key="greeting_card_manager.class"&gt;Acme\HelloBundle\Mail\GreetingCardManager&lt;/parameter&gt;
+&lt;/parameters&gt;
+
+    &lt;services&gt;
+    &lt;service id="my_mailer" ... &gt;
+      &lt;!-- ... --&gt;
+    &lt;/service&gt;
+    &lt;service id="my_email_formatter" ... &gt;
+      &lt;!-- ... --&gt;
+    &lt;/service&gt;
+    &lt;service id="newsletter_manager" class="%newsletter_manager.class%"&gt;
+        &lt;call method="setMailer"&gt;
+             &lt;argument type="service" id="my_mailer" /&gt;
+        &lt;/call&gt;
+        &lt;call method="setEmailFormatter"&gt;
+             &lt;argument type="service" id="my_email_formatter" /&gt;
+        &lt;/call&gt;
+    &lt;/service&gt;
+    &lt;service id="greeting_card_manager" class="%greeting_card_manager.class%"&gt;
+        &lt;call method="setMailer"&gt;
+             &lt;argument type="service" id="my_mailer" /&gt;
+        &lt;/call&gt;
+        &lt;call method="setEmailFormatter"&gt;
+             &lt;argument type="service" id="my_email_formatter" /&gt;
+        &lt;/call&gt;
+    &lt;/service&gt;
+    &lt;/services&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Resources/config/services.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\NewsletterManager&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;greeting_card_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\GreetingCardManager&#39;</span><span class="p">);</span>
+
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_email_formatter&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_manager.class%&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">)</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setEmailFormatter&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_email_formatter&#39;</span><span class="p">)</span>
+<span class="p">));</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;greeting_card_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%greeting_card_manager.class%&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">)</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setEmailFormatter&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_email_formatter&#39;</span><span class="p">)</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Hay mucha repetición, tanto en las clases como en la configuración. Esto significa que si cambias, por ejemplo, las clases de correo de la aplicación <tt class="docutils literal"><span class="pre">Mailer</span></tt> de <tt class="docutils literal"><span class="pre">EmailFormatter</span></tt> para inyectarlas a través del constructor, tendrías que actualizar la configuración en dos lugares. Del mismo modo, si necesitas hacer cambios en los métodos definidores tendrías que hacerlo en ambas clases. La forma típica de hacer frente a los métodos comunes de estas clases relacionadas es extraerlas en una superclase:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Mail</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Acme\HelloBundle\Mailer</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\HelloBundle\EmailFormatter</span><span class="p">;</span>
+
+<span class="k">abstract</span> <span class="k">class</span> <span class="nc">MailManager</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="k">protected</span> <span class="nv">$emailFormatter</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setMailer</span><span class="p">(</span><span class="nx">Mailer</span> <span class="nv">$mailer</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">mailer</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEmailFormatter</span><span class="p">(</span><span class="nx">EmailFormatter</span> <span class="nv">$emailFormatter</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">emailFormatter</span> <span class="o">=</span> <span class="nv">$emailFormatter</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Entonces <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt> y <tt class="docutils literal"><span class="pre">GreetingCardManager</span></tt> pueden extender esta
+superclase:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Mail</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">NewsletterManager</span> <span class="k">extends</span> <span class="nx">MailManager</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>y:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Mail</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">GreetingCardManager</span> <span class="k">extends</span> <span class="nx">MailManager</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>De manera similar, el contenedor de servicios de <em>Symfony2</em> también apoya la extensión de servicios en la configuración por lo que también puedes reducir la repetición especificando un padre para un servicio.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
+parameters:
+    # ...
+    newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
+    greeting_card_manager.class: Acme\HelloBundle\Mail\GreetingCardManager
+    mail_manager.class: Acme\HelloBundle\Mail\MailManager
+services:
+    my_mailer:
+        # ...
+    my_email_formatter:
+        # ...
+    mail_manager:
+        class:     %mail_manager.class%
+        abstract:  true
+        calls:
+            - [ setMailer, [ @my_mailer ] ]
+            - [ setEmailFormatter, [ @my_email_formatter] ]
+
+    newsletter_manager:
+        class:     %newsletter_manager.class%
+        parent: mail_manager
+
+    greeting_card_manager:
+        class:     %greeting_card_manager.class%
+        parent: mail_manager</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;
+&lt;parameters&gt;
+    &lt;!-- ... --&gt;
+    &lt;parameter key="newsletter_manager.class"&gt;Acme\HelloBundle\Mail\NewsletterManager&lt;/parameter&gt;
+    &lt;parameter key="greeting_card_manager.class"&gt;Acme\HelloBundle\Mail\GreetingCardManager&lt;/parameter&gt;
+    &lt;parameter key="mail_manager.class"&gt;Acme\HelloBundle\Mail\MailManager&lt;/parameter&gt;
+&lt;/parameters&gt;
+
+    &lt;services&gt;
+    &lt;service id="my_mailer" ... &gt;
+      &lt;!-- ... --&gt;
+    &lt;/service&gt;
+    &lt;service id="my_email_formatter" ... &gt;
+      &lt;!-- ... --&gt;
+    &lt;/service&gt;
+    &lt;service id="mail_manager" class="%mail_manager.class%" abstract="true"&gt;
+        &lt;call method="setMailer"&gt;
+             &lt;argument type="service" id="my_mailer" /&gt;
+        &lt;/call&gt;
+        &lt;call method="setEmailFormatter"&gt;
+             &lt;argument type="service" id="my_email_formatter" /&gt;
+        &lt;/call&gt;
+    &lt;/service&gt;
+    &lt;service id="newsletter_manager" class="%newsletter_manager.class%" parent="mail_manager"/&gt;
+    &lt;service id="greeting_card_manager" class="%greeting_card_manager.class%" parent="mail_manager"/&gt;
+    &lt;/services&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Resources/config/services.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\NewsletterManager&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;greeting_card_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\GreetingCardManager&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;mail_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\MailManager&#39;</span><span class="p">);</span>
+
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_email_formatter&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;mail_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%mail_manager.class%&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">SetAbstract</span><span class="p">(</span>
+    <span class="k">true</span>
+<span class="p">)</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">)</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setEmailFormatter&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_email_formatter&#39;</span><span class="p">)</span>
+<span class="p">));</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">DefinitionDecorator</span><span class="p">(</span>
+    <span class="s1">&#39;mail_manager&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setClass</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_manager.class%&#39;</span>
+<span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;greeting_card_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">DefinitionDecorator</span><span class="p">(</span>
+    <span class="s1">&#39;mail_manager&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setClass</span><span class="p">(</span>
+    <span class="s1">&#39;%greeting_card_manager.class%&#39;</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>En este contexto, tener un servicio <tt class="docutils literal"><span class="pre">padre</span></tt> implica que los argumentos y las llamadas a métodos del servicio padre se deben utilizar en los servicios descendientes.
+En concreto, los métodos definidores especificados para el servicio padre serán llamados cuando se crean instancias del servicio descendiente.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si quitas la clave de configuración del <tt class="docutils literal"><span class="pre">padre</span></tt>, el servicio todavía seguirá siendo una instancia, por supuesto, extendiendo la clase <tt class="docutils literal"><span class="pre">MailManager</span></tt>. La diferencia es que la omisión del <tt class="docutils literal"><span class="pre">padre</span></tt> en la clave de configuración significa que las <tt class="docutils literal"><span class="pre">llamadas</span></tt> definidas en el servicio <tt class="docutils literal"><span class="pre">mail_manager</span></tt> no se ejecutarán al crear instancias de los servicios descendientes.</p>
+</div>
+<p>La clase padre es abstracta, ya que no se deben crear instancias directamente. Al establecerla como abstracta en el archivo de configuración como se hizo anteriormente, significa que sólo se puede utilizar como un servicio primario y no se puede utilizar directamente como un servicio para inyectar y retirar en tiempo de compilación. En otras palabras, existe sólo como una &#8220;plantilla&#8221; que otros servicios pueden utilizar.</p>
+<div class="section" id="sustituyendo-dependencias-padre">
+<h2>Sustituyendo dependencias padre<a class="headerlink" href="#sustituyendo-dependencias-padre" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puede haber ocasiones en las que deses sustituir que clase se pasa a una dependencia en un servicio hijo único. Afortunadamente, añadiendo la llamada al método de configuración para el servicio hijo, las dependencias establecidas por la clase principal se sustituyen. Así que si necesitas pasar una dependencia diferente sólo para la clase <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt>, la configuración sería la siguiente:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
+parameters:
+    # ...
+    newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
+    greeting_card_manager.class: Acme\HelloBundle\Mail\GreetingCardManager
+    mail_manager.class: Acme\HelloBundle\Mail\MailManager
+services:
+    my_mailer:
+        # ...
+    my_alternative_mailer:
+        # ...
+    my_email_formatter:
+        # ...
+    mail_manager:
+        class:     %mail_manager.class%
+        abstract:  true
+        calls:
+            - [ setMailer, [ @my_mailer ] ]
+            - [ setEmailFormatter, [ @my_email_formatter] ]
+
+    newsletter_manager:
+        class:     %newsletter_manager.class%
+        parent: mail_manager
+        calls:
+            - [ setMailer, [ @my_alternative_mailer ] ]
+
+    greeting_card_manager:
+        class:     %greeting_card_manager.class%
+        parent: mail_manager</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;
+&lt;parameters&gt;
+    &lt;!-- ... --&gt;
+    &lt;parameter key="newsletter_manager.class"&gt;Acme\HelloBundle\Mail\NewsletterManager&lt;/parameter&gt;
+    &lt;parameter key="greeting_card_manager.class"&gt;Acme\HelloBundle\Mail\GreetingCardManager&lt;/parameter&gt;
+    &lt;parameter key="mail_manager.class"&gt;Acme\HelloBundle\Mail\MailManager&lt;/parameter&gt;
+&lt;/parameters&gt;
+
+    &lt;services&gt;
+    &lt;service id="my_mailer" ... &gt;
+      &lt;!-- ... --&gt;
+    &lt;/service&gt;
+    &lt;service id="my_alternative_mailer" ... &gt;
+      &lt;!-- ... --&gt;
+    &lt;/service&gt;
+    &lt;service id="my_email_formatter" ... &gt;
+      &lt;!-- ... --&gt;
+    &lt;/service&gt;
+    &lt;service id="mail_manager" class="%mail_manager.class%" abstract="true"&gt;
+        &lt;call method="setMailer"&gt;
+             &lt;argument type="service" id="my_mailer" /&gt;
+        &lt;/call&gt;
+        &lt;call method="setEmailFormatter"&gt;
+             &lt;argument type="service" id="my_email_formatter" /&gt;
+        &lt;/call&gt;
+    &lt;/service&gt;
+    &lt;service id="newsletter_manager" class="%newsletter_manager.class%" parent="mail_manager"&gt;
+         &lt;call method="setMailer"&gt;
+             &lt;argument type="service" id="my_alternative_mailer" /&gt;
+        &lt;/call&gt;
+    &lt;/service&gt;
+    &lt;service id="greeting_card_manager" class="%greeting_card_manager.class%" parent="mail_manager"/&gt;
+    &lt;/services&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Resources/config/services.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\NewsletterManager&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;greeting_card_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\GreetingCardManager&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;mail_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\MailManager&#39;</span><span class="p">);</span>
+
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_alternative_mailer&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_email_formatter&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;mail_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%mail_manager.class%&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">SetAbstract</span><span class="p">(</span>
+    <span class="k">true</span>
+<span class="p">)</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">)</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setEmailFormatter&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_email_formatter&#39;</span><span class="p">)</span>
+<span class="p">));</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">DefinitionDecorator</span><span class="p">(</span>
+    <span class="s1">&#39;mail_manager&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setClass</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_manager.class%&#39;</span>
+<span class="p">)</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_alternative_mailer&#39;</span><span class="p">)</span>
+<span class="p">));</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;greeting_card_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">DefinitionDecorator</span><span class="p">(</span>
+    <span class="s1">&#39;mail_manager&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setClass</span><span class="p">(</span>
+    <span class="s1">&#39;%greeting_card_manager.class%&#39;</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>El <tt class="docutils literal"><span class="pre">GreetingCardManager</span></tt> recibirá las mismas dependencias que antes, pero la <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt> será pasada a <tt class="docutils literal"><span class="pre">my_alternative_mailer</span></tt> en lugar del servicio <tt class="docutils literal"><span class="pre">my_mailer</span></tt>.</p>
+</div>
+<div class="section" id="coleccion-de-dependencias">
+<h2>Colección de dependencias<a class="headerlink" href="#coleccion-de-dependencias" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cabe señalar que el método definidor sustituido en el ejemplo anterior en realidad se invoca dos veces &#8212; una vez en la definición del padre y otra más en la definición del hijo. En el ejemplo anterior, esto estaba muy bien, ya que la segunda llamada a <tt class="docutils literal"><span class="pre">setMailer</span></tt> sustituye al objeto <tt class="docutils literal"><span class="pre">mailer</span></tt> establecido por la primera llamada.</p>
+<p>En algunos casos, sin embargo, esto puede ser un problema. Por ejemplo, si la sustitución a la llamada al método consiste en añadir algo a una colección, entonces se agregarán dos objetos a la colección. A continuación mostramos tal caso, si la clase padre se parece a esto:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Mail</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Acme\HelloBundle\Mailer</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\HelloBundle\EmailFormatter</span><span class="p">;</span>
+
+<span class="k">abstract</span> <span class="k">class</span> <span class="nc">MailManager</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$filters</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setFilter</span><span class="p">(</span><span class="nv">$filter</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">filters</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$filter</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Si tienes la siguiente configuración:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
+parameters:
+    # ...
+    newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
+    mail_manager.class: Acme\HelloBundle\Mail\MailManager
+services:
+    my_filter:
+        # ...
+    another_filter:
+        # ...
+    mail_manager:
+        class:     %mail_manager.class%
+        abstract:  true
+        calls:
+            - [ setFilter, [ @my_filter ] ]
+
+    newsletter_manager:
+        class:     %newsletter_manager.class%
+        parent: mail_manager
+        calls:
+            - [ setFilter, [ @another_filter ] ]</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;
+&lt;parameters&gt;
+    &lt;!-- ... --&gt;
+    &lt;parameter key="newsletter_manager.class"&gt;Acme\HelloBundle\Mail\NewsletterManager&lt;/parameter&gt;
+    &lt;parameter key="mail_manager.class"&gt;Acme\HelloBundle\Mail\MailManager&lt;/parameter&gt;
+&lt;/parameters&gt;
+
+    &lt;services&gt;
+    &lt;service id="my_filter" ... &gt;
+      &lt;!-- ... --&gt;
+    &lt;/service&gt;
+    &lt;service id="another_filter" ... &gt;
+      &lt;!-- ... --&gt;
+    &lt;/service&gt;
+    &lt;service id="mail_manager" class="%mail_manager.class%" abstract="true"&gt;
+        &lt;call method="setFilter"&gt;
+             &lt;argument type="service" id="my_filter" /&gt;
+        &lt;/call&gt;
+    &lt;/service&gt;
+    &lt;service id="newsletter_manager" class="%newsletter_manager.class%" parent="mail_manager"&gt;
+         &lt;call method="setFilter"&gt;
+             &lt;argument type="service" id="another_filter" /&gt;
+        &lt;/call&gt;
+    &lt;/service&gt;
+    &lt;/services&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Resources/config/services.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\NewsletterManager&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;mail_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Mail\MailManager&#39;</span><span class="p">);</span>
+
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_filter&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;another_filter&#39;</span><span class="p">,</span> <span class="o">...</span> <span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;mail_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%mail_manager.class%&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">SetAbstract</span><span class="p">(</span>
+    <span class="k">true</span>
+<span class="p">)</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setFilter&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_filter&#39;</span><span class="p">)</span>
+<span class="p">));</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">DefinitionDecorator</span><span class="p">(</span>
+    <span class="s1">&#39;mail_manager&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setClass</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_manager.class%&#39;</span>
+<span class="p">)</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setFilter&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;another_filter&#39;</span><span class="p">)</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>En este ejemplo, el <tt class="docutils literal"><span class="pre">setFilter</span></tt> del servicio <tt class="docutils literal"><span class="pre">newsletter_manager</span></tt> se llamará dos veces, dando lugar a que el array <tt class="docutils literal"><span class="pre">$filters</span></tt> contenga ambos objetos <tt class="docutils literal"><span class="pre">my_filter</span></tt> y <tt class="docutils literal"><span class="pre">another_filter</span></tt>. Esto es genial si sólo quieres agregar filtros adicionales para subclases. Si deseas reemplazar los filtros pasados a la subclase, elimina de la matriz el ajuste de la configuración, esto evitará que la clase <tt class="docutils literal"><span class="pre">setFilter</span></tt> base sea llamada.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="scopes.html" title="Cómo trabajar con ámbitos"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="factories.html" title="Cómo utilizar el patrón fábrica para crear servicios"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

@@ -1,0 +1,454 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo manejar archivos subidos con Doctrine &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Extensiones Doctrine: Timestampable, Sluggable, Translatable, etc." href="common_extensions.html" />
+    <link rel="prev" title="Cómo aplicar un filtro Assetic a una extensión de archivo especifica" href="../assetic/apply_to_option.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="common_extensions.html" title="Extensiones Doctrine: Timestampable, Sluggable, Translatable, etc."
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="../assetic/apply_to_option.html" title="Cómo aplicar un filtro Assetic a una extensión de archivo especifica"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-manejar-archivos-subidos-con-doctrine">
+<h1>Cómo manejar archivos subidos con <em>Doctrine</em><a class="headerlink" href="#como-manejar-archivos-subidos-con-doctrine" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Manejar el envío de archivos con entidades <em>Doctrine</em> no es diferente a la manipulación de cualquier otra carga de archivo. En otras palabras, eres libre de mover el archivo en tu controlador después de manipular el envío de un formulario. Para ver ejemplos de cómo hacerlo, consulta el <a class="reference internal" href="../../reference/forms/types/file.html"><em>Tipo de campo file</em></a> en la referencia.</p>
+<p>Si lo deseas, también puedes integrar la carga de archivos en el ciclo de vida de tu entidad (es decir, creación, actualización y eliminación). En este caso, ya que tu entidad es creada, actualizada y eliminada desde <em>Doctrine</em>, el proceso de carga y remoción de archivos se llevará a cabo de forma automática (sin necesidad de hacer nada en el controlador);</p>
+<p>Para que esto funcione, tendrás que hacerte cargo de una serie de detalles, los cuales serán cubiertos en este artículo del recetario.</p>
+<div class="section" id="configuracion-basica">
+<h2>Configuración básica<a class="headerlink" href="#configuracion-basica" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>En primer lugar, crea una sencilla clase Entidad de <em>Doctrine</em> con la cual trabajar:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Entity/Document.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Entity</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Doctrine\ORM\Mapping</span> <span class="k">as</span> <span class="nx">ORM</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+
+<span class="sd">/**</span>
+<span class="sd"> * @ORM\Entity</span>
+<span class="sd"> */</span>
+<span class="k">class</span> <span class="nc">Document</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\Id</span>
+<span class="sd">     * @ORM\Column(type=&quot;integer&quot;)</span>
+<span class="sd">     * @ORM\GeneratedValue(strategy=&quot;AUTO&quot;)</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="nv">$id</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\Column(type=&quot;string&quot;, length=255)</span>
+<span class="sd">     * @Assert\NotBlank</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="nv">$name</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\Column(type=&quot;string&quot;, length=255, nullable=true)</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="nv">$path</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAbsolutePath</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">?</span> <span class="k">null</span> <span class="o">:</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">()</span><span class="o">.</span><span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getWebPath</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">?</span> <span class="k">null</span> <span class="o">:</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadDir</span><span class="p">()</span><span class="o">.</span><span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">getUploadRootDir</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// la ruta absoluta del directorio donde se deben guardar los archivos cargados</span>
+        <span class="k">return</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../../../../web/&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadDir</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">getUploadDir</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// se libra del __DIR__ para no desviarse al mostrar `doc/image` en la vista.</span>
+        <span class="k">return</span> <span class="s1">&#39;uploads/documents&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>La entidad <tt class="docutils literal"><span class="pre">Documento</span></tt> tiene un nombre y está asociado con un archivo. La propiedad <tt class="docutils literal"><span class="pre">ruta</span></tt> almacena la ruta relativa al archivo y se persiste en la base de datos.
+El <tt class="docutils literal"><span class="pre">getAbsolutePath()</span></tt> es un método útil que devuelve la ruta absoluta al archivo, mientras que <tt class="docutils literal"><span class="pre">getWebPath()</span></tt> es un conveniente método que devuelve la ruta web, la cual se utiliza en una plantilla para enlazar el archivo cargado.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Si no lo has hecho, probablemente primero deberías leer el tipo <a class="reference internal" href="../../reference/forms/types/file.html"><em>archivo</em></a> en la documentación para comprender cómo trabaja el proceso de carga básico.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si estás utilizando anotaciones para especificar tus reglas de validación (como muestra este ejemplo), asegúrate de que has habilitado la validación por medio de anotaciones (consulta <a class="reference internal" href="../../book/validation.html#book-validation-configuration"><em>configurando la validación</em></a>).</p>
+</div>
+<p>Para manejar el archivo real subido en el formulario, utiliza un campo <tt class="docutils literal"><span class="pre">file</span></tt> &#8220;virtual&#8221;.
+Por ejemplo, si estás construyendo tu formulario directamente en un controlador, este podría tener el siguiente aspecto:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">uploadAction</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createFormBuilder</span><span class="p">(</span><span class="nv">$document</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">getForm</span><span class="p">()</span>
+    <span class="p">;</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A continuación, crea esta propiedad en tu clase <tt class="docutils literal"><span class="pre">Documento</span></tt> y agrega algunas reglas de validación:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Entity/Document.php</span>
+
+<span class="c1">// ...</span>
+<span class="k">class</span> <span class="nc">Document</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @Assert\File(maxSize=&quot;6000000&quot;)</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="nv">$file</span><span class="p">;</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Debido a que estás utilizando la restricción <tt class="docutils literal"><span class="pre">File</span></tt>, <em>Symfony2</em> automáticamente supone que el campo del formulario es una entrada para cargar un archivo. Es por eso que no lo tienes que establecer explícitamente al crear el formulario anterior (<tt class="docutils literal"><span class="pre">-&gt;add('file')</span></tt>).</p>
+</div>
+<p>El siguiente controlador muestra cómo manipular todo el proceso:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Acme\DemoBundle\Entity\Document</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Sensio\Bundle\FrameworkExtraBundle\Configuration\Template</span><span class="p">;</span>
+<span class="c1">// ...</span>
+
+<span class="sd">/**</span>
+<span class="sd"> * @Template()</span>
+<span class="sd"> */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">uploadAction</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$document</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Document</span><span class="p">();</span>
+    <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createFormBuilder</span><span class="p">(</span><span class="nv">$document</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">getForm</span><span class="p">()</span>
+    <span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getMethod</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;POST&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">bindRequest</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">());</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">();</span>
+
+            <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
+            <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
+
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">generateUrl</span><span class="p">(</span><span class="s1">&#39;...&#39;</span><span class="p">));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;form&#39;</span> <span class="o">=&gt;</span> <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">createView</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>Al escribir la plantilla, no olvides fijar el atributo <tt class="docutils literal"><span class="pre">enctype</span></tt>:</p>
+<div class="last highlight-html+php"><pre>&lt;h1&gt;Upload File&lt;/h1&gt;
+
+&lt;form action="#" method="post" {{ form_enctype(form) }}&gt;
+    {{ form_widget(form) }}
+
+    &lt;input type="submit" value="Upload Document" /&gt;
+&lt;/form&gt;</pre>
+</div>
+</div>
+<p>El controlador anterior automáticamente persistirá la entidad <tt class="docutils literal"><span class="pre">Documento</span></tt> con el nombre presentado, pero no hará nada sobre el archivo y la propiedad <tt class="docutils literal"><span class="pre">path</span></tt> quedará en blanco.</p>
+<p>Una manera fácil de manejar la carga de archivos es que lo muevas justo antes de que se persista la entidad y a continuación, establece la propiedad <tt class="docutils literal"><span class="pre">path</span></tt> en consecuencia. Comienza por invocar a un nuevo método <tt class="docutils literal"><span class="pre">upload()</span></tt> en la clase <tt class="docutils literal"><span class="pre">Documento</span></tt>, el cual deberás crear en un momento para manejar la carga del archivo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
+    <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">();</span>
+
+    <span class="nv">$document</span><span class="o">-&gt;</span><span class="na">upload</span><span class="p">();</span>
+
+    <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
+    <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
+
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="s1">&#39;...&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>El método <tt class="docutils literal"><span class="pre">upload()</span></tt> tomará ventaja del objeto <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\File\UploadedFile</span></tt>, el cual es lo que devuelve después de que se presenta un campo <tt class="docutils literal"><span class="pre">file</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">upload</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="c1">// la propiedad file puede estar vacía si el campo no es obligatorio</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// aquí utilizamos el nombre de archivo original pero lo deberías</span>
+    <span class="c1">// desinfectar por lo menos para evitar cualquier problema de seguridad</span>
+
+    <span class="c1">// &#39;move&#39; toma el directorio y nombre de archivo destino al cual trasladarlo</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">move</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">(),</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">getClientOriginalName</span><span class="p">());</span>
+
+    <span class="c1">// establece la propiedad path al nombre de archivo dónde lo hayas guardado</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">getClientOriginalName</span><span class="p">();</span>
+
+    <span class="c1">// limpia la propiedad &#39;file&#39; ya que no la necesitas más</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="usando-el-ciclo-de-vida-de-las-retrollamadas">
+<h2>Usando el ciclo de vida de las retrollamadas<a class="headerlink" href="#usando-el-ciclo-de-vida-de-las-retrollamadas" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Incluso si esta implementación trabaja, adolece de un defecto importante: ¿Qué pasa si hay un problema al persistir la entidad? El archivo ya se ha movido a su ubicación final, incluso aunque la propiedad <tt class="docutils literal"><span class="pre">path</span></tt> de la entidad no se persista correctamente.</p>
+<p>Para evitar estos problemas, debes cambiar la implementación para que la operación de base de datos y el traslado del archivo sean atómicos: si hay un problema al persistir la entidad o si el archivo no se puede mover, entonces, no debe suceder <em>nada</em>.</p>
+<p>Para ello, es necesario mover el archivo justo cuando <em>Doctrine</em> persista la entidad a la base de datos. Esto se puede lograr enganchando el ciclo de vida de la entidad a una retrollamada:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="sd">/**</span>
+<span class="sd"> * @ORM\Entity</span>
+<span class="sd"> * @ORM\HasLifecycleCallbacks</span>
+<span class="sd"> */</span>
+<span class="k">class</span> <span class="nc">Document</span>
+<span class="p">{</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A continuación, reconstruye la clase <tt class="docutils literal"><span class="pre">Documento</span></tt> para que tome ventaja de estas retrollamadas:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\File\UploadedFile</span><span class="p">;</span>
+
+<span class="sd">/**</span>
+<span class="sd"> * @ORM\Entity</span>
+<span class="sd"> * @ORM\HasLifecycleCallbacks</span>
+<span class="sd"> */</span>
+<span class="k">class</span> <span class="nc">Document</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\PrePersist()</span>
+<span class="sd">     * @ORM\PreUpdate()</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">preUpload</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">!==</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// haz cualquier cosa para generar un nombre único</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="nb">uniqid</span><span class="p">()</span><span class="o">.</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">guessExtension</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\PostPersist()</span>
+<span class="sd">     * @ORM\PostUpdate()</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">upload</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c1">// si hay un error al mover el archivo, move() automáticamente</span>
+        <span class="c1">// envía una excepción. Esta impedirá que la entidad se persista</span>
+        <span class="c1">// en la base de datos en caso de error</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">move</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">(),</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">);</span>
+
+        <span class="nb">unset</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\PostRemove()</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">removeUpload</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$file</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getAbsolutePath</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nb">unlink</span><span class="p">(</span><span class="nv">$file</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>La clase ahora hace todo lo que necesitas: genera un nombre de archivo único antes de persistirlo, mueve el archivo después de persistirlo y elimina el archivo si la entidad es eliminada.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Los eventos retrollamados <tt class="docutils literal"><span class="pre">&#64;ORM\PrePersist()</span></tt> y <tt class="docutils literal"><span class="pre">&#64;ORM\PostPersist()</span></tt> se disparan antes y después de almacenar la entidad en la base de datos. Por otro lado, los eventos retrollamados <tt class="docutils literal"><span class="pre">&#64;ORM\PreUpdate()</span></tt> y <tt class="docutils literal"><span class="pre">&#64;ORM\PostUpdate()</span></tt> se llaman al actualizar la entidad.</p>
+</div>
+<div class="admonition caution">
+<p class="first admonition-title">Prudencia</p>
+<p class="last">Las retrollamadas <tt class="docutils literal"><span class="pre">PreUpdate</span></tt> y <tt class="docutils literal"><span class="pre">PostUpdate</span></tt> sólo se activan si se persiste algún cambio en uno de los campos de la entidad. Esto significa que, de manera predeterminada, si sólo modificas la propiedad <tt class="docutils literal"><span class="pre">$file</span></tt>, estos eventos no se activarán, puesto que esa propiedad no se persiste directamente a través de <em>Doctrine</em>. Una solución sería usar un campo <tt class="docutils literal"><span class="pre">actualizado</span></tt> que <em>Doctrine</em> persista, y modificarlo manualmente al cambiar el archivo.</p>
+</div>
+</div>
+<div class="section" id="usando-el-id-como-nombre-de-archivo">
+<h2>Usando el <tt class="docutils literal"><span class="pre">id</span></tt> como nombre de archivo<a class="headerlink" href="#usando-el-id-como-nombre-de-archivo" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si deseas utilizar el <tt class="docutils literal"><span class="pre">id</span></tt> como el nombre del archivo, la implementación es un poco diferente conforme sea necesaria para guardar la extensión en la propiedad <tt class="docutils literal"><span class="pre">path</span></tt>, en lugar del nombre de archivo real:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\File\UploadedFile</span><span class="p">;</span>
+
+<span class="sd">/**</span>
+<span class="sd"> * @ORM\Entity</span>
+<span class="sd"> * @ORM\HasLifecycleCallbacks</span>
+<span class="sd"> */</span>
+<span class="k">class</span> <span class="nc">Document</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\PrePersist()</span>
+<span class="sd">     * @ORM\PreUpdate()</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">preUpload</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">!==</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">guessExtension</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\PostPersist()</span>
+<span class="sd">     * @ORM\PostUpdate()</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">upload</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c1">// aquí debes lanzar una excepción si el archivo no se puede mover</span>
+        <span class="c1">// para que la entidad no se conserve en la base de datos</span>
+        <span class="c1">// lo cual hace el método move() del archivo subido</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">move</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">(),</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="o">.</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">guessExtension</span><span class="p">());</span>
+
+        <span class="nb">unset</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\PreRemove()</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">removeUpload</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$file</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getAbsolutePath</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nb">unlink</span><span class="p">(</span><span class="nv">$file</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getAbsolutePath</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">?</span> <span class="k">null</span> <span class="o">:</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">()</span><span class="o">.</span><span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="o">.</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="common_extensions.html" title="Extensiones Doctrine: Timestampable, Sluggable, Translatable, etc."
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="../assetic/apply_to_option.html" title="Cómo aplicar un filtro Assetic a una extensión de archivo especifica"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

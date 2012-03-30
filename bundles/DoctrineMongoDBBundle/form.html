@@ -1,0 +1,375 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo implementar un sencillo formulario de inscripción con MongoDB &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="DoctrineMongoDBBundle" href="index.html" />
+    <link rel="next" title="Colaborando" href="../../contributing/index.html" />
+    <link rel="prev" title="Configurando DoctrineMongoDBBundle" href="config.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../../contributing/index.html" title="Colaborando"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="Configurando DoctrineMongoDBBundle"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Paquetes de la <em>edición estándar de Symfony2</em></a> &raquo;</li>
+          <li><a href="index.html" accesskey="U"><tt class="docutils literal docutils literal docutils literal docutils literal"><span class="pre">DoctrineMongoDBBundle</span></tt></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-implementar-un-sencillo-formulario-de-inscripcion-con-mongodb">
+<h1>Cómo implementar un sencillo formulario de inscripción con <em>MongoDB</em><a class="headerlink" href="#como-implementar-un-sencillo-formulario-de-inscripcion-con-mongodb" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Algunos formularios tienen campos adicionales cuyos valores no es necesario almacenar en la base de datos. En este ejemplo, vamos a crear un formulario de registro con algunos campos adicionales, y un campo &#8220;términos aceptados&#8221; (como casilla de verificación) incluido en el formulario que en realidad no se almacena en la información de la cuenta. Vamos a utilizar <em>MongoDB</em> para almacenar los datos.</p>
+<div class="section" id="el-modelo-de-usuario-simple">
+<h2>El modelo de Usuario simple<a class="headerlink" href="#el-modelo-de-usuario-simple" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Por lo tanto, en esta guía comenzaremos con el modelo para un documento <tt class="docutils literal"><span class="pre">Usuario</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Document/User.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Document</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Doctrine\ODM\MongoDB\Mapping\Annotations</span> <span class="k">as</span> <span class="nx">MongoDB</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\Bundle\MongoDBBundle\Validator\Constraints\Unique</span> <span class="k">as</span> <span class="nx">MongoDBUnique</span><span class="p">;</span>
+
+<span class="sd">/**</span>
+<span class="sd"> * @MongoDB\Document(collection=&quot;users&quot;)</span>
+<span class="sd"> * @MongoDBUnique(fields=&quot;email&quot;)</span>
+<span class="sd"> */</span>
+<span class="k">class</span> <span class="nc">User</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @MongoDB\Id</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$id</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @MongoDB\Field(type=&quot;string&quot;)</span>
+<span class="sd">     * @Assert\NotBlank()</span>
+<span class="sd">     * @Assert\Email()</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$email</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @MongoDB\Field(type=&quot;string&quot;)</span>
+<span class="sd">     * @Assert\NotBlank()</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$password</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getId</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getEmail</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">email</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEmail</span><span class="p">(</span><span class="nv">$email</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">email</span> <span class="o">=</span> <span class="nv">$email</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getPassword</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">password</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// encriptado estúpidamente simple (¡por favor no copies esto!)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setPassword</span><span class="p">(</span><span class="nv">$password</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">password</span> <span class="o">=</span> <span class="nb">sha1</span><span class="p">(</span><span class="nv">$password</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Este documento <tt class="docutils literal"><span class="pre">Usuario</span></tt> contiene tres campos y dos de ellos (correo y contraseña) se deben mostrar en el formulario. La propiedad correo debe ser única en la base de datos, por lo tanto añadimos esta validación en lo alto de la clase.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si deseas integrar este Usuario en el sistema de seguridad, es necesario implementar la <a class="reference internal" href="../../book/security.html#book-security-user-entity"><em>Interfaz de usuario</em></a> del componente de Seguridad.</p>
+</div>
+</div>
+<div class="section" id="creando-un-formulario-para-el-modelo">
+<h2>Creando un formulario para el modelo<a class="headerlink" href="#creando-un-formulario-para-el-modelo" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A continuación, crea el formulario para el modelo <tt class="docutils literal"><span class="pre">Usuario</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Form/Type/UserType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\Extension\Core\Type\RepeatedType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">UserType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="s1">&#39;email&#39;</span><span class="p">);</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;repeated&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+           <span class="s1">&#39;first_name&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;password&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;second_name&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;confirm&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;password&#39;</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;data_class&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\AccountBundle\Document\User&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;user&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Acabamos de añadir dos campos: correo y contraseña (repetido para confirmar la contraseña introducida). La opción <tt class="docutils literal"><span class="pre">data_class</span></tt> le indica al formulario el nombre de la clase de los datos (es decir, el documento <tt class="docutils literal"><span class="pre">Usuario</span></tt>).</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Para explorar más cosas sobre el componente Formulario, lee esta <a class="reference internal" href="../../book/forms.html"><em>documentación</em></a>.</p>
+</div>
+</div>
+<div class="section" id="incorporando-el-formulario-usuario-en-un-formulario-de-inscripcion">
+<h2>Incorporando el formulario Usuario en un formulario de inscripción<a class="headerlink" href="#incorporando-el-formulario-usuario-en-un-formulario-de-inscripcion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El formulario que vamos a usar para la página de registro no es el mismo que el formulario utilizado para simplemente modificar al <tt class="docutils literal"><span class="pre">Usuario</span></tt> (es decir, <tt class="docutils literal"><span class="pre">UserType</span></tt>). El formulario de registro contiene más campos como &#8220;acepto las condiciones&#8221;, cuyo valor no se almacenará en la base de datos.</p>
+<p>En otras palabras, creas un segundo formulario de inscripción, el cual incorpora el formulario <tt class="docutils literal"><span class="pre">Usuario</span></tt> y añades el campo extra necesario. Empecemos creando una clase simple que representa la &#8220;inscripción&#8221;:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Form/Model/Registration.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Form\Model</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Acme\AccountBundle\Document\User</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Registration</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @Assert\Type(type=&quot;Acme\AccountBundle\Document\User&quot;)</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$user</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @Assert\NotBlank()</span>
+<span class="sd">     * @Assert\True()</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$termsAccepted</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setUser</span><span class="p">(</span><span class="nx">User</span> <span class="nv">$user</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">usuario</span> <span class="o">=</span> <span class="nv">$usuario</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getUser</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">user</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getTermsAccepted</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">termsAccepted</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setTermsAccepted</span><span class="p">(</span><span class="nv">$termsAccepted</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">termsAccepted</span> <span class="o">=</span> <span class="p">(</span><span class="nx">boolean</span><span class="p">)</span><span class="nv">$termsAccepted</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A continuación, crea el formulario para el modelo <tt class="docutils literal"><span class="pre">Registro</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Form/Type/RegistrationType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\Extension\Core\Type\RepeatedType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">RegistrationType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">UserType</span><span class="p">());</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;terms&#39;</span><span class="p">,</span> <span class="s1">&#39;checkbox&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;property_path&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;termsAccepted&#39;</span><span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;registration&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>No necesitas utilizar métodos especiales para integrar el <tt class="docutils literal"><span class="pre">UserType</span></tt> en el formulario.
+Un formulario es un campo, también &#8212; por lo tanto lo puedes añadir como cualquier otro campo, con la expectativa de que la propiedad <tt class="docutils literal"><span class="pre">Usuario</span></tt> correspondiente mantendrá una instancia de la clase <tt class="docutils literal"><span class="pre">UserType</span></tt>.</p>
+</div>
+<div class="section" id="manejando-el-envio-del-formulario">
+<h2>Manejando el envío del formulario<a class="headerlink" href="#manejando-el-envio-del-formulario" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A continuación, necesitas un controlador para manejar el formulario. Comienza creando un controlador simple para mostrar el formulario de inscripción:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Controller/AccountController.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Controller</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Bundle\FrameworkBundle\Controller\Controller</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Response</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Acme\AccountBundle\Form\Type\RegistrationType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\AccountBundle\Form\Model\Registration</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AccountController</span> <span class="k">extends</span> <span class="nx">Controller</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">registerAction</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createForm</span><span class="p">(</span><span class="k">new</span> <span class="nx">RegistrationType</span><span class="p">(),</span> <span class="k">new</span> <span class="nx">Registration</span><span class="p">());</span>
+
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeAccountBundle:Account:register.html.twig&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;form&#39;</span> <span class="o">=&gt;</span> <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">createView</span><span class="p">()));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>y su plantilla:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/AccountBundle/Resources/views/Account/register.html.twig #}</span>
+
+<span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">path</span><span class="o">(</span><span class="s1">&#39;create&#39;</span><span class="o">)</span><span class="cp">}}</span><span class="s">&quot;</span> <span class="na">method=</span><span class="s">&quot;post&quot;</span> <span class="cp">{{</span> <span class="nv">form_enctype</span><span class="o">(</span><span class="nv">form</span><span class="o">)</span> <span class="cp">}}</span><span class="nt">&gt;</span>
+    <span class="cp">{{</span> <span class="nv">form_widget</span><span class="o">(</span><span class="nv">form</span><span class="o">)</span> <span class="cp">}}</span>
+
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/form&gt;</span>
+</pre></div>
+</div>
+<p>Finalmente, crea el controlador que maneja el envío del formulario.  Esto realiza la validación y guarda los datos en <em>MongoDB</em>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">createAction</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$dm</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;doctrine.odm.mongodb.default_document_manager&#39;</span><span class="p">);</span>
+
+    <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createForm</span><span class="p">(</span><span class="k">new</span> <span class="nx">RegistrationType</span><span class="p">(),</span> <span class="k">new</span> <span class="nx">Registration</span><span class="p">());</span>
+
+    <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">bindRequest</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">());</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
+        <span class="nv">$registration</span> <span class="o">=</span> <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">getData</span><span class="p">();</span>
+
+        <span class="nv">$dm</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$registration</span><span class="o">-&gt;</span><span class="na">getUser</span><span class="p">());</span>
+        <span class="nv">$dm</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
+
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeAccountBundle:Account:register.html.twig&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;form&#39;</span> <span class="o">=&gt;</span> <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">createView</span><span class="p">()));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>¡Eso es todo! Tu formulario ahora valida, y te permite guardar el objeto <tt class="docutils literal"><span class="pre">Usuario</span></tt> a <em>MongoDB</em>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../../contributing/index.html" title="Colaborando"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="Configurando DoctrineMongoDBBundle"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Paquetes de la <em>edición estándar de Symfony2</em></a> &raquo;</li>
+          <li><a href="index.html" ><tt class="docutils literal docutils literal docutils literal docutils literal"><span class="pre">DoctrineMongoDBBundle</span></tt></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

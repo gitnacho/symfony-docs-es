@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo minimizar JavaScript y hojas de estilo con YUI Compressor &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo utilizar Assetic para optimizar imágenes con funciones Twig" href="jpeg_optimize.html" />
+    <link rel="prev" title="Cómo utilizar Assetic para gestionar activos" href="asset_management.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="jpeg_optimize.html" title="Cómo utilizar Assetic para optimizar imágenes con funciones Twig"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="asset_management.html" title="Cómo utilizar Assetic para gestionar activos"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-minimizar-javascript-y-hojas-de-estilo-con-yui-compressor">
+<h1>Cómo minimizar <em>JavaScript</em> y hojas de estilo con <em>YUI Compressor</em><a class="headerlink" href="#como-minimizar-javascript-y-hojas-de-estilo-con-yui-compressor" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Yahoo! proporciona una excelente utilidad para minimizar (minify) <em>JavaScript</em> y hojas de estilo para que viajen más rápido por la red, el <a class="reference external" href="http://developer.yahoo.com/yui/compressor/">YUI Compressor</a>. Gracias a <tt class="docutils literal"><span class="pre">Assetic</span></tt>, puedes tomar ventaja de esta herramienta con mucha facilidad.</p>
+<div class="section" id="descargando-el-jar-de-yui-compressor">
+<h2>Descargando el <em>JAR</em> de <em>YUI Compressor</em><a class="headerlink" href="#descargando-el-jar-de-yui-compressor" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El <em>YUI Compressor</em> está escrito en <em>Java</em> y se distribuye como <em>JAR</em>. <a class="reference external" href="http://yuilibrary.com/downloads/#yuicompressor">Descarga el JAR</a> desde el sitio Yahoo! y guárdalo en <tt class="docutils literal"><span class="pre">app/Resources/java/yuicompressor.jar</span></tt>.</p>
+</div>
+<div class="section" id="configurando-los-filtros-de-yui">
+<h2>Configurando los filtros de <em>YUI</em><a class="headerlink" href="#configurando-los-filtros-de-yui" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Ahora debes configurar dos <em>filtros</em> <tt class="docutils literal"><span class="pre">Assetic</span></tt> en tu aplicación, uno para minimizar <em>JavaScript</em> con el compresor <em>YUI</em> y otro para minimizar hojas de estilo:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">assetic</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">filters</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">yui_css</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">jar</span><span class="p-Indicator">:</span> <span class="s">&quot;%kernel.root_dir%/Resources/java/yuicompressor.jar&quot;</span>
+        <span class="l-Scalar-Plain">yui_js</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">jar</span><span class="p-Indicator">:</span> <span class="s">&quot;%kernel.root_dir%/Resources/java/yuicompressor.jar&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;assetic:config&gt;</span>
+    <span class="nt">&lt;assetic:filter</span>
+        <span class="na">name=</span><span class="s">&quot;yui_css&quot;</span>
+        <span class="na">jar=</span><span class="s">&quot;%kernel.root_dir%/Resources/java/yuicompressor.jar&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;assetic:filter</span>
+        <span class="na">name=</span><span class="s">&quot;yui_js&quot;</span>
+        <span class="na">jar=</span><span class="s">&quot;%kernel.root_dir%/Resources/java/yuicompressor.jar&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/assetic:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;assetic&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;filters&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;yui_css&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;jar&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;%kernel.root_dir%/Resources/java/yuicompressor.jar&#39;</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;yui_js&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;jar&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;%kernel.root_dir%/Resources/java/yuicompressor.jar&#39;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Ahora tienes acceso a dos nuevos <em>filtros</em> <tt class="docutils literal"><span class="pre">Assetic</span></tt> en tu aplicación:
+<tt class="docutils literal"><span class="pre">yui_css</span></tt> y <tt class="docutils literal"><span class="pre">yui_js</span></tt>. Estos utilizan el compresor de <em>YUI</em> para minimizar hojas de estilo y <em>JavaScript</em>, respectivamente.</p>
+</div>
+<div class="section" id="minimizando-tus-activos">
+<h2>Minimizando tus activos<a class="headerlink" href="#minimizando-tus-activos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Ahora tienes configurado el compresor <em>YUI</em>, pero nada va a pasar hasta que apliques uno de estos filtros a un activo. Dado que tus activos son una parte de la capa de la vista, este trabajo se hace en tus plantillas:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">javascripts</span> <span class="s1">&#39;@AcmeFooBundle/Resources/public/js/*&#39;</span> <span class="nv">filter</span><span class="o">=</span><span class="s1">&#39;yui_js&#39;</span> <span class="cp">%}</span>
+<span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">asset_url</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="cp">{%</span> <span class="k">endjavascripts</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;assetic&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">javascripts</span><span class="p">(</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;@AcmeFooBundle/Resources/public/js/*&#39;</span><span class="p">),</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;yui_js&#39;</span><span class="p">))</span> <span class="k">as</span> <span class="nv">$url</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+<span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">escape</span><span class="p">(</span><span class="nv">$url</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">El ejemplo anterior asume que tienes un paquete llamado <tt class="docutils literal"><span class="pre">AcmeFooBundle</span></tt> y tus archivos <em>JavaScript</em> están bajo el directorio <tt class="docutils literal"><span class="pre">Resources/public/js</span></tt> de tu paquete. No obstante, esto no es importante &#8212;puedes incluir tus archivos <em>Javascript</em> sin importar donde se encuentren.</p>
+</div>
+<p>Con la incorporación del filtro <tt class="docutils literal"><span class="pre">yui_js</span></tt> a las etiquetas de los activos anteriores, ahora deberías ver llegar mucho más rápido tus <em>JavaScripts</em> minimizados a través del cable. Puedes repetir el mismo proceso para minimizar tus hojas de estilo.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">stylesheets</span> <span class="s1">&#39;@AcmeFooBundle/Resources/public/css/*&#39;</span> <span class="nv">filter</span><span class="o">=</span><span class="s1">&#39;yui_css&#39;</span> <span class="cp">%}</span>
+<span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">media=</span><span class="s">&quot;screen&quot;</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">asset_url</span> <span class="cp">}}</span><span class="s">&quot;</span> <span class="nt">/&gt;</span>
+<span class="cp">{%</span> <span class="k">endstylesheets</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;assetic&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">stylesheets</span><span class="p">(</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;@AcmeFooBundle/Resources/public/css/*&#39;</span><span class="p">),</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;yui_css&#39;</span><span class="p">))</span> <span class="k">as</span> <span class="nv">$url</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+<span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">media=</span><span class="s">&quot;screen&quot;</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">escape</span><span class="p">(</span><span class="nv">$url</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="s">&quot;</span> <span class="nt">/&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="desactivando-la-minimizacion-en-modo-de-depuracion">
+<h2>Desactivando la minimización en modo de depuración<a class="headerlink" href="#desactivando-la-minimizacion-en-modo-de-depuracion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El <em>JavaScript</em> y las hojas de estilo minimizadas son muy difíciles de leer, y mucho más de depurar. Debido a esto, <tt class="docutils literal"><span class="pre">Assetic</span></tt> te permite desactivar un determinado <em>filtro</em> cuando la aplicación está en modo de depuración. Para ello, puedes prefijar el nombre del <em>filtro</em> en tu plantilla con un signo de interrogación: <tt class="docutils literal"><span class="pre">?</span></tt>. Esto le dice a <tt class="docutils literal"><span class="pre">Assetic</span></tt> que aplique este filtro sólo cuando el modo de depuración está desactivado.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">javascripts</span> <span class="s1">&#39;@AcmeFooBundle/Resources/public/js/*&#39;</span> <span class="nv">filter</span><span class="o">=</span><span class="s1">&#39;?yui_js&#39;</span> <span class="cp">%}</span>
+<span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">asset_url</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="cp">{%</span> <span class="k">endjavascripts</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;assetic&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">javascripts</span><span class="p">(</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;@AcmeFooBundle/Resources/public/js/*&#39;</span><span class="p">),</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;?yui_js&#39;</span><span class="p">))</span> <span class="k">as</span> <span class="nv">$url</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+<span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">escape</span><span class="p">(</span><span class="nv">$url</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="jpeg_optimize.html" title="Cómo utilizar Assetic para optimizar imágenes con funciones Twig"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="asset_management.html" title="Cómo utilizar Assetic para gestionar activos"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

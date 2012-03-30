@@ -1,0 +1,264 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo trabajar con correos electrónicos durante el desarrollo &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo organizar el envío de correo electrónico" href="spool.html" />
+    <link rel="prev" title="Cómo utilizar Gmail para enviar mensajes de correo electrónico" href="gmail.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="spool.html" title="Cómo organizar el envío de correo electrónico"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="gmail.html" title="Cómo utilizar Gmail para enviar mensajes de correo electrónico"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-trabajar-con-correos-electronicos-durante-el-desarrollo">
+<h1>Cómo trabajar con correos electrónicos durante el desarrollo<a class="headerlink" href="#como-trabajar-con-correos-electronicos-durante-el-desarrollo" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Cuando estás creando una aplicación que envía mensajes de correo electrónico, a menudo, mientras desarrollas, no quieres enviar realmente los correos electrónicos al destinatario especificado. Si estás utilizando el <tt class="docutils literal"><span class="pre">SwiftmailerBundle</span></tt> con <em>Symfony2</em>, puedes lograr fácilmente esto a través de ajustes de configuración sin tener que realizar ningún cambio en el código de tu aplicación en absoluto. Hay dos opciones principales cuando se trata de manejar correos electrónicos durante el desarrollo: (a) desactivar el envío de correos electrónicos por completo o (b) enviar todos los mensajes de correo electrónico a una dirección específica.</p>
+<div class="section" id="desactivando-el-envio">
+<h2>Desactivando el envío<a class="headerlink" href="#desactivando-el-envio" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes desactivar el envío de correos electrónicos estableciendo la opción <tt class="docutils literal"><span class="pre">disable_delivery</span></tt> a <tt class="docutils literal"><span class="pre">true</span></tt>. Este es el predeterminado en el entorno <tt class="docutils literal"><span class="pre">test</span></tt> de la distribución estándar. Si haces esto en la configuración específica de <tt class="docutils literal"><span class="pre">test</span></tt>, los mensajes de correo electrónico no se enviarán cuando ejecutas las pruebas, pero se seguirán enviando en los entornos <tt class="docutils literal"><span class="pre">prod</span></tt> y <tt class="docutils literal"><span class="pre">dev</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config_test.yml</span>
+<span class="l-Scalar-Plain">swiftmailer</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">disable_delivery</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config_test.xml --&gt;</span>
+
+<span class="c">&lt;!--</span>
+<span class="c">xmlns:swiftmailer=&quot;http://symfony.com/schema/dic/swiftmailer&quot;</span>
+<span class="c">http://symfony.com/schema/dic/swiftmailer http://symfony.com/schema/dic/swiftmailer/swiftmailer-1.0.xsd</span>
+<span class="c">--&gt;</span>
+
+<span class="nt">&lt;swiftmailer:config</span>
+    <span class="na">disable-delivery=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config_test.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;swiftmailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;disable_delivery&#39;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Si también deseas inhabilitar el envío en el entorno <tt class="docutils literal"><span class="pre">dev</span></tt>, sólo tienes que añadir esta misma configuración en el archivo <tt class="file docutils literal"><span class="pre">config_dev.yml</span></tt>.</p>
+</div>
+<div class="section" id="enviando-a-una-direccion-especifica">
+<h2>Enviando a una dirección específica<a class="headerlink" href="#enviando-a-una-direccion-especifica" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>También puedes optar por hacer que todos los correos sean enviados a una dirección específica, en vez de la dirección real especificada cuando se envía el mensaje. Esto se puede conseguir a través de la opción <tt class="docutils literal"><span class="pre">delivery_address</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config_dev.yml</span>
+<span class="l-Scalar-Plain">swiftmailer</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">delivery_address</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">dev@example.com</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config_dev.xml --&gt;</span>
+
+<span class="c">&lt;!--</span>
+<span class="c">xmlns:swiftmailer=&quot;http://symfony.com/schema/dic/swiftmailer&quot;</span>
+<span class="c">http://symfony.com/schema/dic/swiftmailer http://symfony.com/schema/dic/swiftmailer/swiftmailer-1.0.xsd</span>
+<span class="c">--&gt;</span>
+
+<span class="nt">&lt;swiftmailer:config</span>
+    <span class="na">delivery-address=</span><span class="s">&quot;dev@example.com&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config_dev.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;swiftmailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;delivery_address&#39;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;dev@example.com&quot;</span><span class="p">,</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Ahora, supongamos que estás enviando un correo electrónico a <tt class="docutils literal"><span class="pre">recipient&#64;example.com</span></tt>.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">indexAction</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$message</span> <span class="o">=</span> <span class="nx">\Swift_Message</span><span class="o">::</span><span class="na">newInstance</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">setSubject</span><span class="p">(</span><span class="s1">&#39;Hello Email&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">setFrom</span><span class="p">(</span><span class="s1">&#39;send@example.com&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">setTo</span><span class="p">(</span><span class="s1">&#39;recipient@example.com&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">setBody</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">renderView</span><span class="p">(</span><span class="s1">&#39;HelloBundle:Hello:email.txt.twig&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;name&#39;</span> <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">)))</span>
+    <span class="p">;</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">send</span><span class="p">(</span><span class="nv">$message</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>En el entorno <tt class="docutils literal"><span class="pre">dev</span></tt>, el correo electrónico será enviado a <tt class="docutils literal"><span class="pre">dev&#64;example.com</span></tt>.
+<tt class="docutils literal"><span class="pre">SwiftMailer</span></tt> añadirá una cabecera adicional al correo electrónico, <tt class="docutils literal"><span class="pre">X-Swift-To</span></tt>, conteniendo la dirección reemplazada, por lo tanto todavía serás capaz de ver qué se ha enviado.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Además de las direcciones <tt class="docutils literal"><span class="pre">para</span></tt>, también se detendrá el correo electrónico que se envíe a cualquier dirección <tt class="docutils literal"><span class="pre">CC</span></tt> y <tt class="docutils literal"><span class="pre">BCC</span></tt> establecida. <tt class="docutils literal"><span class="pre">SwiftMailer</span></tt> agregará encabezados adicionales al correo electrónico con la dirección reemplazada en ellos.
+Estas son <tt class="docutils literal"><span class="pre">X-Swift-CC</span></tt> y <tt class="docutils literal"><span class="pre">X-Swift-CCO</span></tt> para las direcciones <tt class="docutils literal"><span class="pre">CC</span></tt> y <tt class="docutils literal"><span class="pre">BCC</span></tt>, respectivamente.</p>
+</div>
+</div>
+<div class="section" id="visualizando-desde-la-barra-de-depuracion-web">
+<h2>Visualizando desde la barra de depuración web<a class="headerlink" href="#visualizando-desde-la-barra-de-depuracion-web" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes ver cualquier correo electrónico enviado por una respuesta cuando estás en el entorno <tt class="docutils literal"><span class="pre">dev</span></tt> usando la barra de depuración web. El icono de correo electrónico en la barra de herramientas mostrará cuántos correos electrónicos fueron enviados. Si haces clic en él, se abrirá un informe mostrando los detalles de los mensajes de correo electrónico enviados.</p>
+<p>Si estás enviando un correo electrónico e inmediatamente rediriges a otra página, la barra de herramientas de depuración web no mostrará un icono de correo electrónico o un informe en la siguiente página.</p>
+<p>En su lugar, puedes ajustar la opción <tt class="docutils literal"><span class="pre">intercept_redirects</span></tt> a <tt class="docutils literal"><span class="pre">true</span></tt> en el archivo <tt class="file docutils literal"><span class="pre">config_dev.yml</span></tt>, lo cual provocará que la redirección se detenga y te permitirá abrir el informe con los detalles de los correos enviados.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Como alternativa, puedes abrir el perfilador después de la redirección y buscar la <em>URL</em> utilizada en la petición anterior (por ejemplo <tt class="docutils literal"><span class="pre">/contact/handle</span></tt>).
+La característica de búsqueda del perfilador te permite cargar información del perfil de peticiones anteriores.</p>
+</div>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config_dev.yml</span>
+<span class="l-Scalar-Plain">web_profiler</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">intercept_redirects</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config_dev.xml --&gt;</span>
+
+<span class="c">&lt;!-- xmlns:webprofiler=&quot;http://symfony.com/schema/dic/webprofiler&quot; --&gt;</span>
+<span class="c">&lt;!-- xsi:schemaLocation=&quot;http://symfony.com/schema/dic/webprofiler http://symfony.com/schema/dic/webprofiler/webprofiler-1.0.xsd&quot;&gt; --&gt;</span>
+
+<span class="nt">&lt;webprofiler:config</span>
+    <span class="na">intercept-redirects=</span><span class="s">&quot;true&quot;</span>
+<span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config_dev.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;web_profiler&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;intercept_redirects&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;true&#39;</span><span class="p">,</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="spool.html" title="Cómo organizar el envío de correo electrónico"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="gmail.html" title="Cómo utilizar Gmail para enviar mensajes de correo electrónico"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

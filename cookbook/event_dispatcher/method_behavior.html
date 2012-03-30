@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo personalizar el comportamiento de un método sin utilizar herencia &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo registrar un nuevo formato de petición y tipo MIME" href="../request/mime_type.html" />
+    <link rel="prev" title="Cómo extender una clase sin necesidad de utilizar herencia" href="class_extension.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../request/mime_type.html" title="Cómo registrar un nuevo formato de petición y tipo MIME"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="class_extension.html" title="Cómo extender una clase sin necesidad de utilizar herencia"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-personalizar-el-comportamiento-de-un-metodo-sin-utilizar-herencia">
+<span id="index-0"></span><h1>Cómo personalizar el comportamiento de un método sin utilizar herencia<a class="headerlink" href="#como-personalizar-el-comportamiento-de-un-metodo-sin-utilizar-herencia" title="Enlazar permanentemente con este título">¶</a></h1>
+<div class="section" id="haciendo-algo-antes-o-despues-de-llamar-a-un-metodo">
+<h2>Haciendo algo antes o después de llamar a un método<a class="headerlink" href="#haciendo-algo-antes-o-despues-de-llamar-a-un-metodo" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si quieres hacer algo justo antes o justo después de invocar a un método, puedes enviar un evento, al principio o al final del método, respectivamente:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">send</span><span class="p">(</span><span class="nv">$foo</span><span class="p">,</span> <span class="nv">$bar</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// hace algo antes que el método</span>
+        <span class="nv">$event</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">FilterBeforeSendEvent</span><span class="p">(</span><span class="nv">$foo</span><span class="p">,</span> <span class="nv">$bar</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;foo.pre_send&#39;</span><span class="p">,</span> <span class="nv">$event</span><span class="p">);</span>
+
+        <span class="c1">// obtiene $foo y $bar desde el evento, esto se puede modificar</span>
+        <span class="nv">$foo</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getFoo</span><span class="p">();</span>
+        <span class="nv">$bar</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getBar</span><span class="p">();</span>
+        <span class="c1">// aquí va la implementación real del método</span>
+        <span class="c1">// $ret = ...;</span>
+
+        <span class="c1">// hace algo después del método</span>
+        <span class="nv">$event</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">FilterSendReturnValue</span><span class="p">(</span><span class="nv">$ret</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;foo.post_send&#39;</span><span class="p">,</span> <span class="nv">$event</span><span class="p">);</span>
+
+        <span class="k">return</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getReturnValue</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>En este ejemplo, se lanzan dos eventos: <tt class="docutils literal"><span class="pre">foo.pre_send</span></tt>, antes de ejecutar el método, y <tt class="docutils literal"><span class="pre">foo.post_send</span></tt> después de ejecutar el método. Cada uno utiliza una clase Evento personalizada para comunicar información a los escuchas de los dos eventos. Estas clases de evento se tendrían que crear por ti y deben permitir que, en este ejemplo, las variables <tt class="docutils literal"><span class="pre">$foo</span></tt>, <tt class="docutils literal"><span class="pre">$bar</span></tt> y <tt class="docutils literal"><span class="pre">$ret</span></tt> sean recuperadas y establecidas por los escuchas.</p>
+<p>Por ejemplo, suponiendo que el <tt class="docutils literal"><span class="pre">FilterSendReturnValue</span></tt> tiene un método <tt class="docutils literal"><span class="pre">setReturnValue</span></tt>, un escucha puede tener este aspecto:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">onFooPostSend</span><span class="p">(</span><span class="nx">FilterSendReturnValue</span> <span class="nv">$event</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$ret</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getReturnValue</span><span class="p">();</span>
+    <span class="c1">// modifica el valor original de ``$ret``</span>
+
+    <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">setReturnValue</span><span class="p">(</span><span class="nv">$ret</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../request/mime_type.html" title="Cómo registrar un nuevo formato de petición y tipo MIME"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="class_extension.html" title="Cómo extender una clase sin necesidad de utilizar herencia"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

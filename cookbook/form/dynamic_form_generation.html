@@ -1,0 +1,252 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo generar formularios dinámicamente usando eventos del formulario &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo integrar una colección de formularios" href="form_collections.html" />
+    <link rel="prev" title="Utilizando transformadores de datos" href="data_transformers.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="form_collections.html" title="Cómo integrar una colección de formularios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="data_transformers.html" title="Utilizando transformadores de datos"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-generar-formularios-dinamicamente-usando-eventos-del-formulario">
+<span id="index-0"></span><h1>Cómo generar formularios dinámicamente usando eventos del formulario<a class="headerlink" href="#como-generar-formularios-dinamicamente-usando-eventos-del-formulario" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Antes de zambullirnos en la generación dinámica de formularios, hagamos una rápida revisión de lo que es una clase formulario desnuda:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">//src/Acme/DemoBundle/Form/ProductType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Form</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">ProductType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;price&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;product&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si esta sección de código en particular no te es familiar, probablemente necesites dar un paso atrás y revisar en primer lugar el <a class="reference internal" href="../../book/forms.html"><em>Capítulo de Formularios</em></a> antes de continuar.</p>
+</div>
+<p>Asumiremos por un momento que este formulario utiliza una clase <tt class="docutils literal"><span class="pre">&quot;Product&quot;</span></tt> imaginaria que únicamente tiene dos propiedades relevantes (&#8220;name&#8221; y &#8220;price&#8221;). El formulario generado a partir de esta clase se verá exactamente igual, independientemente de que se esté creando un nuevo producto o si se está editando un producto existente (por ejemplo, un producto recuperado de la base de datos).</p>
+<p>Ahora, supongamos que no deseas que el usuario pueda cambiar el valor del <tt class="docutils literal"><span class="pre">name</span></tt> una vez creado el objeto. Para ello, puedes confiar en el sistema <em class="xref std std-ref">Despachador de eventos</em> de <em>Symfony</em> para analizar los datos en el objeto y modificar el formulario basándose en los datos del objeto <tt class="docutils literal"><span class="pre">Producto</span></tt>. En este artículo, aprenderás cómo añadir este nivel de flexibilidad a tus formularios.</p>
+<div class="section" id="anadiendo-un-suscriptor-de-evento-a-una-clase-formulario">
+<span id="cookbook-forms-event-subscriber"></span><h2>Añadiendo un suscriptor de evento a una clase formulario<a class="headerlink" href="#anadiendo-un-suscriptor-de-evento-a-una-clase-formulario" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Por lo tanto, en lugar de añadir directamente el elemento gráfico <tt class="docutils literal"><span class="pre">&quot;name&quot;</span></tt> vía nuestra clase formulario <tt class="docutils literal"><span class="pre">ProductType</span></tt>, vamos a delegar la responsabilidad de crear este campo en particular a un suscriptor de evento:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">//src/Acme/DemoBundle/Form/ProductType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Form</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\DemoBundle\Form\EventListener\AddNameFieldSubscriber</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">ProductType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$subscriber</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AddNameFieldSubscriber</span><span class="p">(</span><span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">getFormFactory</span><span class="p">());</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">addEventSubscriber</span><span class="p">(</span><span class="nv">$subscriber</span><span class="p">);</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;price&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;product&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>El suscriptor de eventos se pasa al objeto <tt class="docutils literal"><span class="pre">FormFactory</span></tt> en su constructor de modo que  nuestro nuevo suscriptor es capaz de crear el elemento gráfico del formulario una vez notificado de que el evento se ha despachado durante creación del formulario.</p>
+</div>
+<div class="section" id="dentro-de-la-clase-suscriptor-de-eventos">
+<span id="cookbook-forms-inside-subscriber-class"></span><h2>Dentro de la clase suscriptor de eventos<a class="headerlink" href="#dentro-de-la-clase-suscriptor-de-eventos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El objetivo es crear el campo <tt class="docutils literal"><span class="pre">&quot;name&quot;</span></tt> <em>únicamente</em> si el objeto <tt class="docutils literal"><span class="pre">Producto</span></tt> subyacente es nuevo (por ejemplo, no se ha persistido a la base de datos). Basándonos en esto, el suscriptor podría tener la siguiente apariencia:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Form/EventListener/AddNameFieldSubscriber.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Form\EventListener</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\Event\DataEvent</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormFactoryInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventSubscriberInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormEvents</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AddNameFieldSubscriber</span> <span class="k">implements</span> <span class="nx">EventSubscriberInterface</span>
+<span class="p">{</span>
+        <span class="k">private</span> <span class="nv">$factory</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">FormFactoryInterface</span> <span class="nv">$factory</span><span class="p">)</span>
+    <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">factory</span> <span class="o">=</span> <span class="nv">$factory</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">getSubscribedEvents</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// Informa al despachador que deseamos escuchar el evento</span>
+        <span class="c1">// form.pre_set_data y se debe llamar al método &#39;preSetData&#39;.</span>
+        <span class="k">return</span> <span class="k">array</span><span class="p">(</span><span class="nx">FormEvents</span><span class="o">::</span><span class="na">PRE_SET_DATA</span> <span class="o">=&gt;</span> <span class="s1">&#39;preSetData&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">preSetData</span><span class="p">(</span><span class="nx">DataEvent</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$data</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getData</span><span class="p">();</span>
+        <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getForm</span><span class="p">();</span>
+
+        <span class="c1">// Durante la creación del formulario setData() es llamado con null como</span>
+        <span class="c1">// argumento por el constructor FormBuilder. Solo nos interesa cuando</span>
+        <span class="c1">// setData es llamado con un objeto Entity real (ya sea nuevo,</span>
+        <span class="c1">// o recuperado con Doctrine). Esta declaración if nos permite saltar</span>
+        <span class="c1">// directamente a la condición null.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$data</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c1">// comprueba si el objeto producto es &quot;nuevo&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$data</span><span class="o">-&gt;</span><span class="na">getId</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">factory</span><span class="o">-&gt;</span><span class="na">createNamed</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition caution">
+<p class="first admonition-title">Prudencia</p>
+<p class="last">Es fácil malinterpretar el propósito del segmento <tt class="docutils literal"><span class="pre">if</span> <span class="pre">(null</span> <span class="pre">===</span> <span class="pre">$data)</span></tt> de este suscriptor de eventos. Para comprender plenamente su papel, podrías considerar echarle un vistazo también a la <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Form.php">clase Form</a>  prestando especial atención a donde se llama a <tt class="docutils literal"><span class="pre">setData()</span></tt> al final del constructor, así como al método <tt class="docutils literal"><span class="pre">setData()</span></tt> en sí mismo.</p>
+</div>
+<p>La línea <tt class="docutils literal"><span class="pre">FormEvents::PRE_SET_DATA</span></tt> en realidad se resuelve en la cadena <tt class="docutils literal"><span class="pre">form.pre_set_data</span></tt>.
+La <a class="reference external" href="https://github.com/symfony/Form/blob/master/FormEvents.php">clase FormEvents</a> sirve a un propósito organizacional. Se trata de una ubicación centralizada en la cual puedes encontrar todos los eventos de formulario disponibles.</p>
+<p>Aunque este ejemplo podría haber utilizado el evento <tt class="docutils literal"><span class="pre">form.set_data</span></tt> o incluso el evento <tt class="docutils literal"><span class="pre">form.post_set_data</span></tt> con la misma eficacia, al usar <tt class="docutils literal"><span class="pre">form.pre_set_data</span></tt> garantizamos que los datos se recuperan desde el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> el cual de ninguna manera ha sido modificado por ningún otro suscriptor o escucha. Esto se debe a que <tt class="docutils literal"><span class="pre">form.pre_set_data</span></tt> pasa un objeto <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Event/DataEvent.php">DataEvent</a> en lugar del objeto <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Event/FilterDataEvent.php">FilterDataEvent</a> que pasa el evento <tt class="docutils literal"><span class="pre">form.set_data</span></tt>. <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Event/DataEvent.php">DataEvent</a>, a diferencia de su hijo <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Event/FilterDataEvent.php">FilterDataEvent</a>, carece de un método <tt class="docutils literal"><span class="pre">setData()</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Puedes ver la lista de eventos de formulario completa vía la <a class="reference external" href="https://github.com/symfony/Form/blob/master/FormEvents.php">clase FormEvents</a>, del paquete <tt class="docutils literal"><span class="pre">form</span></tt>.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="form_collections.html" title="Cómo integrar una colección de formularios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="data_transformers.html" title="Utilizando transformadores de datos"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

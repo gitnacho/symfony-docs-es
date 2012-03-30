@@ -1,0 +1,365 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>El componente Routing &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../index.html" />
+    <link rel="up" title="Componentes" href="index.html" />
+    <link rel="next" title="El componente Templating" href="templating.html" />
+    <link rel="prev" title="El componente Process" href="process.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../index.html"><img src=".././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src=".././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="templating.html" title="El componente Templating"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="process.html" title="El componente Process"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Componentes</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="el-componente-routing">
+<span id="index-0"></span><h1>El componente <tt class="docutils literal"><span class="pre">Routing</span></tt><a class="headerlink" href="#el-componente-routing" title="Enlazar permanentemente con este título">¶</a></h1>
+<blockquote>
+<div>The Routing Component maps an HTTP request to a set of configuration
+variables.</div></blockquote>
+<div class="section" id="instalando">
+<h2>Instalando<a class="headerlink" href="#instalando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes instalar el componente de varias maneras diferentes:</p>
+<ul class="simple">
+<li>Usando el repositorio <em>Git</em> oficial (<a class="reference external" href="https://github.com/symfony/Routing">https://github.com/symfony/Routing</a>);</li>
+<li>Instalándolo a través de <em>PEAR</em> (<cite>pear.symfony.com/Routing</cite>);</li>
+<li>Instalándolo vía <tt class="docutils literal"><span class="pre">Composer</span></tt> (<cite>symfony/routing</cite> en Packagist)</li>
+</ul>
+</div>
+<div class="section" id="usando">
+<h2>Usando<a class="headerlink" href="#usando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Con el fin de establecer un sistema de enrutado básico necesitas tres partes:</p>
+<ul class="simple">
+<li>Una clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RouteCollection</span></tt>, que contiene las definiciones de las rutas (instancias de la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Route</span></tt>)</li>
+<li>Una clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RequestContext</span></tt>, que contiene información sobre la petición</li>
+<li>Una clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Matcher\UrlMatcher</span></tt>, que realiza la asignación de la petición a una sola ruta</li>
+</ul>
+<p>Veamos un ejemplo rápido. Ten en cuenta que esto supone que ya has configurado el cargador automático para cargar el componente <tt class="docutils literal"><span class="pre">Routing</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Routing\Matcher\UrlMatcher</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Routing\RequestContext</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Routing\RouteCollection</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Routing\Route</span><span class="p">;</span>
+
+<span class="nv">$routes</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+<span class="nv">$routes</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;route_name&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/foo&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;controller&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;MyController&#39;</span><span class="p">)));</span>
+
+<span class="nv">$context</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RequestContext</span><span class="p">(</span><span class="nv">$_SERVER</span><span class="p">[</span><span class="s1">&#39;REQUEST_URI&#39;</span><span class="p">]);</span>
+
+<span class="nv">$matcher</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">UrlMatcher</span><span class="p">(</span><span class="nv">$routes</span><span class="p">,</span> <span class="nv">$context</span><span class="p">);</span>
+
+<span class="nv">$parameters</span> <span class="o">=</span> <span class="nv">$matcher</span><span class="o">-&gt;</span><span class="na">match</span><span class="p">(</span> <span class="s1">&#39;/foo&#39;</span> <span class="p">);</span>
+<span class="c1">// array(&#39;controller&#39; =&gt; &#39;MyController&#39;, &#39;_route&#39; =&gt; &#39;route_name&#39;)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Ten cuidado al usar <tt class="docutils literal"><span class="pre">$_SERVER['REQUEST_URI']</span></tt>, ya que este puede incluir los parámetros de consulta en la URL, lo cual causará problemas con la ruta coincidente. Una manera fácil de solucionar esto es usando el componente <tt class="docutils literal"><span class="pre">HTTPFoundation</span></tt> como se explica <a class="reference internal" href="#components-routing-http-foundation"><em>abajo</em></a>.</p>
+</div>
+<p>Puedes agregar tantas rutas como quieras a una clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RouteCollection</span></tt>.</p>
+<p>El método <a href="#id1"><span class="problematic" id="id2">:method:`RouteCollection::add()&lt;Symfony\\Component\\Routing\\RouteCollection::add&gt;`</span></a> toma dos argumentos. El primero es el nombre de la ruta. El segundo es un objeto <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Route</span></tt>, que espera una ruta <em>URL</em> y algún arreglo de variables personalizadas en su constructor. Este arreglo de variables personalizadas puede ser <em>cualquier cosa</em> que tenga significado para tu aplicación, y se devuelto cuando dicha ruta corresponda.</p>
+<p>Si no hay ruta coincidente te puedes encontrar con que se lanza una <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Exception\ResourceNotFoundException</span></tt>.</p>
+<p>Además de tu arreglo de variables personalizadas, se añade una clave <tt class="docutils literal"><span class="pre">_route</span></tt>, que contiene el nombre de la ruta buscada.</p>
+<div class="section" id="definiendo-rutas">
+<h3>Definiendo rutas<a class="headerlink" href="#definiendo-rutas" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Una definición de la ruta completa puede contener un máximo de cuatro partes:</p>
+<ol class="arabic simple">
+<li>El patrón de la ruta <em>URL</em>. Este se compara con la <em>URL</em> pasada al <tt class="docutils literal"><span class="pre">RequestContext</span></tt>, y puede contener comodines marcadores de posición nombrados (por ejemplo, <tt class="docutils literal"><span class="pre">{placeholders}</span></tt>) para que coincidan con elementos dinámicos en la <em>URL</em>.</li>
+<li>Una matriz de valores predeterminados. Esta contiene un conjunto de valores arbitrarios que serán devueltos cuando la petición coincide con la ruta.</li>
+<li>Un arreglo de requisitos. Estos definen las restricciones para los valores de los marcadores de posición como las expresiones regulares.</li>
+<li>Un arreglo de opciones. Estas contienen la configuración interna de la ruta y son las menos necesarias comúnmente.</li>
+</ol>
+<p>Veamos la siguiente ruta, que combina varias de estas ideas:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$route</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span>
+    <span class="s1">&#39;/archive/{month}&#39;</span><span class="p">,</span> <span class="c1">// path</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;controller&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;showArchive&#39;</span><span class="p">),</span> <span class="c1">// default values</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;month&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;[0-9]{4}-[0-9]{2}&#39;</span><span class="p">),</span> <span class="c1">// requirements</span>
+    <span class="k">array</span><span class="p">()</span> <span class="c1">// options</span>
+<span class="p">);</span>
+
+<span class="c1">// ...</span>
+
+<span class="nv">$parameters</span> <span class="o">=</span> <span class="nv">$matcher</span><span class="o">-&gt;</span><span class="na">match</span><span class="p">(</span><span class="s1">&#39;/archive/2012-01&#39;</span><span class="p">);</span>
+<span class="c1">// array(&#39;controller&#39; =&gt; &#39;showArchive&#39;, &#39;month&#39; =&gt; 2012-01&#39;&#39;, &#39;_route&#39; =&gt; &#39;...&#39;)</span>
+
+<span class="nv">$parameters</span> <span class="o">=</span> <span class="nv">$matcher</span><span class="o">-&gt;</span><span class="na">match</span><span class="p">(</span><span class="s1">&#39;/archive/foo&#39;</span><span class="p">);</span>
+<span class="c1">// lanza la ResourceNotFoundException</span>
+</pre></div>
+</div>
+<p>En este caso, la ruta coincide con <tt class="docutils literal"><span class="pre">/archive/2012/01</span></tt>, porque el comodín <tt class="docutils literal"><span class="pre">{month}</span></tt> coincide con el comodín de la expresión regular dada. Sin embargo, <tt class="docutils literal"><span class="pre">/archive/foo</span></tt> <em>no</em> coincide, porque el comodín del mes &#8220;foo&#8221; no concuerda.</p>
+<p>Además de las limitaciones de la expresión regular, hay dos requisitos especiales que puedes definir:</p>
+<ul class="simple">
+<li>el <tt class="docutils literal"><span class="pre">_method</span></tt> impone un determinado método de la petición <em>HTTP</em> (<tt class="docutils literal"><span class="pre">HEAD</span></tt>, <tt class="docutils literal"><span class="pre">GET</span></tt>, <tt class="docutils literal"><span class="pre">POST</span></tt>, ...)</li>
+<li><tt class="docutils literal"><span class="pre">_scheme</span></tt> impone un determinado esquema <em>HTTP</em> (<tt class="docutils literal"><span class="pre">http</span></tt>, <tt class="docutils literal"><span class="pre">https</span></tt>)</li>
+</ul>
+<p>Por ejemplo, la siguiente ruta sólo acepta peticiones a <tt class="docutils literal"><span class="pre">/foo</span></tt> con el método <tt class="docutils literal"><span class="pre">POST</span></tt> y una conexión segura:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$route</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/foo&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;_method&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;post&#39;</span><span class="p">,</span> <span class="s1">&#39;_scheme&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;https&#39;</span> <span class="p">));</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p>Si quieres hacer coincidir todas las <em>URL</em> que comiencen con una cierta ruta y terminan en un sufijo arbitrario puedes utilizar la siguiente definición de ruta:</p>
+<div class="last highlight-php"><div class="highlight"><pre><span class="nv">$route</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/start/{suffix}&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;suffix&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;suffix&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;.*&#39;</span><span class="p">));</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="usando-prefijos">
+<h3>Usando prefijos<a class="headerlink" href="#usando-prefijos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Puedes agregar rutas u otras instancias de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RouteCollection</span></tt> a <em>otra</em> colección.
+De esta manera puedes construir un árbol de rutas. Además, puedes definir un prefijo, los requisitos predeterminados y las opciones predefinidas para todas las rutas de un subárbol:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootCollection</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+
+<span class="nv">$subCollection</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+<span class="nv">$subCollection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span> <span class="cm">/*...*/</span> <span class="p">);</span>
+<span class="nv">$subCollection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span> <span class="cm">/*...*/</span> <span class="p">);</span>
+
+<span class="nv">$rootCollection</span><span class="o">-&gt;</span><span class="na">addCollection</span><span class="p">(</span><span class="nv">$subCollection</span><span class="p">,</span> <span class="s1">&#39;/prefix&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;_scheme&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;https&#39;</span><span class="p">));</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="configurando-los-parametros-de-la-peticion">
+<h3>Configurando los parámetros de la Petición<a class="headerlink" href="#configurando-los-parametros-de-la-peticion" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RequestContext</span></tt> proporciona información sobre la petición actual. Puedes definir todos los parámetros de una petición <em>HTTP</em> con esta clase a través de su constructor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$baseUrl</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="nv">$method</span> <span class="o">=</span> <span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="nv">$host</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="nv">$scheme</span> <span class="o">=</span> <span class="s1">&#39;http&#39;</span><span class="p">,</span> <span class="nv">$httpPort</span> <span class="o">=</span> <span class="mi">80</span><span class="p">,</span> <span class="nv">$httpsPort</span> <span class="o">=</span> <span class="mi">443</span><span class="p">)</span>
+</pre></div>
+</div>
+<p id="components-routing-http-foundation">Normalmente puedes pasar los valores de la variables <tt class="docutils literal"><span class="pre">$_SERVER</span></tt> para poblar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RequestContext</span></tt>. Pero si utilizas el componente <a class="reference internal" href="http_foundation.html"><em>HttpFoundation</em></a>, puedes utilizar su clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Request</span></tt> para alimentar al <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RequestContext</span></tt> en un atajo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Request</span><span class="p">;</span>
+
+<span class="nv">$context</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RequestContext</span><span class="p">();</span>
+<span class="nv">$context</span><span class="o">-&gt;</span><span class="na">fromRequest</span><span class="p">(</span><span class="nx">Request</span><span class="o">::</span><span class="na">createFromGlobals</span><span class="p">());</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="generando-una-url">
+<h3>Generando una URL<a class="headerlink" href="#generando-una-url" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Si bien la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Matcher\UrlMatcher</span></tt> trata de encontrar una ruta que se adapte a la petición dada, esta también puede construir una <em>URL</em> a partir de una ruta determinada:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Routing\Generator\UrlGenerator</span><span class="p">;</span>
+
+<span class="nv">$routes</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+<span class="nv">$routes</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;show_post&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/show/{slug}&#39;</span><span class="p">));</span>
+
+<span class="nv">$context</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RequestContext</span><span class="p">(</span><span class="nv">$_SERVER</span><span class="p">[</span><span class="s1">&#39;REQUEST_URI&#39;</span><span class="p">]);</span>
+
+<span class="nv">$generator</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">UrlGenerator</span><span class="p">(</span><span class="nv">$routes</span><span class="p">,</span> <span class="nv">$context</span><span class="p">);</span>
+
+<span class="nv">$url</span> <span class="o">=</span> <span class="nv">$generator</span><span class="o">-&gt;</span><span class="na">generate</span><span class="p">(</span><span class="s1">&#39;show_post&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;slug&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;my-blog-post&#39;</span>
+<span class="p">));</span>
+<span class="c1">// /show/my-blog-post</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si has definido el requisito <tt class="docutils literal"><span class="pre">_scheme</span></tt>, se genera una <em>URL</em> absoluta si el esquema del <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RequestContext</span></tt> actual no conincide con el requisito.</p>
+</div>
+</div>
+<div class="section" id="cargando-rutas-desde-un-archivo">
+<h3>Cargando rutas desde un archivo<a class="headerlink" href="#cargando-rutas-desde-un-archivo" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Ya hemos visto lo fácil que es añadir rutas a una colección dentro de <em>PHP</em>. Pero también puedes cargar rutas de una serie de archivos diferentes.</p>
+<p>El componente de enrutado viene con una serie de clases cargadoras, cada una dotándote de la capacidad para cargar una colección de definiciones de ruta desde un archivo externo en algún formato.
+Cada cargador espera una instancia del <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Config\FileLocator</span></tt> como argumento del constructor. Puedes utilizar el <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Config\FileLocator</span></tt> para definir una serie de rutas en las que el cargador va a buscar los archivos solicitados.
+Si se encuentra el archivo, el cargador devuelve una <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RouteCollection</span></tt>.</p>
+<p>Si estás usando el <tt class="docutils literal"><span class="pre">YamlFileLoader</span></tt>, entonces las definiciones de ruta tienen este aspecto:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># routes.yml</span>
+<span class="l-Scalar-Plain">route1</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/foo</span>
+    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">controller</span><span class="p-Indicator">:</span> <span class="s">&#39;MyController::fooAction&#39;</span> <span class="p-Indicator">}</span>
+
+<span class="l-Scalar-Plain">route2</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/foo/bar</span>
+    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">controller</span><span class="p-Indicator">:</span> <span class="s">&#39;MyController::foobarAction&#39;</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+<p>Para cargar este archivo, puedes utilizar el siguiente código. Este asume que tu archivo <tt class="file docutils literal"><span class="pre">routes.yml</span></tt> está en el mismo directorio que el código de abajo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Config\FileLocator</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Routing\Loader\YamlFileLoader</span><span class="p">;</span>
+
+<span class="c1">// busca dentro de *este* directorio</span>
+<span class="nv">$locator</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">FileLocator</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="nx">__DIR__</span><span class="p">));</span>
+<span class="nv">$loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">YamlFileLoader</span><span class="p">(</span><span class="nv">$locator</span><span class="p">);</span>
+<span class="nv">$collection</span> <span class="o">=</span> <span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">load</span><span class="p">(</span><span class="s1">&#39;routes.yml&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Además del <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Loader\YamlFileLoader</span></tt> hay otros dos cargadores que funcionan de manera similar:</p>
+<ul class="simple">
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Loader\XmlFileLoader</span></tt></li>
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Loader\PhpFileLoader</span></tt></li>
+</ul>
+<p>Si utilizas el <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Loader\PhpFileLoader</span></tt> debes proporcionar el nombre del un archivo <em>php</em> que devuelva una <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RouteCollection</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// ProveedorDeRuta.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Routing\RouteCollection</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Routing\Route</span><span class="p">;</span>
+
+<span class="nv">$collection</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+<span class="nv">$collection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;route_name&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/foo&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;controller&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;ExampleController&#39;</span><span class="p">)));</span>
+<span class="c1">// ...</span>
+
+<span class="k">return</span> <span class="nv">$collection</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="section" id="rutas-como-cierres">
+<h4>Rutas como cierres<a class="headerlink" href="#rutas-como-cierres" title="Enlazar permanentemente con este título">¶</a></h4>
+<p>También está el <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Loader\ClosureLoader</span></tt>, que
+llama a un cierre y utiliza el resultado como un <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\RouteCollection</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Routing\Loader\ClosureLoader</span><span class="p">;</span>
+
+<span class="nv">$closure</span> <span class="o">=</span> <span class="k">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+<span class="p">};</span>
+
+<span class="nv">$loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ClosureLoader</span><span class="p">();</span>
+<span class="nv">$collection</span> <span class="o">=</span> <span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">load</span><span class="p">(</span><span class="nv">$closure</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="rutas-como-anotaciones">
+<h4>Rutas como anotaciones<a class="headerlink" href="#rutas-como-anotaciones" title="Enlazar permanentemente con este título">¶</a></h4>
+<p>Por último, pero no menos importante, están las <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Loader\AnnotationDirectoryLoader</span></tt> y <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Loader\AnnotationFileLoader</span></tt> para cargar
+definiciones de ruta a partir de las anotaciones de la clase. Los detalles específicos se dejan aquí.</p>
+</div>
+</div>
+<div class="section" id="el-ruteador-todo-en-uno">
+<h3>El ruteador todo en uno<a class="headerlink" href="#el-ruteador-todo-en-uno" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Router</span></tt> es un paquete todo en uno para utilizar rápidamente el componente de enrutado. El constructor espera una instancia del cargador, una ruta a la definición de la ruta principal y algunas otras opciones:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">LoaderInterface</span> <span class="nv">$loader</span><span class="p">,</span> <span class="nv">$resource</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span> <span class="o">=</span> <span class="k">array</span><span class="p">(),</span> <span class="nx">RequestContext</span> <span class="nv">$context</span> <span class="o">=</span> <span class="k">null</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$defaults</span> <span class="o">=</span> <span class="k">array</span><span class="p">());</span>
+</pre></div>
+</div>
+<p>Con la opción <tt class="docutils literal"><span class="pre">cache_dir</span></tt> puedes habilitar la caché de enrutado (si proporcionas una ruta) o desactivar el almacenamiento en caché (si la configuras a <tt class="docutils literal"><span class="pre">null</span></tt>). El almacenamiento en caché se hace automáticamente en segundo plano si quieres usarlo. Un ejemplo básico de la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Router</span></tt>  se vería así:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$locator</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">FileLocator</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="nx">__DIR__</span><span class="p">));</span>
+<span class="nv">$requestContext</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RequestContext</span><span class="p">(</span><span class="nv">$_SERVER</span><span class="p">[</span><span class="s1">&#39;REQUEST_URI&#39;</span><span class="p">]);</span>
+
+<span class="nv">$router</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Router</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">YamlFileLoader</span><span class="p">(</span><span class="nv">$locator</span><span class="p">),</span>
+    <span class="s2">&quot;routes.yml&quot;</span><span class="p">,</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;cache_dir&#39;</span> <span class="o">=&gt;</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/cache&#39;</span><span class="p">),</span>
+    <span class="nv">$requestContext</span><span class="p">,</span>
+<span class="p">);</span>
+<span class="nv">$router</span><span class="o">-&gt;</span><span class="na">match</span><span class="p">(</span><span class="s1">&#39;/foo/bar&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si utilizas el almacenamiento en caché, el componente <tt class="docutils literal"><span class="pre">Routing</span></tt> compilará las nuevas clases guardándolas en el <tt class="docutils literal"><span class="pre">cache_dir</span></tt>. Esto significa que el archivo debe tener permisos de escritura en esa ubicación.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src=".././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="templating.html" title="El componente Templating"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="process.html" title="El componente Process"
+             >anterior</a> |</li>
+        <li><a href="../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="index.html" >Componentes</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

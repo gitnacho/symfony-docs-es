@@ -1,0 +1,310 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Referencia en configurando Security &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Documentos de referencia" href="../index.html" />
+    <link rel="next" title="Configurando el SwiftmailerBundle (&#34;swiftmailer&#34;)" href="swiftmailer.html" />
+    <link rel="prev" title="Referencia de configuración del ORM de Doctrine" href="doctrine.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="swiftmailer.html" title="Configurando el SwiftmailerBundle (&#34;swiftmailer&#34;)"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="doctrine.html" title="Referencia de configuración del ORM de Doctrine"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Documentos de referencia</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="referencia-en-configurando-security">
+<span id="index-0"></span><h1>Referencia en configurando <tt class="docutils literal"><span class="pre">Security</span></tt><a class="headerlink" href="#referencia-en-configurando-security" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El sistema de seguridad es una de las piezas más poderosas de <em>Symfony2</em>, y en gran medida se puede controlar por medio de su configuración.</p>
+<div class="section" id="configuracion-predeterminada-completa">
+<h2>Configuración predeterminada completa<a class="headerlink" href="#configuracion-predeterminada-completa" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La siguiente es la configuración predeterminada para el sistema de seguridad completo.
+Cada parte se explica en la siguiente sección.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># app/config/security.yml
+security:
+    access_denied_url: /foo/error403
+
+    always_authenticate_before_granting: false
+
+    # Si o no llamar a erase_credentials con el segmento
+    erase_credentials: true
+
+    # la estrategia puede ser: none, migrate, invalidate
+    session_fixation_strategy: migrate
+
+    access_decision_manager:
+        strategy: affirmative
+        allow_if_all_abstain: false
+        allow_if_equal_granted_denied: true
+
+    acl:
+        connection: default # any name configured in doctrine.dbal section
+        tables:
+            class: acl_classes
+            entry: acl_entries
+            object_identity: acl_object_identities
+            object_identity_ancestors: acl_object_identity_ancestors
+            security_identity: acl_security_identities
+        cache:
+            id: service_id
+            prefix: sf2_acl_
+        voter:
+            allow_if_object_identity_unavailable: true
+
+    encoders:
+        somename:
+            class: Acme\DemoBundle\Entity\User
+        Acme\DemoBundle\Entity\User: sha512
+        Acme\DemoBundle\Entity\User: plaintext
+        Acme\DemoBundle\Entity\User:
+            algorithm: sha512
+            encode_as_base64: true
+            iterations: 5000
+        Acme\DemoBundle\Entity\User:
+            id: my.custom.encoder.service.id
+
+    providers:
+        memory_provider_name:
+            memory:
+                users:
+                    foo: { password: foo, roles: ROLE_USER }
+                    bar: { password: bar, roles: [ROLE_USER, ROLE_ADMIN] }
+        entity_provider_name:
+            entity: { class: SecurityBundle:User, property: username }
+
+    factories:
+        MyFactory: %kernel.root_dir%/../src/Acme/DemoBundle/Resources/config/security_factories.xml
+
+    firewalls:
+        somename:
+            pattern: .*
+            request_matcher: some.service.id
+            access_denied_url: /foo/error403
+            access_denied_handler: some.service.id
+            entry_point: some.service.id
+            provider: some_provider_key_from_above
+            context: name
+            stateless: false
+            x509:
+                provider: some_provider_key_from_above
+            http_basic:
+                provider: some_provider_key_from_above
+            http_digest:
+                provider: some_provider_key_from_above
+            form_login:
+                check_path: /login_check
+                login_path: /login
+                use_forward: false
+                always_use_default_target_path: false
+                default_target_path: /
+                target_path_parameter: _target_path
+                use_referer: false
+                failure_path: /foo
+                failure_forward: false
+                failure_handler: some.service.id
+                success_handler: some.service.id
+                username_parameter: _username
+                password_parameter: _password
+                csrf_parameter: _csrf_token
+                intention: authenticate
+                csrf_provider: my.csrf_provider.id
+                post_only: true
+                remember_me: false
+            remember_me:
+                token_provider: name
+                key: someS3cretKey
+                name: NameOfTheCookie
+                lifetime: 3600 # in seconds
+                path: /foo
+                domain: somedomain.foo
+                secure: true
+                httponly: true
+                always_remember_me: false
+                remember_me_parameter: _remember_me
+            logout:
+                path:   /logout
+                target: /
+                invalidate_session: false
+                delete_cookies:
+                    a: { path: null, domain: null }
+                    b: { path: null, domain: null }
+                handlers: [some.service.id, another.service.id]
+                success_handler: some.service.id
+            anonymous: ~
+
+    access_control:
+        -
+            path: ^/foo
+            host: mydomain.foo
+            ip: ^/, roles: [ROLE_A, ROLE_B]
+            requires_channel: https
+
+    role_hierarchy:
+        ROLE_SUPERADMIN: ROLE_ADMIN
+        ROLE_SUPERADMIN: 'ROLE_ADMIN, ROLE_USER'
+        ROLE_SUPERADMIN: [ROLE_ADMIN, ROLE_USER]
+        anything: { id: ROLE_SUPERADMIN, value: 'ROLE_USER, ROLE_ADMIN' }
+        anything: { id: ROLE_SUPERADMIN, value: [ROLE_USER, ROLE_ADMIN] }</pre>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="configurando-el-formulario-de-acceso">
+<span id="reference-security-firewall-form-login"></span><h2>Configurando el formulario de acceso<a class="headerlink" href="#configurando-el-formulario-de-acceso" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuando usas el escucha de autenticación <tt class="docutils literal"><span class="pre">form_login</span></tt> bajo un cortafuegos, hay varias opciones comunes para experimentar en la configuración del &#8220;formulario de acceso&#8221;:</p>
+<div class="section" id="procesando-el-formulario-de-acceso">
+<h3>Procesando el formulario de acceso<a class="headerlink" href="#procesando-el-formulario-de-acceso" title="Enlazar permanentemente con este título">¶</a></h3>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">login_path</span></tt> (type: <tt class="docutils literal"><span class="pre">string</span></tt>, default: <tt class="docutils literal"><span class="pre">/login</span></tt>)
+Esta es la <em>URL</em> a que el usuario será redirigido (a menos que <tt class="docutils literal"><span class="pre">use_forward</span></tt> se haya fijado en <tt class="docutils literal"><span class="pre">true</span></tt>) cuando él/ella intente acceder a un recurso protegido, pero no está totalmente autenticado.</p>
+<p>Esta <strong>URL</strong> debe ser accesible por un usuario normal, no autenticado, de lo contrario puede crear un bucle de redireccionamiento. Para más información, consulta &#8220;<a class="reference internal" href="../../book/security.html#book-security-common-pitfalls"><em>Evitando errores comunes</em></a>&#8221;.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">check_path</span></tt> (type: <tt class="docutils literal"><span class="pre">string</span></tt>, default: <tt class="docutils literal"><span class="pre">/login_check</span></tt>)
+Esta es la <em>URL</em> en la cual se debe presentar el formulario de inicio de sesión. El cortafuegos intercepta cualquier petición (sólo las peticiones <em>POST</em>, por omisión) a esta <em>URL</em> y procesa las credenciales presentadas.</p>
+<p>Asegúrate de que esta dirección está cubierta por el cortafuegos principal (es decir, no crees un servidor de seguridad independiente sólo para la <em>URL</em> <tt class="docutils literal"><span class="pre">check_path</span></tt>).</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">use_forward</span></tt> (type: <tt class="docutils literal"><span class="pre">Boolean</span></tt> <strong>predeterminado</strong>: <tt class="docutils literal"><span class="pre">false</span></tt>)
+Si deseas que el usuario sea remitido al formulario de acceso en vez de ser redirigido, marca esta opción a <tt class="docutils literal"><span class="pre">true</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">username_parameter</span></tt> (type: <tt class="docutils literal"><span class="pre">string</span></tt>, default: <tt class="docutils literal"><span class="pre">_username</span></tt>)
+Este es el nombre del campo que debes dar al campo &#8216;nombre de usuario&#8217; de tu formulario de acceso. Cuando se presenta el formulario a <tt class="docutils literal"><span class="pre">check_path</span></tt>, el sistema de seguridad buscará un parámetro <em>POST</em> con este nombre.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">password_parameter</span></tt> (type: <tt class="docutils literal"><span class="pre">string</span></tt>, default: <tt class="docutils literal"><span class="pre">_password</span></tt>)
+Este es el nombre de campo que se debe dar al campo de la contraseña de tu formulario de inicio de sesión. Cuando se presenta el formulario a <tt class="docutils literal"><span class="pre">check_path</span></tt>, el sistema de seguridad buscará un parámetro <em>POST</em> con este nombre.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">post_only</span></tt> (type: <tt class="docutils literal"><span class="pre">Boolean</span></tt> <strong>predeterminado</strong>: <tt class="docutils literal"><span class="pre">true</span></tt>)
+De forma predeterminada, debes enviar tu formulario de acceso a la <em>URL</em> <tt class="docutils literal"><span class="pre">check_path</span></tt> como una petición <em>POST</em>. Al poner esta opción a <tt class="docutils literal"><span class="pre">false</span></tt>, puedes enviar una petición <em>GET</em> a la <em>URL</em> <tt class="docutils literal"><span class="pre">check_path</span></tt>.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="redirigiendo-despues-del-inicio-de-sesion">
+<h3>Redirigiendo después del inicio de sesión<a class="headerlink" href="#redirigiendo-despues-del-inicio-de-sesion" title="Enlazar permanentemente con este título">¶</a></h3>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">always_use_default_target_path</span></tt> (type: <tt class="docutils literal"><span class="pre">Boolean</span></tt> <strong>predeterminado</strong>: <tt class="docutils literal"><span class="pre">false</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">default_target_path</span></tt> (type: <tt class="docutils literal"><span class="pre">string</span></tt>, default: <tt class="docutils literal"><span class="pre">/</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">target_path_parameter</span></tt> (type: <tt class="docutils literal"><span class="pre">string</span></tt>, default: <tt class="docutils literal"><span class="pre">_target_path</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">use_referer</span></tt> (type: <tt class="docutils literal"><span class="pre">Boolean</span></tt> <strong>predeterminado</strong>: <tt class="docutils literal"><span class="pre">false</span></tt>)</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="swiftmailer.html" title="Configurando el SwiftmailerBundle (&#34;swiftmailer&#34;)"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="doctrine.html" title="Referencia de configuración del ORM de Doctrine"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Documentos de referencia</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

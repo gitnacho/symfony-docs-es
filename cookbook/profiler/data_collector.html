@@ -1,0 +1,273 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo crear un colector de datos personalizado &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo crear un servicio Web SOAP en un controlador de Symfony2" href="../web_services/php_soap_extension.html" />
+    <link rel="prev" title="Cómo registrar un nuevo formato de petición y tipo MIME" href="../request/mime_type.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../web_services/php_soap_extension.html" title="Cómo crear un servicio Web SOAP en un controlador de Symfony2"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="../request/mime_type.html" title="Cómo registrar un nuevo formato de petición y tipo MIME"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-crear-un-colector-de-datos-personalizado">
+<span id="index-0"></span><h1>Cómo crear un colector de datos personalizado<a class="headerlink" href="#como-crear-un-colector-de-datos-personalizado" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El <a class="reference internal" href="../../book/internals.html#internals-profiler"><em>Generador de perfiles</em></a> de <em>Symfony2</em> delega la recolección de datos a los colectores de datos. <em>Symfony2</em> incluye algunos colectores, pero puedes crear el tuyo fácilmente.</p>
+<div class="section" id="creando-un-colector-de-datos-personalizado">
+<h2>Creando un colector de datos personalizado<a class="headerlink" href="#creando-un-colector-de-datos-personalizado" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Crear un colector de datos personalizado es tan simple como implementar la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\DataCollector\DataCollectorInterface</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">interface</span> <span class="nx">DataCollectorInterface</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * Collects data for the given Request and Response.</span>
+<span class="sd">     *</span>
+<span class="sd">     * @param Request    $request   A Request instance</span>
+<span class="sd">     * @param Response   $response  A Response instance</span>
+<span class="sd">     * @param \Exception $exception An Exception instance</span>
+<span class="sd">     */</span>
+    <span class="k">function</span> <span class="nf">collect</span><span class="p">(</span><span class="nx">Request</span> <span class="nv">$request</span><span class="p">,</span> <span class="nx">Response</span> <span class="nv">$response</span><span class="p">,</span> <span class="nx">\Exception</span> <span class="nv">$exception</span> <span class="o">=</span> <span class="k">null</span><span class="p">);</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * Returns the name of the collector.</span>
+<span class="sd">     *</span>
+<span class="sd">     * @return string The collector name</span>
+<span class="sd">     */</span>
+    <span class="k">function</span> <span class="nf">getName</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>El método <tt class="docutils literal"><span class="pre">getName()</span></tt> debe devolver un nombre único. Este se utiliza para acceder a la información más adelante (consulta <a class="reference internal" href="../testing/profiling.html"><em>Cómo utilizar el generador de perfiles en una prueba funcional</em></a> para ver un ejemplo).</p>
+<p>El método <tt class="docutils literal"><span class="pre">collect()</span></tt> se encarga de almacenar los datos de las propiedades locales a las que quieres dar acceso.</p>
+<div class="admonition caution">
+<p class="first admonition-title">Prudencia</p>
+<p class="last">Puesto que el generador de perfiles serializa instancias del colector de datos, no debes almacenar objetos que no se puedan serializar (como objetos <em>PDO</em>), o tendrás que proporcionar tu propio método <tt class="docutils literal"><span class="pre">serialize()</span></tt>.</p>
+</div>
+<p>La mayoría de las veces, es conveniente extender <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\DataCollector\DataCollector</span></tt> y rellenar los datos de la propiedad <tt class="docutils literal"><span class="pre">$this-&gt;data</span></tt> (que se encarga de serializar la propiedad <tt class="docutils literal"><span class="pre">$this-&gt;data</span></tt>):</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MemoryDataCollector</span> <span class="k">extends</span> <span class="nx">DataCollector</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">collect</span><span class="p">(</span><span class="nx">Request</span> <span class="nv">$request</span><span class="p">,</span> <span class="nx">Response</span> <span class="nv">$response</span><span class="p">,</span> <span class="nx">\Exception</span> <span class="nv">$exception</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">data</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;memory&#39;</span> <span class="o">=&gt;</span> <span class="nx">memory_get_peak_usage</span><span class="p">(</span><span class="k">true</span><span class="p">),</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getMemory</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">data</span><span class="p">[</span><span class="s1">&#39;memory&#39;</span><span class="p">];</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;memory&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="habilitando-colectores-de-datos-personalizados">
+<span id="data-collector-tag"></span><h2>Habilitando colectores de datos personalizados<a class="headerlink" href="#habilitando-colectores-de-datos-personalizados" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para habilitar un colector de datos, lo tienes que añadir como un servicio regular a tu configuración, y etiquetarlo con <tt class="docutils literal"><span class="pre">data_collector</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">data_collector.your_collector_name</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Fully\Qualified\Collector\Class\Name</span>
+        <span class="l-Scalar-Plain">tags</span><span class="p-Indicator">:</span>
+                <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">name</span><span class="p-Indicator">:</span> <span class="nv">data_collector</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;data_collector.your_collector_name&quot;</span> <span class="na">class=</span><span class="s">&quot;Fully\Qualified\Collector\Class\Name&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;data_collector&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/service&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span>
+    <span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;data_collector.your_collector_name&#39;</span><span class="p">,</span> <span class="s1">&#39;Fully\Qualified\Collector\Class\Name&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;data_collector&#39;</span><span class="p">)</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="anadiendo-el-generador-de-perfiles-web-en-plantillas">
+<h2>Añadiendo el generador de perfiles web en plantillas<a class="headerlink" href="#anadiendo-el-generador-de-perfiles-web-en-plantillas" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuando desees mostrar los datos recogidos por el colector de datos en la barra de depuración o el generador de perfiles web, crea una plantilla <em>Twig</em> siguiendo este esqueleto:</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">extends</span> <span class="s1">&#39;WebProfilerBundle:Profiler:base.html.twig&#39;</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">toolbar</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    </span><span class="c">{# La barra de herramientas para depuración de contenido web #}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">head</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    </span><span class="c">{# Si el panel de perfiles web necesita algunos archivos CSS o JS específicos #}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">menu</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    </span><span class="c">{# el menú de contenido #}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">panel</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    </span><span class="c">{# el panel de contenido #}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="x"></span>
+</pre></div>
+</div>
+<p>Cada bloque es opcional. El bloque <tt class="docutils literal"><span class="pre">toolbar</span></tt> se utiliza para la barra de herramientas de depuración web <tt class="docutils literal"><span class="pre">menu</span></tt> y <tt class="docutils literal"><span class="pre">panel</span></tt> se utilizan para agregar un grupo especial al generador de perfiles web.</p>
+<p>Todos los bloques tienen acceso al objeto <tt class="docutils literal"><span class="pre">collector</span></tt>.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Las plantillas incorporadas utilizan una imagen codificada en base64 para la barra de herramientas (<tt class="docutils literal"><span class="pre">&lt;img</span> <span class="pre">src=&quot;src=&quot;data:image/png;base64,...&quot;</span></tt>). Puedes calcular el valor base64 para una imagen con este pequeño guión: <tt class="docutils literal"><span class="pre">echo</span>
+<span class="pre">base64_encode(file_get_contents($_SERVER['argv'][1]));</span></tt>.</p>
+</div>
+<p>Para habilitar la plantilla, agrega un atributo <tt class="docutils literal"><span class="pre">template</span></tt> a la etiqueta <tt class="docutils literal"><span class="pre">data_collector</span></tt> en tu configuración. Por ejemplo, asumiendo que tu plantilla está en algún <tt class="docutils literal"><span class="pre">AcmeDebugBundle</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">data_collector.your_collector_name</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Acme\DebugBundle\Collector\Class\Name</span>
+        <span class="l-Scalar-Plain">tags</span><span class="p-Indicator">:</span>
+                <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">name</span><span class="p-Indicator">:</span> <span class="nv">data_collector</span><span class="p-Indicator">,</span> <span class="nv">template</span><span class="p-Indicator">:</span> <span class="s">&quot;AcmeDebug:Collector:templatename&quot;</span><span class="p-Indicator">,</span> <span class="nv">id</span><span class="p-Indicator">:</span> <span class="s">&quot;your_collector_name&quot;</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;data_collector.your_collector_name&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\DebugBundle\Collector\Class\Name&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;data_collector&quot;</span> <span class="na">template=</span><span class="s">&quot;AcmeDebug:Collector:templatename&quot;</span> <span class="na">id=</span><span class="s">&quot;your_collector_name&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/service&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span>
+    <span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;data_collector.your_collector_name&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\DebugBundle\Collector\Class\Name&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;data_collector&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;template&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;AcmeDebugBundle:Collector:templatename&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;your_collector_name&#39;</span><span class="p">))</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../web_services/php_soap_extension.html" title="Cómo crear un servicio Web SOAP en un controlador de Symfony2"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="../request/mime_type.html" title="Cómo registrar un nuevo formato de petición y tipo MIME"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

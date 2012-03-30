@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo personalizar páginas de error &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo definir controladores como servicios" href="service.html" />
+    <link rel="prev" title="Cómo crear y guardar un proyecto Symfony2 en Subversion" href="../workflow/new_project_svn.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="service.html" title="Cómo definir controladores como servicios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="../workflow/new_project_svn.html" title="Cómo crear y guardar un proyecto Symfony2 en Subversion"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-personalizar-paginas-de-error">
+<h1>Cómo personalizar páginas de error<a class="headerlink" href="#como-personalizar-paginas-de-error" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Cuando se lanza alguna excepción en <em>Symfony2</em>, la excepción es capturada dentro de la clase <tt class="docutils literal"><span class="pre">Kernel</span></tt> y, finalmente, remitida a un controlador especial, <tt class="docutils literal"><span class="pre">TwigBundle:Exception:show</span></tt> para procesarla. Este controlador, el cual vive dentro del núcleo de <tt class="docutils literal"><span class="pre">TwigBundle</span></tt>, determina cual plantilla de error mostrar y el código de estado que se debe establecer para la excepción dada.</p>
+<p>Puedes personalizar las páginas de error de dos formas diferentes, dependiendo de la cantidad de control que necesites:</p>
+<ol class="arabic simple">
+<li>Personalizando las plantillas de error de las diferentes páginas de error (se explica más adelante);</li>
+<li>Reemplazando el controlador de excepciones <tt class="docutils literal"><span class="pre">TwigBundle::Exception:show</span></tt> predeterminado con tu propio controlador y procesándolo como quieras (consulta <a class="reference internal" href="../../reference/configuration/twig.html#config-twig-exception-controller"><em>exception_controller en la referencia de Twig</em></a>);</li>
+</ol>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Personalizar el tratamiento de las excepciones en realidad es mucho más poderoso que lo escrito aquí. Produce un evento interno, <tt class="docutils literal"><span class="pre">core.exception</span></tt>, el cual te permite completo control sobre el manejo de la excepción. Para más información, consulta el <a class="reference internal" href="../../book/internals.html#kernel-kernel-exception"><em>Evento kernel.exception</em></a>.</p>
+</div>
+<p>Todas las plantillas de error viven dentro de <tt class="docutils literal"><span class="pre">TwigBundle</span></tt>. Para sustituir las plantillas, simplemente confiamos en el método estándar para sustituir las plantillas que viven dentro de un paquete. Para más información, consulta <a class="reference internal" href="../../book/templating.html#overriding-bundle-templates"><em>Sustituyendo plantillas del paquete</em></a>.</p>
+<p>Por ejemplo, para sustituir la plantilla de error predeterminada mostrada al usuario final, crea una nueva plantilla ubicada en <tt class="docutils literal"><span class="pre">app/Resources/TwigBundle/views/Exception/error.html.twig</span></tt>:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">&lt;!DOCTYPE html&gt;</span>
+    <span class="nt">&lt;html&gt;</span>
+    <span class="nt">&lt;head&gt;</span>
+    <span class="nt">&lt;meta</span> <span class="na">http-equiv=</span><span class="s">&quot;Content-Type&quot;</span> <span class="na">content=</span><span class="s">&quot;text/html; charset=utf-8&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;title&gt;</span>An Error Occurred: <span class="cp">{{</span> <span class="nv">status_text</span> <span class="cp">}}</span><span class="nt">&lt;/title&gt;</span>
+    <span class="nt">&lt;/head&gt;</span>
+    <span class="nt">&lt;body&gt;</span>
+    <span class="nt">&lt;h1&gt;</span>Oops! An Error Occurred<span class="nt">&lt;/h1&gt;</span>
+    <span class="nt">&lt;h2&gt;</span>The server returned a &quot;<span class="cp">{{</span> <span class="nv">status_code</span> <span class="cp">}}</span> <span class="cp">{{</span> <span class="nv">status_text</span> <span class="cp">}}</span>&quot;.<span class="nt">&lt;/h2&gt;</span>
+    <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/html&gt;</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Si no estás familiarizado con <em>Twig</em>, no te preocupes. <em>Twig</em> es un sencillo, potente y opcional motor de plantillas que se integra con <em>Symfony2</em>. Para más información sobre <em>Twig</em> consulta <a class="reference internal" href="../../book/templating.html"><em>Creando y usando plantillas</em></a>.</p>
+</div>
+<p>Además de la página de error <em>HTML</em> estándar, <em>Symfony</em> proporciona una página de error predeterminada para muchos de los más comunes formatos de respuesta, como <em>JSON</em> (<tt class="docutils literal"><span class="pre">error.json.twig</span></tt>), <em>XML</em> (<tt class="docutils literal"><span class="pre">error.xml.twig</span></tt>) e incluso <em>Javascript</em> (<tt class="docutils literal"><span class="pre">error.js.twig</span></tt>), por nombrar algunos. Para sustituir cualquiera de estas plantillas, basta con crear un nuevo archivo con el mismo nombre en el directorio <tt class="docutils literal"><span class="pre">app/Resources/TwigBundle/views/Exception</span></tt>. Esta es la manera estándar de sustituir cualquier plantilla que viva dentro de un paquete.</p>
+<div class="section" id="personalizando-la-pagina-404-y-otras-paginas-de-error">
+<span id="cookbook-error-pages-by-status-code"></span><h2>Personalizando la página 404 y otras páginas de error<a class="headerlink" href="#personalizando-la-pagina-404-y-otras-paginas-de-error" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>También puedes personalizar plantillas de error específicas de acuerdo con el código de estado <em>HTTP</em>. Por ejemplo, crea una plantilla <tt class="docutils literal"><span class="pre">app/Resources/TwigBundle/views/Exception/error404.html.twig</span></tt> para mostrar una página especial para los errores 404 (página no encontrada).</p>
+<p><em>Symfony</em> utiliza el siguiente algoritmo para determinar qué plantilla utilizar:</p>
+<ul class="simple">
+<li>En primer lugar, busca una plantilla para el formato dado y el código de estado (como <tt class="docutils literal"><span class="pre">error404.json.twig</span></tt>);</li>
+<li>Si no existe, busca una plantilla para el formato propuesto (como <tt class="docutils literal"><span class="pre">error.json.twig</span></tt>);</li>
+<li>Si no existe, este cae de nuevo a la plantilla <em>HTML</em> (como <tt class="docutils literal"><span class="pre">error.html.twig</span></tt>).</li>
+</ul>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Para ver la lista completa de plantillas de error predeterminadas, revisa el directorio <tt class="docutils literal"><span class="pre">Resources/views/Exception</span></tt> de <tt class="docutils literal"><span class="pre">TwigBundle</span></tt>. En una instalación estándar de <em>Symfony2</em>, el <tt class="docutils literal"><span class="pre">TwigBundle</span></tt> se puede encontrar en <tt class="docutils literal"><span class="pre">vendor/symfony/symfony/src/Symfony/Bundle/TwigBundle</span></tt>. A menudo, la forma más fácil de personalizar una página de error es copiarla de <tt class="docutils literal"><span class="pre">TwigBundle</span></tt> a <tt class="docutils literal"><span class="pre">app/Resources/TwigBundle/views/Exception</span></tt> y luego modificarla.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">El amigable depurador de páginas de excepción muestra al desarrollador cómo, incluso, puede personalizar de la misma manera creando plantillas como <tt class="docutils literal"><span class="pre">exception.html.twig</span></tt> para la página de excepción <em>HTML</em> estándar o <tt class="docutils literal"><span class="pre">exception.json.twig</span></tt> para la página de excepción <em>JSON</em>.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="service.html" title="Cómo definir controladores como servicios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="../workflow/new_project_svn.html" title="Cómo crear y guardar un proyecto Symfony2 en Subversion"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

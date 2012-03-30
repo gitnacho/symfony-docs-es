@@ -1,0 +1,267 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo configurar parámetros externos en el contenedor de servicios &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo utilizar el patrón fábrica para crear servicios" href="../service_container/factories.html" />
+    <link rel="prev" title="Cómo dominar y crear nuevos entornos" href="environments.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../service_container/factories.html" title="Cómo utilizar el patrón fábrica para crear servicios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="environments.html" title="Cómo dominar y crear nuevos entornos"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-configurar-parametros-externos-en-el-contenedor-de-servicios">
+<span id="index-0"></span><h1>Cómo configurar parámetros externos en el contenedor de servicios<a class="headerlink" href="#como-configurar-parametros-externos-en-el-contenedor-de-servicios" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>En el capítulo <a class="reference internal" href="environments.html"><em>Cómo dominar y crear nuevos entornos</em></a>, aprendiste cómo gestionar la configuración de tu aplicación. A veces, puedes beneficiar a tu aplicación almacenando ciertas credenciales fuera del código de tu proyecto. La configuración de la base de datos es tal ejemplo. La flexibilidad del contenedor de servicios de <em>Symfony</em> te permite hacer esto fácilmente.</p>
+<div class="section" id="variables-de-entorno">
+<h2>Variables de entorno<a class="headerlink" href="#variables-de-entorno" title="Enlazar permanentemente con este título">¶</a></h2>
+<p><em>Symfony</em> grabará cualquier variable de entorno con el prefijo <tt class="docutils literal"><span class="pre">SYMFONY__</span></tt> y lo configurará como parámetro en el contenedor de servicios.  Los dobles guiones bajos son reemplazados por un punto, ya que un punto no es un carácter válido en un nombre de variable de entorno.</p>
+<p>Por ejemplo, si estás usando <em>Apache</em>, las variables de entorno se pueden fijar usando la siguiente configuración de <tt class="docutils literal"><span class="pre">VirtualHost</span></tt>:</p>
+<div class="highlight-apache"><div class="highlight"><pre><span class="nt">&lt;VirtualHost</span> <span class="s">*:80</span><span class="nt">&gt;</span>
+    <span class="nb">ServerName</span>      Symfony2
+    <span class="nb">DocumentRoot</span>    <span class="s2">&quot;/ruta/a/symfony_2_app/web&quot;</span>
+    <span class="nb">DirectoryIndex</span>  index.php index.html
+    <span class="nb">SetEnv</span>          SYMFONY__DATABASE__USER <span class="k">user</span>
+    <span class="nb">SetEnv</span>          SYMFONY__DATABASE__PASSWORD secret
+
+    <span class="nt">&lt;Directory</span> <span class="s">&quot;/path/to/symfony_2_app/web&quot;</span><span class="nt">&gt;</span>
+        <span class="nb">AllowOverride</span> <span class="k">All</span>
+        <span class="nb">Allow</span> from <span class="k">All</span>
+    <span class="nt">&lt;/Directory&gt;</span>
+<span class="nt">&lt;/VirtualHost&gt;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>El ejemplo anterior es una configuración para <em>Apache</em>, con la directiva <a class="reference external" href="http://httpd.apache.org/docs/current/env.html">SetEnv</a>.  Sin embargo, esta funcionará para cualquier servidor web compatible con la configuración de variables de entorno.</p>
+<p>Además, con el fin de que tu consola trabaje (la cual no utiliza <em>Apache</em>), las tienes que exportar como variables del intérprete. En un sistema Unix, puedes ejecutar las siguientes ordenes:</p>
+<div class="last highlight-bash"><div class="highlight"><pre><span class="nb">export </span><span class="nv">SYMFONY__DATABASE__USER</span><span class="o">=</span>user
+<span class="nb">export </span><span class="nv">SYMFONY__DATABASE__PASSWORD</span><span class="o">=</span>secret
+</pre></div>
+</div>
+</div>
+<p>Ahora que has declarado una variable de entorno, estará presente en la variable global <tt class="docutils literal"><span class="pre">$_SERVER</span></tt> de <em>PHP</em>. Entonces <em>Symfony</em> automáticamente fijará todas las variables <tt class="docutils literal"><span class="pre">$_SERVER</span></tt> con el prefijo <tt class="docutils literal"><span class="pre">SYMFONY__</span></tt> como parámetros en el contenedor de servicios.</p>
+<p>Ahora puedes referirte a estos parámetros donde los necesites.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre>doctrine:
+    dbal:
+        driver    pdo_mysql
+        dbname:   symfony2_project
+        user:     %database.user%
+        password: %database.password%</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- xmlns:doctrine=&quot;http://symfony.com/schema/dic/doctrine&quot; --&gt;</span>
+<span class="c">&lt;!-- xsi:schemaLocation=&quot;http://symfony.com/schema/dic/doctrine http://symfony.com/schema/dic/doctrine/doctrine-1.0.xsd&quot;&gt; --&gt;</span>
+
+<span class="nt">&lt;doctrine:config&gt;</span>
+    <span class="nt">&lt;doctrine:dbal</span>
+        <span class="na">driver=</span><span class="s">&quot;pdo_mysql&quot;</span>
+        <span class="na">dbname=</span><span class="s">&quot;symfony2_project&quot;</span>
+        <span class="na">user=</span><span class="s">&quot;%database.user%&quot;</span>
+        <span class="na">password=</span><span class="s">&quot;%database.password%&quot;</span>
+    <span class="nt">/&gt;</span>
+<span class="nt">&lt;/doctrine:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;doctrine&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;dbal&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;driver&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;pdo_mysql&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;dbname&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;symfony2_project&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user&#39;</span>     <span class="o">=&gt;</span> <span class="s1">&#39;%database.user%&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;password&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;%database.password%&#39;</span><span class="p">,</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="constantes">
+<h2>Constantes<a class="headerlink" href="#constantes" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El contenedor también cuenta con apoyo para fijar constantes <em>PHP</em> como parámetros. Para aprovechar esta característica, asigna el nombre de tu constante a un parámetro clave, y define el tipo como <tt class="docutils literal"><span class="pre">constant</span></tt>.</p>
+<blockquote>
+<div><div class="highlight-xml"><div class="highlight"><pre><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+
+<span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+<span class="nt">&gt;</span>
+
+    <span class="nt">&lt;parameters&gt;</span>
+        <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;global.constant.value&quot;</span> <span class="na">type=</span><span class="s">&quot;constant&quot;</span><span class="nt">&gt;</span>GLOBAL_CONSTANT<span class="nt">&lt;/parameter&gt;</span>
+        <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;my_class.constant.value&quot;</span> <span class="na">type=</span><span class="s">&quot;constant&quot;</span><span class="nt">&gt;</span>My_Class::CONSTANT_NAME<span class="nt">&lt;/parameter&gt;</span>
+    <span class="nt">&lt;/parameters&gt;</span>
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>Esto sólo funciona para la configuración <em>XML</em>. Si <em>no</em> estás usando <em>XML</em>, sólo tienes que importar un archivo <em>XML</em> para tomar ventaja de esta funcionalidad:</p>
+<div class="last highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">// app/config/config.yml</span>
+<span class="l-Scalar-Plain">imports</span><span class="p-Indicator">:</span>
+    <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">resource</span><span class="p-Indicator">:</span> <span class="nv">parameters.xml</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="otra-configuracion">
+<h2>Otra configuración<a class="headerlink" href="#otra-configuracion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La directiva <tt class="docutils literal"><span class="pre">imports</span></tt> se puede utilizar para extraer parámetros almacenados en otro lugar.
+Importar un archivo <em>PHP</em> te da la flexibilidad de añadir al contenedor lo que sea necesario. La siguiente directiva importa un archivo llamado <tt class="file docutils literal"><span class="pre">parameters.php</span></tt>.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">imports</span><span class="p-Indicator">:</span>
+    <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">resource</span><span class="p-Indicator">:</span> <span class="nv">parameters.php</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;imports&gt;</span>
+    <span class="nt">&lt;import</span> <span class="na">resource=</span><span class="s">&quot;parameters.php&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/imports&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">import</span><span class="p">(</span><span class="s1">&#39;parameters.php&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Un archivo de recursos puede tener uno de muchos tipos. Los recursos <em>PHP</em>, <em>XML</em>, <em>YAML</em>, <em>INI</em> y cierre son compatibles con la directiva <tt class="docutils literal"><span class="pre">imports</span></tt>.</p>
+</div>
+<p>En <tt class="file docutils literal"><span class="pre">parameters.php</span></tt>, dile al contenedor de servicios los parámetros que deseas configurar. Esto es útil cuando la configuración importante está en un formato no estándar. El siguiente ejemplo incluye la configuración de una base de datos <em>Drupal</em> en el contenedor de servicios de <em>Symfony</em>.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/parameters.php</span>
+
+<span class="k">include_once</span><span class="p">(</span><span class="s1">&#39;/path/to/drupal/sites/default/settings.php&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;drupal.database.url&#39;</span><span class="p">,</span> <span class="nv">$db_url</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../service_container/factories.html" title="Cómo utilizar el patrón fábrica para crear servicios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="environments.html" title="Cómo dominar y crear nuevos entornos"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

@@ -1,0 +1,348 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo crear un tipo de campo personalizado para formulario &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo crear una restricción de validación personalizada" href="../validation/custom_constraint.html" />
+    <link rel="prev" title="Cómo integrar una colección de formularios" href="form_collections.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../validation/custom_constraint.html" title="Cómo crear una restricción de validación personalizada"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="form_collections.html" title="Cómo integrar una colección de formularios"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-crear-un-tipo-de-campo-personalizado-para-formulario">
+<span id="index-0"></span><h1>Cómo crear un tipo de campo personalizado para formulario<a class="headerlink" href="#como-crear-un-tipo-de-campo-personalizado-para-formulario" title="Enlazar permanentemente con este título">¶</a></h1>
+<p><em>Symfony</em> viene con un montón de tipos de campos fundamentales para la construcción de formularios.
+Sin embargo, hay situaciones en las que queremos crear un tipo de campo de formulario personalizado
+para un propósito específico. Esta receta asume que necesitamos una definición de campo que contiene el género de una persona, basándose en el campo <tt class="docutils literal"><span class="pre">choice</span></tt> existente. Esta sección explica cómo definir el campo, cómo podemos personalizar su diseño y, por último, cómo lo podemos registrar para usarlo en nuestra aplicación.</p>
+<div class="section" id="definiendo-el-tipo-de-campo">
+<h2>Definiendo el tipo de campo<a class="headerlink" href="#definiendo-el-tipo-de-campo" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Con el fin de crear el tipo de campo personalizado, primero tenemos que crear la clase que representa al campo. En nuestra situación, la clase contendrá el tipo de campo que se llamará <tt class="docutils literal"><span class="pre">GenderType</span></tt> y el archivo se guardará en la ubicación predeterminada para campos de formulario, la cual es <tt class="docutils literal"><span class="pre">&lt;NombrePaquete&gt;\form\Type</span></tt>. Asegúrese de que el campo se extiende de
+<tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Form\AbstractType</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1"># src/Acme/DemoBundle/Form/Type/GenderType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">GenderType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;choices&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+                <span class="s1">&#39;m&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Male&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;f&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Female&#39;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getParent</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;choice&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;gender&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">La ubicación de este archivo no es importante - el directorio <tt class="docutils literal"><span class="pre">Form\Type</span></tt> sólo es una convención.</p>
+</div>
+<p>En este caso, el valor de retorno de la función <tt class="docutils literal"><span class="pre">getParent</span></tt> indica que estamos extendiendo el tipo de campo <tt class="docutils literal"><span class="pre">choice</span></tt>. Esto significa que, por omisión, heredamos toda la lógica y prestación de ese tipo de campo. Para ver algo de la lógica, echa un vistazo a la clase <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Extension/Core/Type/ChoiceType.php">ChoiceType</a>. Hay tres métodos que son particularmente importantes:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">buildForm()</span></tt> - Cada tipo de campo tiene un método <tt class="docutils literal"><span class="pre">buildForm</span></tt>, que es donde configuras y construyes cualquier campo(s). Ten en cuenta que este es el mismo método que utilizas para configurar <em>tus</em> formularios, y aquí funciona igual.</li>
+<li><tt class="docutils literal"><span class="pre">buildView()</span></tt> - Este método se utiliza para establecer las variables extra que necesitarás al reproducir el campo en una plantilla. Por ejemplo, en <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Extension/Core/Type/ChoiceType.php">ChoiceType</a>, está definida una variable <tt class="docutils literal"><span class="pre">multiple</span></tt> que se fija y utiliza en la plantilla para establecer (o no un conjunto), el atributo <tt class="docutils literal"><span class="pre">multiple</span></tt> en el campo <tt class="docutils literal"><span class="pre">select</span></tt>. Ve <a class="reference internal" href="#creando-una-plantilla-para-el-campo">Creando una plantilla para el campo</a> para más detalles.</li>
+<li><tt class="docutils literal"><span class="pre">getDefaultOptions()</span></tt> &#8212; Este define las opciones para el tipo de tu formulario mismas que puedes utilizar en <tt class="docutils literal"><span class="pre">buildForm()</span></tt> y <tt class="docutils literal"><span class="pre">buildView()</span></tt>. Hay un montón de opciones comunes a todos los campos (consulta <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Extension/Core/Type/FieldType.php">FieldType</a>), pero aquí, puedes crear cualquier otro que necesites.</li>
+</ul>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Si vas a crear un campo que consiste de muchos campos, entonces, asegúrate de establecer tu tipo &#8220;padre&#8221; como <tt class="docutils literal"><span class="pre">form</span></tt> o algo que extienda a <tt class="docutils literal"><span class="pre">form</span></tt>.
+Además, si es necesario modificar la &#8220;vista&#8221; de cualquiera de tus tipos descendientes de tu tipo padre, utiliza el método <tt class="docutils literal"><span class="pre">buildViewBottomUp()</span></tt>.</p>
+</div>
+<p>El método <tt class="docutils literal"><span class="pre">getName()</span></tt> devuelve un identificador que debe ser único en tu aplicación. Este se utiliza en varios lugares, tales como cuando personalizas cómo será pintado tu tipo de formulario.</p>
+<p>El objetivo de nuestro campo es extender el tipo <tt class="docutils literal"><span class="pre">choice</span></tt> para habilitar la selección de un género. Esto se consigue fijando las opciones a una lista de posibles géneros.</p>
+</div>
+<div class="section" id="creando-una-plantilla-para-el-campo">
+<h2>Creando una plantilla para el campo<a class="headerlink" href="#creando-una-plantilla-para-el-campo" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cada tipo de campo está representado por un fragmento de la plantilla, el cual se determina en parte por el valor de su método <tt class="docutils literal"><span class="pre">getName()</span></tt>. Para más información, consulta <a class="reference internal" href="form_customization.html#cookbook-form-customization-form-themes"><em>¿Qué son los temas de formulario?</em></a>.</p>
+<p>En este caso, debido a que nuestro campo padre es <tt class="docutils literal"><span class="pre">choice</span></tt>, no <em>necesitamos</em> hacer ningún trabajo que nuestro tipo de campo personalizado como tipo <tt class="docutils literal"><span class="pre">choice</span></tt>, hace automáticamente. Pero para beneficio de este ejemplo, vamos a suponer que cuando nuestro campo es &#8220;extendido&#8221; (es decir, botones de radio o casillas de verificación, en lugar de un campo selección), queremos pintarlo siempre como un elemento <tt class="docutils literal"><span class="pre">ul</span></tt>. En tu plantilla del tema de tu formulario (consulta el enlace de arriba para más detalles), crea un bloque <tt class="docutils literal"><span class="pre">gender_widget</span></tt> para manejar esto:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/DemoBundle/Resources/views/Form/fields.html.twig #}</span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">gender_widget</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">spaceless</span> <span class="cp">%}</span>
+    <span class="cp">{%</span> <span class="k">if</span> <span class="nv">expanded</span> <span class="cp">%}</span>
+        <span class="nt">&lt;ul</span> <span class="cp">{{</span> <span class="nb">block</span><span class="o">(</span><span class="s1">&#39;widget_container_attributes&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="nt">&gt;</span>
+        <span class="cp">{%</span> <span class="k">for</span> <span class="nv">child</span> <span class="k">in</span> <span class="nv">form</span> <span class="cp">%}</span>
+            <span class="nt">&lt;li&gt;</span>
+                <span class="cp">{{</span> <span class="nv">form_widget</span><span class="o">(</span><span class="nv">child</span><span class="o">)</span> <span class="cp">}}</span>
+                <span class="cp">{{</span> <span class="nv">form_label</span><span class="o">(</span><span class="nv">child</span><span class="o">)</span> <span class="cp">}}</span>
+            <span class="nt">&lt;/li&gt;</span>
+        <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+        <span class="nt">&lt;/ul&gt;</span>
+    <span class="cp">{%</span> <span class="k">else</span> <span class="cp">%}</span>
+        <span class="c">{# simplemente deja que el elemento gráfico &#39;choice&#39; reproduzca la etiqueta select #}</span>
+        <span class="cp">{{</span> <span class="nb">block</span><span class="o">(</span><span class="s1">&#39;choice_widget&#39;</span><span class="o">)</span> <span class="cp">}}</span>
+    <span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endspaceless</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>Asegúrate que utilizas el prefijo correcto para el elemento gráfico. En este ejemplo, el nombre debe set <tt class="docutils literal"><span class="pre">gender_widget</span></tt>, de acuerdo con el valor devuelto por <tt class="docutils literal"><span class="pre">getName</span></tt>.
+Además, el archivo de configuración principal debe apuntar a la plantilla del formulario personalizado de modo que este se utilice al reproducir todos los formularios.</p>
+<div class="last highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+
+    <span class="l-Scalar-Plain">twig</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">form</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">resources</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="s">&#39;AcmeDemoBundle:Form:fields.html.twig&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="usando-el-tipo-de-campo">
+<h2>Usando el tipo de campo<a class="headerlink" href="#usando-el-tipo-de-campo" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Ahora puedes utilizar el tipo de campo personalizado de inmediato, simplemente creando una nueva instancia del tipo en uno de tus formularios:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Form/Type/AuthorType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AuthorType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;gender_code&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">GenderType</span><span class="p">(),</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;empty_value&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Choose a gender&#39;</span><span class="p">,</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Pero esto sólo funciona porque el <tt class="docutils literal"><span class="pre">GenderType()</span></tt> es muy sencillo. ¿Qué pasa si los códigos de género se almacena en la configuración o en una base de datos? La siguiente sección se explica cómo resuelven este problema los tipos de campo más complejos.</p>
+</div>
+<div class="section" id="creando-tu-tipo-de-campo-como-un-servicio">
+<h2>Creando tu tipo de campo como un servicio<a class="headerlink" href="#creando-tu-tipo-de-campo-como-un-servicio" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Hasta ahora, este artículo ha supuesto que tienes un tipo de campo personalizado muy simple.
+Pero si necesitas acceder a la configuración de una conexión base de datos, o a algún otro servicio, entonces querrás registrar tu tipo personalizado como un servicio. por ejemplo, supongamos que estamos almacenando los parámetros de género en la configuración:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">genders</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">m</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Male</span>
+        <span class="l-Scalar-Plain">f</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Female</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;parameters&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;genders&quot;</span> <span class="na">type=</span><span class="s">&quot;collection&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;m&quot;</span><span class="nt">&gt;</span>Male<span class="nt">&lt;/parameter&gt;</span>
+        <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;f&quot;</span><span class="nt">&gt;</span>Female<span class="nt">&lt;/parameter&gt;</span>
+    <span class="nt">&lt;/parameter&gt;</span>
+<span class="nt">&lt;/parameters&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Para utilizar el parámetro, vamos a definir nuestro tipo de campo personalizado como un servicio, inyectando el valor del parámetro <tt class="docutils literal"><span class="pre">genders</span></tt> como el primer argumento de la función <tt class="docutils literal"><span class="pre">__construct</span></tt> que vamos a crear:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/DemoBundle/Resources/config/services.yml</span>
+<span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">form.type.gender</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Acme\DemoBundle\Form\Type\GenderType</span>
+        <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="s">&quot;%genders%&quot;</span>
+        <span class="l-Scalar-Plain">tags</span><span class="p-Indicator">:</span>
+                <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">name</span><span class="p-Indicator">:</span>     <span class="nv">form.type</span><span class="p-Indicator">,</span> <span class="nv">alias</span><span class="p-Indicator">:</span> <span class="nv">gender</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/DemoBundle/Resources/config/services.xml --&gt;</span>
+<span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;form.type.gender&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\DemoBundle\Form\Type\GenderType&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;argument&gt;</span>%genders%<span class="nt">&lt;/argument&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;form.type&quot;</span> <span class="na">alias=</span><span class="s">&quot;gender&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/service&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Asegúrate de que estás importando el archivo de servicios. Consulta <a class="reference internal" href="../../book/service_container.html#service-container-imports-directive"><em>Importando configuración con imports</em></a> para más detalles.</p>
+</div>
+<p>Asegúrate de que la etiqueta del atributo <tt class="docutils literal"><span class="pre">alias</span></tt> corresponde con el valor devuelto por el método <tt class="docutils literal"><span class="pre">getName</span></tt> definido anteriormente. Vamos a ver la importancia de esto en un momento cuando utilicemos el tipo de campo personalizado. Pero en primer lugar, agrega un argumento <tt class="docutils literal"><span class="pre">GenderType</span></tt> al <tt class="docutils literal"><span class="pre">__construct</span></tt>, el cual recibe la configuración del género:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1"># src/Acme/DemoBundle/Form/Type/GenderType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Form\Type</span><span class="p">;</span>
+<span class="c1">// ...</span>
+
+<span class="k">class</span> <span class="nc">GenderType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$genderChoices</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="k">array</span> <span class="nv">$genderChoices</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genderChoices</span> <span class="o">=</span> <span class="nv">$genderChoices</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;choices&#39;</span> <span class="o">=&gt;</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">genderChoices</span><span class="p">,</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>¡Genial! El <tt class="docutils literal"><span class="pre">GenderType</span></tt> ahora es impulsado por los parámetros de configuración y está registrado como un servicio. Y debido a que utilizamos el alias de <tt class="docutils literal"><span class="pre">form.type</span></tt> en su configuración, es mucho más fácil utilizar el campo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Form/Type/AuthorType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Form\Type</span><span class="p">;</span>
+<span class="c1">// ...</span>
+
+<span class="k">class</span> <span class="nc">AuthorType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;gender_code&#39;</span><span class="p">,</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;empty_value&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Choose a gender&#39;</span><span class="p">,</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ten en cuenta que en lugar de crear una nueva instancia, podemos referirnos a esta por el alias utilizado en la configuración de nuestro servicio, <tt class="docutils literal"><span class="pre">gender</span></tt>. ¡Que te diviertas!</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../validation/custom_constraint.html" title="Cómo crear una restricción de validación personalizada"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="form_collections.html" title="Cómo integrar una colección de formularios"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

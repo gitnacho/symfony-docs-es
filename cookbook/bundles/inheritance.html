@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo utilizar la herencia de paquetes para redefinir partes de un paquete &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo sustituir cualquier parte de un paquete" href="override.html" />
+    <link rel="prev" title="Estructura de un paquete y buenas prácticas" href="best_practices.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="override.html" title="Cómo sustituir cualquier parte de un paquete"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="best_practices.html" title="Estructura de un paquete y buenas prácticas"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-utilizar-la-herencia-de-paquetes-para-redefinir-partes-de-un-paquete">
+<span id="index-0"></span><h1>Cómo utilizar la herencia de paquetes para redefinir partes de un paquete<a class="headerlink" href="#como-utilizar-la-herencia-de-paquetes-para-redefinir-partes-de-un-paquete" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Cuando trabajes con paquetes de terceros, probablemente llegues a una situación en la que desees reemplazar un archivo en ese paquete de terceros con un archivo de uno de tus propios paquetes. <em>Symfony</em> te proporciona una forma muy conveniente para sustituir cosas como controladores, plantillas, traducciones, y otros archivos en eñ directorio <tt class="docutils literal"><span class="pre">Resources/</span></tt> de los paquetes.</p>
+<p>Por ejemplo, supongamos que estás instalando el <a class="reference external" href="https://github.com/friendsofsymfony/fosuserbundle">FOSUserBundle</a>, pero deseas sustituir su plantilla base <tt class="docutils literal"><span class="pre">base.html.twig</span></tt>, así como uno de sus controladores. Supongamos también que tienes tu propio <tt class="docutils literal"><span class="pre">AcmeUserBundle</span></tt> donde deseas que vivan los archivos sobrescritos. Para empezar, registra el <tt class="docutils literal"><span class="pre">FOSUserBundle</span></tt> como el &#8220;padre&#8221; de tu paquete:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/UserBundle/AcmeUserBundle.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\UserBundle</span><span class="p">;</span>
+
+    <span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Bundle\Bundle</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AcmeUserBundle</span> <span class="k">extends</span> <span class="nx">Bundle</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getParent</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;FOSUserBundle&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Al hacer este simple cambio, ahora puedes sustituir varias partes del <tt class="docutils literal"><span class="pre">FOSUserBundle</span></tt> simplemente creando un archivo con el mismo nombre.</p>
+<div class="section" id="sustituyendo-controladores">
+<h2>Sustituyendo Controladores<a class="headerlink" href="#sustituyendo-controladores" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Supongamos que deseas añadir alguna funcionalidad al <tt class="docutils literal"><span class="pre">RegisterAction</span></tt> de <tt class="docutils literal"><span class="pre">RegistrationController</span></tt> que vive dentro de <tt class="docutils literal"><span class="pre">FOSUserBundle</span></tt>. Para ello, basta con crear tu propio archivo <tt class="file docutils literal"><span class="pre">RegistrationController.php</span></tt>, reemplaza el método original, y cambia su funcionalidad:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/UserBundle/Controller/RegistrationController.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\UserBundle\Controller</span><span class="p">;</span>
+
+    <span class="k">use</span> <span class="nx">FOS\UserBundle\Controller\RegistrationController</span> <span class="k">as</span> <span class="nx">BaseController</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">RegistrationController</span> <span class="k">extends</span> <span class="nx">BaseController</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">registerAction</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$response</span> <span class="o">=</span> <span class="k">parent</span><span class="o">::</span><span class="na">registerAction</span><span class="p">();</span>
+
+        <span class="c1">// haz tus cosas a medida</span>
+
+        <span class="k">return</span> <span class="nv">$response</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Dependiendo de cuanto necesites cambiar el comportamiento, puedes llamar a <tt class="docutils literal"><span class="pre">parent::RegisterAction()</span></tt> o sustituir por completo su lógica con la tuya.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">La sustitución de controladores de esta forma solo funciona si el paquete se refiere al controlador usando la sintaxis estándar <tt class="docutils literal"><span class="pre">FOSUserBundle:Registration:register</span></tt> en las rutas y plantillas. Esta es la buena práctica.</p>
+</div>
+</div>
+<div class="section" id="sustituyendo-recursos-plantillas-enrutado-validacion-etc">
+<h2>Sustituyendo recursos: Plantillas, Enrutado, Validación, etc.<a class="headerlink" href="#sustituyendo-recursos-plantillas-enrutado-validacion-etc" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>También puedes cambiar la mayoría de los recursos, simplemente creando un archivo en la misma ubicación que en el padre de tu paquete.</p>
+<p>Por ejemplo, es muy común que necesites reemplazar la plantilla <tt class="docutils literal"><span class="pre">base.html.twig</span></tt> de <tt class="docutils literal"><span class="pre">FOSUserBundle</span></tt> para que utilice el diseño base de tu aplicación.
+Debido a que el archivo vive en <tt class="docutils literal"><span class="pre">Resources/views/base.html.twig</span></tt> en <tt class="docutils literal"><span class="pre">FOSUserBundle</span></tt>, puedes crear tu propio archivo en el mismo lugar dentro de <tt class="docutils literal"><span class="pre">AcmeUserBundle</span></tt>.
+<em>Symfony</em> ignorará el archivo que vive dentro de <tt class="docutils literal"><span class="pre">FOSUserBundle</span></tt> por completo, y en su lugar utilizará ese archivo.</p>
+<p>Lo mismo ocurre con los archivos de enrutado, la configuración de validación y otros recursos.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">La sustitución de recursos sólo funciona cuando haces referencia a los recursos con el método <tt class="docutils literal"><span class="pre">&#64;FosUserBundle/Resources/config/routing/security.xml</span></tt>.
+Si te refieres a recursos sin utilizar el acceso directo <tt class="docutils literal"><span class="pre">&#64;BundleName</span></tt>, no puedes reemplazar en esta forma.</p>
+</div>
+<div class="admonition caution">
+<p class="first admonition-title">Prudencia</p>
+<p class="last">Los archivos de traducción no funcionan de la misma manera como se describió anteriormente. todos los archivos de traducción se acumulan en un conjunto de &#8220;piscinas&#8221; (una por cada) dominio. <em>Symfony</em>, primero carga los archivos de traducción desde los paquetes (en el orden en que se inician los paquetes) y luego desde tu directorio <tt class="docutils literal"><span class="pre">app(Resources</span></tt>. Si la misma traducción se especifica en dos recursos, gana la traducción de los recursos cargada al último.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="override.html" title="Cómo sustituir cualquier parte de un paquete"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="best_practices.html" title="Estructura de un paquete y buenas prácticas"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

@@ -1,0 +1,282 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo agregar la funcionalidad “recuérdame” al inicio de sesión &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo implementar tu propio votante para agregar direcciones IP a la lista negra" href="voters.html" />
+    <link rel="prev" title="Cómo probar repositorios Doctrine" href="../testing/doctrine.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="voters.html" title="Cómo implementar tu propio votante para agregar direcciones IP a la lista negra"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="../testing/doctrine.html" title="Cómo probar repositorios Doctrine"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-agregar-la-funcionalidad-recuerdame-al-inicio-de-sesion">
+<h1>Cómo agregar la funcionalidad &#8220;recuérdame&#8221; al inicio de sesión<a class="headerlink" href="#como-agregar-la-funcionalidad-recuerdame-al-inicio-de-sesion" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Una vez que un usuario está autenticado, normalmente sus credenciales se almacenan en la sesión. Esto significa que cuando termina la sesión se desechará la sesión y tienes que proporcionar de nuevo tus datos de acceso la próxima vez que desees acceder a la aplicación. Puedes permitir a tus usuarios que puedan optar por permanecer conectados durante más tiempo del que dure la sesión con una <em class="dfn">cookie</em> con la opción <tt class="docutils literal"><span class="pre">remember_me</span></tt> del cortafuegos.
+El cortafuegos necesita tener configurada una clave secreta, la cual se utiliza para cifrar el contenido de la <em class="dfn">cookie</em>. También tiene varias opciones con los valores predeterminados que se muestran a continuación:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/security.yml</span>
+<span class="l-Scalar-Plain">firewalls</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">main</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">remember_me</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">key</span><span class="p-Indicator">:</span>      <span class="l-Scalar-Plain">aSecretKey</span>
+            <span class="l-Scalar-Plain">lifetime</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">3600</span>
+            <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">/</span>
+            <span class="l-Scalar-Plain">domain</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">~</span> <span class="c1"># El valor predeterminado es el dominio actual de $_SERVER</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;!-- app/config/security.xml --&gt;
+&lt;config&gt;
+    &lt;firewall&gt;
+        &lt;remember-me
+            key="aSecretKey"
+            lifetime="3600"
+            path="/"
+            domain="" &lt;!-- El valor predeterminado es el dominio actual de $_SERVER --&gt;
+        /&gt;
+    &lt;/firewall&gt;
+&lt;/config&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/security.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;firewalls&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;main&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;remember_me&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;key&#39;</span>                     <span class="o">=&gt;</span> <span class="s1">&#39;aSecretKey&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;lifetime&#39;</span>                <span class="o">=&gt;</span> <span class="mi">3600</span><span class="p">,</span>
+            <span class="s1">&#39;path&#39;</span>                    <span class="o">=&gt;</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;domain&#39;</span>                  <span class="o">=&gt;</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="c1">// Por omisión, el dominio de $_SERVER</span>
+        <span class="p">)),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Es buena idea ofrecer al usuario la opción de utilizar o no la funcionalidad recuérdame, ya que no siempre es adecuada. La forma habitual de hacerlo consiste en añadir una casilla de verificación en el formulario de acceso. Al dar a la casilla de verificación el nombre <tt class="docutils literal"><span class="pre">_remember_me</span></tt>, la <em class="dfn">cookie</em> se ajustará automáticamente cuando la casilla esté marcada y el usuario inicia sesión satisfactoriamente. Por lo tanto, tu formulario de acceso específico en última instancia, podría tener este aspecto:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/SecurityBundle/Resources/views/Security/login.html.twig #}</span>
+<span class="cp">{%</span> <span class="k">if</span> <span class="nv">error</span> <span class="cp">%}</span>
+    <span class="nt">&lt;div&gt;</span><span class="cp">{{</span> <span class="nv">error.message</span> <span class="cp">}}</span><span class="nt">&lt;/div&gt;</span>
+<span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span>
+
+<span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">path</span><span class="o">(</span><span class="s1">&#39;login_check&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span> <span class="na">method=</span><span class="s">&quot;post&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">for=</span><span class="s">&quot;username&quot;</span><span class="nt">&gt;</span>Username:<span class="nt">&lt;/label&gt;</span>
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">id=</span><span class="s">&quot;username&quot;</span> <span class="na">name=</span><span class="s">&quot;_username&quot;</span> <span class="na">value=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">last_username</span> <span class="cp">}}</span><span class="s">&quot;</span> <span class="nt">/&gt;</span>
+
+    <span class="nt">&lt;label</span> <span class="na">for=</span><span class="s">&quot;password&quot;</span><span class="nt">&gt;</span>Password:<span class="nt">&lt;/label&gt;</span>
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;password&quot;</span> <span class="na">id=</span><span class="s">&quot;password&quot;</span> <span class="na">name=</span><span class="s">&quot;_password&quot;</span> <span class="nt">/&gt;</span>
+
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;checkbox&quot;</span> <span class="na">id=</span><span class="s">&quot;remember_me&quot;</span> <span class="na">name=</span><span class="s">&quot;_remember_me&quot;</span> <span class="na">checked</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">for=</span><span class="s">&quot;remember_me&quot;</span><span class="nt">&gt;</span>Keep me logged in<span class="nt">&lt;/label&gt;</span>
+
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span> <span class="na">name=</span><span class="s">&quot;login&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/form&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="cp">&lt;?php</span> <span class="c1">// src/Acme/SecurityBundle/Resources/views/Security/login.html.php ?&gt;</span>
+<span class="o">&lt;?</span><span class="nx">php</span> <span class="k">if</span> <span class="p">(</span><span class="nv">$error</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+    <span class="nt">&lt;div&gt;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$error</span><span class="o">-&gt;</span><span class="na">getMessage</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="nt">&lt;/div&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">endif</span><span class="p">;</span> <span class="cp">?&gt;</span>
+
+<span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">generate</span><span class="p">(</span><span class="s1">&#39;login_check&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="s">&quot;</span> <span class="na">method=</span><span class="s">&quot;post&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">for=</span><span class="s">&quot;username&quot;</span><span class="nt">&gt;</span>Username:<span class="nt">&lt;/label&gt;</span>
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">id=</span><span class="s">&quot;username&quot;</span>
+           <span class="na">name=</span><span class="s">&quot;_username&quot;</span> <span class="na">value=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$last_username</span> <span class="cp">?&gt;</span><span class="s">&quot;</span> <span class="nt">/&gt;</span>
+
+    <span class="nt">&lt;label</span> <span class="na">for=</span><span class="s">&quot;password&quot;</span><span class="nt">&gt;</span>Password:<span class="nt">&lt;/label&gt;</span>
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;password&quot;</span> <span class="na">id=</span><span class="s">&quot;password&quot;</span> <span class="na">name=</span><span class="s">&quot;_password&quot;</span> <span class="nt">/&gt;</span>
+
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;checkbox&quot;</span> <span class="na">id=</span><span class="s">&quot;remember_me&quot;</span> <span class="na">name=</span><span class="s">&quot;_remember_me&quot;</span> <span class="na">checked</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;label</span> <span class="na">for=</span><span class="s">&quot;remember_me&quot;</span><span class="nt">&gt;</span>Keep me logged in<span class="nt">&lt;/label&gt;</span>
+
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span> <span class="na">name=</span><span class="s">&quot;login&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/form&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>El usuario entonces, se registra automáticamente en las subsecuentes visitas, mientras que la <em class="dfn">cookie</em> sea válida.</p>
+<div class="section" id="forzando-al-usuario-a-volver-a-autenticarse-antes-de-acceder-a-ciertos-recursos">
+<h2>Forzando al usuario a volver a autenticarse antes de acceder a ciertos recursos<a class="headerlink" href="#forzando-al-usuario-a-volver-a-autenticarse-antes-de-acceder-a-ciertos-recursos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuando el usuario vuelve a tu sitio, se autentica automáticamente en función de la información almacenada en la <em class="dfn">cookie</em> recuérdame. Esto permite al usuario acceder a recursos protegidos como si el usuario se hubiera autenticado en realidad al visitar el sitio.</p>
+<p>En algunos casos, sin embargo, puedes obligar al usuario a realmente volver a autenticarse antes de acceder a ciertos recursos. Por ejemplo, podrías permitir a un usuario de &#8220;recuérdame&#8221; ver la información básica de la cuenta, pero luego obligarlo a volver a autenticarse realmente antes de modificar dicha información.</p>
+<p>El componente de seguridad proporciona una manera fácil de hacerlo. Además de los roles asignados expresamente, a los usuarios se les asigna automáticamente uno de los siguientes roles, dependiendo de cómo se hayan autenticado:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_ANONYMOUSLY</span></tt> &#8212; asignado automáticamente a un usuario que está en una parte del sitio protegida por el cortafuegos, pero que no ha iniciado sesión.
+Esto sólo es posible si se le ha permitido el acceso anónimo.</li>
+<li><tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_REMEMBERED</span></tt> &#8212; asignado automáticamente a un usuario autenticado a través de una <em class="dfn">cookie</em> recuérdame.</li>
+<li><tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_FULLY</span></tt> &#8212; asignado automáticamente a un usuario que haya proporcionado sus datos de acceso durante la sesión actual.</li>
+</ul>
+<p>Las puedes utilizar para controlar el acceso más allá de los roles asignados explícitamente.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si tienes el rol <tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_REMEMBERED</span></tt>, entonces también tienes el rol <tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_ANONYMOUSLY</span></tt>. Si tienes el rol <tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_FULLY</span></tt>, entonces también tienes los otros dos roles. En otras palabras, estos roles representan tres niveles incrementales de &#8220;fortaleza&#8221; en la autenticación.</p>
+</div>
+<p>Puedes utilizar estos roles adicionales para un control más granular sobre el acceso a partes de un sitio. Por ejemplo, posiblemente desees que el usuario pueda ver su cuenta en <tt class="docutils literal"><span class="pre">/cuenta</span></tt> cuando está autenticado por <em class="dfn">cookie</em>, pero tiene que proporcionar sus datos de acceso para poder editar la información de la cuenta. Lo puedes hacer protegiendo acciones específicas del controlador usando estos roles. La acción de edición en el controlador se puede proteger usando el servicio contexto.</p>
+<p>En el siguiente ejemplo, la acción sólo es permitida si el usuario tiene el rol <tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_FULLY</span></tt>.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Exception\AccessDeniedException</span>
+<span class="c1">// ...</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">editAction</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">false</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;security.context&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">isGranted</span><span class="p">(</span>
+        <span class="s1">&#39;IS_AUTHENTICATED_FULLY&#39;</span>
+    <span class="p">))</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">AccessDeniedException</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>También puedes optar por instalar y utilizar el opcional <a class="reference external" href="https://github.com/schmittjoh/JMSSecurityExtraBundle">JMSSecurityExtraBundle</a>, el cual puede proteger tu controlador usando anotaciones:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">JMS\SecurityExtraBundle\Annotation\Secure</span><span class="p">;</span>
+
+<span class="sd">/**</span>
+<span class="sd"> * @Secure(roles=&quot;IS_AUTHENTICATED_FULLY&quot;)</span>
+<span class="sd"> */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">editAction</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p>Si, además, hubiera un control de acceso en tu configuración de seguridad que requiere que el usuario tenga un rol <tt class="docutils literal"><span class="pre">ROLE_USER</span></tt> a fin de acceder a cualquier área de la cuenta, entonces tendríamos la siguiente situación:</p>
+<ul class="last simple">
+<li>Si un usuario no autenticado (o un usuario autenticado anónimamente) intenta acceder al área de la cuenta, el usuario se tendrá que autenticar.</li>
+<li>Una vez que el usuario ha introducido su nombre de usuario y contraseña, asumiendo que el usuario recibe el rol <tt class="docutils literal"><span class="pre">ROLE_USER</span></tt> de tu configuración, el usuario tendrá el rol <tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_FULLY</span></tt> y podrá acceder a cualquier página en la sección de cuenta, incluyendo el controlador <tt class="docutils literal"><span class="pre">editAction</span></tt>.</li>
+<li>Si termina la sesión del usuario, cuando el usuario vuelve al sitio, podrá acceder a cada página de la cuenta &#8212;a excepción de la página de edición&#8212; sin verse obligado a volver a autenticarse. Sin embargo, cuando intenta acceder al controlador <tt class="docutils literal"><span class="pre">editAction</span></tt>, se verá obligado a volver a autenticarse, ya que no está, sin embargo, totalmente autenticado.</li>
+</ul>
+</div>
+<p>Para más información sobre proteger servicios o métodos de esta manera, consulta <a class="reference internal" href="securing_services.html"><em>Cómo proteger cualquier servicio o método de tu aplicación</em></a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="voters.html" title="Cómo implementar tu propio votante para agregar direcciones IP a la lista negra"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="../testing/doctrine.html" title="Cómo probar repositorios Doctrine"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

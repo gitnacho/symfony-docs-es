@@ -1,0 +1,572 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo exponer la configuración semántica de un paquete &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo enviar correo electrónico" href="../email/email.html" />
+    <link rel="prev" title="Cómo sustituir cualquier parte de un paquete" href="override.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../email/email.html" title="Cómo enviar correo electrónico"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="override.html" title="Cómo sustituir cualquier parte de un paquete"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-exponer-la-configuracion-semantica-de-un-paquete">
+<span id="index-0"></span><h1>Cómo exponer la configuración semántica de un paquete<a class="headerlink" href="#como-exponer-la-configuracion-semantica-de-un-paquete" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Si abres el archivo de configuración de tu aplicación (por lo general <tt class="docutils literal"><span class="pre">app/config/config.yml</span></tt>), puedes encontrar una serie de configuraciones de diferentes &#8220;espacios de nombres&#8221;, como <tt class="docutils literal"><span class="pre">framework</span></tt>, <tt class="docutils literal"><span class="pre">twig</span></tt> y <tt class="docutils literal"><span class="pre">doctrine</span></tt>. Cada una de estas configura un paquete específico, lo cual te permite configurar las cosas a nivel superior y luego dejar que el paquete haga todo lo de bajo nivel, haciendo los cambios complejos que resulten.</p>
+<p>Por ejemplo, el siguiente fragmento le dice al <tt class="docutils literal"><span class="pre">FrameworkBundle</span></tt> que habilite la integración de formularios, lo cual implica la definición de unos cuantos servicios, así como la integración de otros componentes relacionados:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">framework</span><span class="p-Indicator">:</span>
+    <span class="c1"># ...</span>
+    <span class="l-Scalar-Plain">form</span><span class="p-Indicator">:</span>            <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;framework:config&gt;</span>
+    <span class="nt">&lt;framework:form</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/framework:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="c1">// ...</span>
+    <span class="s1">&#39;form&#39;</span>            <span class="o">=&gt;</span> <span class="k">true</span><span class="p">,</span>
+    <span class="c1">// ...</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Cuando creas un paquete, tienes dos opciones sobre cómo manejar la configuración:</p>
+<ol class="arabic">
+<li><p class="first"><strong>Configuración normal del servicio</strong> (<em>fácil</em>):</p>
+<blockquote>
+<div><p>Puedes especificar tus servicios en un archivo de configuración (por ejemplo, <tt class="file docutils literal"><span class="pre">services.yml</span></tt>) que vive en tu paquete y luego importarlo desde la configuración principal de tu aplicación. Esto es realmente fácil, rápido y completamente eficaz. Si usas <a class="reference internal" href="../../book/service_container.html#book-service-container-parameters"><em>parámetros</em></a>, entonces todavía tienes cierta flexibilidad para personalizar el paquete desde la configuración de tu aplicación. Consulta &#8220;<a class="reference internal" href="../../book/service_container.html#service-container-imports-directive"><em>Importando configuración con imports</em></a>&#8221; para más detalles.</p>
+</div></blockquote>
+</li>
+<li><p class="first"><strong>Exponiendo la configuración semántica</strong> (<em>avanzado</em>):</p>
+<blockquote>
+<div><p>Esta es la forma de configuración que se hace con los paquetes básicos (como se describió anteriormente). La idea básica es que, en lugar de permitir al usuario sustituir parámetros individuales, permites al usuario configurar unos cuantos, en concreto la creación de opciones. A medida que desarrollas el paquete, vas analizando la configuración y cargas tus servicios en una clase &#8220;Extensión&#8221;. Con este método, no tendrás que importar ningún recurso de configuración desde la configuración principal de tu aplicación: la clase Extensión puede manejar todo esto.</p>
+</div></blockquote>
+</li>
+</ol>
+<p>La segunda opción &#8212;de la cual aprenderás en este artículo&#8212; es mucho más flexible, pero también requiere más tiempo de configuración. Si te preguntas qué método debes utilizar, probablemente sea una buena idea empezar con el método #1, y  más adelante, si es necesario, cambiar al #2.</p>
+<p>El segundo método tiene varias ventajas específicas:</p>
+<ul class="simple">
+<li>Es mucho más poderoso que la simple definición de parámetros: un valor de opción específico podría inducir la creación de muchas definiciones de servicios;</li>
+<li>La habilidad de tener jerarquías de configuración</li>
+<li>La fusión inteligente de varios archivos de configuración (por ejemplo, <tt class="file docutils literal"><span class="pre">config_dev.yml</span></tt> y <tt class="file docutils literal"><span class="pre">config.yml</span></tt>) sustituye los demás ajustes;</li>
+<li>Configurando la validación (si utilizas una <a class="reference internal" href="#cookbook-bundles-extension-config-class"><em>clase Configuración</em></a>);</li>
+<li>Autocompletado en tu <em>IDE</em> cuando creas un <em>XSD</em> y los desarrolladores del <em>IDE</em> utilizan <em>XML</em>.</li>
+</ul>
+<div class="sidebar">
+<p class="first sidebar-title">Sustituyendo parámetros del paquete</p>
+<p class="last">Si un paquete proporciona una clase <em>Extension</em>, entonces, generalmente <em>no debes</em> reemplazar los parámetros del contenedor de servicios de ese paquete. La idea es que si está presente una clase Extensión, cada ajuste que deba ser configurable debe estar presente en la configuración disponible en esa clase. En otras palabras, la clase Extensión define cómo dibulgas todas las opciones de configuración apoyadas para las cuales, por mantenimiento, existe compatibilidad hacia atrás.</p>
+</div>
+<div class="section" id="creando-una-clase-extension">
+<span id="index-1"></span><h2>Creando una clase Extensión<a class="headerlink" href="#creando-una-clase-extension" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si eliges exponer una configuración semántica de tu paquete, primero tendrás que crear una nueva clase &#8220;Extensión&#8221;, la cual debe manipular el proceso.
+Esta clase debe vivir en el directorio <tt class="docutils literal"><span class="pre">DependencyInjection</span></tt> de tu paquete y su nombre se debe construir reemplazar el sufijo <tt class="docutils literal"><span class="pre">Bundle</span></tt> del nombre de la clase del paquete con <tt class="docutils literal"><span class="pre">Extension</span></tt>. Por ejemplo, la clase Extensión de <tt class="docutils literal"><span class="pre">AcmeHelloBundle</span></tt> se llamaría <tt class="docutils literal"><span class="pre">AcmeHelloExtension</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// Acme/HelloBundle/DependencyInjection/AcmeHelloExtension.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\DependencyInjection\Extension</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AcmeHelloExtension</span> <span class="k">extends</span> <span class="nx">Extension</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="k">array</span> <span class="nv">$configs</span><span class="p">,</span> <span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// aquí se lleva a cabo toda la lógica</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getXsdValidationBasePath</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../Resources/config/&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getNamespace</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;http://www.example.com/symfony/schema/&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Los métodos <tt class="docutils literal"><span class="pre">getXsdValidationBasePath</span></tt> y <tt class="docutils literal"><span class="pre">getNamespace</span></tt> sólo son necesarios si el paquete opcional XSD proporciona la configuración.</p>
+</div>
+<p>La presencia de la clase anterior significa que ahora puedes definir una configuración de espacio de nombres <tt class="docutils literal"><span class="pre">acme_hello</span></tt> en cualquier archivo de configuración. El espacio de nombres <tt class="docutils literal"><span class="pre">acme_hello</span></tt> se construyó a partir del nombre en minúsculas de la clase extensión eliminando la palabra <tt class="docutils literal"><span class="pre">Extension</span></tt>, a continuación un guión bajo y el resto del nombre. En otras palabras, <tt class="docutils literal"><span class="pre">AcmeHelloExtension</span></tt> se convierte en <tt class="docutils literal"><span class="pre">acme_hello</span></tt>.</p>
+<p>Puedes empezar de inmediato, especificando la configuración en este espacio de nombres:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">acme_hello</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">~</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot; ?&gt;</span>
+
+<span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xmlns:acme_hello=</span><span class="s">&quot;http://www.example.com/symfony/schema/&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://www.example.com/symfony/schema/ http://www.example.com/symfony/schema/hello-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+   <span class="nt">&lt;acme_hello:config</span> <span class="nt">/&gt;</span>
+   ...
+
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;acme_hello&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">());</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Si sigues las convenciones de nomenclatura mencionadas anteriormente, entonces el método <tt class="docutils literal"><span class="pre">load()</span></tt> el cual carga el código de tu extensión es llamado siempre que tu paquete sea registrado en el núcleo. En otras palabras, incluso si el usuario no proporciona ninguna configuración (es decir, la entrada <tt class="docutils literal"><span class="pre">acme_hello</span></tt> ni siquiera figura), el método <tt class="docutils literal"><span class="pre">load()</span></tt> será llamado y se le pasará una matriz <tt class="docutils literal"><span class="pre">$configs</span></tt> vacía. Todavía puedes proporcionar algunos parámetros predeterminados para tu paquete si lo deseas.</p>
+</div>
+</div>
+<div class="section" id="analizando-la-matriz-configs">
+<h2>Analizando la matriz <tt class="docutils literal"><span class="pre">$configs</span></tt><a class="headerlink" href="#analizando-la-matriz-configs" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cada vez que un usuario incluya el espacio de nombres <tt class="docutils literal"><span class="pre">acme_hello</span></tt> en un archivo de configuración, la configuración bajo este se agrega a una gran matriz de configuraciones y se pasa al método <tt class="docutils literal"><span class="pre">load()</span></tt> de tu extensión (<em>Symfony2</em> convierte automáticamente <em>XML</em> y <em>YAML</em> a una matriz).</p>
+<p>Tomemos la siguiente configuración:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">acme_hello</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">foo</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">fooValue</span>
+    <span class="l-Scalar-Plain">bar</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">barValue</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot; ?&gt;</span>
+
+<span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xmlns:acme_hello=</span><span class="s">&quot;http://www.example.com/symfony/schema/&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://www.example.com/symfony/schema/ http://www.example.com/symfony/schema/hello-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;acme_hello:config</span> <span class="na">foo=</span><span class="s">&quot;fooValue&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;acme_hello:bar&gt;</span>barValue<span class="nt">&lt;/acme_hello:bar&gt;</span>
+    <span class="nt">&lt;/acme_hello:config&gt;</span>
+
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;acme_hello&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;foo&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;fooValue&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;bar&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;barValue&#39;</span><span class="p">,</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>La matriz pasada a tu método <tt class="docutils literal"><span class="pre">load()</span></tt> se verá así:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">array</span><span class="p">(</span>
+    <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;foo&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;fooValue&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;bar&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;barValue&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Ten en cuenta que se trata de una <em>matriz de matrices</em>, y no sólo una única matriz plana con los valores de configuración. Esto es intencional. Por ejemplo, si <tt class="docutils literal"><span class="pre">acme_hello</span></tt> aparece en otro archivo de configuración &#8212;digamos en <tt class="file docutils literal"><span class="pre">config_dev.yml</span></tt>&#8212; con diferentes valores bajo él, entonces la matriz entrante puede tener este aspecto:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">array</span><span class="p">(</span>
+    <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;foo&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;fooValue&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;bar&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;barValue&#39;</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;foo&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;fooDevValue&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;baz&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;newConfigEntry&#39;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>El orden de las dos matrices depende de cuál es el primer conjunto.</p>
+<p>Entonces, es tu trabajo, decidir cómo se fusionan estas configuraciones. Es posible que, por ejemplo, después tengas que sustituir valores anteriores o alguna combinación de ellos.</p>
+<p>Más tarde, en la sección <a class="reference internal" href="#cookbook-bundles-extension-config-class"><em>clase Configuración</em></a>, aprenderás una forma realmente robusta para manejar esto. Pero por ahora, sólo puedes combinarlos manualmente:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="k">array</span> <span class="nv">$configs</span><span class="p">,</span> <span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$config</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+    <span class="k">foreach</span> <span class="p">(</span><span class="nv">$configs</span> <span class="k">as</span> <span class="nv">$subConfig</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nv">$config</span> <span class="o">=</span> <span class="nb">array_merge</span><span class="p">(</span><span class="nv">$config</span><span class="p">,</span> <span class="nv">$subConfig</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Ahora usa la matriz simple $config</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition caution">
+<p class="first admonition-title">Prudencia</p>
+<p class="last">Asegúrate de que la técnica de fusión anterior tenga sentido para tu paquete. Este es sólo un ejemplo, y debes tener cuidado de no usarlo a ciegas.</p>
+</div>
+</div>
+<div class="section" id="usando-el-metodo-load">
+<h2>Usando el método <tt class="docutils literal"><span class="pre">load()</span></tt><a class="headerlink" href="#usando-el-metodo-load" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Dentro de <tt class="docutils literal"><span class="pre">load()</span></tt>, la variable <tt class="docutils literal"><span class="pre">$container</span></tt> se refiere a un contenedor que sólo sabe acerca de esta configuración de espacio de nombres (es decir, no contiene información de los servicios cargados por otros paquetes). El objetivo del método <tt class="docutils literal"><span class="pre">load()</span></tt> es manipular el contenedor, añadir y configurar cualquier método o servicio necesario por tu paquete.</p>
+<div class="section" id="cargando-la-configuracion-de-recursos-externos">
+<h3>Cargando la configuración de recursos externos<a class="headerlink" href="#cargando-la-configuracion-de-recursos-externos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Una de las cosas comunes por hacer es cargar un archivo de configuración externo que puede contener la mayor parte de los servicios que necesita tu paquete. Por ejemplo, supongamos que tienes un archivo <tt class="docutils literal"><span class="pre">services.xml</span></tt> el cual contiene gran parte de la configuración de los servicios en tu paquete:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Loader\XmlFileLoader</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\FileLocator</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="k">array</span> <span class="nv">$configs</span><span class="p">,</span> <span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// prepara tu variable $config</span>
+
+    <span class="nv">$loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XmlFileLoader</span><span class="p">(</span><span class="nv">$container</span><span class="p">,</span> <span class="k">new</span> <span class="nx">FileLocator</span><span class="p">(</span><span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../Resources/config&#39;</span><span class="p">));</span>
+    <span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">load</span><span class="p">(</span><span class="s1">&#39;services.xml&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Incluso lo podrías hacer condicionalmente, basándote en uno de los valores de configuración.
+Por ejemplo, supongamos que sólo deseas cargar un conjunto de servicios si una opción <tt class="docutils literal"><span class="pre">habilitado</span></tt> es pasada y fijada en <tt class="docutils literal"><span class="pre">true</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="k">array</span> <span class="nv">$configs</span><span class="p">,</span> <span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// prepara tu variable $config</span>
+
+    <span class="nv">$loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XmlFileLoader</span><span class="p">(</span><span class="nv">$container</span><span class="p">,</span> <span class="k">new</span> <span class="nx">FileLocator</span><span class="p">(</span><span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../Resources/config&#39;</span><span class="p">));</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$config</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">])</span> <span class="o">&amp;&amp;</span> <span class="nv">$config</span><span class="p">[</span><span class="s1">&#39;enabled&#39;</span><span class="p">])</span> <span class="p">{</span>
+        <span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">load</span><span class="p">(</span><span class="s1">&#39;services.xml&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="configurando-servicios-y-ajustando-parametros">
+<h3>Configurando servicios y ajustando parámetros<a class="headerlink" href="#configurando-servicios-y-ajustando-parametros" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Una vez que hayas cargado alguna configuración de servicios, posiblemente necesites modificar la configuración basándote en alguno de los valores entrantes. Por ejemplo, supongamos que tienes un servicio cuyo primer argumento es algún &#8220;tipo&#8221; de cadena que se debe utilizar internamente. Quisieras que el usuario del paquete lo configurara fácilmente, por tanto en el archivo de configuración de tu servicio (por ejemplo, <tt class="docutils literal"><span class="pre">services.xml</span></tt>), defines este servicio y utilizas un parámetro en blanco &#8212;<tt class="docutils literal"><span class="pre">acme_hello.my_service_options</span></tt>&#8212; como primer argumento:</p>
+<div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;</span>
+<span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;parameters&gt;</span>
+        <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;acme_hello.my_service_type&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/parameters&gt;</span>
+
+        <span class="nt">&lt;services&gt;</span>
+        <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;acme_hello.my_service&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\HelloBundle\MyService&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;argument&gt;</span>%acme_hello.my_service_type%<span class="nt">&lt;/argument&gt;</span>
+        <span class="nt">&lt;/service&gt;</span>
+        <span class="nt">&lt;/services&gt;</span>
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+<p>Pero ¿por qué definir un parámetro vacío y luego pasarlo a tu servicio?
+La respuesta es que vas a establecer este parámetro en tu clase Extensión, basándote en los valores de configuración entrantes. Supongamos, por ejemplo, que deseas permitir al usuario definir esta opción de <em>tipo</em> en una clave denominada <tt class="docutils literal"><span class="pre">my_type</span></tt>.
+Para hacerlo agrega lo siguiente al método <tt class="docutils literal"><span class="pre">load()</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="k">array</span> <span class="nv">$configs</span><span class="p">,</span> <span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// prepara tu variable $config</span>
+
+    <span class="nv">$loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XmlFileLoader</span><span class="p">(</span><span class="nv">$container</span><span class="p">,</span> <span class="k">new</span> <span class="nx">FileLocator</span><span class="p">(</span><span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../Resources/config&#39;</span><span class="p">));</span>
+    <span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">load</span><span class="p">(</span><span class="s1">&#39;services.xml&#39;</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$config</span><span class="p">[</span><span class="s1">&#39;my_type&#39;</span><span class="p">]))</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">\InvalidArgumentException</span><span class="p">(</span><span class="s1">&#39;The &quot;my_type&quot; option must be set&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;acme_hello.my_service_type&#39;</span><span class="p">,</span> <span class="nv">$config</span><span class="p">[</span><span class="s1">&#39;my_type&#39;</span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ahora, el usuario puede configurar eficientemente el servicio especificando el valor de configuración <tt class="docutils literal"><span class="pre">my_type</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">acme_hello</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">my_type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">foo</span>
+    <span class="c1"># ...</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot; ?&gt;</span>
+
+<span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xmlns:acme_hello=</span><span class="s">&quot;http://www.example.com/symfony/schema/&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://www.example.com/symfony/schema/ http://www.example.com/symfony/schema/hello-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;acme_hello:config</span> <span class="na">my_type=</span><span class="s">&quot;foo&quot;</span><span class="nt">&gt;</span>
+        <span class="c">&lt;!-- ... --&gt;</span>
+    <span class="nt">&lt;/acme_hello:config&gt;</span>
+
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;acme_hello&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;my_type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;foo&#39;</span><span class="p">,</span>
+    <span class="c1">// ...</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="parametros-globales">
+<h3>Parámetros globales<a class="headerlink" href="#parametros-globales" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Cuando configures el contenedor, tienes que estar consciente de que los siguientes parámetros globales están disponibles para que los utilices:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">kernel.name</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">kernel.environment</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">kernel.debug</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">kernel.root_dir</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">kernel.cache_dir</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">kernel.logs_dir</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">kernel.bundle_dirs</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">kernel.bundles</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">kernel.charset</span></tt></li>
+</ul>
+<div class="admonition caution">
+<p class="first admonition-title">Prudencia</p>
+<p class="last">Todos los nombres de los parámetros y servicios que comienzan con un guión bajo <tt class="docutils literal"><span class="pre">_</span></tt> están reservados para la plataforma, y no los debes definir en tus nuevos paquetes.</p>
+</div>
+</div>
+</div>
+<div class="section" id="validando-y-fusionando-con-una-clase-configuracion">
+<span id="cookbook-bundles-extension-config-class"></span><h2>Validando y fusionando con una clase configuración<a class="headerlink" href="#validando-y-fusionando-con-una-clase-configuracion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Hasta ahora, has fusionado manualmente las matrices de configuración y las has comprobado por medio de la presencia de los valores de configuración utilizando la función <tt class="docutils literal"><span class="pre">isset()</span></tt> de <em>PHP</em>. También hay disponible un sistema de <em>configuración</em> opcional, el cual puede ayudar con la fusión, validación, valores predeterminados y normalización de formato.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last"><em>Normalización de formato</em> se refiere al hecho de que ciertos formatos &#8212;en su mayoría <em>XML</em>&#8212; resultan en matrices de configuración ligeramente diferentes, y que estas matrices se deben &#8220;normalizar&#8221; para que coincidan con todo lo demás.</p>
+</div>
+<p>Para aprovechar las ventajas de este sistema, debes crear una clase <tt class="docutils literal"><span class="pre">Configuración</span></tt> y construir un árbol que define tu configuración en esa clase:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/DependencyInjection/Configuration.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\HelloBundle\DependencyInjection</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\Builder\TreeBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\ConfigurationInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Configuration</span> <span class="k">implements</span> <span class="nx">ConfigurationInterface</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getConfigTreeBuilder</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$treeBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">TreeBuilder</span><span class="p">();</span>
+        <span class="nv">$rootNode</span> <span class="o">=</span> <span class="nv">$treeBuilder</span><span class="o">-&gt;</span><span class="na">root</span><span class="p">(</span><span class="s1">&#39;acme_hello&#39;</span><span class="p">);</span>
+
+        <span class="nv">$rootNode</span>
+            <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;my_type&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">defaultValue</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="p">;</span>
+
+        <span class="k">return</span> <span class="nv">$treeBuilder</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>Se trata de un ejemplo <em>muy</em> sencillo, pero ahora puedes utilizar esta clase en el método <tt class="docutils literal"><span class="pre">load()</span></tt> para combinar tu configuración y forzar su validación. Si se pasan las demás opciones salvo <tt class="docutils literal"><span class="pre">my_type</span></tt>, el usuario recibirá una notificación con una excepción de que se ha pasado una opción no admitida:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\Processor</span><span class="p">;</span>
+<span class="c1">// ...</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="k">array</span> <span class="nv">$configs</span><span class="p">,</span> <span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$processor</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Processor</span><span class="p">();</span>
+    <span class="nv">$configuration</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Configuration</span><span class="p">();</span>
+    <span class="nv">$config</span> <span class="o">=</span> <span class="nv">$processor</span><span class="o">-&gt;</span><span class="na">processConfiguration</span><span class="p">(</span><span class="nv">$configuration</span><span class="p">,</span> <span class="nv">$configs</span><span class="p">);</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>El método <tt class="docutils literal"><span class="pre">processConfiguration()</span></tt> utiliza el árbol de configuración que has definido en la clase <tt class="docutils literal"><span class="pre">Configuración</span></tt> para validar, normalizar y fusionar todas las matrices de configuración.</p>
+<p>La clase <tt class="docutils literal"><span class="pre">Configuración</span></tt> puede ser mucho más complicada de lo que se muestra aquí, apoyando matrices de nodos, nodos &#8220;prototipo&#8221;, validación avanzada, normalización <em>XML</em> específica y fusión avanzada. La mejor manera de ver esto en acción es revisando algunas de las clases configuración del núcleo, como la <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Bundle/FrameworkBundle/DependencyInjection/Configuration.php">configuración del FrameworkBundle</a>  o la <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Bundle/TwigBundle/DependencyInjection/Configuration.php">configuración del TwigBundle</a>.</p>
+<div class="section" id="volcado-de-la-configuracion-predefinida">
+<h3>Volcado de la configuración predefinida<a class="headerlink" href="#volcado-de-la-configuracion-predefinida" title="Enlazar permanentemente con este título">¶</a></h3>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>La orden <tt class="docutils literal"><span class="pre">config:dump-reference</span></tt> se añadió en <em>Symfony</em> 2.1</p>
+<p>La orden <cite>config:dump-reference`</cite> permite volcar en consola la configuración predefinida en <em>YAML</em> de un paquete.</p>
+<p>Mientras que la configuración de tu paquete se encuentre en la ubicación estándar (<tt class="docutils literal"><span class="pre">TuPaquete\DependencyInjection\Configuration</span></tt>) y no tiene un <tt class="docutils literal"><span class="pre">__construct()</span></tt> funcionará automáticamente.  Si tienes algo diferente en tu clase <tt class="docutils literal"><span class="pre">Extensión</span></tt> tendrás que sobrescribir el método <tt class="docutils literal"><span class="pre">Extension::getConfiguration()</span></tt>.  Para que devuelva una instancia de tu <tt class="docutils literal"><span class="pre">Configuración</span></tt>.</p>
+<p>Puedes agregar comentarios y ejemplos a los nodos de configuración usando los métodos <tt class="docutils literal"><span class="pre">-&gt;setinfo()</span></tt> y <tt class="docutils literal"><span class="pre">-&gt;setExample()</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/DependencyExtension/Configuration.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\HelloBundle\DependencyInjection</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\Builder\TreeBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\ConfigurationInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Configuration</span> <span class="k">implements</span> <span class="nx">ConfigurationInterface</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getConfigTreeBuilder</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$treeBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">TreeBuilder</span><span class="p">();</span>
+        <span class="nv">$rootNode</span> <span class="o">=</span> <span class="nv">$treeBuilder</span><span class="o">-&gt;</span><span class="na">root</span><span class="p">(</span><span class="s1">&#39;acme_hello&#39;</span><span class="p">);</span>
+
+        <span class="nv">$rootNode</span>
+            <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;my_type&#39;</span><span class="p">)</span>
+                    <span class="o">-&gt;</span><span class="na">defaultValue</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+                    <span class="o">-&gt;</span><span class="na">setInfo</span><span class="p">(</span><span class="s1">&#39;what my_type configures&#39;</span><span class="p">)</span>
+                    <span class="o">-&gt;</span><span class="na">setExample</span><span class="p">(</span><span class="s1">&#39;example setting&#39;</span><span class="p">)</span>
+                <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="p">;</span>
+
+        <span class="k">return</span> <span class="nv">$treeBuilder</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>Este texto aparece en comentarios <em>YAML</em> en el resultado de la orden <tt class="docutils literal"><span class="pre">config:dump-reference</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="convenciones-de-extension">
+<span id="index-2"></span><h2>Convenciones de extensión<a class="headerlink" href="#convenciones-de-extension" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Al crear una extensión, sigue estas simples convenciones:</p>
+<ul class="simple">
+<li>La extensión se debe almacenar en el subespacio de nombres <tt class="docutils literal"><span class="pre">DependencyInjection</span></tt>;</li>
+<li>La extensión se debe nombrar después del nombre del paquete y con el sufijo <tt class="docutils literal"><span class="pre">Extension</span></tt> (<tt class="docutils literal"><span class="pre">AcmeHelloExtension</span></tt> para <tt class="docutils literal"><span class="pre">AcmeHelloBundle</span></tt>);</li>
+<li>La extensión debe proporcionar un esquema <em>XSD</em>.</li>
+</ul>
+<p>Si sigues estas simples convenciones, <em>Symfony2</em> registrará automáticamente las extensiones. Si no es así, sustituye el método <a href="#id1"><span class="problematic" id="id2">:method:`Symfony\\Component\\HttpKernel\\Bundle\\Bundle::build`</span></a> en tu paquete:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Acme\HelloBundle\DependencyInjection\UnconventionalExtensionClass</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AcmeHelloBundle</span> <span class="k">extends</span> <span class="nx">Bundle</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">build</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">parent</span><span class="o">::</span><span class="na">build</span><span class="p">(</span><span class="nv">$container</span><span class="p">);</span>
+
+        <span class="c1">// registra manualmente las extensiones que no siguen las convenciones</span>
+        <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">registerExtension</span><span class="p">(</span><span class="k">new</span> <span class="nx">UnconventionalExtensionClass</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>En este caso, la clase Extensión también debe implementar un método <tt class="docutils literal"><span class="pre">getAlias()</span></tt> que devuelva un alias único nombrado después del paquete (por ejemplo, <tt class="docutils literal"><span class="pre">acme_hello</span></tt>). Esto es necesario porque el nombre de clase no sigue la norma de terminar en <tt class="docutils literal"><span class="pre">Extension</span></tt>.</p>
+<p>Además, el método <tt class="docutils literal"><span class="pre">load()</span></tt> de tu extensión <em>sólo</em> se llama si el usuario especifica el alias <tt class="docutils literal"><span class="pre">acme_hello</span></tt> en por lo menos un archivo de configuración. Una vez más, esto se debe a que la clase Extensión no se ajusta a las normas establecidas anteriormente, por lo tanto nada sucede automáticamente.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../email/email.html" title="Cómo enviar correo electrónico"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="override.html" title="Cómo sustituir cualquier parte de un paquete"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

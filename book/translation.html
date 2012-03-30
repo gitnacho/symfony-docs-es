@@ -1,0 +1,843 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Traduciendo &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../index.html" />
+    <link rel="up" title="Libro" href="index.html" />
+    <link rel="next" title="Contenedor de servicios" href="service_container.html" />
+    <link rel="prev" title="Caché HTTP" href="http_cache.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../index.html"><img src=".././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src=".././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="service_container.html" title="Contenedor de servicios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="http_cache.html" title="Caché HTTP"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Libro</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="traduciendo">
+<span id="index-0"></span><h1>Traduciendo<a class="headerlink" href="#traduciendo" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El término &#8220;internacionalización&#8221; (frecuentemente abreviado como <a class="reference external" href="http://es.wikipedia.org/wiki/Internacionalizaci%C3%B3n_y_localizaci%C3%B3n">i18n</a>) se refiere al proceso de abstraer cadenas y otros elementos específicos de la configuración regional de tu aplicación a una capa donde se puedan traducir y convertir basándose en la configuración regional del usuario (es decir, el idioma y país). Para el texto, esto significa envolver cada uno con una función capaz de traducir el texto (o &#8220;mensaje&#8221;) al idioma del usuario:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// el texto *siempre* se imprime en Inglés</span>
+<span class="k">echo</span> <span class="s1">&#39;Hello World&#39;</span><span class="p">;</span>
+
+<span class="c1">// el texto se puede traducir al idioma del</span>
+<span class="c1">// usuario final o predeterminado en Inglés</span>
+<span class="k">echo</span> <span class="nv">$translator</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;Hello World&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">El término <em>locale</em> se refiere más o menos al lenguaje y país del usuario. Esta puede ser cualquier cadena que entonces la aplicación utilice para manejar las traducciones y otras diferencias de formato (por ejemplo, formato de moneda). Recomendamos el código <em>ISO639-1</em> para el <em>idioma</em>, un guión bajo (<tt class="docutils literal"><span class="pre">_</span></tt>), luego el código <em>ISO3166</em> para el <em>país</em> (por ejemplo &#8220;<tt class="docutils literal"><span class="pre">es_MX</span></tt>&#8221; para Español/México).</p>
+</div>
+<p>En este capítulo, aprenderemos cómo preparar una aplicación para apoyar varias configuraciones regionales y, a continuación cómo crear traducciones para múltiples regiones. En general, el proceso tiene varios pasos comunes:</p>
+<ol class="arabic simple">
+<li>Habilitar y configurar el componente <tt class="docutils literal"><span class="pre">Translation</span></tt> de <em>Symfony</em>;</li>
+<li>Abstraer cadenas (es decir, &#8220;mensajes&#8221;) envolviéndolas en llamadas al <tt class="docutils literal"><span class="pre">Traductor</span></tt>;</li>
+<li>Crear recursos de traducción para cada configuración regional compatible, la cual traduce cada mensaje en la aplicación;</li>
+<li>Determinar, establecer y administrar la configuración regional del usuario para la petición y, opcionalmente, la sesión entera.</li>
+</ol>
+<div class="section" id="configurando">
+<span id="index-1"></span><h2>Configurando<a class="headerlink" href="#configurando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La traducción está a cargo de un <a class="reference internal" href="../glossary.html#term-servicio"><em class="xref std std-term">servicio</em></a> <tt class="docutils literal"><span class="pre">Traductor</span></tt> que utiliza la configuración regional del usuario para buscar y devolver mensajes traducidos. Antes de usarlo, habilita el <tt class="docutils literal"><span class="pre">Traductor</span></tt> en tu configuración:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">framework</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">translator</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">fallback</span><span class="p-Indicator">:</span> <span class="nv">en</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;framework:config&gt;</span>
+    <span class="nt">&lt;framework:translator</span> <span class="na">fallback=</span><span class="s">&quot;en&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/framework:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;translator&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;fallback&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;en&#39;</span><span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>La opción <tt class="docutils literal"><span class="pre">fallback</span></tt> define la configuración regional de reserva cuando la traducción no existe en la configuración regional del usuario.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Cuando la traducción no existe para una configuración regional, el traductor primero intenta encontrar la traducción para el idioma (&#8220;<tt class="docutils literal"><span class="pre">es</span></tt>&#8221; si el local es &#8220;<tt class="docutils literal"><span class="pre">es_MX</span></tt>&#8221; por ejemplo). Si esto también falla, busca una traducción utilizando la configuración regional de reserva.</p>
+</div>
+<p>La región utilizada en las traducciones es la almacenada en la petición. Esta, normalmente se establece en el atributo <tt class="docutils literal"><span class="pre">_locale</span></tt> de tus rutas (ve <a class="reference internal" href="#book-translation-locale-url"><em>Locale y la URL</em></a>).</p>
+</div>
+<div class="section" id="traduccion-basica">
+<span id="index-2"></span><h2>Traducción básica<a class="headerlink" href="#traduccion-basica" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La traducción de texto se hace a través del servicio <tt class="docutils literal"><span class="pre">traductor</span></tt> (<tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Translation\Translator</span></tt>). Para traducir un bloque de texto (llamado un <em>mensaje</em>), utiliza el método <a href="#id1"><span class="problematic" id="id2">:method:`Symfony\\Component\\Translation\\Translator::trans`</span></a>. Supongamos, por ejemplo, que estamos traduciendo un simple mensaje desde el interior de un controlador:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">indexAction</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$t</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;Symfony2 is great&#39;</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Response</span><span class="p">(</span><span class="nv">$t</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Cuando se ejecuta este código, <em>Symfony2</em> tratará de traducir el mensaje &#8220;Symfony2 is great&#8221;, basándose en la variable <tt class="docutils literal"><span class="pre">locale</span></tt> del usuario. Para que esto funcione, tenemos que decirle a <em>Symfony2</em> la manera de traducir el mensaje a través de un &#8220;recurso de traducción&#8221;, el cual es una colección de mensajes traducidos para una determinada configuración regional.
+Este &#8220;diccionario&#8221; de traducciones se puede crear en varios formatos diferentes, <em>XLIFF</em> es el formato recomendado:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- messages.fr.xliff --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot;?&gt;</span>
+<span class="nt">&lt;xliff</span> <span class="na">version=</span><span class="s">&quot;1.2&quot;</span> <span class="na">xmlns=</span><span class="s">&quot;urn:oasis:names:tc:xliff:document:1.2&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;file</span> <span class="na">source-language=</span><span class="s">&quot;en&quot;</span> <span class="na">datatype=</span><span class="s">&quot;plaintext&quot;</span> <span class="na">original=</span><span class="s">&quot;file.ext&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;body&gt;</span>
+            <span class="nt">&lt;trans-unit</span> <span class="na">id=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;source&gt;</span>Symfony2 is great<span class="nt">&lt;/source&gt;</span>
+                <span class="nt">&lt;target&gt;</span>J&#39;aime Symfony2<span class="nt">&lt;/target&gt;</span>
+            <span class="nt">&lt;/trans-unit&gt;</span>
+            <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/file&gt;</span>
+<span class="nt">&lt;/xliff&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// messages.fr.php</span>
+<span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;Symfony2 is great&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;J\&#39;aime Symfony2&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># messages.fr.yml</span>
+<span class="l-Scalar-Plain">Symfony2 is great</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">J&#39;aime Symfony2</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Ahora, si el idioma de la configuración regional del usuario es el Francés (por ejemplo, <tt class="docutils literal"><span class="pre">fr_FR</span></tt> o <tt class="docutils literal"><span class="pre">fr_BE</span></tt>), el mensaje será traducido a <tt class="docutils literal"><span class="pre">J'aime</span> <span class="pre">Symfony2</span></tt>.</p>
+<div class="section" id="el-proceso-de-traduccion">
+<h3>El proceso de traducción<a class="headerlink" href="#el-proceso-de-traduccion" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Para empezar a traducir el mensaje, <em>Symfony2</em> utiliza un proceso sencillo:</p>
+<ul class="simple">
+<li>Determina la <tt class="docutils literal"><span class="pre">región</span></tt> del usuario actual, la cual está almacenada en la petición (o almacenada como <tt class="docutils literal"><span class="pre">locale</span></tt> en la sesión del usuario);</li>
+<li>Carga un catálogo de mensajes traducidos desde los recursos de traducción definidos para la configuración de <tt class="docutils literal"><span class="pre">locale</span></tt> (por ejemplo, <tt class="docutils literal"><span class="pre">fr_FR</span></tt>). Los mensajes de la configuración regional de reserva también se cargan y se agregan al catálogo si no existen ya. El resultado final es un gran &#8220;diccionario&#8221; de traducciones. Consulta <a class="reference internal" href="#catalogos-de-mensajes">Catálogos de mensajes</a> para más detalles;</li>
+<li>Si se encuentra el mensaje en el catálogo, devuelve la traducción. En caso contrario, el traductor devuelve el mensaje original.</li>
+</ul>
+<p>Cuando se usa el método <tt class="docutils literal"><span class="pre">trans()</span></tt>, <em>Symfony2</em> busca la cadena exacta dentro del catálogo de mensajes apropiado y la devuelve (si existe).</p>
+</div>
+<div class="section" id="marcadores-de-posicion-en-mensajes">
+<span id="index-3"></span><h3>Marcadores de posición en mensajes<a class="headerlink" href="#marcadores-de-posicion-en-mensajes" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>A veces, se debe traducir un mensaje que contiene una variable:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">indexAction</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$t</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;Hello &#39;</span><span class="o">.</span><span class="nv">$name</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Response</span><span class="p">(</span><span class="nv">$t</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Sin embargo, la creación de una traducción de esta cadena es imposible, ya que el traductor tratará de buscar el mensaje exacto, incluyendo las porciones variables (por ejemplo, &#8220;Hello Ryan&#8221; o &#8220;Hello Fabian&#8221;). En lugar de escribir una traducción de cada iteración posible de la variable <tt class="docutils literal"><span class="pre">$name</span></tt>, podemos reemplazar la variable con un &#8220;marcador de posición&#8221;:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">indexAction</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$t</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;Hello %name%&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%name%&#39;</span> <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">));</span>
+
+    <span class="k">new</span> <span class="nx">Response</span><span class="p">(</span><span class="nv">$t</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><em>Symfony2</em> ahora busca una traducción del mensaje en bruto (<tt class="docutils literal"><span class="pre">Hello</span> <span class="pre">%name%</span></tt>) y <em>después</em> reemplaza los marcadores de posición con sus valores. La creación de una traducción se hace igual que antes:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- messages.fr.xliff --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot;?&gt;</span>
+<span class="nt">&lt;xliff</span> <span class="na">version=</span><span class="s">&quot;1.2&quot;</span> <span class="na">xmlns=</span><span class="s">&quot;urn:oasis:names:tc:xliff:document:1.2&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;file</span> <span class="na">source-language=</span><span class="s">&quot;en&quot;</span> <span class="na">datatype=</span><span class="s">&quot;plaintext&quot;</span> <span class="na">original=</span><span class="s">&quot;file.ext&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;body&gt;</span>
+            <span class="nt">&lt;trans-unit</span> <span class="na">id=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;source&gt;</span>Hello %name%<span class="nt">&lt;/source&gt;</span>
+                <span class="nt">&lt;target&gt;</span>Bonjour %name%<span class="nt">&lt;/target&gt;</span>
+            <span class="nt">&lt;/trans-unit&gt;</span>
+            <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/file&gt;</span>
+<span class="nt">&lt;/xliff&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// messages.fr.php</span>
+<span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;Hello %name%&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Bonjour %name%&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># messages.fr.yml</span>
+<span class="s">&#39;Hello</span><span class="nv"> </span><span class="s">%name%&#39;</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Hello %name%</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Los marcadores de posición pueden tomar cualquier forma, el mensaje completo se reconstruye usando la <a class="reference external" href="http://www.php.net/manual/es/function.strtr.php">función strtr</a> de <em>PHP</em>. Sin embargo, se requiere la notación <tt class="docutils literal"><span class="pre">%var%</span></tt> cuando se traduce en plantillas <em>Twig</em>, y en general es un convenio razonable a seguir.</p>
+</div>
+<p>Como hemos visto, la creación de una traducción es un proceso de dos pasos:</p>
+<ol class="arabic simple">
+<li>Abstraer el mensaje que se necesita traducir procesándolo con el <tt class="docutils literal"><span class="pre">Traductor</span></tt>.</li>
+<li>Crear una traducción del mensaje para cada región que elijas apoyar.</li>
+</ol>
+<p>El segundo paso se realiza creando catálogos de mensajes que definen las traducciones para cualquier número de regiones diferentes.</p>
+</div>
+</div>
+<div class="section" id="catalogos-de-mensajes">
+<span id="index-4"></span><h2>Catálogos de mensajes<a class="headerlink" href="#catalogos-de-mensajes" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuando se traduce un mensaje, <em>Symfony2</em> compila un catálogo de mensajes para la configuración regional del usuario y busca en ese una traducción del mensaje. Un catálogo de mensajes es como un diccionario de traducciones para una configuración regional específica. Por ejemplo, el catálogo de la configuración regional <tt class="docutils literal"><span class="pre">fr_FR</span></tt> podría contener la siguiente traducción:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nx">Symfony2</span> <span class="nx">is</span> <span class="nx">Great</span> <span class="o">=&gt;</span> <span class="nx">J</span><span class="err">&#39;</span><span class="nx">aime</span> <span class="nx">Symfony2</span>
+</pre></div>
+</div>
+<p>Es responsabilidad del desarrollador (o traductor) de una aplicación internacionalizada crear estas traducciones. Las traducciones son almacenadas en el sistema de archivos y descubiertas por <em>Symfony</em>, gracias a algunos convenios.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p>Cada vez que creas un <em>nuevo</em> recurso de traducción (o instalas un paquete que incluye un recurso de traducción), para que <em>Symfony</em> pueda descubrir el nuevo recurso de traducción, asegúrate de borrar la caché con la siguiente orden:</p>
+<div class="last highlight-bash"><div class="highlight"><pre>php app/console cache:clear
+</pre></div>
+</div>
+</div>
+<div class="section" id="ubicacion-de-traduccion-y-convenciones-de-nomenclatura">
+<span id="index-5"></span><h3>Ubicación de traducción y convenciones de nomenclatura<a class="headerlink" href="#ubicacion-de-traduccion-y-convenciones-de-nomenclatura" title="Enlazar permanentemente con este título">¶</a></h3>
+<p><em>Symfony2</em> busca archivos de mensajes (traducciones) en dos lugares:</p>
+<ul class="simple">
+<li>Para los mensajes que se encuentran en un paquete, los archivos de mensajes correspondientes deben vivir en el directorio <tt class="docutils literal"><span class="pre">Resources/translations/</span></tt> del paquete;</li>
+<li>Para sustituir la traducción de algún paquete, debes colocar los archivos de mensajes en el directorio <tt class="docutils literal"><span class="pre">app/Resources/translations</span></tt>.</li>
+</ul>
+<p>El nombre del archivo de las traducciones también es importante ya que <em>Symfony2</em> utiliza una convención para determinar los detalles sobre las traducciones. Cada archivo de mensajes se debe nombrar de acuerdo con el siguiente patrón: <tt class="docutils literal"><span class="pre">dominio.región.cargador</span></tt>:</p>
+<ul class="simple">
+<li><strong>dominio</strong>: Una forma opcional para organizar los mensajes en grupos (por ejemplo, <tt class="docutils literal"><span class="pre">admin</span></tt>, <tt class="docutils literal"><span class="pre">navigation</span></tt> o el valor predeterminado <tt class="docutils literal"><span class="pre">messages</span></tt>) &#8212; consulta <a class="reference internal" href="#usando-el-dominio-de-los-mensajes">Usando el dominio de los mensajes</a>;</li>
+<li><strong>región</strong>: La región para la cual son las traducciones (por ejemplo, &#8220;<tt class="docutils literal"><span class="pre">en_GB</span></tt>&#8221;, &#8221; <tt class="docutils literal"><span class="pre">en</span></tt>&#8221;, etc.);</li>
+<li><strong>cargador</strong>: ¿Cómo debe cargar y analizar el archivo <em>Symfony2</em> (por ejemplo, <tt class="docutils literal"><span class="pre">XLIFF</span></tt>, <tt class="docutils literal"><span class="pre">php</span></tt> o <tt class="docutils literal"><span class="pre">yml</span></tt>).</li>
+</ul>
+<p>El cargador puede ser el nombre de cualquier gestor registrado. De manera predeterminada, <em>Symfony</em> incluye los siguientes cargadores:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">xliff</span></tt>: archivo <em>XLIFF</em>;</li>
+<li><tt class="docutils literal"><span class="pre">php</span></tt>:   archivo <em>PHP</em>;</li>
+<li><tt class="docutils literal"><span class="pre">yml</span></tt>:  archivo <em>YAML</em>.</li>
+</ul>
+<p>La elección del cargador a utilizar es totalmente tuya y es una cuestión de gusto.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">También puedes almacenar las traducciones en una base de datos, o cualquier otro almacenamiento, proporcionando una clase personalizada que implemente la interfaz <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Translation\Loader\LoaderInterface</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="creando-traducciones">
+<span id="index-6"></span><h3>Creando traducciones<a class="headerlink" href="#creando-traducciones" title="Enlazar permanentemente con este título">¶</a></h3>
+<dl class="docutils">
+<dt>El acto de crear archivos de traducción es una parte importante de la &#8220;localización&#8221; (a menudo abreviado <a class="reference external" href="http://es.wikipedia.org/wiki/Internacionalizaci%C3%B3n_y_localizaci%C3%B3n">L10n</a>). Los archivos de traducción constan de una serie de pares Identificador-traducción para un determinado dominio y configuración regional.</dt>
+<dd>El <tt class="docutils literal"><span class="pre">id</span></tt> es el identificador de la traducción individual, y puede ser el mensaje en la región principal (por ejemplo, &#8220;Symfony is great&#8221;) de tu aplicación o un identificador único (por ejemplo, &#8220;symfony2.great&#8221; &#8212;consulta el recuadro más adelante):</dd>
+</dl>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/DemoBundle/Resources/translations/messages.fr.xliff --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot;?&gt;</span>
+<span class="nt">&lt;xliff</span> <span class="na">version=</span><span class="s">&quot;1.2&quot;</span> <span class="na">xmlns=</span><span class="s">&quot;urn:oasis:names:tc:xliff:document:1.2&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;file</span> <span class="na">source-language=</span><span class="s">&quot;en&quot;</span> <span class="na">datatype=</span><span class="s">&quot;plaintext&quot;</span> <span class="na">original=</span><span class="s">&quot;file.ext&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;body&gt;</span>
+            <span class="nt">&lt;trans-unit</span> <span class="na">id=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;source&gt;</span>Symfony2 is great<span class="nt">&lt;/source&gt;</span>
+                <span class="nt">&lt;target&gt;</span>J&#39;aime Symfony2<span class="nt">&lt;/target&gt;</span>
+            <span class="nt">&lt;/trans-unit&gt;</span>
+            <span class="nt">&lt;trans-unit</span> <span class="na">id=</span><span class="s">&quot;2&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;source&gt;</span>symfony2.great<span class="nt">&lt;/source&gt;</span>
+                <span class="nt">&lt;target&gt;</span>J&#39;aime Symfony2<span class="nt">&lt;/target&gt;</span>
+            <span class="nt">&lt;/trans-unit&gt;</span>
+            <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/file&gt;</span>
+<span class="nt">&lt;/xliff&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Resources/translations/messages.fr.php</span>
+<span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;Symfony2 is great&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;J\&#39;aime Symfony2&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;symfony2.great&#39;</span>    <span class="o">=&gt;</span> <span class="s1">&#39;J\&#39;aime Symfony2&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/DemoBundle/Resources/translations/messages.fr.yml</span>
+<span class="l-Scalar-Plain">Symfony2 is great</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">J&#39;aime Symfony2</span>
+<span class="l-Scalar-Plain">symfony2.great</span><span class="p-Indicator">:</span>    <span class="l-Scalar-Plain">J&#39;aime Symfony2</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p><em>Symfony2</em> descubrirá estos archivos y los utilizará cuando traduce o bien &#8220;Symfony2 is graeat&#8221; o &#8220;symfony2.great&#8221; en un Idioma regional de Francés (por ejemplo, <tt class="docutils literal"><span class="pre">fr_FR</span></tt> o <tt class="docutils literal"><span class="pre">fr_BE</span></tt>).</p>
+<div class="sidebar">
+<p class="first sidebar-title">Usar mensajes reales o palabras clave</p>
+<p>Este ejemplo ilustra las dos diferentes filosofías, cuando creas mensajes a traducir:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$t</span> <span class="o">=</span> <span class="nv">$translator</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;Symfony2 is great&#39;</span><span class="p">);</span>
+
+<span class="nv">$t</span> <span class="o">=</span> <span class="nv">$translator</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;symfony2.great&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>En el primer método, los mensajes están escritos en el idioma de la región predeterminada (Inglés en este caso). Ese mensaje se utiliza entonces como el &#8220;id&#8221; al crear traducciones.</p>
+<p>En el segundo método, los mensajes en realidad son &#8220;palabras clave&#8221; que transmiten la idea del mensaje. Entonces, la palabra clave del mensaje se utiliza como el &#8220;id&#8221; para las traducciones. En este caso, la traducción se debe hacer para la región predeterminada (es decir, para traducir <tt class="docutils literal"><span class="pre">symfony2.great</span></tt> a <tt class="docutils literal"><span class="pre">Symfony2</span> <span class="pre">is</span> <span class="pre">great</span></tt>).</p>
+<p>El segundo método es útil porque la clave del mensaje no se tendrá que cambiar en cada archivo de la traducción si decidimos que el mensaje en realidad debería decir &#8220;Ciertamente Symfony2 es magnífico&#8221; en la configuración regional predeterminada.</p>
+<p>La elección del método a utilizar es totalmente tuya, pero a menudo se recomienda el formato de &#8220;palabra clave&#8221;.</p>
+<p>Además, es compatible con archivos anidados en formato <tt class="docutils literal"><span class="pre">php</span></tt> y <tt class="docutils literal"><span class="pre">yaml</span></tt> para evitar repetir siempre lo mismo si utilizas palabras clave en lugar de texto real para tus identificadores:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">symfony2</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">is</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">great</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Symfony2 is great</span>
+        <span class="l-Scalar-Plain">amazing</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Symfony2 is amazing</span>
+    <span class="l-Scalar-Plain">has</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">bundles</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Symfony2 has bundles</span>
+<span class="l-Scalar-Plain">user</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">login</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Login</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;symfony2&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;is&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;great&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Symfony2 is great&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;amazing&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Symfony2 is amazing&#39;</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;has&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;bundles&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Symfony2 has bundles&#39;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+    <span class="s1">&#39;user&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;login&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Login&#39;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Los niveles múltiples se acoplan en pares de id/traducción añadiendo un punto (.) entre cada nivel, por lo tanto los ejemplos anteriores son equivalentes a los siguientes:</p>
+<div class="last configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">symfony2.is.great</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Symfony2 is great</span>
+<span class="l-Scalar-Plain">symfony2.is.amazing</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Symfony2 is amazing</span>
+<span class="l-Scalar-Plain">symfony2.has.bundles</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Symfony2 has bundles</span>
+<span class="l-Scalar-Plain">user.login</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Login</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;symfony2.is.great&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Symfony2 is great&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;symfony2.is.amazing&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Symfony2 is amazing&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;symfony2.has.bundles&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Symfony2 has bundles&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;user.login&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Login&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="usando-el-dominio-de-los-mensajes">
+<span id="index-7"></span><h2>Usando el dominio de los mensajes<a class="headerlink" href="#usando-el-dominio-de-los-mensajes" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Como hemos visto, los archivos de mensajes se organizan en las diferentes regiones a traducir. Los archivos de mensajes también se pueden organizar en &#8220;dominios&#8221;.
+Al crear archivos de mensajes, el dominio es la primera porción del nombre de archivo.
+El dominio predeterminado es <tt class="docutils literal"><span class="pre">messages</span></tt>. Por ejemplo, supongamos que, por organización, las traducciones se dividieron en tres diferentes ámbitos: <tt class="docutils literal"><span class="pre">messages</span></tt>, <tt class="docutils literal"><span class="pre">admin</span></tt>
+y <tt class="docutils literal"><span class="pre">navigation</span></tt>. La traducción española debe tener los siguientes archivos de mensaje:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">messages.es.xliff</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">admin.es.xliff</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">navigation.es.xliff</span></tt></li>
+</ul>
+<p>Al traducir las cadenas que no están en el dominio predeterminado (<tt class="docutils literal"><span class="pre">messages</span></tt>), debes especificar el dominio como tercer argumento de <tt class="docutils literal"><span class="pre">trans()</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;Symfony2 is great&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(),</span> <span class="s1">&#39;admin&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><em>Symfony2</em> ahora buscará el mensaje en el dominio <tt class="docutils literal"><span class="pre">admin</span></tt> de la configuración regional del usuario.</p>
+</div>
+<div class="section" id="manejando-la-configuracion-regional-del-usuario">
+<span id="index-8"></span><h2>Manejando la configuración regional del usuario<a class="headerlink" href="#manejando-la-configuracion-regional-del-usuario" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La configuración regional del usuario actual se almacena en la petición y se puede acceder a través del objeto <tt class="docutils literal"><span class="pre">petición</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// accede al objeto request en un controlador estándar</span>
+<span class="nv">$request</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">();</span>
+
+<span class="nv">$locale</span> <span class="o">=</span> <span class="nv">$request</span><span class="o">-&gt;</span><span class="na">getLocale</span><span class="p">();</span>
+
+<span class="nv">$request</span><span class="o">-&gt;</span><span class="na">setLocale</span><span class="p">(</span><span class="s1">&#39;en_US&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p id="index-9">También es posible almacenar la región en la sesión en lugar de en base a cada petición. Si lo haces, cada subsecuente petición tendrá esa región.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;session&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">set</span><span class="p">(</span><span class="s1">&#39;_locale&#39;</span><span class="p">,</span> <span class="s1">&#39;en_US&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>En la sección <a class="reference internal" href="#book-translation-locale-url"><em>Locale y la URL</em></a>, más adelante, puedes ver cómo configurar la región a través del enrutado.</p>
+<div class="section" id="configuracion-regional-predeterminada-y-reserva">
+<h3>Configuración regional predeterminada y reserva<a class="headerlink" href="#configuracion-regional-predeterminada-y-reserva" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Si la configuración regional no se ha establecido explícitamente en la sesión, el parámetro de configuración <tt class="docutils literal"><span class="pre">fallback_locale</span></tt> será utilizado por el <tt class="docutils literal"><span class="pre">Traductor</span></tt>. El valor predeterminado del parámetro es &#8220;<tt class="docutils literal"><span class="pre">en</span></tt>&#8221; (consulta la sección <a class="reference internal" href="#configurando">Configurando</a>).</p>
+<p>Alternativamente, puedes garantizar que hay un <tt class="docutils literal"><span class="pre">locale</span></tt> establecido en cada petición definiendo un <tt class="docutils literal"><span class="pre">default_locale</span></tt> para la plataforma:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">framework</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">default_locale</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">en</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;framework:config&gt;</span>
+    <span class="nt">&lt;framework:default-locale&gt;</span>en<span class="nt">&lt;/framework:default-locale&gt;</span>
+<span class="nt">&lt;/framework:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;default_locale&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;en&#39;</span><span class="p">,</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1.</span></p>
+</div>
+<div class="section" id="locale-y-la-url">
+<span id="book-translation-locale-url"></span><h3><tt class="docutils literal"><span class="pre">Locale</span></tt> y la <em>URL</em><a class="headerlink" href="#locale-y-la-url" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Dado que la configuración regional del usuario se almacena en la sesión, puede ser tentador utilizar la misma <em>URL</em> para mostrar un recurso en muchos idiomas diferentes en función de la región del usuario. Por ejemplo, <tt class="docutils literal"><span class="pre">http://www.ejemplo.com/contact</span></tt> podría mostrar el contenido en Inglés para un usuario y en Francés para otro. Por desgracia, esto viola una norma fundamental de la <em>Web</em>: que una <em>URL</em> particular devuelve el mismo recurso, independientemente del usuario. Para acabar de enturbiar el problema, ¿cual sería la versión del contenido indexado por los motores de búsqueda?</p>
+<p>Una mejor política es incluir la configuración regional en la <em>URL</em>. Esto es totalmente compatible con el sistema de enrutado mediante el parámetro especial <tt class="docutils literal"><span class="pre">_locale</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">contact</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">/{_locale}/contact</span>
+    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span>  <span class="p-Indicator">{</span> <span class="nv">_controller</span><span class="p-Indicator">:</span> <span class="nv">AcmeDemoBundle</span><span class="p-Indicator">:</span><span class="nv">Contact</span><span class="p-Indicator">:</span><span class="nv">index</span><span class="p-Indicator">,</span> <span class="nv">_locale</span><span class="p-Indicator">:</span> <span class="nv">en</span> <span class="p-Indicator">}</span>
+    <span class="l-Scalar-Plain">requirements</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">_locale</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">en|fr|de</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;route</span> <span class="na">id=</span><span class="s">&quot;contact&quot;</span> <span class="na">pattern=</span><span class="s">&quot;/{_locale}/contact&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;default</span> <span class="na">key=</span><span class="s">&quot;_controller&quot;</span><span class="nt">&gt;</span>AcmeDemoBundle:Contact:index<span class="nt">&lt;/default&gt;</span>
+    <span class="nt">&lt;default</span> <span class="na">key=</span><span class="s">&quot;_locale&quot;</span><span class="nt">&gt;</span>en<span class="nt">&lt;/default&gt;</span>
+    <span class="nt">&lt;requirement</span> <span class="na">key=</span><span class="s">&quot;_locale&quot;</span><span class="nt">&gt;</span>en|fr|de<span class="nt">&lt;/requirement&gt;</span>
+<span class="nt">&lt;/route&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Routing\RouteCollection</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Routing\Route</span><span class="p">;</span>
+
+<span class="nv">$collection</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+<span class="nv">$collection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;contact&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/{_locale}/contact&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;_controller&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;AcmeDemoBundle:Contact:index&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;_locale&#39;</span>     <span class="o">=&gt;</span> <span class="s1">&#39;en&#39;</span><span class="p">,</span>
+<span class="p">),</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;_locale&#39;</span>     <span class="o">=&gt;</span> <span class="s1">&#39;en|fr|de&#39;</span>
+<span class="p">)));</span>
+
+<span class="k">return</span> <span class="nv">$collection</span><span class="p">;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Cuando utilizas el parámetro especial <tt class="docutils literal"><span class="pre">_locale</span></tt> en una ruta, la configuración regional emparejada <em>automáticamente se establece en la sesión del usuario</em>. En otras palabras, si un usuario visita la <em>URI</em> <tt class="docutils literal"><span class="pre">/es/contact</span></tt>, la región &#8220;<tt class="docutils literal"><span class="pre">es</span></tt>&#8221; se ajustará automáticamente según la configuración regional de la sesión del usuario.</p>
+<p>Ahora puedes utilizar la configuración regional del usuario para crear rutas hacia otras páginas traducidas en tu aplicación.</p>
+</div>
+</div>
+<div class="section" id="pluralizacion">
+<span id="index-10"></span><h2>Pluralización<a class="headerlink" href="#pluralizacion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La pluralización de mensajes es un tema difícil puesto que las reglas pueden ser bastante complejas. Por ejemplo, aquí tienes la representación matemática de las reglas de pluralización de Rusia:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="p">((</span><span class="nv">$number</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="nv">$number</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">!=</span> <span class="mi">11</span><span class="p">))</span>
+<span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="p">(((</span><span class="nv">$number</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="nv">$number</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">&lt;=</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+        <span class="p">((</span><span class="nv">$number</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="nv">$number</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">&gt;=</span> <span class="mi">20</span><span class="p">)))</span>
+       <span class="o">?</span> <span class="mi">1</span> <span class="o">:</span> <span class="mi">2</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Como puedes ver, en Ruso, puedes tener tres formas diferentes del plural, cada una da un índice de 0, 1 o 2. Para todas las formas, el plural es diferente, por lo que la traducción también es diferente.</p>
+<p>Cuando una traducción tiene diferentes formas debido a la pluralización, puedes proporcionar todas las formas como una cadena separada por una tubería (<tt class="docutils literal"><span class="pre">|</span></tt>):</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="s1">&#39;Hay una manzana|Hay %count% manzanas&#39;</span>
+</pre></div>
+</div>
+<p>Para traducir los mensajes pluralizados, utiliza el método <a href="#id3"><span class="problematic" id="id4">:method:`Symfony\\Component\\Translation\\Translator::transChoice`</span></a>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$t</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">transChoice</span><span class="p">(</span>
+    <span class="s1">&#39;There is one apple|There are %count% apples&#39;</span><span class="p">,</span>
+    <span class="mi">10</span><span class="p">,</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%count%&#39;</span> <span class="o">=&gt;</span> <span class="mi">10</span><span class="p">)</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>El segundo argumento (<tt class="docutils literal"><span class="pre">10</span></tt> en este ejemplo), es el <em>número</em> de objetos descrito y se utiliza para determinar cual traducción usar y también para rellenar el marcador de posición <tt class="docutils literal"><span class="pre">%count%</span></tt>.</p>
+<p>En base al número dado, el traductor elige la forma plural adecuada.
+En Inglés, la mayoría de las palabras tienen una forma singular cuando hay exactamente un objeto y una forma plural para todos los otros números (0, 2, 3...). Así pues, si <tt class="docutils literal"><span class="pre">count</span></tt> es <tt class="docutils literal"><span class="pre">1</span></tt>, el traductor utilizará la primera cadena (<tt class="docutils literal"><span class="pre">Hay</span> <span class="pre">una</span> <span class="pre">manzana</span></tt>) como la traducción. De lo contrario, utilizará <tt class="docutils literal"><span class="pre">Hay</span> <span class="pre">%count%</span> <span class="pre">manzanas</span></tt>.</p>
+<p>Aquí está la traducción al Francés:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="s1">&#39;Il y a %count% pomme|Il y a %count% pommes&#39;</span>
+</pre></div>
+</div>
+<p>Incluso si la cadena tiene una apariencia similar (se compone de dos subcadenas separadas por un tubo), las reglas francesas son diferentes: la primera forma (no plural) se utiliza cuando <tt class="docutils literal"><span class="pre">count</span></tt> es <tt class="docutils literal"><span class="pre">0</span></tt> o <tt class="docutils literal"><span class="pre">1</span></tt>. Por lo tanto, el traductor utilizará automáticamente la primera cadena (<tt class="docutils literal"><span class="pre">Il</span> <span class="pre">y</span> <span class="pre">a</span> <span class="pre">%count%</span> <span class="pre">pomme</span></tt>) cuando <tt class="docutils literal"><span class="pre">count</span></tt> es <tt class="docutils literal"><span class="pre">0</span></tt> o <tt class="docutils literal"><span class="pre">1</span></tt>.</p>
+<p>Cada región tiene su propio conjunto de reglas, con algunas que tienen hasta seis formas diferentes de plural con reglas complejas detrás de las cuales los números asignan a tal forma plural.
+Las reglas son bastante simples para Inglés y Francés, pero para el Ruso, puedes querer una pista para saber qué regla coincide con qué cadena. Para ayudar a los traductores, puedes &#8220;etiquetar&#8221; cada cadena:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="s1">&#39;one: There is one apple|some: There are %count% apples&#39;</span>
+
+<span class="s1">&#39;none_or_one: Il y a %count% pomme|some: Il y a %count% pommes&#39;</span>
+</pre></div>
+</div>
+<p>Las etiquetas realmente son pistas sólo para los traductores y no afectan a la lógica utilizada para determinar qué forma plural usar. Las etiquetas pueden ser cualquier cadena descriptiva que termine con dos puntos (<tt class="docutils literal"><span class="pre">:</span></tt>). Las etiquetas además no necesitan ser las mismas en el mensaje original cómo en la traducción.</p>
+<div class="section" id="intervalo-explicito-de-pluralizacion">
+<h3>Intervalo explícito de pluralización<a class="headerlink" href="#intervalo-explicito-de-pluralizacion" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La forma más fácil de pluralizar un mensaje es dejar que <em>Symfony2</em> utilice su lógica interna para elegir qué cadena se utiliza en base a un número dado. A veces, tendrás más control o quieres una traducción diferente para casos específicos (por <tt class="docutils literal"><span class="pre">0</span></tt>, o cuando el número es negativo, por ejemplo). Para estos casos, puedes utilizar intervalos matemáticos explícitos:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="s1">&#39;{0} There are no apples|{1} There is one apple|]1,19] There are %count% apples|[20,Inf] There are many apples&#39;</span>
+</pre></div>
+</div>
+<p>Los intervalos siguen la notación <a class="reference external" href="http://en.wikipedia.org/wiki/Interval_%28mathematics%29#The_ISO_notation">ISO 31-11</a>. La cadena anterior especifica cuatro intervalos diferentes: exactamente <tt class="docutils literal"><span class="pre">0</span></tt>, exactamente <tt class="docutils literal"><span class="pre">1</span></tt>, <tt class="docutils literal"><span class="pre">2-19</span></tt> y <tt class="docutils literal"><span class="pre">20</span></tt> y superior.</p>
+<p>También puedes mezclar reglas matemáticas explícitas y estándar. En este caso, si la cuenta no corresponde con un intervalo específico, las reglas estándar entran en vigor después de remover las reglas explícitas:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="s1">&#39;{0} There are no apples|[20,Inf] There are many apples|There is one apple|a_few: There are %count% apples&#39;</span>
+</pre></div>
+</div>
+<p>Por ejemplo, para <tt class="docutils literal"><span class="pre">1</span> <span class="pre">apple</span></tt>, la regla estándar <tt class="docutils literal"><span class="pre">There</span> <span class="pre">is</span> <span class="pre">one</span> <span class="pre">apple</span></tt> será utilizada. Para <tt class="docutils literal"><span class="pre">2-19</span> <span class="pre">apples</span></tt>, la segunda regla estándar <tt class="docutils literal"><span class="pre">There</span> <span class="pre">are</span> <span class="pre">%count%</span>
+<span class="pre">apples</span></tt> será seleccionada.</p>
+<p>Un <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Translation\Interval</span></tt> puede representar un conjunto finito de números:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>O números entre otros dos números:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">+</span><span class="nx">Inf</span><span class="p">[</span>
+<span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">[</span>
+</pre></div>
+</div>
+<p>El delimitador izquierdo puede ser <tt class="docutils literal"><span class="pre">[</span></tt> (inclusive) o <tt class="docutils literal"><span class="pre">]</span></tt> (exclusivo). El delimitador derecho puede ser <tt class="docutils literal"><span class="pre">[</span></tt> (exclusivo) o <tt class="docutils literal"><span class="pre">]</span></tt> (inclusive). Más allá de los números, puedes usar <tt class="docutils literal"><span class="pre">-Inf</span></tt> y <tt class="docutils literal"><span class="pre">+Inf</span></tt> para el infinito.</p>
+</div>
+</div>
+<div class="section" id="traducciones-en-plantillas">
+<span id="index-11"></span><h2>Traducciones en plantillas<a class="headerlink" href="#traducciones-en-plantillas" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La mayoría de las veces, la traducción ocurre en las plantillas. <em>Symfony2</em> proporciona apoyo nativo para ambas plantillas <em>Twig</em> y <em>PHP</em>.</p>
+<div class="section" id="plantillas-twig">
+<h3>Plantillas <em>Twig</em><a class="headerlink" href="#plantillas-twig" title="Enlazar permanentemente con este título">¶</a></h3>
+<p><em>Symfony2</em> proporciona etiquetas <em>Twig</em> especializadas (<tt class="docutils literal"><span class="pre">trans</span></tt> y <tt class="docutils literal"><span class="pre">transchoice</span></tt>) para ayudar con la traducción de los mensajes de <em>bloques de texto estático</em>:</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">trans</span> <span class="cp">%}</span><span class="x">Hello %name%</span><span class="cp">{%</span> <span class="k">endtrans</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="cp">{%</span> <span class="k">transchoice</span> <span class="nv">count</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    {0} There are no apples|{1} There is one apple|]1,Inf] There are %count% apples</span>
+<span class="cp">{%</span> <span class="k">endtranschoice</span> <span class="cp">%}</span><span class="x"></span>
+</pre></div>
+</div>
+<p>La etiqueta <tt class="docutils literal"><span class="pre">transchoice</span></tt> obtiene automáticamente la variable <tt class="docutils literal"><span class="pre">%count%</span></tt> a partir del contexto actual y la pasa al traductor. Este mecanismo sólo funciona cuando se utiliza un marcador de posición después del patrón <tt class="docutils literal"><span class="pre">%var%</span></tt>.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Si necesitas utilizar el carácter de porcentaje (<tt class="docutils literal"><span class="pre">%</span></tt>) en una cadena, lo tienes que escapar duplicando el siguiente: <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">trans</span> <span class="pre">%}Porcentaje:</span> <span class="pre">%percent%%%{%</span> <span class="pre">endtrans</span> <span class="pre">%}</span></tt></p>
+</div>
+<p>También puedes especificar el dominio del mensaje y pasar algunas variables adicionales:</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">trans</span> <span class="k">with</span> <span class="o">{</span><span class="s1">&#39;%name%&#39;</span><span class="o">:</span> <span class="s1">&#39;Fabien&#39;</span><span class="o">}</span> <span class="nv">from</span> <span class="s2">&quot;app&quot;</span> <span class="cp">%}</span><span class="x">Hello %name%</span><span class="cp">{%</span> <span class="k">endtrans</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="cp">{%</span> <span class="k">trans</span> <span class="k">with</span> <span class="o">{</span><span class="s1">&#39;%name%&#39;</span><span class="o">:</span> <span class="s1">&#39;Fabien&#39;</span><span class="o">}</span> <span class="nv">from</span> <span class="s2">&quot;app&quot;</span> <span class="nv">into</span> <span class="s2">&quot;fr&quot;</span> <span class="cp">%}</span><span class="x">Hello %name%</span><span class="cp">{%</span> <span class="k">endtrans</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="cp">{%</span> <span class="k">transchoice</span> <span class="nv">count</span> <span class="k">with</span> <span class="o">{</span><span class="s1">&#39;%name%&#39;</span><span class="o">:</span> <span class="s1">&#39;Fabien&#39;</span><span class="o">}</span> <span class="nv">from</span> <span class="s2">&quot;app&quot;</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    {0} There is no apples|{1} There is one apple|]1,Inf] There are %count% apples</span>
+<span class="cp">{%</span> <span class="k">endtranschoice</span> <span class="cp">%}</span><span class="x"></span>
+</pre></div>
+</div>
+<p>Los filtros <tt class="docutils literal"><span class="pre">trans</span></tt> y <tt class="docutils literal"><span class="pre">transchoice</span></tt> se pueden utilizar para traducir <em>texto variable</em> y  expresiones complejas:</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">message</span><span class="o">|</span><span class="nf">trans</span> <span class="cp">}}</span><span class="x"></span>
+
+<span class="cp">{{</span> <span class="nv">message</span><span class="o">|</span><span class="nf">transchoice</span><span class="o">(</span><span class="m">5</span><span class="o">)</span> <span class="cp">}}</span><span class="x"></span>
+
+<span class="cp">{{</span> <span class="nv">message</span><span class="o">|</span><span class="nf">trans</span><span class="o">({</span><span class="s1">&#39;%name%&#39;</span><span class="o">:</span> <span class="s1">&#39;Fabien&#39;</span><span class="o">},</span> <span class="s2">&quot;app&quot;</span><span class="o">)</span> <span class="cp">}}</span><span class="x"></span>
+
+<span class="cp">{{</span> <span class="nv">message</span><span class="o">|</span><span class="nf">transchoice</span><span class="o">(</span><span class="m">5</span><span class="o">,</span> <span class="o">{</span><span class="s1">&#39;%name%&#39;</span><span class="o">:</span> <span class="s1">&#39;Fabien&#39;</span><span class="o">},</span> <span class="s1">&#39;app&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="x"></span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p>Usar etiquetas de traducción o filtros tiene el mismo efecto, pero con una sutil diferencia: la salida escapada automáticamente sólo se aplica a las variables traducidas usando un filtro. En otras palabras, si necesitas estar seguro de que tu variable traducida <em>no</em> se escapó en la salida, debes aplicar el filtro <tt class="docutils literal"><span class="pre">raw</span></tt> después del filtro de traducción:</p>
+<div class="last highlight-jinja"><div class="highlight"><pre><span class="c">{# el texto traducido entre etiquetas nunca se escapa #}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">trans</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    &lt;h3&gt;foo&lt;/h3&gt;</span>
+<span class="cp">{%</span> <span class="k">endtrans</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="cp">{%</span> <span class="k">set</span> <span class="nv">message</span> <span class="o">=</span> <span class="s1">&#39;&lt;h3&gt;foo&lt;/h3&gt;&#39;</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="c">{# por omisión, una variable traducida vía un filtro se escapa #}</span><span class="x"></span>
+<span class="cp">{{</span> <span class="nv">message</span><span class="o">|</span><span class="nf">trans</span><span class="o">|</span><span class="nf">raw</span> <span class="cp">}}</span><span class="x"></span>
+
+<span class="c">{# pero las cadenas estáticas nunca se escapan #}</span><span class="x"></span>
+<span class="cp">{{</span> <span class="s1">&#39;&lt;h3&gt;foo&lt;/h3&gt;&#39;</span><span class="o">|</span><span class="nf">trans</span> <span class="cp">}}</span><span class="x"></span>
+</pre></div>
+</div>
+</div>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1.</span></p>
+</div>
+<div class="section" id="plantillas-php">
+<h3>Plantillas <em>PHP</em><a class="headerlink" href="#plantillas-php" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El servicio traductor es accesible en plantillas <em>PHP</em> a través del ayudante <tt class="docutils literal"><span class="pre">translator</span></tt>:</p>
+<div class="highlight-html+php"><div class="highlight"><pre><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;translator&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span><span class="s1">&#39;Symfony2 is great&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+
+<span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;translator&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">transChoice</span><span class="p">(</span>
+    <span class="s1">&#39;{0} There is no apples|{1} There is one apple|]1,Inf[ There are %count% apples&#39;</span><span class="p">,</span>
+    <span class="mi">10</span><span class="p">,</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%count%&#39;</span> <span class="o">=&gt;</span> <span class="mi">10</span><span class="p">)</span>
+<span class="p">)</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="forzando-la-configuracion-regional-del-traductor">
+<h2>Forzando la configuración regional del traductor<a class="headerlink" href="#forzando-la-configuracion-regional-del-traductor" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Al traducir un mensaje, <em>Symfony2</em> utiliza la configuración regional de la petición o la configuración regional de <tt class="docutils literal"><span class="pre">reserva</span></tt> si es necesario. También puedes especificar manualmente la configuración regional utilizada para la traducción:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span>
+    <span class="s1">&#39;Symfony2 is great&#39;</span><span class="p">,</span>
+    <span class="k">array</span><span class="p">(),</span>
+    <span class="s1">&#39;messages&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;fr_FR&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+
+<span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span>
+    <span class="s1">&#39;{0} There are no apples|{1} There is one apple|]1,Inf[ There are %count% apples&#39;</span><span class="p">,</span>
+    <span class="mi">10</span><span class="p">,</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%count%&#39;</span> <span class="o">=&gt;</span> <span class="mi">10</span><span class="p">),</span>
+    <span class="s1">&#39;messages&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;fr_FR&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="traduciendo-contenido-de-base-de-datos">
+<h2>Traduciendo contenido de base de datos<a class="headerlink" href="#traduciendo-contenido-de-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La traducción del contenido de la base de datos la debe manejar <em>Doctrine</em> a través de la <a class="reference external" href="https://github.com/l3pp4rd/DoctrineExtensions">Extensión Translatable</a>. Para más información, consulta la documentación de la biblioteca.</p>
+</div>
+<div class="section" id="traduciendo-mensajes-de-restriccion">
+<h2>Traduciendo mensajes de restricción<a class="headerlink" href="#traduciendo-mensajes-de-restriccion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La mejor manera de entender la traducción de las restricciones es verla en acción. Para empezar, supongamos que hemos creado un sencillo objeto <em>PHP</em> el cual en algún lugar tiene que utilizar tu aplicación:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/BlogBundle/Entity/Author.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\BlogBundle\Entity</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Author</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="nv">$name</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Añade las restricciones con cualquiera de los métodos admitidos. Configura la opción de mensaje al texto fuente traducido. Por ejemplo, para garantizar que la propiedad <tt class="docutils literal"><span class="pre">$name</span></tt> no esté vacía, agrega lo siguiente:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/BlogBundle/Resources/config/validation.yml</span>
+<span class="l-Scalar-Plain">Acme\BlogBundle\Entity\Author</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">properties</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">NotBlank</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">message</span><span class="p-Indicator">:</span> <span class="s">&quot;author.name.not_blank&quot;</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>Annotations</em><div class="highlight-php-annotations"><div class="highlight"><pre><span class="c1">// src/Acme/BlogBundle/Entity/Author.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Autor</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @Assert\NotBlank(message = &quot;author.name.not_blank&quot;)</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="nv">$name</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/BlogBundle/Resources/config/validation.xml --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;</span>
+<span class="nt">&lt;constraint-mapping</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/constraint-mapping&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/dic/constraint-mapping http://symfony.com/schema/dic/constraint-mapping/constraint-mapping-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;class</span> <span class="na">name=</span><span class="s">&quot;Acme\BlogBundle\Entity\Author&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">&quot;name&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;constraint</span> <span class="na">name=</span><span class="s">&quot;NotBlank&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;option</span> <span class="na">name=</span><span class="s">&quot;message&quot;</span><span class="nt">&gt;</span>author.name.not_blank<span class="nt">&lt;/option&gt;</span>
+            <span class="nt">&lt;/constraint&gt;</span>
+        <span class="nt">&lt;/property&gt;</span>
+    <span class="nt">&lt;/class&gt;</span>
+<span class="nt">&lt;/constraint-mapping&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/BlogBundle/Entity/Author.php</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Mapping\ClassMetadata</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints\NotBlank</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Autor</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="nv">$name</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">loadValidatorMetadata</span><span class="p">(</span><span class="nx">ClassMetadata</span> <span class="nv">$metadata</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$metadata</span><span class="o">-&gt;</span><span class="na">addPropertyConstraint</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">NotBlank</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;message&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;author.name.not_blank&#39;</span>
+        <span class="p">)));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Crea un archivo de traducción bajo el catálogo <tt class="docutils literal"><span class="pre">validators</span></tt> para los mensajes de restricción, por lo general en el directorio <tt class="docutils literal"><span class="pre">Resources/translations/</span></tt> del paquete. Consulta <a class="reference internal" href="#catalogos-de-mensajes">Catálogos de mensajes</a> para más detalles;</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- validators.es.xliff --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot;?&gt;</span>
+<span class="nt">&lt;xliff</span> <span class="na">version=</span><span class="s">&quot;1.2&quot;</span> <span class="na">xmlns=</span><span class="s">&quot;urn:oasis:names:tc:xliff:document:1.2&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;file</span> <span class="na">source-language=</span><span class="s">&quot;en&quot;</span> <span class="na">datatype=</span><span class="s">&quot;plaintext&quot;</span> <span class="na">original=</span><span class="s">&quot;file.ext&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;body&gt;</span>
+            <span class="nt">&lt;trans-unit</span> <span class="na">id=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;source&gt;</span>author.name.not_blank<span class="nt">&lt;/source&gt;</span>
+                <span class="nt">&lt;target&gt;</span>Por favor, ingresa un nombre de autor.<span class="nt">&lt;/target&gt;</span>
+            <span class="nt">&lt;/trans-unit&gt;</span>
+            <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/file&gt;</span>
+<span class="nt">&lt;/xliff&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="o">|//</span> <span class="nx">validators</span><span class="o">.</span><span class="nx">es</span><span class="o">.</span><span class="nx">php</span>
+<span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;author.name.not_blank&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Por favor, ingresa un nombre de autor.&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># validators.es.yml</span>
+<span class="l-Scalar-Plain">author.name.not_blank</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Por favor, ingresa un nombre de autor..</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="resumen">
+<h2>Resumen<a class="headerlink" href="#resumen" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Con el componente <tt class="docutils literal"><span class="pre">Translation</span></tt> de <em>Symfony2</em>, la creación de una aplicación internacionalizada ya no tiene que ser un proceso doloroso y se reduce a sólo algunos pasos básicos:</p>
+<ul class="simple">
+<li>Abstrae los mensajes en tu aplicación envolviendo cada uno en el método <a href="#id5"><span class="problematic" id="id6">:method:`Symfony\\Component\\Translation\\Translator::trans`</span></a> o <a href="#id7"><span class="problematic" id="id8">:method:`Symfony\\Component\\Translation\\Translator::transChoice`</span></a>;</li>
+<li>Traduce cada mensaje en varias configuraciones regionales creando archivos de mensajes traducidos. <em>Symfony2</em> descubre y procesa cada archivo porque su nombre sigue una convención específica;</li>
+<li>Administra la configuración regional del usuario, la cual se almacena en la petición, pero también se puede fijar una sola vez en la sesión del usuario.</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src=".././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="service_container.html" title="Contenedor de servicios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="http_cache.html" title="Caché HTTP"
+             >anterior</a> |</li>
+        <li><a href="../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="index.html" >Libro</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

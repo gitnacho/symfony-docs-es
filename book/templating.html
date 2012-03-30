@@ -1,0 +1,1119 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Creando y usando plantillas &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../index.html" />
+    <link rel="up" title="Libro" href="index.html" />
+    <link rel="next" title="Bases de datos y Doctrine (“El modelo”)" href="doctrine.html" />
+    <link rel="prev" title="Enrutando" href="routing.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../index.html"><img src=".././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src=".././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="doctrine.html" title="Bases de datos y Doctrine (“El modelo”)"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="routing.html" title="Enrutando"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Libro</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="creando-y-usando-plantillas">
+<span id="index-0"></span><h1>Creando y usando plantillas<a class="headerlink" href="#creando-y-usando-plantillas" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Como sabes, el <a class="reference internal" href="controller.html"><em>Controlador</em></a> es responsable de manejar cada petición entrante en una aplicación <em>Symfony2</em>. En realidad, el controlador delega la mayor parte del trabajo pesado ​​a otros lugares para que el código se pueda probar y volver a utilizar. Cuando un controlador necesita generar <em>HTML</em>, <em>CSS</em> o cualquier otro contenido, que maneje el trabajo fuera del motor de plantillas.
+En este capítulo, aprenderás cómo escribir potentes plantillas que puedes utilizar para devolver contenido al usuario, rellenar el cuerpo de correo electrónico y mucho más. Aprenderás métodos abreviados, formas inteligentes para extender las plantillas y cómo reutilizar código de plantilla.</p>
+<div class="section" id="plantillas">
+<span id="index-1"></span><h2>Plantillas<a class="headerlink" href="#plantillas" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Una plantilla simplemente es un archivo de texto que puede generar cualquier formato basado en texto (<em>HTML</em>, <em>XML</em>, <em>CSV</em>, <em>LaTeX</em>...). El tipo de plantilla más familiar es una plantilla <em>PHP</em> &#8212; un archivo de texto interpretado por <em>PHP</em> que contiene una mezcla de texto y código <em>PHP</em>:</p>
+<div class="highlight-html+php"><div class="highlight"><pre><span class="cp">&lt;!DOCTYPE html&gt;</span>
+    <span class="nt">&lt;html&gt;</span>
+        <span class="nt">&lt;head&gt;</span>
+        <span class="nt">&lt;title&gt;</span>Welcome to Symfony!<span class="nt">&lt;/title&gt;</span>
+        <span class="nt">&lt;/head&gt;</span>
+        <span class="nt">&lt;body&gt;</span>
+        <span class="nt">&lt;h1&gt;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$page_title</span> <span class="cp">?&gt;</span><span class="nt">&lt;/h1&gt;</span>
+
+        <span class="nt">&lt;ul</span> <span class="na">id=</span><span class="s">&quot;navigation&quot;</span><span class="nt">&gt;</span>
+            <span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$navigation</span> <span class="k">as</span> <span class="nv">$item</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+                <span class="nt">&lt;li&gt;</span>
+                    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$item</span><span class="o">-&gt;</span><span class="na">getHref</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+                        <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$item</span><span class="o">-&gt;</span><span class="na">getCaption</span><span class="p">()</span> <span class="cp">?&gt;</span>
+                        <span class="nt">&lt;/a&gt;</span>
+                <span class="nt">&lt;/li&gt;</span>
+            <span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+        <span class="nt">&lt;/ul&gt;</span>
+        <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/html&gt;</span>
+</pre></div>
+</div>
+<p id="index-2">Pero <em>Symfony2</em> contiene un lenguaje de plantillas aún más potente llamado <a class="reference external" href="http://gitnacho.github.com/symfony-docs-es/twig/index.html">Twig</a>.
+<em>Twig</em> te permite escribir plantillas concisas y fáciles de leer que son más amigables para los diseñadores web y, de varias maneras, más poderosas que las plantillas <em>PHP</em>:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">&lt;!DOCTYPE html&gt;</span>
+    <span class="nt">&lt;html&gt;</span>
+        <span class="nt">&lt;head&gt;</span>
+        <span class="nt">&lt;title&gt;</span>Welcome to Symfony!<span class="nt">&lt;/title&gt;</span>
+        <span class="nt">&lt;/head&gt;</span>
+        <span class="nt">&lt;body&gt;</span>
+        <span class="nt">&lt;h1&gt;</span><span class="cp">{{</span> <span class="nv">page_title</span> <span class="cp">}}</span><span class="nt">&lt;/h1&gt;</span>
+
+        <span class="nt">&lt;ul</span> <span class="na">id=</span><span class="s">&quot;navigation&quot;</span><span class="nt">&gt;</span>
+            <span class="cp">{%</span> <span class="k">for</span> <span class="nv">item</span> <span class="k">in</span> <span class="nv">navigation</span> <span class="cp">%}</span>
+                <span class="nt">&lt;li&gt;&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">item.href</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span><span class="cp">{{</span> <span class="nv">item.caption</span> <span class="cp">}}</span><span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+            <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+        <span class="nt">&lt;/ul&gt;</span>
+        <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/html&gt;</span>
+</pre></div>
+</div>
+<p><em>Twig</em> define dos tipos de sintaxis especial:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">{{</span> <span class="pre">...</span> <span class="pre">}}</span></tt>: &#8220;Dice algo&#8221;: imprime una variable o el resultado de una expresión a la plantilla;</li>
+<li><tt class="docutils literal"><span class="pre">{%</span> <span class="pre">...</span> <span class="pre">%}</span></tt>: &#8220;Hace algo&#8221;: una <strong>etiqueta</strong> que controla la lógica de la plantilla; se utiliza para declaraciones <tt class="docutils literal"><span class="pre">if</span></tt> y ejecutar bucles <tt class="docutils literal"><span class="pre">for</span></tt>, por ejemplo.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Hay una tercer sintaxis utilizada para crear comentarios: <tt class="docutils literal"><span class="pre">{#</span> <span class="pre">esto</span> <span class="pre">es</span> <span class="pre">un</span> <span class="pre">comentario</span> <span class="pre">#}</span></tt>.
+Esta sintaxis se puede utilizar en múltiples líneas como la sintaxis <tt class="docutils literal"><span class="pre">/*</span> <span class="pre">comentario</span> <span class="pre">*/</span></tt> equivalente de <em>PHP</em>.</p>
+</div>
+<p><em>Twig</em> también contiene <strong>filtros</strong>, los cuales modifican el contenido antes de reproducirlo.
+El siguiente fragmento convierte a mayúsculas la variable <tt class="docutils literal"><span class="pre">title</span></tt> antes de reproducirla:</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">title</span><span class="o">|</span><span class="nf">upper</span> <span class="cp">}}</span><span class="x"></span>
+</pre></div>
+</div>
+<p><em>Twig</em> viene con una larga lista de <a class="reference external" href="http://gitnacho.github.com/Twig/tags/index.html">etiquetas</a> y <a class="reference external" href="http://gitnacho.github.com/Twig/filters/index.html">filtros</a> que están disponibles de forma predeterminada. Incluso puedes <a class="reference external" href="http://gitnacho.github.com/Twig/extensions.html">agregar tus propias extensiones</a> a <em>Twig</em>, según sea necesario.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Registrar una extensión de <em>Twig</em> es tan fácil como crear un nuevo servicio y etiquetarlo con <a class="reference internal" href="../reference/dic_tags.html#reference-dic-tags-twig-extension"><em>twig.extension</em></a>.</p>
+</div>
+<p>Como verás a través de la documentación, <em>Twig</em> también es compatible con funciones y fácilmente puedes añadir nuevas. Por ejemplo, la siguiente función, utiliza una etiqueta <tt class="docutils literal"><span class="pre">for</span></tt> estándar y la función <tt class="docutils literal"><span class="pre">cycle</span></tt> para imprimir diez etiquetas div, alternando entre clases <tt class="docutils literal"><span class="pre">par</span></tt> e <tt class="docutils literal"><span class="pre">impar</span></tt>:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">for</span> <span class="nv">i</span> <span class="k">in</span> <span class="m">0.</span><span class="nv">.10</span> <span class="cp">%}</span>
+    <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">cycle</span><span class="o">([</span><span class="s1">&#39;odd&#39;</span><span class="o">,</span> <span class="s1">&#39;even&#39;</span><span class="o">],</span> <span class="nv">i</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+      <span class="c">&lt;!-- some HTML here --&gt;</span>
+        <span class="nt">&lt;/div&gt;</span>
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+<p>A lo largo de este capítulo, mostraremos las plantillas de ejemplo en ambos formatos <em>Twig</em> y <em>PHP</em>.</p>
+<div class="sidebar">
+<p class="first sidebar-title">¿Porqué <em>Twig</em>?</p>
+<p>Las plantillas <em>Twig</em> están destinadas a ser simples y no procesar etiquetas <em>PHP</em>. Esto es por diseño: el sistema de plantillas <em>Twig</em> está destinado a expresar la presentación, no la lógica del programa. Cuanto más utilices <em>Twig</em>, más apreciarás y te beneficiarás de esta distinción. Y, por supuesto, todos los diseñadores web las amarán.</p>
+<p><em>Twig</em> también puede hacer cosas que <em>PHP</em> no puede, como heredar verdaderas plantillas (las plantillas <em>Twig</em> se compilan hasta clases <em>PHP</em> que se heredan unas a otras), controlar los espacios en blanco, restringir un ambiente para prácticas, e incluir funciones y filtros personalizados que sólo afectan a las plantillas. <em>Twig</em> contiene características que facilitan la escritura de plantillas y estas son más concisas. Tomemos el siguiente ejemplo, el cual combina un bucle con una declaración <tt class="docutils literal"><span class="pre">if</span></tt> lógica:</p>
+<div class="last highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;ul&gt;</span>
+    <span class="cp">{%</span> <span class="k">for</span> <span class="nv">user</span> <span class="k">in</span> <span class="nv">users</span> <span class="cp">%}</span>
+        <span class="nt">&lt;li&gt;</span><span class="cp">{{</span> <span class="nv">user.username</span> <span class="cp">}}</span><span class="nt">&lt;/li&gt;</span>
+    <span class="cp">{%</span> <span class="k">else</span> <span class="cp">%}</span>
+        <span class="nt">&lt;li&gt;</span>No users found<span class="nt">&lt;/li&gt;</span>
+    <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+<span class="nt">&lt;/ul&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="guardando-en-cache-plantillas-twig">
+<span id="index-3"></span><h3>Guardando en caché plantillas <em>Twig</em><a class="headerlink" href="#guardando-en-cache-plantillas-twig" title="Enlazar permanentemente con este título">¶</a></h3>
+<p><em>Twig</em> es rápido. Cada plantilla <em>Twig</em> se compila hasta una clase <em>PHP</em> nativa que se reproduce en tiempo de ejecución. Las clases compiladas se encuentran en el directorio <tt class="docutils literal"><span class="pre">app/cache/{entorno}/twig</span></tt> (donde <tt class="docutils literal"><span class="pre">{entorno}</span></tt> es el entorno, tal como <tt class="docutils literal"><span class="pre">dev</span></tt> o <tt class="docutils literal"><span class="pre">prod</span></tt>) y, en algunos casos, pueden ser útiles mientras depuras. Consulta la sección <a class="reference internal" href="page_creation.html#environments-summary"><em>Entornos</em></a> para más información sobre los entornos.</p>
+<p>Cuando está habilitado el modo <tt class="docutils literal"><span class="pre">debug</span></tt> (comúnmente en el entorno <tt class="docutils literal"><span class="pre">dev</span></tt>) al realizar cambios a una plantilla <em>Twig</em>, esta se vuelve a compilar automáticamente. Esto significa que durante el desarrollo, felizmente, puedes realizar cambios en una plantilla <em>Twig</em> e inmediatamente ver las modificaciones sin tener que preocuparte de limpiar ninguna caché.</p>
+<p>Cuando el modo <tt class="docutils literal"><span class="pre">debug</span></tt> está desactivado (comúnmente en el entorno <tt class="docutils literal"><span class="pre">prod</span></tt>), sin embargo, debes borrar el directorio de caché para regenerar las plantillas. Recuerda hacer esto al desplegar tu aplicación.</p>
+</div>
+</div>
+<div class="section" id="plantillas-herencia-y-diseno">
+<span id="index-4"></span><h2>Plantillas, herencia y diseño<a class="headerlink" href="#plantillas-herencia-y-diseno" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A menudo, las plantillas en un proyecto comparten elementos comunes, como el encabezado, pie de página, barra lateral o más. En <em>Symfony2</em>, nos gusta pensar en este problema de forma diferente: una plantilla se puede decorar con otra. Esto funciona exactamente igual que las clases <em>PHP</em>: la herencia de plantillas nos permite crear un &#8220;diseño&#8221; de plantilla base que contiene todos los elementos comunes de tu sitio definidos como <strong>bloques</strong> (piensa en &#8220;clases <em>PHP</em> con métodos base&#8221;). Una plantilla hija puede extender el diseño base y reemplazar cualquiera de sus bloques (piensa en las &#8220;subclases <em>PHP</em> que sustituyen determinados métodos de su clase padre&#8221;).</p>
+<p>En primer lugar, crea un archivo con tu diseño base:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# app/Resources/views/base.html.twig #}</span>
+<span class="cp">&lt;!DOCTYPE html&gt;</span>
+    <span class="nt">&lt;html&gt;</span>
+        <span class="nt">&lt;head&gt;</span>
+        <span class="nt">&lt;meta</span> <span class="na">http-equiv=</span><span class="s">&quot;Content-Type&quot;</span> <span class="na">content=</span><span class="s">&quot;text/html; charset=utf-8&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;title&gt;</span><span class="cp">{%</span> <span class="k">block</span> <span class="nv">title</span> <span class="cp">%}</span>Test Application<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="nt">&lt;/title&gt;</span>
+        <span class="nt">&lt;/head&gt;</span>
+        <span class="nt">&lt;body&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;sidebar&quot;</span><span class="nt">&gt;</span>
+            <span class="cp">{%</span> <span class="k">block</span> <span class="nv">sidebar</span> <span class="cp">%}</span>
+            <span class="nt">&lt;ul&gt;</span>
+                <span class="nt">&lt;li&gt;&lt;a</span> <span class="na">href=</span><span class="s">&quot;/&quot;</span><span class="nt">&gt;</span>Home<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+                <span class="nt">&lt;li&gt;&lt;a</span> <span class="na">href=</span><span class="s">&quot;/blog&quot;</span><span class="nt">&gt;</span>Blog<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+            <span class="nt">&lt;/ul&gt;</span>
+            <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+            <span class="nt">&lt;/div&gt;</span>
+
+        <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;contenido&quot;</span><span class="nt">&gt;</span>
+            <span class="cp">{%</span> <span class="k">block</span> <span class="nv">body</span> <span class="cp">%}{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+            <span class="nt">&lt;/div&gt;</span>
+        <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/html&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="c">&lt;!-- app/Resources/views/base.html.php --&gt;</span>
+<span class="cp">&lt;!DOCTYPE html&gt;</span>
+    <span class="nt">&lt;html&gt;</span>
+        <span class="nt">&lt;head&gt;</span>
+        <span class="nt">&lt;meta</span> <span class="na">http-equiv=</span><span class="s">&quot;Content-Type&quot;</span> <span class="na">content=</span><span class="s">&quot;text/html; charset=utf-8&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;title&gt;</span><span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;slots&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">output</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;Test Application&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="nt">&lt;/title&gt;</span>
+        <span class="nt">&lt;/head&gt;</span>
+        <span class="nt">&lt;body&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;sidebar&quot;</span><span class="nt">&gt;</span>
+            <span class="cp">&lt;?php</span> <span class="k">if</span> <span class="p">(</span><span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;slots&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">has</span><span class="p">(</span><span class="s1">&#39;sidebar&#39;</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+                <span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;slots&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">output</span><span class="p">(</span><span class="s1">&#39;sidebar&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+            <span class="cp">&lt;?php</span> <span class="k">else</span><span class="o">:</span> <span class="cp">?&gt;</span>
+                <span class="nt">&lt;ul&gt;</span>
+                    <span class="nt">&lt;li&gt;&lt;a</span> <span class="na">href=</span><span class="s">&quot;/&quot;</span><span class="nt">&gt;</span>Home<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+                    <span class="nt">&lt;li&gt;&lt;a</span> <span class="na">href=</span><span class="s">&quot;/blog&quot;</span><span class="nt">&gt;</span>Blog<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+                <span class="nt">&lt;/ul&gt;</span>
+            <span class="cp">&lt;?php</span> <span class="k">endif</span><span class="p">;</span> <span class="cp">?&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+
+        <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;contenido&quot;</span><span class="nt">&gt;</span>
+            <span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;slots&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">output</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+        <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/html&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Aunque la explicación sobre la herencia de plantillas será en términos de <em>Twig</em>, la filosofía es la misma entre plantillas <em>Twig</em> y <em>PHP</em>.</p>
+</div>
+<p>Esta plantilla define el esqueleto del documento <em>HTML</em> base de una simple página de dos columnas. En este ejemplo, se definen tres áreas <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">block</span> <span class="pre">%}</span></tt> (<tt class="docutils literal"><span class="pre">title</span></tt>, <tt class="docutils literal"><span class="pre">sidebar</span></tt> y <tt class="docutils literal"><span class="pre">body</span></tt>). Una plantilla hija puede sustituir cada uno de los bloques o dejarlos con su implementación predeterminada. Esta plantilla también se podría reproducir directamente. En este caso, los bloques <tt class="docutils literal"><span class="pre">title</span></tt>, <tt class="docutils literal"><span class="pre">sidebar</span></tt> y <tt class="docutils literal"><span class="pre">body</span></tt> simplemente mantienen los valores predeterminados usados en esta plantilla.</p>
+<p>Una plantilla hija podría tener este aspecto:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/BlogBundle/Resources/views/Blog/index.html.twig #}</span>
+<span class="cp">{%</span> <span class="k">extends</span> <span class="s1">&#39;::base.html.twig&#39;</span> <span class="cp">%}</span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">title</span> <span class="cp">%}</span>My cool blog posts<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">body</span> <span class="cp">%}</span>
+    <span class="cp">{%</span> <span class="k">for</span> <span class="nv">entry</span> <span class="k">in</span> <span class="nv">blog_entries</span> <span class="cp">%}</span>
+        <span class="nt">&lt;h2&gt;</span><span class="cp">{{</span> <span class="nv">entry.title</span> <span class="cp">}}</span><span class="nt">&lt;/h2&gt;</span>
+        <span class="nt">&lt;p&gt;</span><span class="cp">{{</span> <span class="nv">entry.body</span> <span class="cp">}}</span><span class="nt">&lt;/p&gt;</span>
+    <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/BlogBundle/Resources/views/Blog/index.html.php --&gt;</span>
+<span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">extend</span><span class="p">(</span><span class="s1">&#39;::base.html.php&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+
+<span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;slots&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">set</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span> <span class="s1">&#39;My cool blog posts&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+
+<span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;slots&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">start</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+    <span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$blog_entries</span> <span class="k">as</span> <span class="nv">$entry</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+        <span class="nt">&lt;h2&gt;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$entry</span><span class="o">-&gt;</span><span class="na">getTitle</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="nt">&lt;/h2&gt;</span>
+        <span class="nt">&lt;p&gt;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$entry</span><span class="o">-&gt;</span><span class="na">getBody</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="nt">&lt;/p&gt;</span>
+    <span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+<span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;slots&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">stop</span><span class="p">()</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">La plantilla padre se identifica mediante una sintaxis de cadena especial (<tt class="docutils literal"><span class="pre">::base.html.twig</span></tt>) la cual indica que la plantilla vive en el directorio <tt class="docutils literal"><span class="pre">app/Resources/views</span></tt> del proyecto. Esta convención de nomenclatura se explica completamente en <a class="reference internal" href="#template-naming-locations"><em>Nomenclatura y ubicación de plantillas</em></a>.</p>
+</div>
+<p>La clave para la herencia de plantillas es la etiqueta <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">extends</span> <span class="pre">%}</span></tt>. Esta le indica al motor de plantillas que primero evalúe la plantilla base, la cual establece el diseño y define varios bloques. Luego reproduce la plantilla hija, en ese momento, los bloques <tt class="docutils literal"><span class="pre">title</span></tt> y <tt class="docutils literal"><span class="pre">body</span></tt> del padre son reemplazados por los de la hija. Dependiendo del valor de <tt class="docutils literal"><span class="pre">blog_entries</span></tt>, el resultado sería algo como esto:</p>
+<div class="highlight-html"><div class="highlight"><pre><span class="cp">&lt;!DOCTYPE html&gt;</span>
+    <span class="nt">&lt;html&gt;</span>
+        <span class="nt">&lt;head&gt;</span>
+        <span class="nt">&lt;meta</span> <span class="na">http-equiv=</span><span class="s">&quot;Content-Type&quot;</span> <span class="na">content=</span><span class="s">&quot;text/html; charset=utf-8&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;title&gt;</span>My cool blog posts<span class="nt">&lt;/title&gt;</span>
+        <span class="nt">&lt;/head&gt;</span>
+        <span class="nt">&lt;body&gt;</span>
+        <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;sidebar&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;ul&gt;</span>
+                <span class="nt">&lt;li&gt;&lt;a</span> <span class="na">href=</span><span class="s">&quot;/&quot;</span><span class="nt">&gt;</span>Home<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+                <span class="nt">&lt;li&gt;&lt;a</span> <span class="na">href=</span><span class="s">&quot;/blog&quot;</span><span class="nt">&gt;</span>Blog<span class="nt">&lt;/a&gt;&lt;/li&gt;</span>
+            <span class="nt">&lt;/ul&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+
+        <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;contenido&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;h2&gt;</span>My first post<span class="nt">&lt;/h2&gt;</span>
+            <span class="nt">&lt;p&gt;</span>The body of the first post.<span class="nt">&lt;/p&gt;</span>
+
+            <span class="nt">&lt;h2&gt;</span>Another post<span class="nt">&lt;/h2&gt;</span>
+            <span class="nt">&lt;p&gt;</span>The body of the second post.<span class="nt">&lt;/p&gt;</span>
+            <span class="nt">&lt;/div&gt;</span>
+        <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/html&gt;</span>
+</pre></div>
+</div>
+<p>Ten en cuenta que como en la plantilla hija no has definido un bloque <tt class="docutils literal"><span class="pre">sidebar</span></tt>, en su lugar, se utiliza el valor de la plantilla padre. Una plantilla padre, de forma predeterminada, siempre utiliza una etiqueta <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">block</span> <span class="pre">%}</span></tt> para el contenido.</p>
+<p>Puedes utilizar tantos niveles de herencia como quieras. En la siguiente sección, explicaremos un modelo común de tres niveles de herencia junto con la forma en que se organizan las plantillas dentro de un proyecto <em>Symfony2</em>.</p>
+<p>Cuando trabajes con la herencia de plantillas, ten en cuenta los siguientes consejos:</p>
+<ul>
+<li><p class="first">Si utilizas <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">extends</span> <span class="pre">%}</span></tt> en una plantilla, esta debe ser la primer etiqueta en esa plantilla.</p>
+</li>
+<li><p class="first">Mientras más etiquetas <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">block</span> <span class="pre">%}</span></tt> tengas en tu plantilla base, mejor.
+Recuerda, las plantillas hijas no tienen que definir todos los bloques de los padres, por lo tanto crea tantos bloques en tus plantillas base como desees y dale a cada uno un valor predeterminado razonable. Mientras más bloques tengan tus plantillas base, más flexible será tu diseño.</p>
+</li>
+<li><p class="first">Si te encuentras duplicando contenido en una serie de plantillas, probablemente significa que debes mover el contenido a un <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">block</span> <span class="pre">%}</span></tt> en una plantilla padre.
+En algunos casos, una mejor solución podría ser mover el contenido a una nueva plantilla e incluirla con <tt class="docutils literal"><span class="pre">include</span></tt> (consulta <a class="reference internal" href="#incluyendo-plantillas"><em>Incluyendo otras plantillas</em></a>).</p>
+</li>
+<li><p class="first">Si necesitas conseguir el contenido de un bloque desde la plantilla padre, puedes usar la función <tt class="docutils literal"><span class="pre">{{</span> <span class="pre">parent()</span> <span class="pre">}}</span></tt>. Esta es útil si deseas añadir algo al contenido de un bloque padre en vez de reemplazarlo por completo:</p>
+<blockquote>
+<div><div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">block</span> <span class="nv">sidebar</span> <span class="cp">%}</span>
+    <span class="nt">&lt;h3&gt;</span>Table of Contents<span class="nt">&lt;/h3&gt;</span>
+    ...
+    <span class="cp">{{</span> <span class="nv">parent</span><span class="o">()</span> <span class="cp">}}</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ul>
+</div>
+<div class="section" id="nomenclatura-y-ubicacion-de-plantillas">
+<span id="template-naming-locations"></span><span id="index-5"></span><h2>Nomenclatura y ubicación de plantillas<a class="headerlink" href="#nomenclatura-y-ubicacion-de-plantillas" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>De forma predeterminada, las plantillas pueden vivir en dos diferentes lugares:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">app/Resources/views/</span></tt>: El directorio de las <tt class="docutils literal"><span class="pre">vistas</span></tt> de la aplicación puede contener todas las plantillas base de la aplicación (es decir, los diseños de tu aplicación), así como plantillas que sustituyen a plantillas de paquetes (consulta <a class="reference internal" href="#overriding-bundle-templates"><em>Sustituyendo plantillas del paquete</em></a>);</li>
+<li><tt class="docutils literal"><span class="pre">ruta/al/paquete/Resources/views/</span></tt> Cada paquete contiene sus plantillas en su directorio (y subdirectorios) <tt class="docutils literal"><span class="pre">Resources/views</span></tt>. La mayoría de las plantillas viven dentro de un paquete.</li>
+</ul>
+<p><em>Symfony2</em> utiliza una sintaxis de cadena <strong>paquete</strong>:<strong>controlador</strong>:<strong>plantilla</strong> para las plantillas. Esto permite diferentes tipos de plantilla, dónde cada una vive en un lugar específico:</p>
+<ul>
+<li><p class="first"><tt class="docutils literal"><span class="pre">AcmeBlogBundle:Blog:index.html.twig</span></tt>: Esta sintaxis se utiliza para especificar una plantilla para una página específica. Las tres partes de la cadena, cada una separada por dos puntos (<tt class="docutils literal"><span class="pre">:</span></tt>), significan lo siguiente:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">AcmeBlogBundle</span></tt>: (<em>paquete</em>) la plantilla vive dentro de <em class="dfn">AcmeBlogBundle</em> (por ejemplo, <tt class="file docutils literal"><span class="pre">src/Acme/BlogBundle</span></tt>);</li>
+<li><tt class="docutils literal"><span class="pre">Blog</span></tt>: (<em>controlador</em>) indica que la plantilla vive dentro del subdirectorio <tt class="docutils literal"><span class="pre">Blog</span></tt> de <tt class="docutils literal"><span class="pre">Resources/views</span></tt>;</li>
+<li><tt class="docutils literal"><span class="pre">index.html.twig</span></tt>: (<em>plantilla</em>) el nombre real del archivo es <tt class="docutils literal"><span class="pre">index.html.twig</span></tt>.</li>
+</ul>
+</div></blockquote>
+<p>Suponiendo que <em class="dfn">AcmeBlogBundle</em> vive en <tt class="file docutils literal"><span class="pre">src/Acme/BlogBundle</span></tt>, la ruta final para el diseño debería ser <tt class="file docutils literal"><span class="pre">src/Acme/BlogBundle/Resources/views/Blog/index.html.twig</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">AcmeBlogBundle::base.html.twig</span></tt>: Esta sintaxis se refiere a una plantilla base que es específica para <tt class="docutils literal"><span class="pre">AcmeBlogBundle</span></tt>. Puesto que falta la porción central, &#8220;controlador&#8221;, (por ejemplo, <tt class="docutils literal"><span class="pre">Blog</span></tt>), la plantilla vive en <tt class="docutils literal"><span class="pre">Resources/views/base.html.twig</span></tt> dentro de <tt class="docutils literal"><span class="pre">AcmeBlogBundle</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">::base.html.twig</span></tt>: Esta sintaxis se refiere a una plantilla o diseño base de la aplicación. Observa que la cadena comienza con dobles dos puntos (<tt class="docutils literal"><span class="pre">::</span></tt>), lo cual significa que faltan ambas porciones <em>paquete</em> y <em>controlador</em>. Esto quiere decir que la plantilla no se encuentra en ningún paquete, sino en el directorio raíz de la aplicación <tt class="docutils literal"><span class="pre">app/Resources/views/</span></tt>.</p>
+</li>
+</ul>
+<p>En la sección <a class="reference internal" href="#overriding-bundle-templates"><em>Sustituyendo plantillas del paquete</em></a>, encontrarás cómo puedes sustituir cada plantilla que vive dentro de <tt class="docutils literal"><span class="pre">AcmeBlogBundle</span></tt>, por ejemplo, colocando una plantilla del mismo nombre en el directorio <tt class="docutils literal"><span class="pre">app/Resources/AcmeBlog/views/</span></tt>. Esto nos da el poder para sustituir plantillas de cualquier paquete de terceros.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Esperemos que la sintaxis de nomenclatura de plantilla te resulte familiar &#8212;es la misma convención de nomenclatura utilizada para referirse al <a class="reference internal" href="routing.html#controller-string-syntax"><em>Patrón de nomenclatura para controladores</em></a>.</p>
+</div>
+<div class="section" id="sufijo-de-plantilla">
+<h3>Sufijo de plantilla<a class="headerlink" href="#sufijo-de-plantilla" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El formato <strong>paquete</strong>:<strong>controlador</strong>:<strong>plantilla</strong> de cada plantilla, especifica <em>dónde</em> se encuentra el archivo de plantilla. Cada nombre de plantilla también cuenta con dos extensiones que especifican el <em>formato</em> y <em>motor</em> de esa plantilla.</p>
+<ul class="simple">
+<li><strong>AcmeBlogBundle:Blog:index.html.twig</strong> &#8212; formato <em>HTML</em>, motor <em>Twig</em></li>
+<li><strong>AcmeBlogBundle:Blog:index.html.php</strong> &#8212; formato <em>HTML</em>, motor <em>PHP</em></li>
+<li><strong>AcmeBlogBundle:Blog:index.css.twig</strong> &#8212; formato <em>CSS</em>, motor <em>Twig</em></li>
+</ul>
+<p>De forma predeterminada, cualquier plantilla <em>Symfony2</em> se puede escribir en <em>Twig</em> o <em>PHP</em>, y la última parte de la extensión (por ejemplo <tt class="file docutils literal"><span class="pre">.twig</span></tt> o <tt class="file docutils literal"><span class="pre">.php</span></tt>) especifica cuál de los dos <em>motores</em> se debe utilizar. La primera parte de la extensión, (por ejemplo <tt class="file docutils literal"><span class="pre">.html</span></tt>, <tt class="file docutils literal"><span class="pre">.css</span></tt>, etc.) es el formato final que la plantilla debe generar. A diferencia del motor, el cual determina cómo procesa <em>Symfony2</em> la plantilla, esta simplemente es una táctica de organización utilizada en caso de que el mismo recurso se tenga que reproducir como <em>HTML</em> (<tt class="docutils literal"><span class="pre">index.html.twig</span></tt>), <em>XML</em> (<tt class="docutils literal"><span class="pre">index.xml.twig</span></tt>), o cualquier otro formato. Para más información, lee la sección <a class="reference internal" href="#template-formats"><em>Depurando</em></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Los &#8220;motores&#8221; disponibles se pueden configurar e incluso agregar nuevos motores.
+Consulta <a class="reference internal" href="#template-configuration"><em>Configuración de plantillas</em></a> para más detalles.</p>
+</div>
+</div>
+</div>
+<div class="section" id="etiquetas-y-ayudantes">
+<span id="index-6"></span><h2>Etiquetas y ayudantes<a class="headerlink" href="#etiquetas-y-ayudantes" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Ya entendiste los conceptos básicos de las plantillas, cómo son denominadas y cómo utilizar la herencia en plantillas. Las partes más difíciles ya quedaron atrás. En esta sección, aprenderás acerca de un amplio grupo de herramientas disponibles para ayudarte a realizar las tareas de plantilla más comunes, como la inclusión de otras plantillas, enlazar páginas e incluir imágenes.</p>
+<p><em>Symfony2</em> viene con varias etiquetas <em>Twig</em> especializadas y funciones que facilitan la labor del diseñador de la plantilla. En <em>PHP</em>, el sistema de plantillas extensible ofrece un sistema de <em>ayudantes</em> que proporciona funciones útiles en el contexto de la plantilla.</p>
+<p>Ya hemos visto algunas etiquetas integradas en <em>Twig</em> (<tt class="docutils literal"><span class="pre">{%</span> <span class="pre">block</span> <span class="pre">%}</span></tt> y <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">extends</span> <span class="pre">%}</span></tt>), así como un ejemplo de un ayudante <em>PHP</em> (consulta <tt class="docutils literal"><span class="pre">$view['slot']</span></tt>). Aprendamos un poco más...</p>
+<div class="section" id="incluyendo-otras-plantillas">
+<span id="incluyendo-plantillas"></span><span id="index-7"></span><h3>Incluyendo otras plantillas<a class="headerlink" href="#incluyendo-otras-plantillas" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>A menudo querrás incluir la misma plantilla o fragmento de código en varias páginas diferentes. Por ejemplo, en una aplicación con &#8220;artículos de noticias&#8221;, el código de la plantilla que muestra un artículo se puede utilizar en la página de detalles del artículo, en una página que muestra los artículos más populares, o en una lista de los últimos artículos.</p>
+<p>Cuando necesitas volver a utilizar un trozo de código <em>PHP</em>, normalmente mueves el código a una nueva clase o función <em>PHP</em>. Lo mismo es cierto para las plantillas. Al mover el código de la plantilla a su propia plantilla, este se puede incluir en cualquier otra plantilla. En primer lugar, crea la plantilla que tendrás que volver a usar.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/ArticleBundle/Resources/views/Article/articleDetails.html.twig #}</span>
+<span class="nt">&lt;h2&gt;</span><span class="cp">{{</span> <span class="nv">article.title</span> <span class="cp">}}</span><span class="nt">&lt;/h2&gt;</span>
+<span class="nt">&lt;h3</span> <span class="na">class=</span><span class="s">&quot;byline&quot;</span><span class="nt">&gt;</span>by <span class="cp">{{</span> <span class="nv">article.authorName</span> <span class="cp">}}</span><span class="nt">&lt;/h3&gt;</span>
+
+<span class="nt">&lt;p&gt;</span>
+    <span class="cp">{{</span> <span class="nv">article.body</span> <span class="cp">}}</span>
+<span class="nt">&lt;/p&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/ArticleBundle/Resources/views/Article/articleDetails.html.php --&gt;</span>
+<span class="nt">&lt;h2&gt;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$article</span><span class="o">-&gt;</span><span class="na">getTitle</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="nt">&lt;/h2&gt;</span>
+<span class="nt">&lt;h3</span> <span class="na">class=</span><span class="s">&quot;byline&quot;</span><span class="nt">&gt;</span>by <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$article</span><span class="o">-&gt;</span><span class="na">getAuthorName</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="nt">&lt;/h3&gt;</span>
+
+<span class="nt">&lt;p&gt;</span>
+    <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$article</span><span class="o">-&gt;</span><span class="na">getBody</span><span class="p">()</span> <span class="cp">?&gt;</span>
+<span class="nt">&lt;/p&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Incluir esta plantilla en cualquier otra plantilla es sencillo:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/ArticleBundle/Resources/Article/list.html.twig #}</span>
+<span class="cp">{%</span> <span class="k">extends</span> <span class="s1">&#39;AcmeArticleBundle::base.html.twig&#39;</span> <span class="cp">%}</span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">body</span> <span class="cp">%}</span>
+    <span class="nt">&lt;h1&gt;</span>Recent Articles<span class="nt">&lt;h1&gt;</span>
+
+    <span class="cp">{%</span> <span class="k">for</span> <span class="nv">article</span> <span class="k">in</span> <span class="nv">articles</span> <span class="cp">%}</span>
+        <span class="cp">{%</span> <span class="k">include</span> <span class="s1">&#39;AcmeArticleBundle:Article:articleDetails.html.twig&#39;</span> <span class="k">with</span> <span class="o">{</span><span class="s1">&#39;article&#39;</span><span class="o">:</span> <span class="nv">article</span><span class="o">}</span> <span class="cp">%}</span>
+    <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/ArticleBundle/Resources/Article/list.html.php --&gt;</span>
+<span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">extend</span><span class="p">(</span><span class="s1">&#39;AcmeArticleBundle::base.html.php&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+
+<span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;slots&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">start</span><span class="p">(</span><span class="s1">&#39;body&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+    <span class="nt">&lt;h1&gt;</span>Recent Articles<span class="nt">&lt;/h1&gt;</span>
+
+    <span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$articles</span> <span class="k">as</span> <span class="nv">$article</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+        <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeArticleBundle:Article:articleDetails.html.php&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;article&#39;</span> <span class="o">=&gt;</span> <span class="nv">$article</span><span class="p">))</span> <span class="cp">?&gt;</span>
+    <span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+<span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;slots&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">stop</span><span class="p">()</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>La plantilla se incluye con la etiqueta <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">include</span> <span class="pre">%}</span></tt>. Observa que el nombre de la plantilla sigue la misma convención típica. La plantilla <tt class="docutils literal"><span class="pre">articleDetails.html.twig</span></tt> utiliza una variable <tt class="docutils literal"><span class="pre">article</span></tt>. Esta es proporcionada por la plantilla <tt class="docutils literal"><span class="pre">list.html.twig</span></tt> utilizando la orden <tt class="docutils literal"><span class="pre">with</span></tt>.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last"><tt class="docutils literal"><span class="pre">{'article':</span> <span class="pre">article}</span></tt> es la sintaxis de asignación estándar de <em>Twig</em> (es decir, una matriz con claves nombradas). Si tuviéramos que pasar varios elementos, se vería así: <tt class="docutils literal"><span class="pre">{'foo':</span> <span class="pre">foo,</span> <span class="pre">'bar':</span> <span class="pre">bar}</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="integrando-controladores">
+<span id="templating-embedding-controller"></span><span id="index-8"></span><h3>Integrando controladores<a class="headerlink" href="#integrando-controladores" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>En algunos casos, es necesario hacer algo más que incluir una simple plantilla. Supongamos que en tu diseño tienes una barra lateral, la cual contiene los tres artículos más recientes.
+Recuperar los tres artículos puede incluir consultar la base de datos o realizar otra pesada lógica ​​que no se puede hacer desde dentro de una plantilla.</p>
+<p>La solución es simplemente insertar el resultado de un controlador en tu plantilla entera. En primer lugar, crea un controlador que reproduzca un cierto número de artículos recientes:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/ArticleBundle/Controller/ArticleController.php</span>
+
+<span class="k">class</span> <span class="nc">ArticleController</span> <span class="k">extends</span> <span class="nx">Controller</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">recentArticlesAction</span><span class="p">(</span><span class="nv">$max</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// hace una llamada a la base de datos u otra lógica</span>
+        <span class="c1">// para obtener los &quot;$max&quot; artículos más recientes</span>
+        <span class="nv">$articles</span> <span class="o">=</span> <span class="o">...</span><span class="p">;</span>
+
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeArticleBundle:Article:recentList.html.twig&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;articles&#39;</span> <span class="o">=&gt;</span> <span class="nv">$articles</span><span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>La plantilla <tt class="docutils literal"><span class="pre">recentList</span></tt> es perfectamente clara:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/ArticleBundle/Resources/views/Article/recentList.html.twig #}</span>
+<span class="cp">{%</span> <span class="k">for</span> <span class="nv">article</span> <span class="k">in</span> <span class="nv">articles</span> <span class="cp">%}</span>
+    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;/article/</span><span class="cp">{{</span> <span class="nv">article.slug</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+        <span class="cp">{{</span> <span class="nv">article.title</span> <span class="cp">}}</span>
+        <span class="nt">&lt;/a&gt;</span>
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/ArticleBundle/Resources/views/Article/recentList.html.php --&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$articles</span> <span class="k">as</span> <span class="nv">$article</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;/article/</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$article</span><span class="o">-&gt;</span><span class="na">getSlug</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+        <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$article</span><span class="o">-&gt;</span><span class="na">getTitle</span><span class="p">()</span> <span class="cp">?&gt;</span>
+        <span class="nt">&lt;/a&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Ten en cuenta que en este ejemplo hemos falsificado y codificado la <em>URL</em> del artículo (por ejemplo <tt class="docutils literal"><span class="pre">/article/slug</span></tt>). Esta es una mala práctica. En la siguiente sección, aprenderás cómo hacer esto correctamente.</p>
+</div>
+<p>Para incluir el controlador, tendrás que referirte a él utilizando la sintaxis de cadena estándar para controladores (es decir, <strong>paquete</strong>:<strong>controlador</strong>:<strong>acción</strong>):</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# app/Resources/views/base.html.twig #}</span>
+...
+
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;sidebar&quot;</span><span class="nt">&gt;</span>
+    <span class="cp">{%</span> <span class="k">render</span> <span class="s2">&quot;AcmeArticleBundle:Article:recentArticles&quot;</span> <span class="k">with</span> <span class="o">{</span><span class="s1">&#39;max&#39;</span><span class="o">:</span> <span class="m">3</span><span class="o">}</span> <span class="cp">%}</span>
+    <span class="nt">&lt;/div&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="c">&lt;!-- app/Resources/views/base.html.php --&gt;</span>
+...
+
+<span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;sidebar&quot;</span><span class="nt">&gt;</span>
+    <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeArticleBundle:Article:recentArticles&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;max&#39;</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">))</span> <span class="cp">?&gt;</span>
+    <span class="nt">&lt;/div&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Cada vez que te encuentres necesitando una variable o una pieza de información a la que una plantilla no tiene acceso, considera reproducir un controlador.
+Los controladores se ejecutan rápidamente y promueven la buena organización y reutilización de código.</p>
+</div>
+<div class="section" id="contenido-asincrono-con-hinclude-js">
+<h3>Contenido asíncrono con <tt class="file docutils literal"><span class="pre">hinclude.js</span></tt><a class="headerlink" href="#contenido-asincrono-con-hinclude-js" title="Enlazar permanentemente con este título">¶</a></h3>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>La compatibilidad con <tt class="file docutils literal"><span class="pre">hinclude.js</span></tt> se añadió en <em>Symfony 2.1</em></p>
+<p>Los controladores se pueden incorporar de manera asíncrona con la biblioteca <em>JavaScript</em> <a class="reference external" href="http://mnot.github.com/hinclude/">hinclude.js</a>.
+Debido a que el contenido integrado proviene de otra página (o controlador para el caso), <em>Symfony2</em> utiliza el ayudante <tt class="docutils literal"><span class="pre">render</span></tt> estándar para configurar las etiquetas <tt class="docutils literal"><span class="pre">hinclude</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">render</span> <span class="s1">&#39;...:news&#39;</span> <span class="k">with</span> <span class="o">{},</span> <span class="o">{</span><span class="s1">&#39;standalone&#39;</span><span class="o">:</span> <span class="s1">&#39;js&#39;</span><span class="o">}</span> <span class="cp">%}</span><span class="x"></span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;...:news&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(),</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;standalone&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;js&#39;</span><span class="p">))</span> <span class="cp">?&gt;</span><span class="x"></span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Para que trabaje, debes incluir <a class="reference external" href="http://mnot.github.com/hinclude/">hinclude.js</a> en tu página.</p>
+</div>
+<p>Puedes especificar globalmente el contenido predeterminado (al cargar o si <em>JavaScript</em> está desactivado) en la configuración de tu aplicación:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">framework</span><span class="p-Indicator">:</span>
+    <span class="c1"># ...</span>
+    <span class="l-Scalar-Plain">templating</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">hinclude_default_template</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">AcmeDemoBundle::hinclude.html.twig</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;framework:config&gt;</span>
+    <span class="nt">&lt;framework:templating</span> <span class="na">hinclude-default-template=</span><span class="s">&quot;AcmeDemoBundle::hinclude.html.twig&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/framework:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="c1">// ...</span>
+    <span class="s1">&#39;templating&#39;</span>      <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;hinclude_default_template&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;AcmeDemoBundle::hinclude.html.twig&#39;</span><span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="enlazando-paginas">
+<span id="index-9"></span><h3>Enlazando páginas<a class="headerlink" href="#enlazando-paginas" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La creación de enlaces a otras páginas en tu aplicación es uno de los trabajos más comunes de una plantilla. En lugar de codificar las <em>URL</em> en las plantillas, utiliza la función <tt class="docutils literal"><span class="pre">path</span></tt> de <em>Twig</em> (o el ayudante <tt class="docutils literal"><span class="pre">router</span></tt> en <em>PHP</em>) para generar <em>URL</em> basadas en la configuración de enrutado. Más tarde, si deseas modificar la <em>URL</em> de una página en particular, todo lo que tienes que hacer es cambiar la configuración de enrutado; las plantillas automáticamente generarán la nueva <em>URL</em>.</p>
+<p>En primer lugar, crea el enlace a la página <tt class="docutils literal"><span class="pre">&quot;_welcome&quot;</span></tt>, la cual es accesible a través de la siguiente configuración de enrutado:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">_welcome</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">/</span>
+    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">_controller</span><span class="p-Indicator">:</span> <span class="nv">AcmeDemoBundle</span><span class="p-Indicator">:</span><span class="nv">Welcome</span><span class="p-Indicator">:</span><span class="nv">index</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;route</span> <span class="na">id=</span><span class="s">&quot;_welcome&quot;</span> <span class="na">pattern=</span><span class="s">&quot;/&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;default</span> <span class="na">key=</span><span class="s">&quot;_controller&quot;</span><span class="nt">&gt;</span>AcmeDemoBundle:Welcome:index<span class="nt">&lt;/default&gt;</span>
+<span class="nt">&lt;/route&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$collection</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+<span class="nv">$collection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;_welcome&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;_controller&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;AcmeDemoBundle:Welcome:index&#39;</span><span class="p">,</span>
+<span class="p">)));</span>
+
+<span class="k">return</span> <span class="nv">$collection</span><span class="p">;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Para enlazar a la página, sólo tienes que utilizar la función <tt class="docutils literal"><span class="pre">path</span></tt> de <em>Twig</em> y referir la ruta:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">path</span><span class="o">(</span><span class="s1">&#39;_welcome&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>Home<span class="nt">&lt;/a&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">generate</span><span class="p">(</span><span class="s1">&#39;_welcome&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;</span>Home<span class="nt">&lt;/a&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Como era de esperar, esto genera la <em>URL</em> <tt class="docutils literal"><span class="pre">/</span></tt>. Vamos a ver cómo funciona esto con una ruta más complicada:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">article_show</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">/article/{slug}</span>
+    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">_controller</span><span class="p-Indicator">:</span> <span class="nv">AcmeArticleBundle</span><span class="p-Indicator">:</span><span class="nv">Article</span><span class="p-Indicator">:</span><span class="nv">show</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;route</span> <span class="na">id=</span><span class="s">&quot;article_show&quot;</span> <span class="na">pattern=</span><span class="s">&quot;/article/{slug}&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;default</span> <span class="na">key=</span><span class="s">&quot;_controller&quot;</span><span class="nt">&gt;</span>AcmeArticleBundle:Article:show<span class="nt">&lt;/default&gt;</span>
+<span class="nt">&lt;/route&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$collection</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+<span class="nv">$collection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;article_show&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/article/{slug}&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;_controller&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;AcmeArticleBundle:Article:show&#39;</span><span class="p">,</span>
+<span class="p">)));</span>
+
+<span class="k">return</span> <span class="nv">$collection</span><span class="p">;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>En este caso, es necesario especificar el nombre de la ruta (<tt class="docutils literal"><span class="pre">article_show</span></tt>) y un valor para el parámetro <tt class="docutils literal"><span class="pre">{slug}</span></tt>. Usando esta ruta, vamos a volver a la plantilla <tt class="docutils literal"><span class="pre">recentList</span></tt> de la sección anterior y enlazar los artículos correctamente:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/ArticleBundle/Resources/views/Article/recentList.html.twig #}</span>
+<span class="cp">{%</span> <span class="k">for</span> <span class="nv">article</span> <span class="k">in</span> <span class="nv">articles</span> <span class="cp">%}</span>
+    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">path</span><span class="o">(</span><span class="s1">&#39;article_show&#39;</span><span class="o">,</span> <span class="o">{</span> <span class="s1">&#39;slug&#39;</span><span class="o">:</span> <span class="nv">article.slug</span> <span class="o">})</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+        <span class="cp">{{</span> <span class="nv">article.title</span> <span class="cp">}}</span>
+        <span class="nt">&lt;/a&gt;</span>
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/ArticleBundle/Resources/views/Article/recentList.html.php --&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$articles</span> <span class="nx">in</span> <span class="nv">$article</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span>
+    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">generate</span><span class="p">(</span><span class="s1">&#39;article_show&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;slug&#39;</span> <span class="o">=&gt;</span> <span class="nv">$article</span><span class="o">-&gt;</span><span class="na">getSlug</span><span class="p">())</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+        <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$article</span><span class="o">-&gt;</span><span class="na">getTitle</span><span class="p">()</span> <span class="cp">?&gt;</span>
+        <span class="nt">&lt;/a&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p>También puedes generar una <em>URL</em> absoluta utilizando la función <tt class="docutils literal"><span class="pre">url</span></tt> de <em>Twig</em>:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">url</span><span class="o">(</span><span class="s1">&#39;_welcome&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>Home<span class="nt">&lt;/a&gt;</span>
+</pre></div>
+</div>
+<p>Lo mismo se puede hacer en plantillas <em>PHP</em> pasando un tercer argumento al método <tt class="docutils literal"><span class="pre">generate()</span></tt>:</p>
+<div class="last highlight-html+php"><div class="highlight"><pre><span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">generate</span><span class="p">(</span><span class="s1">&#39;_welcome&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(),</span> <span class="k">true</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;</span>Home<span class="nt">&lt;/a&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="enlazando-activos">
+<span id="index-10"></span><h3>Enlazando activos<a class="headerlink" href="#enlazando-activos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Las plantillas también se refieren comúnmente a imágenes, <em>JavaScript</em>, hojas de estilo y otros activos. Por supuesto, puedes codificar la ruta de estos activos (por ejemplo <tt class="docutils literal"><span class="pre">/images/logo.png</span></tt>), pero <em>Symfony2</em> ofrece una opción más dinámica a través de la función <tt class="docutils literal"><span class="pre">assets</span></tt> de <em>Twig</em>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;img</span> <span class="na">src=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">asset</span><span class="o">(</span><span class="s1">&#39;images/logo.png&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span> <span class="na">alt=</span><span class="s">&quot;Symfony!&quot;</span> <span class="nt">/&gt;</span>
+
+<span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">asset</span><span class="o">(</span><span class="s1">&#39;css/blog.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="nt">&lt;img</span> <span class="na">src=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;assets&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">getUrl</span><span class="p">(</span><span class="s1">&#39;images/logo.png&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="s">&quot;</span> <span class="na">alt=</span><span class="s">&quot;Symfony!&quot;</span> <span class="nt">/&gt;</span>
+
+<span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;assets&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">getUrl</span><span class="p">(</span><span class="s1">&#39;css/blog.css&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="s">&quot;</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>El propósito principal de la función <tt class="docutils literal"><span class="pre">asset</span></tt> es hacer más portátil tu aplicación.
+Si tu aplicación vive en la raíz de tu servidor (por ejemplo, <a class="reference external" href="http://ejemplo.com">http://ejemplo.com</a>), entonces las rutas reproducidas deben ser <tt class="docutils literal"><span class="pre">/images/logo.png</span></tt>. Pero si tu aplicación vive en un subdirectorio (por ejemplo, <a class="reference external" href="http://ejemplo.com/mi_aplic">http://ejemplo.com/mi_aplic</a>), cada ruta de activo debe reproducir el subdirectorio (por ejemplo <tt class="docutils literal"><span class="pre">/mi_aplic/images/logo.png</span></tt>). La función <tt class="docutils literal"><span class="pre">asset</span></tt> se encarga de esto determinando cómo se está utilizando tu aplicación y generando las rutas correctas en consecuencia.</p>
+<p>Además, si utilizas la función <tt class="docutils literal"><span class="pre">asset</span></tt>, <em>Symfony</em> automáticamente puede añadir una cadena de consulta a tu activo, con el fin de garantizar que los activos estáticos actualizados no se almacenen en caché al desplegar tu aplicación. Por ejemplo, <tt class="docutils literal"><span class="pre">/images/logo.png</span></tt> podría ser <tt class="docutils literal"><span class="pre">/images/logo.png?v2</span></tt>. Para más información, consulta la opción de configuración <a class="reference internal" href="../reference/configuration/framework.html#ref-framework-assets-version"><em>assets_version</em></a>.</p>
+</div>
+</div>
+<div class="section" id="incluyendo-hojas-de-estilo-y-javascript-en-twig">
+<span id="index-11"></span><h2>Incluyendo hojas de estilo y <em>JavaScript</em> en <em>Twig</em><a class="headerlink" href="#incluyendo-hojas-de-estilo-y-javascript-en-twig" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Ningún sitio estaría completo sin incluir archivos de <em>JavaScript</em> y hojas de estilo.
+En <em>Symfony</em>, la inclusión de estos activos se maneja elegantemente, aprovechando la herencia de plantillas de <em>Symfony</em>.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Esta sección te enseñará la filosofía detrás de la inclusión de activos como hojas de estilo y <em>Javascript</em> en <em>Symfony</em>. <em>Symfony</em> también empaca otra biblioteca, llamada <tt class="docutils literal"><span class="pre">Assetic</span></tt>, la cual sigue esta filosofía, pero te permite hacer cosas mucho más interesantes con esos activos. Para más información sobre el uso de <tt class="docutils literal"><span class="pre">Assetic</span></tt> consulta <a class="reference internal" href="../cookbook/assetic/asset_management.html"><em>Cómo utilizar Assetic para gestionar activos</em></a>.</p>
+</div>
+<p>Comienza agregando dos bloques a la plantilla base que mantendrá tus activos:
+uno llamado <tt class="docutils literal"><span class="pre">stylesheet</span></tt> dentro de la etiqueta <tt class="docutils literal"><span class="pre">head</span></tt> y otro llamado <tt class="docutils literal"><span class="pre">javascript</span></tt> justo por encima de la etiqueta de cierre <tt class="docutils literal"><span class="pre">body</span></tt>. Estos bloques deben contener todas las hojas de estilo y archivos <em>Javascript</em> que necesitas en tu sitio:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# &#39;app/Resources/views/base.html.twig&#39; #}</span>
+    <span class="nt">&lt;html&gt;</span>
+        <span class="nt">&lt;head&gt;</span>
+        <span class="c">{# ... #}</span>
+
+        <span class="cp">{%</span> <span class="k">block</span> <span class="nv">stylesheets</span> <span class="cp">%}</span>
+            <span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">asset</span><span class="o">(</span><span class="s1">&#39;/css/main.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="nt">/&gt;</span>
+        <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+        <span class="nt">&lt;/head&gt;</span>
+        <span class="nt">&lt;body&gt;</span>
+        <span class="c">{# ... #}</span>
+
+        <span class="cp">{%</span> <span class="k">block</span> <span class="nv">javascripts</span> <span class="cp">%}</span>
+            <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">asset</span><span class="o">(</span><span class="s1">&#39;/js/main.js&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span> <span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+        <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+        <span class="nt">&lt;/body&gt;</span>
+    <span class="nt">&lt;/html&gt;</span>
+</pre></div>
+</div>
+<p>¡Eso es bastante fácil! Pero ¿y si es necesario incluir una hoja de estilo extra o archivos <em>Javascript</em> desde una plantilla hija? Por ejemplo, supongamos que tienes una página de contacto y necesitas incluir una hoja de estilo <tt class="file docutils literal"><span class="pre">contact.css</span></tt> <em>sólo</em> en esa página. Desde dentro de la plantilla de la página de contacto, haz lo siguiente:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/DemoBundle/Resources/views/Contact/contact.html.twig #}</span>
+<span class="cp">{%</span> <span class="k">extends</span> <span class="s1">&#39;::base.html.twig&#39;</span> <span class="cp">%}</span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">stylesheets</span> <span class="cp">%}</span>
+    <span class="cp">{{</span> <span class="nv">parent</span><span class="o">()</span> <span class="cp">}}</span>
+
+    <span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">asset</span><span class="o">(</span><span class="s1">&#39;/css/contact.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="nt">/&gt;</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+
+<span class="c">{# ... #}</span>
+</pre></div>
+</div>
+<p>En la plantilla hija, sólo tienes que reemplazar el bloque <tt class="docutils literal"><span class="pre">stylesheets</span></tt> y poner tu nueva etiqueta de hoja de estilo dentro de ese bloque. Por supuesto, debido a que la quieres añadir al contenido del bloque padre (y no <em>cambiarla</em> en realidad), debes usar la función <tt class="docutils literal"><span class="pre">parent()</span></tt> de <em>Twig</em> para incluir todo, desde el bloque <tt class="docutils literal"><span class="pre">stylesheets</span></tt> de la plantilla base.</p>
+<p>Además, puedes incluir activos ubicados en el directorio <tt class="docutils literal"><span class="pre">Resources/public</span></tt> de tus paquetes.
+Deberás ejecutar la orden <tt class="docutils literal"><span class="pre">php</span> <span class="pre">app/console</span> <span class="pre">assets:install</span> <span class="pre">destino</span> <span class="pre">[--symlink]</span></tt>, la cual mueve (o enlaza simbólicamente) tus archivos a la ubicación correcta. (destino por omisión es &#8220;web&#8221;).</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;link</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">asset</span><span class="o">(</span><span class="s1">&#39;bundles/acmedemo/css/contact.css&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="s">&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+<p>El resultado final es una página que incluye ambas hojas de estilo <tt class="file docutils literal"><span class="pre">main.css</span></tt> y <tt class="file docutils literal"><span class="pre">contact.css</span></tt>.</p>
+</div>
+<div class="section" id="variables-de-plantilla-globales">
+<h2>Variables de plantilla globales<a class="headerlink" href="#variables-de-plantilla-globales" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>En cada petición, <em>Symfony2</em> debe configurar una variable de plantilla global <tt class="docutils literal"><span class="pre">app</span></tt> en ambos motores de plantilla predefinidos <em>Twig</em> y <em>PHP</em>.  La variable <tt class="docutils literal"><span class="pre">app</span></tt> es una instancia de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Bundle\FrameworkBundle\Templating\GlobalVariables</span></tt> que automáticamente te proporciona acceso a algunas variables específicas de la aplicación:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">app.security</span></tt> - El contexto de seguridad.</li>
+<li><tt class="docutils literal"><span class="pre">app.user</span></tt> - El objeto usuario actual.</li>
+<li><tt class="docutils literal"><span class="pre">app.request</span></tt> - El objeto <tt class="docutils literal"><span class="pre">petición</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">app.session</span></tt> - El objeto <tt class="docutils literal"><span class="pre">sesión</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">app.environment</span></tt> - El entorno actual (dev, prod, etc.)</li>
+<li><tt class="docutils literal"><span class="pre">app.debug</span></tt> - True si está en modo de depuración. False en caso contrario.</li>
+</ul>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;p&gt;</span>Username: <span class="cp">{{</span> <span class="nv">app.user.username</span> <span class="cp">}}</span><span class="nt">&lt;/p&gt;</span>
+<span class="cp">{%</span> <span class="k">if</span> <span class="nv">app.debug</span> <span class="cp">%}</span>
+    <span class="nt">&lt;p&gt;</span>Request method: <span class="cp">{{</span> <span class="nv">app.request.method</span> <span class="cp">}}</span><span class="nt">&lt;/p&gt;</span>
+    <span class="nt">&lt;p&gt;</span>Application Environment: <span class="cp">{{</span> <span class="nv">app.environment</span> <span class="cp">}}</span><span class="nt">&lt;/p&gt;</span>
+<span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="nt">&lt;p&gt;</span>Username: <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$app</span><span class="o">-&gt;</span><span class="na">getUser</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getUsername</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="nt">&lt;/p&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">if</span> <span class="p">(</span><span class="nv">$app</span><span class="o">-&gt;</span><span class="na">getDebug</span><span class="p">())</span><span class="o">:</span> <span class="cp">?&gt;</span>
+    <span class="nt">&lt;p&gt;</span>Request method: <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$app</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getMethod</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="nt">&lt;/p&gt;</span>
+    <span class="nt">&lt;p&gt;</span>Application Environment: <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$app</span><span class="o">-&gt;</span><span class="na">getEnvironment</span><span class="p">()</span> <span class="cp">?&gt;</span><span class="nt">&lt;/p&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">endif</span><span class="p">;</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Puedes agregar tus propias variables de plantilla globales. Ve el ejemplo en el recetario en <a class="reference internal" href="../cookbook/templating/global_variables.html"><em>Variables globales</em></a>.</p>
+</div>
+</div>
+<div class="section" id="configurando-y-usando-el-servicio-plantilla">
+<span id="index-12"></span><h2>Configurando y usando el servicio <tt class="docutils literal"><span class="pre">plantilla</span></tt><a class="headerlink" href="#configurando-y-usando-el-servicio-plantilla" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El corazón del sistema de plantillas en <em>Symfony2</em> es el <tt class="docutils literal"><span class="pre">motor</span></tt> de plantillas.
+Este objeto especial es el encargado de reproducir las plantillas y devolver su contenido. Cuando reproduces una plantilla en un controlador, por ejemplo, en realidad estás usando el motor del servicio de plantillas. Por ejemplo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeArticleBundle:Article:index.html.twig&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>es equivalente a:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$engine</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">container</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;templating&#39;</span><span class="p">);</span>
+<span class="nv">$content</span> <span class="o">=</span> <span class="nv">$engine</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeArticleBundle:Article:index.html.twig&#39;</span><span class="p">);</span>
+
+<span class="k">return</span> <span class="nv">$response</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Response</span><span class="p">(</span><span class="nv">$content</span><span class="p">);</span>
+</pre></div>
+</div>
+<p id="template-configuration">El motor de plantillas (o &#8220;servicio&#8221;) está configurado para funcionar automáticamente al interior de <em>Symfony2</em>. Por supuesto, puedes configurar más en el archivo de configuración de la aplicación:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">framework</span><span class="p-Indicator">:</span>
+    <span class="c1"># ...</span>
+    <span class="l-Scalar-Plain">templating</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">engines</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&#39;twig&#39;</span><span class="p-Indicator">]</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;framework:templating&gt;</span>
+    <span class="nt">&lt;framework:engine</span> <span class="na">id=</span><span class="s">&quot;twig&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/framework:templating&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="c1">// ...</span>
+    <span class="s1">&#39;templating&#39;</span>      <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;engines&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;twig&#39;</span><span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Disponemos de muchas opciones de configuración y están cubiertas en el <a class="reference internal" href="../reference/configuration/framework.html"><em>Apéndice Configurando</em></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">En el motor de <tt class="docutils literal"><span class="pre">twig</span></tt> es obligatorio el uso del <tt class="docutils literal"><span class="pre">webprofiler</span></tt> (así como muchos otros paquetes de terceros).</p>
+</div>
+</div>
+<div class="section" id="sustituyendo-plantillas-del-paquete">
+<span id="overriding-bundle-templates"></span><span id="index-13"></span><h2>Sustituyendo plantillas del paquete<a class="headerlink" href="#sustituyendo-plantillas-del-paquete" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La comunidad de <em>Symfony2</em> se enorgullece de crear y mantener paquetes de alta calidad (consulta <a class="reference external" href="http://knpbundles.com">KnpBundles.com</a>) para ver la gran cantidad de diferentes características.
+Una vez que utilizas un paquete de terceros, probablemente necesites redefinir y personalizar una o más de sus plantillas.</p>
+<p>Supongamos que hemos incluido el paquete imaginario <em class="dfn">AcmeBlogBundle</em> de código abierto en el proyecto (por ejemplo, en el directorio <tt class="file docutils literal"><span class="pre">src/Acme/BlogBundle</span></tt>). Y si bien estás muy contento con todo, deseas sustituir la página &#8220;lista&#8221; del <em>blog</em> para personalizar el marcado específicamente para tu aplicación. Al excavar en el controlador del <tt class="docutils literal"><span class="pre">Blog</span></tt> de <tt class="docutils literal"><span class="pre">AcmeBlogBundle</span></tt>, encuentras lo siguiente:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">indexAction</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$blogs</span> <span class="o">=</span> <span class="c1">// cierta lógica para recuperar las entradas</span>
+
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeBlogBundle:Blog:index.html.twig&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;blogs&#39;</span> <span class="o">=&gt;</span> <span class="nv">$blogs</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Al reproducir <tt class="docutils literal"><span class="pre">AcmeBlogBundle:Blog:index.html.twig</span></tt>, en realidad <em>Symfony2</em> busca la plantilla en dos diferentes lugares:</p>
+<ol class="arabic simple">
+<li><tt class="docutils literal"><span class="pre">app/Resources/AcmeBlogBundle/views/Blog/index.html.twig</span></tt></li>
+<li><tt class="file docutils literal"><span class="pre">src/Acme/BlogBundle/Resources/views/Blog/index.html.twig</span></tt></li>
+</ol>
+<p>Para sustituir la plantilla del paquete, sólo tienes que copiar la plantilla <tt class="docutils literal"><span class="pre">index.html.twig</span></tt> del paquete a <tt class="docutils literal"><span class="pre">app/Resources/AcmeBlogBundle/views/Blog/index.html.twig</span></tt> (el directorio <tt class="docutils literal"><span class="pre">app/Resources/AcmeBlogBundle</span></tt> no existe, por lo tanto tendrás que crearlo). Ahora eres libre de personalizar la plantilla para tu aplicación.</p>
+<p>Esta lógica también aplica a las plantillas base del paquete. Supongamos también que cada plantilla en <tt class="docutils literal"><span class="pre">AcmeBlogBundle</span></tt> hereda de una plantilla base llamada <tt class="docutils literal"><span class="pre">AcmeBlogBundle::base.html.twig</span></tt>. Al igual que antes, <em>Symfony2</em> buscará la plantilla en los dos siguientes lugares:</p>
+<ol class="arabic simple">
+<li><tt class="docutils literal"><span class="pre">app/Resources/AcmeBlogBundle/views/base.html.twig</span></tt></li>
+<li><tt class="file docutils literal"><span class="pre">src/Acme/BlogBundle/Resources/views/base.html.twig</span></tt></li>
+</ol>
+<p>Una vez más, para sustituir la plantilla, sólo tienes que copiarla desde el paquete a <tt class="docutils literal"><span class="pre">app/Resources/AcmeBlogBundle/views/base.html.twig</span></tt>. Ahora estás en libertad de personalizar esta copia como mejor te parezca.</p>
+<p>Si retrocedes un paso, verás que <em>Symfony2</em> siempre empieza a buscar una plantilla en el directorio <tt class="docutils literal"><span class="pre">app/Resources/{NOMBRE_PAQUETE}/views/</span></tt>. Si la plantilla no existe allí, continúa buscando dentro del directorio <tt class="docutils literal"><span class="pre">Resources/views</span></tt> del propio paquete. Esto significa que todas las plantillas del paquete se pueden sustituir colocándolas en el subdirectorio <tt class="docutils literal"><span class="pre">app/Resources</span></tt> correcto.</p>
+<span class="target" id="templating-overriding-core-templates"></span><div class="section" id="sustituyendo-plantillas-del-nucleo">
+<span id="index-14"></span><h3>Sustituyendo plantillas del núcleo<a class="headerlink" href="#sustituyendo-plantillas-del-nucleo" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Puesto que la plataforma <em>Symfony2</em> en sí misma sólo es un paquete, las plantillas del núcleo se pueden sustituir de la misma manera. Por ejemplo, el núcleo de <tt class="docutils literal"><span class="pre">TwigBundle</span></tt> contiene una serie de diferentes plantillas para &#8220;excepción&#8221; y &#8220;error&#8221; que puedes sustituir copiando cada una del directorio <tt class="docutils literal"><span class="pre">Resources/views/Exception</span></tt> del <tt class="docutils literal"><span class="pre">TwigBundle</span></tt> a, ¡adivinaste!, el directorio <tt class="docutils literal"><span class="pre">app/Resources/TwigBundle/views/Exception</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="herencia-de-tres-niveles">
+<span id="index-15"></span><h2>Herencia de tres niveles<a class="headerlink" href="#herencia-de-tres-niveles" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Una manera común de usar la herencia es utilizar un enfoque de tres niveles. Este método funciona a la perfección con los tres diferentes tipos de plantilla que acabamos de cubrir:</p>
+<ul>
+<li><p class="first">Crea un archivo <tt class="docutils literal"><span class="pre">app/Resources/views/base.html.twig</span></tt> que contenga el diseño principal para tu aplicación (como en el ejemplo anterior). Internamente, esta plantilla se llama <tt class="docutils literal"><span class="pre">::base.html.twig</span></tt>;</p>
+</li>
+<li><p class="first">Crea una plantilla para cada &#8220;sección&#8221; de tu sitio. Por ejemplo, <tt class="docutils literal"><span class="pre">AcmeBlogBundle</span></tt>, tendría una plantilla llamada <tt class="docutils literal"><span class="pre">AcmeBlogBundle::base.html.twig</span></tt> que sólo contiene los elementos específicos de la sección <em>blog</em>;</p>
+<blockquote>
+<div><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/BlogBundle/Resources/views/base.html.twig #}</span>
+<span class="cp">{%</span> <span class="k">extends</span> <span class="s1">&#39;::base.html.twig&#39;</span> <span class="cp">%}</span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">body</span> <span class="cp">%}</span>
+    <span class="nt">&lt;h1&gt;</span>Blog Application<span class="nt">&lt;/h1&gt;</span>
+
+    <span class="cp">{%</span> <span class="k">block</span> <span class="nv">content</span> <span class="cp">%}{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p class="first">Crea plantillas individuales para cada página y haz que cada una extienda la plantilla de la sección adecuada. Por ejemplo, la página &#8220;index&#8221; se llama algo parecido a <tt class="docutils literal"><span class="pre">AcmeBlogBundle:Blog:index.html.twig</span></tt> y enumera las entradas del <em>blog</em> real.</p>
+<blockquote>
+<div><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/BlogBundle/Resources/views/Blog/index.html.twig #}</span>
+<span class="cp">{%</span> <span class="k">extends</span> <span class="s1">&#39;AcmeBlogBundle::base.html.twig&#39;</span> <span class="cp">%}</span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">content</span> <span class="cp">%}</span>
+    <span class="cp">{%</span> <span class="k">for</span> <span class="nv">entry</span> <span class="k">in</span> <span class="nv">blog_entries</span> <span class="cp">%}</span>
+        <span class="nt">&lt;h2&gt;</span><span class="cp">{{</span> <span class="nv">entry.title</span> <span class="cp">}}</span><span class="nt">&lt;/h2&gt;</span>
+        <span class="nt">&lt;p&gt;</span><span class="cp">{{</span> <span class="nv">entry.body</span> <span class="cp">}}</span><span class="nt">&lt;/p&gt;</span>
+    <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ul>
+<p>Ten en cuenta que esta plantilla extiende la plantilla de la sección &#8212; (<tt class="docutils literal"><span class="pre">AcmeBlogBundle::base.html.twig</span></tt>), que a su vez, extiende el diseño base de la aplicación (<tt class="docutils literal"><span class="pre">::base.html.twig</span></tt>).
+Este es el modelo común de la herencia de tres niveles.</p>
+<p>Cuando construyas tu aplicación, podrás optar por este método o, simplemente, hacer que cada plantilla de página extienda directamente la plantilla base de tu aplicación (por ejemplo, <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">extends</span> <span class="pre">'::base.html.twig'</span> <span class="pre">%}</span></tt>). El modelo de plantillas de tres niveles es un método de las buenas prácticas utilizadas por los paquetes de proveedores a fin de que la plantilla base de un paquete se pueda sustituir fácilmente para extender correctamente el diseño base de tu aplicación.</p>
+</div>
+<div class="section" id="mecanismo-de-escape">
+<span id="index-16"></span><h2>Mecanismo de escape<a class="headerlink" href="#mecanismo-de-escape" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuando generas <em>HTML</em> a partir de una plantilla, siempre existe el riesgo de que una variable de plantilla pueda producir <em>HTML</em> involuntario o código peligroso de lado del cliente. El resultado es que el contenido dinámico puede romper el código <em>HTML</em> de la página resultante o permitir a un usuario malicioso realizar un ataque de <a class="reference external" href="http://en.wikipedia.org/wiki/Cross-site_scripting">Explotación de vulnerabilidades del sistema</a> (<em>Cross Site Scripting XSS</em>). Considera este ejemplo clásico:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="x">Hello </span><span class="cp">{{</span> <span class="nv">name</span> <span class="cp">}}</span><span class="x"></span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre>Hello <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$name</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Imagina que el usuario introduce el siguiente código como su nombre:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;</span><span class="nx">script</span><span class="o">&gt;</span><span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;hello!&#39;</span><span class="p">)</span><span class="o">&lt;/</span><span class="nx">script</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Sin ningún tipo de mecanismo de escape, la plantilla resultante provocaría que aparezca un cuadro de alerta <em>JavaScript</em>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nx">Hello</span> <span class="o">&lt;</span><span class="nx">script</span><span class="o">&gt;</span><span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;hello!&#39;</span><span class="p">)</span><span class="o">&lt;/</span><span class="nx">script</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Y aunque esto parece inofensivo, si un usuario puede llegar hasta aquí, ese mismo usuario también será capaz de escribir código <em>JavaScript</em> malicioso que subrepticiamente realice acciones dentro de la zona segura de un usuario legítimo.</p>
+<p>La respuesta al problema es el mecanismo de escape. Con el mecanismo de escape, reproduces la misma plantilla sin causar daño alguno, y, literalmente, imprimes en pantalla la etiqueta <tt class="docutils literal"><span class="pre">script</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nx">Hello</span> <span class="o">&amp;</span><span class="nx">lt</span><span class="p">;</span><span class="nx">script</span><span class="o">&amp;</span><span class="nx">gt</span><span class="p">;</span><span class="nx">alert</span><span class="p">(</span><span class="o">&amp;</span><span class="c1">#39;helloe&amp;#39;)&amp;lt;/script&amp;gt;</span>
+</pre></div>
+</div>
+<p><em>Twig</em> y los sistemas de plantillas <em>PHP</em> abordan el problema de diferentes maneras.
+Si estás utilizando <em>Twig</em>, el mecanismo de escape por omisión está activado y tu aplicación está protegida.
+En <em>PHP</em>, el mecanismo de escape no es automático, lo cual significa que, de ser necesario, necesitas escapar todo manualmente.</p>
+<div class="section" id="mecanismo-de-escape-en-twig">
+<h3>Mecanismo de escape en <em>Twig</em><a class="headerlink" href="#mecanismo-de-escape-en-twig" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Si estás utilizando las plantillas de <em>Twig</em>, entonces el mecanismo de escape está activado por omisión. Esto significa que estás protegido fuera de la caja de las consecuencias no intencionales del código presentado por los usuarios. De forma predeterminada, el mecanismo de escape asume que el contenido se escapó para salida <em>HTML</em>.</p>
+<p>En algunos casos, tendrás que desactivar el mecanismo de escape cuando estás reproduciendo una variable de confianza y marcado que no se debe escapar.
+Supongamos que los usuarios administrativos están autorizados para escribir artículos que contengan código <em>HTML</em>. De forma predeterminada, <em>Twig</em> debe escapar el cuerpo del artículo. Para reproducirlo normalmente, agrega el filtro <tt class="docutils literal"><span class="pre">raw</span></tt>: <tt class="docutils literal"><span class="pre">{{</span> <span class="pre">article.body|raw</span> <span class="pre">}}</span></tt>.</p>
+<p>También puedes desactivar el mecanismo de escape dentro de una área <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">block</span> <span class="pre">%}</span></tt> o para una plantilla completa. Para más información, consulta la documentación de <em>Twig</em> sobre el <a class="reference external" href="http://gitnacho.github.com/Twig/api.html#extension-escaper">Mecanismo de escape</a>.</p>
+</div>
+<div class="section" id="mecanismo-de-escape-en-php">
+<h3>Mecanismo de escape en <em>PHP</em><a class="headerlink" href="#mecanismo-de-escape-en-php" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El mecanismo de escape no es automático cuando utilizas plantillas <em>PHP</em>. Esto significa que a menos que escapes una variable expresamente, no estás protegido. Para utilizar el mecanismo de escape, usa el método especial de la vista <tt class="docutils literal"><span class="pre">escape()</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nx">Hello</span> <span class="o">&lt;?</span><span class="nx">php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">escape</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="x"></span>
+</pre></div>
+</div>
+<p>De forma predeterminada, el método <tt class="docutils literal"><span class="pre">escape()</span></tt> asume que la variable se está reproduciendo en un contexto <em>HTML</em> (y por tanto la variable se escapa para que sea <em>HTML</em> seguro).
+El segundo argumento te permite cambiar el contexto. Por ejemplo, para mostrar algo en una cadena <em>JavaScript</em>, utiliza el contexto <tt class="docutils literal"><span class="pre">js</span></tt>:</p>
+<div class="highlight-js"><div class="highlight"><pre><span class="kd">var</span> <span class="nx">myMsg</span> <span class="o">=</span> <span class="s1">&#39;Hello &lt;?php echo $view-&gt;escape($name, &#39;</span><span class="nx">js</span><span class="s1">&#39;) ?&gt;&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="depurando">
+<span id="template-formats"></span><span id="index-17"></span><h2>Depurando<a class="headerlink" href="#depurando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.0.9: </span>Esta característica está disponible desde <em>Twig</em> <tt class="docutils literal"><span class="pre">1.5.x</span></tt>, que se adoptó por primera vez en <em>Symfony</em> 2.0.9.</p>
+<p>Cuando utilizas <em>PHP</em>, puedes usar <tt class="docutils literal"><span class="pre">var_dump()</span></tt> si necesitas encontrar rápidamente el valor de una variable proporcionada. Esto es útil, por ejemplo, dentro de tu controlador.
+Lo mismo puedes lograr cuando utilizas <em>Twig</em> usando la extensión de depuración (<tt class="docutils literal"><span class="pre">debug</span></tt>). Necesitas activarla en la configuración:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">acme_hello.twig.extension.debug</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span>        <span class="l-Scalar-Plain">Twig_Extension_Debug</span>
+        <span class="l-Scalar-Plain">tags</span><span class="p-Indicator">:</span>
+                 <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">name</span><span class="p-Indicator">:</span> <span class="s">&#39;twig.extension&#39;</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+    <span class="nt">&lt;services&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;acme_hello.twig.extension.debug&quot;</span> <span class="na">class=</span><span class="s">&quot;Twig_Extension_Debug&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;twig.extension&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/service&gt;</span>
+    <span class="nt">&lt;/services&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+
+<span class="nv">$definition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;Twig_Extension_Debug&#39;</span><span class="p">);</span>
+<span class="nv">$definition</span><span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;twig.extension&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;acme_hello.twig.extension.debug&#39;</span><span class="p">,</span> <span class="nv">$definition</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Puedes descargar los parámetros de plantilla utilizando la función <tt class="docutils literal"><span class="pre">dump</span></tt>:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/ArticleBundle/Resources/views/Article/recentList.html.twig #}</span>
+
+<span class="cp">{{</span> <span class="nv">dump</span><span class="o">(</span><span class="nv">articles</span><span class="o">)</span> <span class="cp">}}</span>
+
+<span class="cp">{%</span> <span class="k">for</span> <span class="nv">article</span> <span class="k">in</span> <span class="nv">articles</span> <span class="cp">%}</span>
+    <span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;/article/</span><span class="cp">{{</span> <span class="nv">article.slug</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+        <span class="cp">{{</span> <span class="nv">article.title</span> <span class="cp">}}</span>
+        <span class="nt">&lt;/a&gt;</span>
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+<p>Las variables serán descargadas si configuras a <em>Twig</em> (en <tt class="file docutils literal"><span class="pre">config.yml</span></tt>) con <tt class="docutils literal"><span class="pre">debug</span></tt> a <tt class="docutils literal"><span class="pre">true</span></tt>. De manera predeterminada, esto significa que las variables serán descargadas en el entorno <tt class="docutils literal"><span class="pre">dev</span></tt>, pero no el entorno <tt class="docutils literal"><span class="pre">prod</span></tt>.</p>
+</div>
+<div class="section" id="formato-de-plantillas">
+<h2>Formato de plantillas<a class="headerlink" href="#formato-de-plantillas" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Las plantillas son una manera genérica para reproducir contenido en <em>cualquier</em> formato. Y aunque en la mayoría de los casos debes utilizar plantillas para reproducir contenido <em>HTML</em>, una plantilla fácilmente puede generar <em>JavaScript</em>, <em>CSS</em>, <em>XML</em> o cualquier otro formato que puedas soñar.</p>
+<p>Por ejemplo, el mismo &#8220;recurso&#8221; a menudo se reproduce en varios formatos diferentes.
+Para reproducir una página índice de artículos en formato <em>XML</em>, basta con incluir el formato en el nombre de la plantilla:</p>
+<ul class="simple">
+<li><em>nombre de plantilla XML</em>: <tt class="docutils literal"><span class="pre">AcmeArticleBundle:Article:index.xml.twig</span></tt></li>
+<li><em>nombre del archivo de plantilla XML</em>: <tt class="docutils literal"><span class="pre">index.xml.twig</span></tt></li>
+</ul>
+<p>Ciertamente, esto no es más que una convención de nomenclatura y la plantilla realmente no se reproduce de manera diferente en función de ese formato.</p>
+<p>En muchos casos, posiblemente desees permitir que un solo controlador reproduzca múltiples formatos basándose en el &#8220;formato de la petición&#8221;. Por esa razón, un patrón común es hacer lo siguiente:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">indexAction</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$format</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getRequestFormat</span><span class="p">();</span>
+
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeBlogBundle:Blog:index.&#39;</span><span class="o">.</span><span class="nv">$format</span><span class="o">.</span><span class="s1">&#39;.twig&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>El <tt class="docutils literal"><span class="pre">getRequestFormat</span></tt> en el objeto <tt class="docutils literal"><span class="pre">Petición</span></tt> por omisión es <em>HTML</em>, pero lo puedes devolver en cualquier otro formato basándote en el formato solicitado por el usuario.
+El formato de la petición muy frecuentemente es gestionado por el enrutador, donde puedes configurar una ruta para que <tt class="docutils literal"><span class="pre">/contact</span></tt> establezca el formato <tt class="docutils literal"><span class="pre">html</span></tt> de la petición, mientras que <tt class="docutils literal"><span class="pre">/contact.xml</span></tt> establezca al formato <tt class="docutils literal"><span class="pre">xml</span></tt>. Para más información, consulta el <a class="reference internal" href="routing.html#advanced-routing-example"><em>ejemplo avanzado en el capítulo de Enrutado</em></a>.</p>
+<p>Para crear enlaces que incluyan el parámetro de formato, agrega una clave <tt class="docutils literal"><span class="pre">_format</span></tt> en el parámetro <tt class="docutils literal"><span class="pre">hash</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">path</span><span class="o">(</span><span class="s1">&#39;article_show&#39;</span><span class="o">,</span> <span class="o">{</span><span class="s1">&#39;id&#39;</span><span class="o">:</span> <span class="m">123</span><span class="o">,</span> <span class="s1">&#39;_format&#39;</span><span class="o">:</span> <span class="s1">&#39;pdf&#39;</span><span class="o">})</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+    PDF Version
+<span class="nt">&lt;/a&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">generate</span><span class="p">(</span><span class="s1">&#39;article_show&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;id&#39;</span> <span class="o">=&gt;</span> <span class="mi">123</span><span class="p">,</span> <span class="s1">&#39;_format&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;pdf&#39;</span><span class="p">))</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+    PDF Version
+<span class="nt">&lt;/a&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="consideraciones-finales">
+<h2>Consideraciones finales<a class="headerlink" href="#consideraciones-finales" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El motor de plantillas de <em>Symfony</em> es una poderosa herramienta que puedes utilizar cada vez que necesites generar contenido de presentación en <em>HTML</em>, <em>XML</em> o cualquier otro formato.
+Y aunque las plantillas son una manera común de generar contenido en un controlador, su uso no es obligatorio. El objeto <tt class="docutils literal"><span class="pre">Respuesta</span></tt> devuelto por un controlador se puede crear usando o sin usar una plantilla:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// crea un objeto Respuesta donde el contenido reproduce la plantilla</span>
+<span class="nv">$response</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeArticleBundle:Article:index.html.twig&#39;</span><span class="p">);</span>
+
+<span class="c1">// crea un objeto Respuesta cuyo contenido es texto simple</span>
+<span class="nv">$response</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Response</span><span class="p">(</span><span class="s1">&#39;response content&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>El motor de plantillas de <em>Symfony</em> es muy flexible y de manera predeterminada disponemos de dos diferentes reproductores de plantilla: las tradicionales plantillas <em>PHP</em> y las elegantes y potentes plantillas <em>Twig</em>. Ambas apoyan una jerarquía de plantillas y vienen empacadas con un rico conjunto de funciones auxiliares capaces de realizar las tareas más comunes.</p>
+<p>En general, el tema de las plantillas se debe pensar como una poderosa herramienta que está a tu disposición. En algunos casos, posiblemente no necesites reproducir una plantilla, y en <em>Symfony2</em>, eso está absolutamente bien.</p>
+</div>
+<div class="section" id="aprende-mas-en-el-recetario">
+<h2>Aprende más en el recetario<a class="headerlink" href="#aprende-mas-en-el-recetario" title="Enlazar permanentemente con este título">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="../cookbook/templating/PHP.html"><em>Cómo usar plantillas PHP en lugar de Twig</em></a></li>
+<li><a class="reference internal" href="../cookbook/controller/error_pages.html"><em>Cómo personalizar páginas de error</em></a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src=".././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="doctrine.html" title="Bases de datos y Doctrine (“El modelo”)"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="routing.html" title="Enrutando"
+             >anterior</a> |</li>
+        <li><a href="../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="index.html" >Libro</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

@@ -1,0 +1,330 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo utilizar Monolog para escribir registros &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo configurar Monolog para reportar errores por correo electrónico" href="monolog_email.html" />
+    <link rel="prev" title="Cómo usar plantillas PHP en lugar de Twig" href="../templating/PHP.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="monolog_email.html" title="Cómo configurar Monolog para reportar errores por correo electrónico"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="../templating/PHP.html" title="Cómo usar plantillas PHP en lugar de Twig"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-utilizar-monolog-para-escribir-registros">
+<span id="index-0"></span><h1>Cómo utilizar <tt class="docutils literal"><span class="pre">Monolog</span></tt> para escribir registros<a class="headerlink" href="#como-utilizar-monolog-para-escribir-registros" title="Enlazar permanentemente con este título">¶</a></h1>
+<p><a class="reference external" href="https://github.com/Seldaek/monolog">Monolog</a> es una biblioteca de registro para <em>PHP</em> 5.3 utilizada por <em>Symfony2</em>. Inspirada en la biblioteca <tt class="docutils literal"><span class="pre">LogBook</span></tt> de <em>Python</em>.</p>
+<div class="section" id="usando">
+<h2>Usando<a class="headerlink" href="#usando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>En <tt class="docutils literal"><span class="pre">Monolog</span></tt> cada notario define un canal de registro. Cada canal tiene una pila de controladores para escribir los registros (los controladores se pueden compartir).</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Cuando inyectas el notario en un servicio puedes <a class="reference internal" href="../../reference/dic_tags.html#dic-tags-monolog"><em>utilizar un canal personalizado</em></a> para ver fácilmente qué parte de la aplicación registró el mensaje.</p>
+</div>
+<p>El encargado básico es el <tt class="docutils literal"><span class="pre">StreamHandler</span></tt> el cual escribe los registros en un flujo (por omisión en <tt class="docutils literal"><span class="pre">app/logs/prod.log</span></tt> en el entorno de producción y <tt class="docutils literal"><span class="pre">app/logs/dev.log</span></tt> en el entorno de desarrollo).</p>
+<p><a class="reference external" href="https://github.com/Seldaek/monolog">Monolog</a> también viene con una potente capacidad integrada para encargarse del registro en el entorno de producción: <tt class="docutils literal"><span class="pre">FingersCrossedHandler</span></tt>. Esta te permite almacenar los mensajes en la memoria intermedia y registrarla sólo si un mensaje llega al nivel de acción (ERROR en la configuración prevista en la edición estándar) transmitiendo los mensajes a otro controlador.</p>
+<p>Para registrar un mensaje, simplemente obtén el servicio notarial del contenedor en tu controlador:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$logger</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;logger&#39;</span><span class="p">);</span>
+<span class="nv">$logger</span><span class="o">-&gt;</span><span class="na">info</span><span class="p">(</span><span class="s1">&#39;We just got the logger&#39;</span><span class="p">);</span>
+<span class="nv">$logger</span><span class="o">-&gt;</span><span class="na">err</span><span class="p">(</span><span class="s1">&#39;An error occurred&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Usar sólo los métodos de la interfaz <tt class="xref php php-class docutils literal"><span class="pre">SymfonyComponentHttpKernelLogLoggerInterface</span></tt> te permite cambiar la implementación del anotador sin cambiar el código.</p>
+</div>
+<div class="section" id="utilizando-varios-controladores">
+<h3>Utilizando varios controladores<a class="headerlink" href="#utilizando-varios-controladores" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El notario utiliza una pila de controladores que se llaman sucesivamente. Esto te permite registrar los mensajes de varias formas fácilmente.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">monolog</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">handlers</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">syslog</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">stream</span>
+            <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/var/log/symfony.log</span>
+            <span class="l-Scalar-Plain">level</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">error</span>
+        <span class="l-Scalar-Plain">main</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">fingers_crossed</span>
+            <span class="l-Scalar-Plain">action_level</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">warning</span>
+            <span class="l-Scalar-Plain">handler</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">file</span>
+        <span class="l-Scalar-Plain">file</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">stream</span>
+            <span class="l-Scalar-Plain">level</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">debug</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xmlns:monolog=</span><span class="s">&quot;http://symfony.com/schema/dic/monolog&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd</span>
+<span class="s">                        http://symfony.com/schema/dic/monolog http://symfony.com/schema/dic/monolog/monolog-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;monolog:config&gt;</span>
+        <span class="nt">&lt;monolog:handler</span>
+            <span class="na">name=</span><span class="s">&quot;syslog&quot;</span>
+            <span class="na">type=</span><span class="s">&quot;stream&quot;</span>
+            <span class="na">path=</span><span class="s">&quot;/var/log/symfony.log&quot;</span>
+            <span class="na">level=</span><span class="s">&quot;error&quot;</span>
+        <span class="nt">/&gt;</span>
+        <span class="nt">&lt;monolog:handler</span>
+            <span class="na">name=</span><span class="s">&quot;main&quot;</span>
+            <span class="na">type=</span><span class="s">&quot;fingers_crossed&quot;</span>
+            <span class="na">action-level=</span><span class="s">&quot;warning&quot;</span>
+            <span class="na">handler=</span><span class="s">&quot;file&quot;</span>
+        <span class="nt">/&gt;</span>
+        <span class="nt">&lt;monolog:handler</span>
+            <span class="na">name=</span><span class="s">&quot;file&quot;</span>
+            <span class="na">type=</span><span class="s">&quot;stream&quot;</span>
+            <span class="na">level=</span><span class="s">&quot;debug&quot;</span>
+        <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/monolog:config&gt;</span>
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>La configuración anterior define una pila de controladores que se llamarán en el orden en el cual se definen.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">El controlador denominado <tt class="docutils literal"><span class="pre">&quot;file&quot;</span></tt> no se incluirá en la misma pila que se utiliza como un controlador anidado del controlador <cite>fingers_crossed</cite>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si deseas cambiar la configuración de <cite>MonologBundle</cite> en otro archivo de configuración necesitas redefinir toda la pila. No se pueden combinar, ya que el orden es importante y una combinación no te permite controlar el orden.</p>
+</div>
+</div>
+<div class="section" id="cambiando-el-formateador">
+<h3>Cambiando el formateador<a class="headerlink" href="#cambiando-el-formateador" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El controlador utiliza un <tt class="docutils literal"><span class="pre">formateador</span></tt> para dar formato al registro antes de ingresarlo. Todos los manipuladores <tt class="docutils literal"><span class="pre">Monolog</span></tt> utilizan una instancia de <tt class="docutils literal"><span class="pre">Monolog\Formatter\LineFormatter</span></tt> por omisión, pero la puedes reemplazar fácilmente. Tu formateador debe implementar <tt class="docutils literal"><span class="pre">Monolog\Formatter\FormatterInterface</span></tt>.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">my_formatter</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Monolog\Formatter\JsonFormatter</span>
+<span class="l-Scalar-Plain">monolog</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">handlers</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">file</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">stream</span>
+            <span class="l-Scalar-Plain">level</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">debug</span>
+            <span class="l-Scalar-Plain">formatter</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">my_formatter</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xmlns:monolog=</span><span class="s">&quot;http://symfony.com/schema/dic/monolog&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd</span>
+<span class="s">                        http://symfony.com/schema/dic/monolog http://symfony.com/schema/dic/monolog/monolog-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+        <span class="nt">&lt;services&gt;</span>
+        <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;my_formatter&quot;</span> <span class="na">class=</span><span class="s">&quot;Monolog\Formatter\JsonFormatter&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;/services&gt;</span>
+    <span class="nt">&lt;monolog:config&gt;</span>
+        <span class="nt">&lt;monolog:handler</span>
+            <span class="na">name=</span><span class="s">&quot;file&quot;</span>
+            <span class="na">type=</span><span class="s">&quot;stream&quot;</span>
+            <span class="na">level=</span><span class="s">&quot;debug&quot;</span>
+            <span class="na">formatter=</span><span class="s">&quot;my_formatter&quot;</span>
+        <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/monolog:config&gt;</span>
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="agregando-algunos-datos-adicionales-en-los-mensajes-de-registro">
+<h2>Agregando algunos datos adicionales en los mensajes de registro<a class="headerlink" href="#agregando-algunos-datos-adicionales-en-los-mensajes-de-registro" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Monolog te permite procesar el registro antes de ingresarlo añadiendo algunos datos adicionales. Un procesador se puede aplicar al manipulador de toda la pila o sólo para un manipulador específico.</p>
+<p>Un procesador simplemente es un ejecutable que recibe el registro como primer argumento.</p>
+<p>Los procesadores se configuran usando la etiqueta DIC <tt class="docutils literal"><span class="pre">monolog.processor</span></tt>. Consulta la
+<a class="reference internal" href="../../reference/dic_tags.html#dic-tags-monolog-processor"><em>referencia sobre esto</em></a>.</p>
+<div class="section" id="agregando-un-segmento-sesion-peticion">
+<h3>Agregando un segmento Sesión/Petición<a class="headerlink" href="#agregando-un-segmento-sesion-peticion" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>A veces es difícil saber cuál de las entradas en el registro pertenece a cada sesión y/o petición. En el siguiente ejemplo agregaremos una ficha única para cada petición usando un procesador.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\MiBundle</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Session</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">SessionRequestProcessor</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$session</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$token</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">Session</span> <span class="nv">$session</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">session</span> <span class="o">=</span> <span class="nv">$session</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">processRecord</span><span class="p">(</span><span class="k">array</span> <span class="nv">$record</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">token</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">try</span> <span class="p">{</span>
+                <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">token</span> <span class="o">=</span> <span class="nb">substr</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">session</span><span class="o">-&gt;</span><span class="na">getId</span><span class="p">(),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+            <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">\RuntimeException</span> <span class="nv">$e</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">token</span> <span class="o">=</span> <span class="s1">&#39;????????&#39;</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">token</span> <span class="o">.=</span> <span class="s1">&#39;-&#39;</span> <span class="o">.</span> <span class="nb">substr</span><span class="p">(</span><span class="nb">uniqid</span><span class="p">(),</span> <span class="o">-</span><span class="mi">8</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="nv">$record</span><span class="p">[</span><span class="s1">&#39;extra&#39;</span><span class="p">][</span><span class="s1">&#39;token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">token</span><span class="p">;</span>
+
+        <span class="k">return</span> <span class="nv">$record</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre>services:
+    monolog.formatter.session_request:
+        class: Monolog\Formatter\LineFormatter
+        arguments:
+            - "[%%datetime%%] [%%extra.token%%] %%channel%%.%%level_name%%: %%message%%\n"
+
+    monolog.processor.session_request:
+        class: Acme\MyBundle\SessionRequestProcessor
+        arguments:  [ @session ]
+        tags:
+                - { name: monolog.processor, method: processRecord }
+
+monolog:
+    handlers:
+        main:
+            type: stream
+            path: %kernel.logs_dir%/%kernel.environment%.log
+            level: debug
+            formatter: monolog.formatter.session_request</pre>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si utilizas varios manipuladores, también puedes registrar el procesador a nivel del manipulador en lugar de globalmente.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="monolog_email.html" title="Cómo configurar Monolog para reportar errores por correo electrónico"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="../templating/PHP.html" title="Cómo usar plantillas PHP en lugar de Twig"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">Symfony en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 30, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+     <div id="disqus_thread"></div>
+   </div>
+   <script type="text/javascript"> 
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script> 
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>
