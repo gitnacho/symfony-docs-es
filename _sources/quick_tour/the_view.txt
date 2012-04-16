@@ -1,0 +1,239 @@
+********
+La vista
+********
+
+Después de leer la primera parte de esta guía, has decidido que bien valen la pena otros 10 minutos en *Symfony2*. ¡Buena elección! En esta segunda parte, aprenderás más sobre el motor de plantillas de *Symfony2*, `Twig`_. *Twig* es un motor de plantillas flexible, rápido y seguro para *PHP*. Este hace tus plantillas más legibles y concisas; además de hacerlas más amigables para los diseñadores web.
+
+.. note::
+
+    En lugar de *Twig*, también puedes utilizar :doc:`PHP </cookbook/templating/PHP>` para tus plantillas. Ambos motores de plantillas son compatibles con *Symfony2*.
+
+Familiarizándote con *Twig*
+===========================
+
+.. tip::
+
+    Si quieres aprender *Twig*, te recomendamos que leas la `documentación`_ oficial. Esta sección es sólo una descripción rápida de los conceptos principales.
+
+Una plantilla *Twig* es un archivo de texto que puede generar cualquier tipo de contenido (*HTML*, *XML*, *CSV*, *LaTeX*, ...). *Twig* define dos tipos de delimitadores:
+
+* ``{{ ... }}``: Imprime una variable o el resultado de una expresión;
+
+* ``{% ... %}``: Controla la lógica de la plantilla; se utiliza para ejecutar bucles ``for`` y declaraciones ``if``, por ejemplo.
+
+A continuación mostramos una plantilla mínima que ilustra algunos conceptos básicos, usando dos variables ``page_title`` y ``navigation``, las cuales se deben pasar a la plantilla:
+
+.. code-block:: html+jinja
+
+    <!DOCTYPE html>
+        <html>
+            <head>
+            <title>{{ page_title }}</title>
+            </head>
+            <body>
+            <h1>{{ page_title }}</h1>
+
+            <ul id="navigation">
+                {% for item in navigation %}
+                    <li><a href="{{ item.href }}">{{ item.caption }}</a></li>
+                {% endfor %}
+            </ul>
+            </body>
+        </html>
+
+
+.. tip::
+
+   Puedes incluir comentarios dentro de las plantillas con el delimitador ``{# ... #}``.
+
+Para reproducir una plantilla en *Symfony*, utiliza el método ``render`` dentro de un controlador, suministrando cualquier variable necesaria en la plantilla::
+
+    $this->render('AcmeDemoBundle:Demo:hello.html.twig', array(
+        'name' => $name,
+    ));
+
+Las variables pasadas a una plantilla pueden ser cadenas, matrices e incluso objetos. *Twig* abstrae la diferencia entre ellas y te permite acceder a los "atributos" de una variable con la notación de punto (``.``):
+
+.. code-block:: jinja
+
+    {# array('name' => 'Fabien') #}
+    {{ name }}
+
+    {# array('user' => array('name' => 'Fabien')) #}
+    {{ user.name }}
+
+    {# obliga a verlo como arreglo #}
+    {{ user['name'] }}
+
+    {# array('user' => new User('Fabien')) #}
+    {{ user.name }}
+    {{ user.getName }}
+
+    {# obliga a ver el nombre como método #}
+    {{ user.name() }}
+    {{ user.getName() }}
+
+    {# pasa argumentos al método #}
+    {{ user.date('Y-m-d') }}
+
+.. note::
+
+    Es importante saber que las llaves no son parte de la variable, sino de la declaración de impresión. Si accedes a variables dentro de las etiquetas no las envuelvas con llaves.
+
+Decorando plantillas
+--------------------
+
+Muy a menudo, las plantillas en un proyecto comparten elementos comunes, como los bien conocidos encabezados y pies de página. En *Symfony2*, nos gusta pensar en este problema de forma diferente: una plantilla se puede decorar con otra. Esto funciona exactamente igual que las clases *PHP*: La herencia de plantillas te permite crear un "esqueleto" de plantilla base que contenga todos los elementos comunes de tu sitio y define los **bloques** que las plantillas descendientes pueden sustituir.
+
+La plantilla ``hello.html.twig`` hereda de ``base.html.twig``, gracias a la etiqueta ``extends``:
+
+.. code-block:: html+jinja
+
+    {# src/Acme/DemoBundle/Resources/views/Demo/hello.html.twig #}
+    {% extends "AcmeDemoBundle::base.html.twig" %}
+
+    {% block title "Hello " ~ name %}
+
+    {% block content %}
+        <h1>Hello {{ name }}!</h1>
+    {% endblock %}
+
+La notación ``AcmeDemoBundle::base.html.twig`` suena familiar, ¿no?
+Es la misma notación utilizada para hacer referencia a una plantilla regular. La parte ``::`` simplemente significa que el elemento controlador está vacío, por lo tanto el archivo correspondiente se almacena directamente bajo el directorio ``Resources/views/``.
+
+Ahora, echemos un vistazo a un ``base.html.twig`` simplificado:
+
+.. code-block:: jinja
+
+    {# src/Acme/DemoBundle/Resources/views/base.html.twig #}
+    <div class="symfony-content">
+        {% block content %}
+        {% endblock %}
+        </div>
+
+La etiqueta ``{% block %}`` define bloques que las plantillas derivadas pueden
+llenar. Todas las etiquetas de bloque le dicen al motor de plantillas que una
+plantilla derivada puede reemplazar esas porciones de la plantilla.
+
+En este ejemplo, la plantilla ``hello.html.twig`` sustituye el bloque ``content``, lo cual significa que el texto ``"Hello Fabien"`` se reproduce dentro del elemento ``div.symfony-content``.
+
+Usando etiquetas, filtros y funciones
+-------------------------------------
+
+Una de las mejores características de *Twig* es su extensibilidad a través de etiquetas, filtros y funciones. *Symfony2* viene empacado con muchas de estas integradas para facilitar el trabajo del diseñador de la plantilla.
+
+Incluyendo otras plantillas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+La mejor manera de compartir un fragmento de código entre varias plantillas diferentes es crear una nueva plantilla, que luego puedas incluir en otras plantillas.
+
+Crea una plantilla ``embedded.html.twig``:
+
+.. code-block:: jinja
+
+    {# src/Acme/DemoBundle/Resources/views/Demo/embedded.html.twig #}
+    Hello {{ name }}
+
+Y cambia la plantilla ``index.html.twig`` para incluirla:
+
+.. code-block:: jinja
+
+    {# src/Acme/DemoBundle/Resources/views/Demo/hello.html.twig #}
+    {% extends "AcmeDemoBundle::base.html.twig" %}
+
+    {# sustituye el bloque 'content' por embedded.html.twig #}
+    {% block content %}
+        {% include "AcmeDemoBundle:Demo:embedded.html.twig" %}
+    {% endblock %}
+
+Integrando otros controladores
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+¿Y si deseas incrustar el resultado de otro controlador en una plantilla?
+Eso es muy útil cuando se trabaja con *Ajax*, o cuando la plantilla incrustada necesita alguna variable que no está disponible en la plantilla principal.
+
+Supongamos que has creado una acción ``fancy``, y deseas incluirla dentro de la plantilla ``index`` principal. Para ello, utiliza la etiqueta ``render``:
+
+.. code-block:: jinja
+
+    {# src/Acme/DemoBundle/Resources/views/Demo/index.html.twig #}
+    {% render "AcmeDemoBundle:Demo:fancy" with { 'name': name, 'color': 'green' } %}
+
+Aquí, la cadena ``AcmeDemoBundle:Demo:fancy`` se refiere a la acción ``fancy`` del controlador ``Demo``. Los argumentos (``name`` y ``color``) actúan como variables de la petición simulada (como si ``fancyAction`` estuviera manejando una petición completamente nueva) y se ponen a disposición del controlador::
+
+    // src/Acme/DemoBundle/Controller/DemoController.php
+
+    class DemoController extends Controller
+    {
+        public function fancyAction($name, $color)
+        {
+            // crea algún objeto, basándose en la variable $color
+            $object = ...;
+
+            return $this->render('AcmeDemoBundle:Demo:fancy.html.twig', array('name' => $name, 'object' => $object));
+        }
+
+        // ...
+    }
+
+Creando enlaces entre páginas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Hablando de aplicaciones web, forzosamente tienes que crear enlaces entre páginas. En lugar de codificar las *URL* en las plantillas, la función ``path`` sabe cómo generar *URL* basándose en la configuración de enrutado. De esta manera, todas tus *URL* se pueden actualizar fácilmente con sólo cambiar la configuración:
+
+.. code-block:: html+jinja
+
+    <a href="{{ path('_demo_hello', { 'name': 'Thomas' }) }}">Greet Thomas!</a>
+
+La función ``path`` toma el nombre de la ruta y una matriz de parámetros como argumentos. El nombre de la ruta es la clave principal en la cual se hace referencia a las rutas y los parámetros son los valores de los marcadores de posición definidos en el patrón de la ruta::
+
+    // src/Acme/DemoBundle/Controller/DemoController.php
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+
+    /**
+     * @Route("/hello/{name}", name="_demo_hello")
+     * @Template()
+     */
+    public function helloAction($name)
+    {
+        return array('name' => $name);
+    }
+
+.. tip::
+
+    La función ``url`` genera *URL* *absolutas*: ``{{ url('_demo_hello', {
+    'name': 'Thomas' }) }}``.
+
+Incluyendo activos: imágenes, *JavaScript* y hojas de estilo
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+¿Qué sería de Internet sin imágenes, *JavaScript* y hojas de estilo?
+*Symfony2* proporciona la función ``asset`` para hacerles frente fácilmente:
+
+.. code-block:: jinja
+
+    <link href="{{ asset('css/blog.css') }}" rel="stylesheet" type="text/css" />
+
+    <img src="{{ asset('images/logo.png') }}" />
+
+El propósito principal de la función ``asset`` es hacer más portátil tu aplicación.
+Gracias a esta función, puedes mover el directorio raíz de la aplicación a cualquier lugar bajo tu directorio web raíz sin cambiar nada en el código de tus plantillas.
+
+Escapando variables
+-------------------
+
+*Twig* está configurado para escapar toda su producción automáticamente. Lee la `documentación`_ de *Twig* para obtener más información sobre el mecanismo de escape y la extensión ``Escaper``.
+
+Consideraciones finales
+-----------------------
+
+*Twig* es simple pero potente. Gracias a los diseños, bloques, plantillas e inclusión de acciones, es muy fácil organizar tus plantillas de manera lógica y extensible. Sin embargo, si no te sientes cómodo con *Twig*, siempre puedes utilizar las plantillas de *PHP* dentro de *Symfony* sin ningún problema.
+
+Sólo has estado trabajando con *Symfony2* durante unos 20 minutos, pero ya puedes hacer cosas muy sorprendentes con él. Ese es el poder de *Symfony2*. Aprender los conceptos básicos es fácil, y pronto aprenderás que esta simplicidad está escondida bajo una arquitectura muy flexible.
+
+Pero me estoy adelantando demasiado. En primer lugar, necesitas aprender más sobre el controlador y ese exactamente es el tema de la :doc:`siguiente parte de esta guía <the_controller>`.
+¿Listo para otros 10 minutos con *Symfony2*?
+
+.. _Twig:          http://gitnacho.github.com/Twig/
+.. _`documentación`: http://gitnacho.github.com/Twig/

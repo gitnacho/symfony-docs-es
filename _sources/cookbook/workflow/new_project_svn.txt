@@ -1,0 +1,114 @@
+Cómo crear y guardar un proyecto *Symfony2* en *Subversion*
+===========================================================
+
+.. tip::
+
+    Este artículo especialmente es sobre *Subversion*, y se basa en os principios que se encuentran en :doc:`/cookbook/workflow/new_project_git`.
+
+Una vez hayas leído :doc:`/book/page_creation` y te sientas cómodo usando *Symfony*, sin duda estarás listo para comenzar tu propio proyecto. El método preferido para gestionar proyectos *Symfony2* es usando `git`_, pero algunos prefieren usar `Subversion`_ ¡lo cual está completamente bien!. En esta receta, aprenderás a gestionar tu proyecto usando `svn`_ en una forma similar a como se debe hacer con `git`_.
+
+.. tip::
+
+    Este es **un** método para dar seguimiento a tu proyecto *Symfony2* en un repositorio de *Subversion*. Hay varias maneras de hacerlo y esta simplemente es una que funciona.
+
+El repositorio *Subversion*
+---------------------------
+
+Para este artículo vamos a suponer que el diseño de tu repositorio sigue la estructura generalizada estándar:
+
+.. code-block:: text
+
+    myproject/
+        branches/
+        tags/
+        trunk/
+
+.. tip::
+
+    La mayoría del alojamiento de *subversión* debe seguir esta práctica estándar. Este es el diseño recomendado del `Control de versiones con Subversion`_ y el diseño utilizado por la mayoría del alojamiento gratuito (consulta :ref:`svn-hosting`).
+
+Configuración inicial del proyecto
+----------------------------------
+
+Para empezar, tendrás que descargar *Symfony2* y obtener la configuración básica de *Subversion*:
+
+1. Descarga la `edición estándar de Symfony2`_ con o sin ``vendors``.
+
+2. Descomprime la distribución. Esto creará un directorio llamado *Symfony* con tu nueva estructura del proyecto, archivos de configuración, etc. Cámbiale el nombre a lo que quieras.
+
+3. Copia el repositorio de *Subversion* que será el anfitrión de este proyecto. Digamos que está alojado en `Google code`_ y se llama ``miproyecto``:
+
+   .. code-block:: bash
+
+        $ svn checkout http://myproject.googlecode.com/svn/trunk myproject
+
+4. Copia los archivos del proyecto *Symfony2* en el directorio de *subversión*:
+
+   .. code-block:: bash
+
+        $ mv Symfony/* myproject/
+
+5. Ahora vamos a configurar las reglas de ignorar. No todo se *debe* almacenar en tu repositorio de *Subversion*. Algunos archivos (como el caché) se generan y otros (como la configuración de la base de datos) están destinados a ser personalizados en cada máquina. Esto hace el usar la propiedad ``svn:ignore``, de modo que podemos ignorar determinados archivos.
+
+   .. code-block:: bash
+
+        $ cd myproject/
+        $ svn add --depth=empty app app/cache app/logs app/config web
+
+        $ svn propset svn:ignore "vendor" .
+        $ svn propset svn:ignore "bootstrap*" app/
+        $ svn propset svn:ignore "parameters.ini" app/config/
+        $ svn propset svn:ignore "*" app/cache/
+        $ svn propset svn:ignore "*" app/logs/
+
+        $ svn propset svn:ignore "bundles" web
+
+        $ svn ci -m "commit basic symfony ignore list (vendor, app/bootstrap*, app/config/parameters.ini, app/cache/*, app/logs/*, web/bundles)"
+
+6. Ahora, puedes añadir los archivos faltantes y confirmar los cambios al proyecto:
+
+   .. code-block:: bash
+
+        $ svn add --force .
+        $ svn ci -m "add basic Symfony Standard 2.X.Y"
+
+7. Copia ``app/config/parameters.ini`` a ``app/config/parameters.ini.dist``.
+   El archivo :file:`parameters.yml` es ignorado por ``svn`` (ve arriba) para no comprometer la configuración específica de la máquina ---como la contraseña de la base de datos---. Al crear el archivo :file:`parameters.yml.dist`, los nuevos desarrolladores rápidamente pueden clonar el proyecto, copiar este archivo a :file:`parameters.yml`, personalizarlo y empezar a desarrollar.
+
+8. Por último, descarga todas las bibliotecas de otros proveedores ejecutando el ``composer``. Para obtener más información, consulta :ref:`installation-updating-vendors`.
+
+.. tip::
+
+	Si confías en las versiones "dev", entonces, puedes utilizar *git* para instalar bibliotecas, puesto que no hay un archivo disponible para descargar.
+
+En este punto, tienes un proyecto *Symfony2* totalmente funcional almacenado en tu repositorio de *Subversion*. Puedes comenzar a desarrollar confirmando tus cambios al repositorio de *Subversion*.
+
+Puedes continuar, siguiendo el capítulo :doc:`/book/page_creation` para aprender más acerca de cómo configurar y desarrollar tu aplicación.
+
+.. tip::
+
+    La *edición estándar de Symfony2* viene con alguna funcionalidad de ejemplo. Para eliminar el código de ejemplo, sigue las instrucciones del archivo `Readme de la edición estándar`_.
+
+.. include:: _vendor_deps.rst.inc
+
+.. _svn-hosting:
+
+Soluciones de alojamiento *Subversion*
+--------------------------------------
+
+La mayor diferencia entre `git`_ y `svn`_ es que *Subversion* necesita un repositorio central para trabajar. Entonces, tiene varias soluciones:
+
+- Autolojamiento: crea tu propio repositorio y accede ahí a través del sistema de archivos o la red. Para ayudarte en esta tarea puedes leer `Control de versiones con Subversion`_.
+
+- Alojamiento de terceros: hay un montón de soluciones serias de alojamiento gratuito disponibles como 'GitHub`_, `Google code`_, `SourceForge`_ o `Gna`_. Algunas de ellas también ofrecen alojamiento ``git``.
+
+.. _`git`: http://git-scm.com/
+.. _`svn`: http://subversion.apache.org/
+.. _`Subversion`: http://subversion.apache.org/
+.. _`edición estándar de Symfony2`: http://symfony.com/download
+.. _`Readme de la edición estándar`: https://github.com/symfony/symfony-standard/blob/master/README.md
+.. _`Control de versiones con Subversion`: http://svnbook.red-bean.com/
+.. _`GitHub`: http://github.com/
+.. _`Google code`: http://code.google.com/hosting/
+.. _`SourceForge`: http://sourceforge.net/
+.. _`Gna`: http://gna.org/

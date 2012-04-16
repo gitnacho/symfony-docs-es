@@ -1,0 +1,141 @@
+Cómo configurar ``Monolog`` para reportar errores por correo electrónico
+========================================================================
+
+Puedes configurar a Monolog_ para que envíe un correo electrónico cuándo ocurra un error en una
+aplicación. La configuración para esto requiere unos cuantos controladores anidados a fin de evitar recibir demasiados mensajes de correo electrónico. Esta configuración se ve complicada al principio, pero cada controlador es bastante sencillo cuando lo diseccionas.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        monolog:
+            handlers:
+                mail:
+                    type:         fingers_crossed
+                    action_level: critical
+                    handler:      buffered
+                buffered:
+                    type:    buffer
+                    handler: swift
+                swift:
+                    type:       swift_mailer
+                    from_email: error@example.com
+                    to_email:   error@example.com
+                    subject:    An Error Occurred!
+                    level:      debug
+
+    .. code-block:: xml
+
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:monolog="http://symfony.com/schema/dic/monolog"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd
+                                http://symfony.com/schema/dic/monolog http://symfony.com/schema/dic/monolog/monolog-1.0.xsd">
+
+            <monolog:config>
+                <monolog:handler
+                    name="mail"
+                    type="fingers_crossed"
+                    action-level="critical"
+                    handler="buffered"
+                />
+                <monolog:handler
+                    name="buffered"
+                    type="buffer"
+                    handler="swift"
+                />
+                <monolog:handler
+                    name="swift"
+                    from-email="error@example.com"
+                    to-email="error@example.com"
+                    subject="An Error Occurred!"
+                    level="debug"
+                />
+            </monolog:config>
+        </container>
+
+El controlador ``mail`` es un controlador ``fingers_crossed`` lo cuál significa que sólo es lanzado cuándo se alcanza el nivel de acción, en este caso ``crítico``.
+Entonces registra todo, incluyendo, los mensajes bajo el nivel de acción.  El nivel ``crítico`` sólo se lanza para códigos de error HTTP 5xx. Establecer el ``handler`` significa que el resultado entonces se pasa al controlador ``buffered``.
+
+.. tip::
+
+    Si quieres que ambos niveles de error 400 y 500 emitan un mensaje de correo electrónico, fija el ``action_level`` a ``error`` en vez de a ``critical``.
+
+El controlador ``buffered`` sencillamente guarda todos los mensajes para una petición y luego los pasa al controlador anidado para enviar solamente uno. Si no utilizas este controlador entonces cada mensaje será enviado por separado. Este entonces es pasado al controlador ``swift``. Este es el controlador que de hecho trata de enviarte el error. Los ajustes para este son directos, las direcciones ``to``, ``from`` y ``subject``.
+
+Puedes combinar estos controladores con otros a modo de que los errores todavía sean registrados en el servidor y enviados:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        monolog:
+            handlers:
+                main:
+                    type:         fingers_crossed
+                    action_level: critical
+                    handler:      grouped
+                grouped:
+                    type:    group
+                    members: [streamed, buffered]
+                streamed:
+                    type:  stream
+                    path:  %kernel.logs_dir%/%kernel.environment%.log
+                    level: debug
+                buffered:
+                    type:    buffer
+                    handler: swift
+                swift:
+                    type:       swift_mailer
+                    from_email: error@example.com
+                    to_email:   error@example.com
+                    subject:    An Error Occurred!
+                    level:      debug
+
+    .. code-block:: xml
+
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:monolog="http://symfony.com/schema/dic/monolog"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd
+                                http://symfony.com/schema/dic/monolog http://symfony.com/schema/dic/monolog/monolog-1.0.xsd">
+
+            <monolog:config>
+                <monolog:handler
+                    name="main"
+                    type="fingers_crossed"
+                    action_level="critical"
+                    handler="grouped"
+                />                
+                <monolog:handler
+                    name="grouped"
+                    type="group"
+                >
+                    <member type="stream"/>
+                    <member type="buffered"/>
+                </monolog:handler>
+                <monolog:handler
+                    name="stream"
+                    path="%kernel.logs_dir%/%kernel.environment%.log"
+                    level="debug"
+                />
+                <monolog:handler
+                    name="buffered"
+                    type="buffer"
+                    handler="swift"
+                />
+                <monolog:handler
+                    name="swift"
+                    from-email="error@example.com"
+                    to-email="error@example.com"
+                    subject="An Error Occurred!"
+                    level="debug"
+                />
+            </monolog:config>
+        </container>
+
+Este utiliza el controlador ``group`` para enviar los mensajes a los dos miembros del grupo, los controladores ``buffered`` y ``stream``. Ahora ambos mensajes serán escritos al archivo de registro y enviados por correo electrónico.
+
+.. _`Monolog`: https://github.com/Seldaek/monolog

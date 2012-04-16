@@ -1,0 +1,99 @@
+.. index::
+   single: Plantillas
+
+El componente ``Templating``
+============================
+
+    El componente ``Templating`` proporciona todas las herramientas necesarias para construir cualquier tipo de sistema de plantillas.
+
+    Este proporciona una infraestructura para cargar los archivos de plantilla y opcionalmente controlar sus cambios. También proporciona una implementación del motor de plantillas concreto usando *PHP* con herramientas adicionales para escapar y separar plantillas en bloques y diseños.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/Templating);
+* Instalándolo a través de *PEAR* (`pear.symfony.com/Templating`);
+* Instalándolo vía ``Composer`` (`symfony/templating` en Packagist).
+
+Usando
+------
+
+La clase :class:`Symfony\\Component\\Templating\\PhpEngine` es el punto de entrada del componente. Este necesita un analizador de nombres de plantilla (:class:`Symfony\\Component\\templating\\TemplateNameParserInterface`) para convertir un nombre de plantilla a una referencia a la plantilla y gestor de plantillas (:class:`Symfony\\Component\\templating\\Loader\\LoaderInterface`) para encontrar la plantilla asociada a una referencia::
+
+    use Symfony\Component\Templating\PhpEngine;
+    use Symfony\Component\Templating\TemplateNameParser;
+    use Symfony\Component\Templating\Loader\FilesystemLoader;
+
+    $loader = new FilesystemLoader(__DIR__ . '/views/%name%');
+
+    $view = new PhpEngine(new TemplateNameParser(), $loader);
+
+    echo $view->render('hello.php', array('firstname' => 'Fabien'));
+
+El método :method:`Symfony\\Component\\Templating\\PhpEngine::render` ejecuta el archivo
+:file:`views/hello.php` y devuelve el texto producido.
+
+.. code-block:: php
+
+    <!-- views/hello.php -->
+    Hello, <?php echo $firstname ?>!
+
+Herencia de plantillas con ranuras
+----------------------------------
+
+La herencia de plantillas está diseñada para compartir diseños con muchas plantillas.
+
+
+.. code-block:: php
+
+    <!-- views/layout.php -->
+        <html>
+            <head>
+            <title><?php $view['slots']->output('title', 'Default title') ?></title>
+            </head>
+            <body>
+            <?php $view['slots']->output('_content') ?>
+            </body>
+        </html>
+
+El método :method:`Symfony\\Templating\\PhpEngine::extend` es llamado en la subplantilla para añadir la plantilla padre.
+
+.. code-block:: php
+
+    <!-- views/page.php -->
+    <?php $view->extend('layout.php') ?>
+
+    <?php $view['slots']->set('title', $page->title) ?>
+
+    <h1>
+        <?php echo $page->title ?>
+    </h1>
+    <p>
+        <?php echo $page->body ?>
+    </p>
+
+Para usar la herencia de plantillas, debes registrar la clase auxiliar :class:`Symfony\\Templating\\Helper\\SlotsHelper`::
+
+    use Symfony\Templating\Helper\SlotsHelper;
+
+    $view->set(new SlotsHelper());
+
+    // Recupera el objeto $page
+
+    echo $view->render('page.php', array('page' => $page));
+
+.. note::
+
+    Es posible la herencia multinivel: un diseño puede extender a otro.
+
+Mecanismo de escape
+-------------------
+
+Esta documentación todavía se está escribiendo.
+
+El ayudante ``Asset``
+---------------------
+
+Esta documentación todavía se está escribiendo.

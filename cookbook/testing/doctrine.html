@@ -33,9 +33,9 @@
   <body>
   <div class="imalogo">
     
-  <a href="../../index.html"><img src="../.././_static/logo-big.gif" alt="Traducciones de Nacho Pacheco" />
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/logo-big.gif" alt="Edición estándar de Symfony2" />
   
-    <a href="http://gitnacho.github.com/tnp/"><img src="../.././_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
     <div class="social">
       <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
@@ -102,6 +102,7 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
 <p>En seguida, tendrás que configurar un gestor de entidades en cada prueba para que <em>Doctrine</em> pueda cargar entidades y repositorios por ti.</p>
 <p>Debido a que <em>Doctrine</em> por omisión no es capaz de cargar los metadatos de anotaciones desde tus entidades, tendrás que configurar el lector de anotaciones para que pueda analizar y cargar las entidades:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/ProductBundle/Tests/Entity/ProductRepositoryTest.php</span>
+
 <span class="k">namespace</span> <span class="nx">Acme\ProductBundle\Tests\Entity</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Doctrine\Tests\OrmTestCase</span><span class="p">;</span>
@@ -111,8 +112,14 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
 
 <span class="k">class</span> <span class="nc">ProductRepositoryTest</span> <span class="k">extends</span> <span class="nx">OrmTestCase</span>
 <span class="p">{</span>
-    <span class="k">private</span> <span class="nv">$_em</span><span class="p">;</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @var \Doctrine\Tests\Mocks\EntityManagerMock</span>
+<span class="sd">     */</span>
+    <span class="k">private</span> <span class="nv">$em</span><span class="p">;</span>
 
+    <span class="sd">/**</span>
+<span class="sd">     * {@inheritDoc}</span>
+<span class="sd">     */</span>
     <span class="k">protected</span> <span class="k">function</span> <span class="nf">setUp</span><span class="p">()</span>
     <span class="p">{</span>
         <span class="nv">$reader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AnnotationReader</span><span class="p">();</span>
@@ -126,20 +133,19 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
             <span class="s1">&#39;Acme\\ProductBundle\\Entity&#39;</span>
         <span class="p">);</span>
 
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_getTestEntityManager</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_getTestEntityManager</span><span class="p">();</span>
 
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getConfiguration</span><span class="p">()</span>
-            <span class="o">-&gt;</span><span class="na">setMetadataDriverImpl</span><span class="p">(</span><span class="nv">$controladorMetadatos</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span><span class="o">-&gt;</span><span class="na">getConfiguration</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">setMetadataDriverImpl</span><span class="p">(</span><span class="nv">$metadataDriver</span><span class="p">);</span>
 
-        <span class="c1">// te permite utilizar la sintaxis AcmeProductBundle:Product</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getConfiguration</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">setEntityNamespaces</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
-            <span class="s1">&#39;AcmeProductBundle&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\\ProductBundle\\Entity&#39;</span>
+        <span class="c1">// te permite usar la sintaxis del AcmeStoreBundle:Product</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span><span class="o">-&gt;</span><span class="na">getConfiguration</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">setEntityNamespaces</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;AcmeStoreBundle&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\\StoreBundle\\Entity&#39;</span>
         <span class="p">));</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Si te fijas en el código, puedes notar que:</p>
+<p>Si te fijas en el código, notarás que:</p>
 <ul class="simple">
 <li>Extiendes desde <tt class="docutils literal"><span class="pre">\Doctrine\Tests\OrmTestCase</span></tt>, el cual proporciona útiles métodos para las pruebas unitarias;</li>
 <li>Debes configurar el <tt class="docutils literal"><span class="pre">AnnotationReader</span></tt> para poder analizar y cargar las entidades;</li>
@@ -150,31 +156,44 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
 <div class="section" id="escribiendo-tus-pruebas-unitarias">
 <h3>Escribiendo tus pruebas unitarias<a class="headerlink" href="#escribiendo-tus-pruebas-unitarias" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>Recuerda que los métodos de repositorio de <em>Doctrine</em> sólo pueden probar si estás construyendo y devolviendo una consulta (pero no ejecutando una consulta realmente). Tomemos el siguiente ejemplo:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/StoreBundle/Entity/ProductRepository</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/StoreBundle/Entity/ProductRepository.php</span>
+
 <span class="k">namespace</span> <span class="nx">Acme\StoreBundle\Entity</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Doctrine\ORM\EntityRepository</span><span class="p">;</span>
 
 <span class="k">class</span> <span class="nc">ProductRepository</span> <span class="k">extends</span> <span class="nx">EntityRepository</span>
 <span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @param  string $name</span>
+<span class="sd">     * @return \Doctrine\ORM\QueryBuilder</span>
+<span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">createSearchByNameQueryBuilder</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createQueryBuilder</span><span class="p">(</span><span class="s1">&#39;p&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nv">$this</span>
+            <span class="o">-&gt;</span><span class="na">createQueryBuilder</span><span class="p">(</span><span class="s1">&#39;p&#39;</span><span class="p">)</span>
             <span class="o">-&gt;</span><span class="na">where</span><span class="p">(</span><span class="s1">&#39;p.name LIKE :name&#39;</span><span class="p">)</span>
-            <span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="nv">$name</span><span class="p">);</span>
+            <span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="nv">$name</span><span class="p">)</span>
+        <span class="p">;</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>En este ejemplo, el método devuelve una instancia de <tt class="docutils literal"><span class="pre">QueryBuilder</span></tt>. Puedes probar el resultado de este método en una variedad de maneras:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ProductRepositoryTest</span> <span class="k">extends</span> <span class="nx">\Doctrine\Tests\OrmTestCase</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/StoreBundle/Tests/Entity/ProductRepositoryTest.php</span>
+
+<span class="cm">/* ... */</span>
+
+<span class="k">class</span> <span class="nc">ProductRepositoryTest</span> <span class="k">extends</span> <span class="nx">OrmTestCase</span>
 <span class="p">{</span>
     <span class="cm">/* ... */</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">testCreateSearchByNameQueryBuilder</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="nv">$queryBuilder</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeProductBundle:Product&#39;</span><span class="p">)</span>
-            <span class="o">-&gt;</span><span class="na">createSearchByNameQueryBuilder</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">);</span>
+        <span class="nv">$queryBuilder</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span>
+            <span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeStoreBundle:Product&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">createSearchByNameQueryBuilder</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+        <span class="p">;</span>
 
         <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertEquals</span><span class="p">(</span><span class="s1">&#39;p.name LIKE :name&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span> <span class="nv">$queryBuilder</span><span class="o">-&gt;</span><span class="na">getDqlPart</span><span class="p">(</span><span class="s1">&#39;where&#39;</span><span class="p">));</span>
         <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertEquals</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;name&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;foo&#39;</span><span class="p">),</span> <span class="nv">$queryBuilder</span><span class="o">-&gt;</span><span class="na">getParameters</span><span class="p">());</span>
@@ -186,15 +205,16 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
 <p>Si sólo tienes un objeto <tt class="docutils literal"><span class="pre">Query</span></tt> crudo o prefieres probar la consulta real, puedes probar la cadena de consulta <em>DQL</em> directamente:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">testCreateSearchByNameQueryBuilder</span><span class="p">()</span>
 <span class="p">{</span>
-    <span class="nv">$queryBuilder</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeProductBundle:Product&#39;</span><span class="p">)</span>
-        <span class="o">-&gt;</span><span class="na">createSearchByNameQueryBuilder</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">);</span>
+    <span class="nv">$queryBuilder</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span>
+        <span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeStoreBundle:Product&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">createSearchByNameQueryBuilder</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+    <span class="p">;</span>
 
-    <span class="nv">$query</span> <span class="o">=</span> <span class="nv">$queryBuilder</span><span class="o">-&gt;</span><span class="na">getQuery</span><span class="p">();</span>
+    <span class="nv">$dql</span> <span class="o">=</span> <span class="nv">$queryBuilder</span><span class="o">-&gt;</span><span class="na">getQuery</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getDql</span><span class="p">();</span>
 
-    <span class="c1">// prueba DQL</span>
     <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertEquals</span><span class="p">(</span>
-        <span class="s1">&#39;SELECT p FROM Acme\ProductBundle\Entity\Product p WHERE p.name LIKE :name&#39;</span><span class="p">,</span>
-        <span class="nv">$query</span><span class="o">-&gt;</span><span class="na">getDql</span><span class="p">()</span>
+        <span class="s1">&#39;SELECT p FROM Acme\StoreBundle\Entity\Product p WHERE p.name LIKE :name&#39;</span><span class="p">,</span>
+        <span class="nv">$dql</span>
     <span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
@@ -204,8 +224,9 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
 <div class="section" id="probando-la-funcionalidad">
 <span id="cookbook-doctrine-repo-functional-test"></span><h2>Probando la funcionalidad<a class="headerlink" href="#probando-la-funcionalidad" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Si realmente necesitas ejecutar una consulta, tendrás que arrancar el <tt class="docutils literal"><span class="pre">núcleo</span></tt> para conseguir una conexión válida. En este caso, debes extender a <tt class="docutils literal"><span class="pre">WebTestCase</span></tt>, el cual hace todo esto muy fácil:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/ProductBundle/Tests/Entity/ProductRepositoryFunctionalTest.php</span>
-<span class="k">namespace</span> <span class="nx">Acme\ProductBundle\Tests\Entity</span><span class="p">;</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/StoreBundle/Tests/Entity/ProductRepositoryFunctionalTest.php</span>
+
+<span class="k">namespace</span> <span class="nx">Acme\StoreBundle\Tests\Entity</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Bundle\FrameworkBundle\Test\WebTestCase</span><span class="p">;</span>
 
@@ -214,23 +235,24 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
     <span class="sd">/**</span>
 <span class="sd">     * @var \Doctrine\ORM\EntityManager</span>
 <span class="sd">     */</span>
-    <span class="k">private</span> <span class="nv">$_em</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$em</span><span class="p">;</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">setUp</span><span class="p">()</span>
     <span class="p">{</span>
-            <span class="nv">$kernel</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="na">createKernel</span><span class="p">();</span>
-            <span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">boot</span><span class="p">();</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span> <span class="o">=</span> <span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">getContainer</span><span class="p">()</span>
-            <span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;doctrine.orm.entity_manager&#39;</span><span class="p">);</span>
+        <span class="nv">$kernel</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="na">createKernel</span><span class="p">();</span>
+        <span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">boot</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span> <span class="o">=</span> <span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">getContainer</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;doctrine.orm.entity_manager&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">testProductByCategoryName</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="nv">$results</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeProductBundle:Product&#39;</span><span class="p">)</span>
+        <span class="nv">$results</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span>
+            <span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeStoreBundle:Product&#39;</span><span class="p">)</span>
             <span class="o">-&gt;</span><span class="na">searchProductsByNameQuery</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
-            <span class="o">-&gt;</span><span class="na">getResult</span><span class="p">();</span>
+            <span class="o">-&gt;</span><span class="na">getResult</span><span class="p">()</span>
+        <span class="p">;</span>
 
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertEquals</span><span class="p">(</span><span class="nb">count</span><span class="p">(</span><span class="nv">$results</span><span class="p">),</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertCount</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nv">$results</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -244,7 +266,7 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
       </div>
       <div class="clearer"></div>
     </div>
-  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="../.././_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/_static/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
   
   <div style="width:740px;margin:10px auto;">
     
@@ -268,15 +290,15 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
 
 
    <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Apr 01, 2012.
+      Actualizado por última vez en Apr 16, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
-     <div id="disqus_thread"></div>
    </div>
-   <script type="text/javascript"> 
+   <script type="text/javascript">
     var disqus_shortname = 'documentos-mx';
     var disqus_developer = 1;
     (function() {
@@ -284,7 +306,7 @@ Las pruebas unitarias sólo son posibles cuando pruebas un método que construye
         dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
         (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
     })();
-   </script> 
+   </script>
    <noscript>
      Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
    </noscript>

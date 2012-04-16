@@ -1,0 +1,67 @@
+.. index::
+   single: Enrutando; Scheme requirement
+
+Cómo forzar las rutas para que siempre usen *HTTPS* o *HTTP*
+============================================================
+
+A veces, deseas proteger algunas rutas y estar seguro de que siempre se accede a ellas a través del protocolo *HTTPS*. El componente ``Routing`` te permite forzar el esquema de la *URI* a través del requisito ``_scheme``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        secure:
+            pattern:  /secure
+            defaults: { _controller: AcmeDemoBundle:Main:secure }
+            requirements:
+                _scheme:  https
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <route id="secure" pattern="/secure">
+                <default key="_controller">AcmeDemoBundle:Main:secure</default>
+                <requirement key="_scheme">https</requirement>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('secure', new Route('/secure', array(
+            '_controller' => 'AcmeDemoBundle:Main:secure',
+        ), array(
+            '_scheme' => 'https',
+        )));
+
+        return $collection;
+
+La configuración anterior obliga a utilizar siempre la ruta ``protegida`` *HTTPS*.
+
+Cuando se genera la *URL* ``protegida``, y si el esquema actual es *HTTP*, *Symfony* generará automáticamente una *URL* absoluta con *HTTPS* como esquema:
+
+.. code-block:: text
+
+    # Si el esquema actual es HTTPS
+    {{ path('secure') }}
+    # genera /secure
+
+    # Si el esquema actual es HTTP
+    {{ path('secure') }}
+    # genera https://example.com/secure
+
+El requisito también aplica para las peticiones entrantes. Si intentas acceder a la ruta ``/secure`` con *HTTP*, automáticamente se te redirige a la misma *URL*, pero con el esquema *HTTPS*.
+
+El ejemplo anterior utiliza ``https`` para el ``_scheme``, pero también puedes obligar a que una *URL* siempre utilice ``http``.
+
+.. note::
+
+    El componente ``Security`` proporciona otra manera de forzar el esquema *HTTP* a través de la opción ``requires_channel``. Este método alternativo es más adecuado para proteger "una amplia área" de tu sitio web (todas las *URL* en ``/admin``) o cuando deseas proteger *URL* definidas en un paquete de terceros.

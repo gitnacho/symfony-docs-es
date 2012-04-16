@@ -1,0 +1,246 @@
+``DoctrineMigrationsBundle``
+============================
+
+La funcionalidad de migración de base de datos, es una extensión de la capa de abstracción de bases de datos y te ofrece la posibilidad de desplegar programáticamente nuevas versiones del esquema de la base de datos de forma segura y estandarizada.
+
+.. tip::
+
+    Puedes leer más sobre las migraciones de base de datos de *Doctrine* en la `documentación`_ del proyecto.
+
+Instalando
+----------
+
+Las migraciones de *Doctrine* para *Symfony* se mantienen en el `DoctrineMigrationsBundle`_.
+Asegúrate de que tienes configuradas en tu proyecto ambas bibliotecas ``doctrine-migrations`` y ``DoctrineMigrationsBundle``. Sigue estos pasos para instalar las bibliotecas en la distribución estándar de *Symfony*.
+
+Agrega lo siguiente a ``deps``. Esto registrará el paquete Migraciones y la biblioteca *doctrine-migrations* como dependencias en tu aplicación:
+
+.. code-block:: text
+
+    [doctrine-migrations]
+        git=http://github.com/doctrine/migrations.git
+
+    [DoctrineMigrationsBundle]
+        git=http://github.com/doctrine/DoctrineMigrationsBundle.git
+        target=/bundles/Doctrine/Bundle/MigrationsBundle
+
+Actualiza las bibliotecas de proveedores:
+
+.. code-block:: bash
+
+    $ php bin/vendors install
+
+A continuación, asegúrate de que el nuevo espacio de nombres ``Doctrine\DBAL\Migrations`` se carga automáticamente a través del archivo ``autoload.php``. El nuevo espacio de nombres ``Migrations`` *debe* estar colocado encima de la entrada ``Doctrine\\DBAL`` de manera que el cargador automático busque esas clases dentro del directorio migraciones:
+
+.. code-block:: php
+
+    // app/autoload.php
+    $loader->registerNamespaces(array(
+        //...
+        'Doctrine\\DBAL\\Migrations' => __DIR__.'/../vendor/doctrine-migrations/lib',
+        'Doctrine\\DBAL'             => __DIR__.'/../vendor/doctrine-dbal/lib',
+    ));
+
+Por último, asegúrate de activar el paquete en ``AppKernel.php`` incluyendo lo siguiente:
+
+.. code-block:: php
+
+    // app/AppKernel.php
+    public function registerBundles()
+    {
+        $bundles = array(
+            //...
+            new Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle(),
+        );
+    }
+
+Usando
+------
+
+Toda la funcionalidad de las migraciones se encuentra en unas cuantas ordenes de consola:
+
+.. code-block:: bash
+
+    doctrine:migrations
+      :diff     Genera una migración comparando tu base de datos actual
+                a tu información asignada.
+      :execute  Ejecuta manualmente una sola versión de migración hacia
+                arriba o abajo.
+      :generate Genera una clase de migración en blanco.
+      :migrate  Ejecuta una migración a una determinada versión o, a la
+                última versión disponible.
+      :status   Ve el estado de un conjunto de migraciones.
+      :version  Añade y elimina versiones de migración manualmente desde
+                la tabla de versiones.
+
+Empieza consiguiendo la situación de las migraciones en tu aplicación ejecutando la orden ``status``:
+
+.. code-block:: bash
+
+    php app/console doctrine:migrations:status
+
+     == Configuration
+
+        >> Name:                                               Application Migrations
+        >> Configuration Source:                               manually configured
+        >> Version Table Name:                                 migration_versions
+        >> Migrations Namespace:                               Application\Migrations
+        >> Migrations Directory:                               /ruta/a/proyecto/app/DoctrineMigrations
+        >> Current Version:                                    0
+        >> Latest Version:                                     0
+        >> Executed Migrations:                                0
+        >> Available Migrations:                               0
+        >> New Migrations:                                     0
+
+Ahora, podemos empezar a trabajar con las migraciones generando una nueva clase de migración en blanco. Más adelante, aprenderás cómo puedes generar migraciones automáticamente con *Doctrine*.
+
+.. code-block:: bash
+
+    php app/console doctrine:migrations:generate
+    Nueva clase migración generada para "/ruta/a/tu/proyecto/app/DoctrineMigrations/Version20100621140655.php"
+
+Echa un vistazo a la clase migración recién generada y verás algo como lo siguiente::
+
+    namespace Application\Migrations;
+
+    use Doctrine\DBAL\Migrations\AbstractMigration,
+        Doctrine\DBAL\Schema\Schema;
+
+    class Version20100621140655 extends AbstractMigration
+    {
+        public function up(Schema $schema)
+        {
+
+        }
+
+        public function down(Schema $schema)
+        {
+
+        }
+    }
+
+Si ahora ejecutas la orden ``status`` te mostrará que tienes una nueva migración por ejecutar:
+
+.. code-block:: bash
+
+    php app/console doctrine:migrations:status
+
+     == Configuration
+
+       >> Name:                                               Application Migrations
+       >> Configuration Source:                               manually configured
+       >> Version Table Name:                                 migration_versions
+       >> Migrations Namespace:                               Application\Migrations
+       >> Migrations Directory:                               /ruta/a/proyecto/app/DoctrineMigrations
+       >> Current Version:                                    0
+       >> Latest Version:                                     2010-06-21 14:06:55 (20100621140655)
+       >> Executed Migrations:                                0
+       >> Available Migrations:                               1
+       >> New Migrations:                                     1
+
+    == Versiones de migración
+
+       >> 2011-06-21 14:06:55 (20110621140655)                no migrada
+
+Ahora puedes agregar algo de código de migración a los métodos ``up()`` y ``down()``, y finalmente cuando estés listo migrar:
+
+.. code-block:: bash
+
+    php app/console doctrine:migrations:migrate
+
+Para más información sobre cómo escribir migraciones en sí mismas (es decir, la manera de rellenar los métodos ``up()`` y ``down()``), consulta la `documentación`_ oficial de las Migraciones de *Doctrine*.
+
+Ejecutando migraciones al desplegar tu aplicación
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Por supuesto, el objetivo final al escribir migraciones es poder utilizarlas para actualizar de manera fiable la estructura de tu base de datos cuando despliegues tu aplicación.
+Al ejecutar las migraciones localmente (o en un servidor de pruebas), puedes asegurarte de que las migraciones trabajan según lo previsto.
+
+Cuando finalmente despliegues tu aplicación, sólo tienes que recordar ejecutar la orden ``doctrine:migrations:migrate``. Internamente, *Doctrine* crea una tabla ``migration_versions`` dentro de la base de datos y allí lleva a cabo el seguimiento de las migraciones que se han ejecutado. Por lo tanto, no importa cuantas migraciones hayas creado y ejecutado localmente, cuando se ejecuta la orden durante el despliegue, *Doctrine* sabrá exactamente qué migraciones no se han ejecutado todavía mirando la tabla ``migration_versions`` de tu base de datos en producción. Independientemente de qué servidor esté activado, siempre puedes ejecutar esta orden de forma segura para realizar sólo las migraciones que todavía no se han llevado a cabo en *esa* base de datos particular.
+
+Generando migraciones automáticamente
+-------------------------------------
+
+En realidad, no deberías tener que escribir migraciones manualmente, puesto que la biblioteca de migraciones puede generar las clases de la migración automáticamente comparando tu información asignada a *Doctrine* (es decir, cómo se *debe* ver tu base de datos) con la estructura de la base de datos actual.
+
+Por ejemplo, supongamos que creas una nueva entidad ``Usuario`` y agregas información asignándola al *ORM* de *Doctrine*:
+
+.. configuration-block::
+
+    .. code-block:: php-annotations
+
+        // src/Acme/HelloBundle/Entity/User.php
+        namespace Acme\HelloBundle\Entity;
+
+        use Doctrine\ORM\Mapping as ORM;
+
+        /**
+         * @ORM\Entity
+         * @ORM\Table(name="hello_user")
+         */
+        class User
+        {
+            /**
+             * @ORM\Id
+             * @ORM\Column(type="integer")
+             * @ORM\GeneratedValue(strategy="AUTO")
+             */
+            protected $id;
+
+            /**
+             * @ORM\Column(type="string", length="255")
+             */
+            protected $name;
+        }
+
+    .. code-block:: yaml
+
+        # src/Acme/HelloBundle/Resources/config/doctrine/User.orm.yml
+        Acme\HelloBundle\Entity\User:
+            type: entity
+            table: hello_user
+            id:
+                id:
+                    type: integer
+                    generator:
+                        strategy: AUTO
+            fields:
+                name:
+                    type: string
+                    length: 255
+
+    .. code-block:: xml
+
+        <!-- src/Acme/HelloBundle/Resources/config/doctrine/User.orm.xml -->
+        <doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                            http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+            <entity name="Acme\HelloBundle\Entity\User" table="hello_user">
+                <id name="id" type="integer" column="id">
+                    <generator strategy="AUTO"/>
+                </id>
+                <field name="name" column="name" type="string" length="255" />
+            </entity>
+
+        </doctrine-mapping>
+
+Con esta información, *Doctrine* ya está listo para ayudarte a persistir tu nuevo objeto ``Usuario`` hacia y desde la tabla ``hello_user``. Por supuesto, ¡esta tabla no existe aún! Genera una nueva migración para esta tabla automáticamente ejecutando la siguiente orden:
+
+.. code-block:: bash
+
+    php app/console doctrine:migrations:diff
+
+Deberás ver un mensaje informando que se ha generado una nueva clase migración basada en las diferencias del esquema. Si abres ese archivo, encontrarás que tiene el código *SQL* necesario para crear la tabla ``hello_user``. A continuación, ejecuta la migración para agregar la tabla a tu base de datos:
+
+.. code-block:: bash
+
+    php app/console doctrine:migrations:migrate
+
+La moraleja de la historia es la siguiente: después de cada cambio que realices en tu información de asignación a *Doctrine*, ejecuta la orden ``doctrine:migrations:diff`` para generar automáticamente las clases de la migración.
+
+Si lo haces desde el principio de tu proyecto (es decir, de modo que incluso las primeras tablas fueran cargadas a través de una clase migración), siempre podrás crear una base de datos actualizada y ejecutar las migraciones a fin de tener tu esquema de base de datos totalmente actualizado. De hecho, este es un flujo de trabajo fácil y confiable para tu proyecto.
+
+.. _`documentación`: http://www.doctrine-project.org/projects/migrations/2.0/docs/reference/introduction/en
+.. _`DoctrineMigrationsBundle`: https://github.com/symfony/DoctrineMigrationsBundle

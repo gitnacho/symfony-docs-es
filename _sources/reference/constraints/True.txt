@@ -1,0 +1,119 @@
+``True``
+========
+
+Valida que un valor es ``true``. En concreto, este comprueba si el valor es exactamente ``true``, exactamente el número entero ``1``, o exactamente la cadena "``1``".
+
+Además consulta :doc:`False <False>`.
+
++----------------+---------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`              |
++----------------+---------------------------------------------------------------------+
+| Opciones       | - `message`_                                                        |
++----------------+---------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\True`           |
++----------------+---------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\TrueValidator`  |
++----------------+---------------------------------------------------------------------+
+
+Uso básico
+----------
+
+Puedes aplicar esta restricción a propiedades (por ejemplo, una propiedad ``termsAccepted`` en un modelo de registro) o a un método ``captador``. Esta es más potente en este último caso, donde puedes afirmar que un método devuelve un valor ``true``. Por ejemplo, supongamos que tienes el siguiente método:
+
+.. code-block:: php
+
+    // src/Acme/BlogBundle/Entity/Author.php
+    namespace Acme\BlogBundle\Entity;
+
+    class Author
+    {
+        protected $token;
+
+        public function isTokenValid()
+        {
+            return $this->token == $this->generateToken();
+        }
+    }
+
+A continuación, puedes limitar este método con ``True``.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/BlogBundle/Resources/config/validation.yml
+        Acme\BlogBundle\Entity\Author:
+            getters:
+                tokenValid:
+                    - "True": { message: "The token is invalid" }
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            protected $token;
+
+            /**
+             * @Assert\True(message = "The token is invalid")
+             */
+            public function isTokenValid()
+            {
+                return $this->token == $this->generateToken();
+            }
+        }
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <!-- src/Acme/Blogbundle/Resources/config/validation.xml -->
+
+        <constraint-mapping xmlns="http://symfony.com/schema/dic/constraint-mapping"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/constraint-mapping http://symfony.com/schema/dic/constraint-mapping/constraint-mapping-1.0.xsd">
+
+            <class name="Acme\BlogBundle\Entity\Author">
+                <getter property="tokenValid">
+                    <constraint name="True">
+                        <option name="message">The token is invalid...</option>
+                    </constraint>
+                </getter>
+            </class>
+        </constraint-mapping>
+
+    .. code-block:: php
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints\True;
+        
+        class Autor
+        {
+            protected $token;
+            
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addGetterConstraint('tokenValid', new True(array(
+                    'message' => 'The token is invalid',
+                )));
+            }
+
+            public function isTokenValid()
+            {
+                return $this->token == $this->generateToken();
+            }
+        }
+
+Si ``isTokenValid()`` devuelve ``false``, la validación fallará.
+
+Opciones
+--------
+
+``message``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``This value should be true`` (``Este valor no debe ser 'true'``)
+
+Este mensaje se muestra si el dato subyacente no es ``true``.

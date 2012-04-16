@@ -1,0 +1,91 @@
+``@ParamConverter``
+===================
+
+Usando
+------
+
+La anotación ``@ParamConverter`` llama a ``converters`` para convertir parámetros de la petición a objetos. Estos objetos se almacenan como atributos de la petición y por lo tanto se pueden inyectar en los argumentos del método controlador::
+
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+
+    /**
+     * @Route("/blog/{id}")
+     * @ParamConverter("post", class="SensioBlogBundle:Post")
+     */
+    public function showAction(Post $post)
+    {
+    }
+
+Suceden varias cosas bajo el capó:
+
+* El convertidor intenta obtener un objeto ``SensioBlogBundle:Post`` desde los atributos de la petición (los atributos de la petición provienen de los marcadores de posición de la ruta -- aquí ``id``);
+
+* Si no se encontró algún objeto ``Post``, se genera una ``respuesta`` ``404``;
+
+* Si se encuentra un objeto ``Post``, se define un nuevo atributo ``post`` para la ``petición`` (accesible a través de ``$request->attributes->get('post')``);
+
+* Al igual que cualquier otro atributo de la petición, este se inyecta automáticamente en el controlador cuando está presente en la firma del método.
+
+Si utilizas el tipo como el del ejemplo anterior, incluso puedes omitir la anotación ``@ParamConverter`` por completo:
+
+.. code-block:: php
+
+    // automático con firma de método
+    public function showAction(Post $post)
+    {
+    }
+
+Convertidores integrados
+------------------------
+
+El paquete tiene un solo convertidor integrado, uno de *Doctrine*.
+
+Convertidor *Doctrine*
+~~~~~~~~~~~~~~~~~~~~~~
+
+De manera predeterminada, el convertidor de *Doctrine* utiliza el valor *predeterminado* del administrador de la entidad. Lo puedes configurar con la opción ``entity_manager``:
+
+.. code-block:: php
+
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
+
+    /**
+     * @Route("/blog/{id}")
+     * @ParamConverter("post", class="SensioBlogBundle:Post", options={"entity_manager" = "foo"})
+     */
+    public function showAction(Post $post)
+    {
+    }
+
+Creando un convertidor
+----------------------
+
+Todos los convertidores deben implementar la :class:`Sensio\\Bundle\\FrameworkExtraBundle\\Request\\ParamConverter\\ParamConverterInterface`::
+
+    namespace Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter;
+
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\ConfigurationInterface;
+    use Symfony\Component\HttpFoundation\Request;
+
+    interface ParamConverterInterface
+    {
+        function apply(Request $request, ConfigurationInterface $configuration);
+
+        function supports(ConfigurationInterface $configuration);
+    }
+
+El método ``supports()`` debe devolver ``true`` cuando sea capaz de convertir la configuración dada (una instancia de ``ParamConverter``).
+
+La instancia de ``ParamConverter`` tiene tres piezas de información sobre la anotación:
+
+* ``name``: El atributo ``name``;
+* ``class``: El atributo nombre de clase (puede ser cualquier cadena que represente el nombre de la clase);
+* ``options``: Un arreglo de opciones
+
+El método ``apply()`` se llama cuando una configuración es compatible. Basándonos en los atributos de la petición, debemos establecer un atributo llamado ``$configuration->getName()``, que almacene un objeto de la clase ``$configuration->getClass()``.
+
+.. tip::
+
+   Utiliza la clase ``DoctrineParamConverter`` como plantilla para tus propios convertidores.

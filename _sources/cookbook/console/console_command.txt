@@ -1,0 +1,101 @@
+Cómo crear una orden de consola
+===============================
+
+La página ``Console`` de la sección de Componentes (:doc:`/components/console`) explica cómo crear una orden de consola. Este artículo trata sobre las diferencias cuando creas ordenes de consola en la plataforma *Symfony2*.
+
+Registrando ordenes automáticamente
+-----------------------------------
+
+Para hacer que las ordenes de consola estén disponibles automáticamente en *Symfony2*, crea un directorio ``Command`` dentro de tu paquete y crea un archivo *PHP* con el sufijo :file:`Command.php` para cada orden que deses proveer. Por ejemplo, si deseas ampliar el ``AcmeDemoBundle`` (disponible en la *edición estándar de Symfony*) para darnos la bienvenida desde la línea de ordenes, crea el archivo :file:`GreetCommand.php` y agrégale lo siguiente:
+
+.. code-block:: php
+
+    // src/Acme/DemoBundle/Command/GreetCommand.php
+    namespace Acme\DemoBundle\Command;
+
+    use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+    use Symfony\Component\Console\Input\InputArgument;
+    use Symfony\Component\Console\Input\InputInterface;
+    use Symfony\Component\Console\Input\InputOption;
+    use Symfony\Component\Console\Output\OutputInterface;
+
+    class GreetCommand extends ContainerAwareCommand
+    {
+        protected function configure()
+        {
+            $this
+                ->setName('demo:greet')
+                ->setDescription('Greet someone')
+                ->addArgument('name', InputArgument::OPTIONAL, 'Who do you want to greet?')
+                ->addOption('yell', null, InputOption::VALUE_NONE, 'If set, the task will yell in uppercase letters')
+            ;
+        }
+
+        protected function execute(InputInterface $input, OutputInterface $output)
+        {
+            $name = $input->getArgument('name');
+            if ($name) {
+                $text = 'Hello '.$name;
+            } else {
+                $text = 'Hello';
+            }
+
+            if ($input->getOption('yell')) {
+                $text = strtoupper($text);
+            }
+
+            $output->writeln($text);
+        }
+    }
+
+Ahora, automáticamente, esta orden estará disponible para funcionar:
+
+.. code-block:: bash
+
+    app/console demo:greet Fabien
+
+Probando ordenes
+----------------
+
+Cuando pruebes ordenes utilizadas como parte de la plataforma completa debes utilizar la :class:`Symfony\\Bundle\\FrameworkBundle\\Console\\Application` en lugar de :class:`Symfony\\Component\\Console\\Application`:
+
+.. code-block:: php
+
+    use Symfony\Component\Console\Tester\CommandTester;
+    use Symfony\Bundle\FrameworkBundle\Console\Application;
+    use Acme\DemoBundle\Command\GreetCommand;
+
+    class ListCommandTest extends \PHPUnit_Framework_TestCase
+    {
+        public function testExecute()
+        {
+            // simula el Kernel o crea uno dependiendo de tus necesidades
+            $application = new Application($kernel);
+            $application->add(new GreetCommand());
+
+            $command = $application->find('demo:greet');
+            $commandTester = new CommandTester($command);
+            $commandTester->execute(array('command' => $command->getName()));
+
+            $this->assertRegExp('/.../', $commandTester->getDisplay());
+
+            // ...
+        }
+    }
+
+Obteniendo servicios del contenedor de servicios
+------------------------------------------------
+
+Al usar :class:`Symfony\\Bundle\\FrameworkBundle\\Command\\ContainerAwareCommand` como la clase base para la orden (en lugar del más básico :class:`Symfony\\Component\\Console\\Command\\Command`), tienes acceso al contenedor de servicios. En otras palabras, tienes acceso a cualquier servicio configurado.
+Por ejemplo, fácilmente podrías extender la tarea para que sea traducible::
+
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $name = $input->getArgument('name');
+        $translator = $this->getContainer()->get('translator');
+        if ($name) {
+            $output->writeln($translator->trans('Hello %name%!', array('%name%' => $name)));
+        } else {
+            $output->writeln($translator->trans('Hello!'));
+        }
+    }

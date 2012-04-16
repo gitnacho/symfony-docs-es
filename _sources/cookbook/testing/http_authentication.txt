@@ -1,0 +1,36 @@
+.. index::
+   single: Pruebas; Autenticación HTTP
+
+Cómo simular autenticación *HTTP* en una prueba funcional
+=========================================================
+
+Si tu aplicación necesita autenticación *HTTP*, pasa el nombre de usuario y contraseña como variables del servidor a ``createClient()``:
+
+.. code-block:: php
+
+    $client = static::createClient(array(), array(
+        'PHP_AUTH_USER' => 'username',
+        'PHP_AUTH_PW'   => 'pa$$word',
+    ));
+
+También lo puedes sustituir basándote en la ``petición``:
+
+.. code-block:: php
+
+    $client->request('DELETE', '/post/12', array(), array(
+        'PHP_AUTH_USER' => 'username',
+        'PHP_AUTH_PW'   => 'pa$$word',
+    ));
+
+Cuando tu aplicación está utilizando un ``form_login``, puedes simplificar las pruebas, permitiendo a la configuración de tus pruebas usar la autenticación *HTTP*. De esta manera puedes utilizar lo anterior para autenticar en las pruebas, pero todavía tienes tu inicio de sesión para los usuarios a través del ``form_login`` normal. El truco consiste en incluir la clave ``http_basic`` en tu cortafuegos, junto con la clave ``form_login``:
+
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config_test.yml
+        security:
+            firewalls:
+                your_firewall_name:
+                    http_basic:

@@ -1,0 +1,506 @@
+Cómo gestionar dependencias comunes con servicios padre
+=======================================================
+
+A medida que agregas más funcionalidad a tu aplicación, puedes comenzar a tener clases relacionadas que comparten algunas de las mismas dependencias. Por ejemplo, puedes tener un gestor de ``boletines`` que utiliza inyección para definir sus dependencias::
+
+    namespace Acme\HelloBundle\Mail;
+
+    use Acme\HelloBundle\Mailer;
+    use Acme\HelloBundle\EmailFormatter;
+
+    class NewsletterManager
+    {
+        protected $mailer;
+        protected $emailFormatter;
+
+        public function setMailer(Mailer $mailer)
+        {
+            $this->mailer = $mailer;
+        }
+
+        public function setEmailFormatter(EmailFormatter $emailFormatter)
+        {
+            $this->emailFormatter = $emailFormatter;
+        }
+        // ...
+    }
+
+y también una clase para tus ``Tarjetas de saludo`` que comparte las mismas dependencias::
+
+    namespace Acme\HelloBundle\Mail;
+
+    use Acme\HelloBundle\Mailer;
+    use Acme\HelloBundle\EmailFormatter;
+
+    class GreetingCardManager
+    {
+        protected $mailer;
+        protected $emailFormatter;
+
+        public function setMailer(Mailer $mailer)
+        {
+            $this->mailer = $mailer;
+        }
+
+        public function setEmailFormatter(EmailFormatter $emailFormatter)
+        {
+            $this->emailFormatter = $emailFormatter;
+        }
+        // ...
+    }
+
+La configuración del servicio de estas clases se vería algo como esto:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/HelloBundle/Resources/config/services.yml
+        parameters:
+            # ...
+            newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
+            greeting_card_manager.class: Acme\HelloBundle\Mail\GreetingCardManager
+        services:
+            my_mailer:
+                # ...
+            my_email_formatter:
+                # ...
+            newsletter_manager:
+                class:     %newsletter_manager.class%
+                calls:
+                    - [ setMailer, [ @my_mailer ] ]
+                    - [ setEmailFormatter, [ @my_email_formatter] ]
+
+            greeting_card_manager:
+                class:     %greeting_card_manager.class%
+                calls:
+                    - [ setMailer, [ @my_mailer ] ]
+                    - [ setEmailFormatter, [ @my_email_formatter] ]
+
+    .. code-block:: xml
+
+        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
+        <parameters>
+            <!-- ... -->
+            <parameter key="newsletter_manager.class">Acme\HelloBundle\Mail\NewsletterManager</parameter>
+            <parameter key="greeting_card_manager.class">Acme\HelloBundle\Mail\GreetingCardManager</parameter>
+        </parameters>
+
+            <services>
+            <service id="my_mailer" ... >
+              <!-- ... -->
+            </service>
+            <service id="my_email_formatter" ... >
+              <!-- ... -->
+            </service>
+            <service id="newsletter_manager" class="%newsletter_manager.class%">
+                <call method="setMailer">
+                     <argument type="service" id="my_mailer" />
+                </call>
+                <call method="setEmailFormatter">
+                     <argument type="service" id="my_email_formatter" />
+                </call>
+            </service>
+            <service id="greeting_card_manager" class="%greeting_card_manager.class%">
+                <call method="setMailer">
+                     <argument type="service" id="my_mailer" />
+                </call>
+                <call method="setEmailFormatter">
+                     <argument type="service" id="my_email_formatter" />
+                </call>
+            </service>
+            </services>
+
+    .. code-block:: php
+
+        // src/Acme/HelloBundle/Resources/config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        // ...
+        $container->setParameter('newsletter_manager.class', 'Acme\HelloBundle\Mail\NewsletterManager');
+        $container->setParameter('greeting_card_manager.class', 'Acme\HelloBundle\Mail\GreetingCardManager');
+
+        $container->setDefinition('my_mailer', ... );
+        $container->setDefinition('my_email_formatter', ... );
+        $container->setDefinition('newsletter_manager', new Definition(
+            '%newsletter_manager.class%'
+        ))->addMethodCall('setMailer', array(
+            new Reference('my_mailer')
+        ))->addMethodCall('setEmailFormatter', array(
+            new Reference('my_email_formatter')
+        ));
+        $container->setDefinition('greeting_card_manager', new Definition(
+            '%greeting_card_manager.class%'
+        ))->addMethodCall('setMailer', array(
+            new Reference('my_mailer')
+        ))->addMethodCall('setEmailFormatter', array(
+            new Reference('my_email_formatter')
+        ));
+
+Hay mucha repetición, tanto en las clases como en la configuración. Esto significa que si cambias, por ejemplo, las clases de correo de la aplicación ``Mailer`` de ``EmailFormatter`` para inyectarlas a través del constructor, tendrías que actualizar la configuración en dos lugares. Del mismo modo, si necesitas hacer cambios en los métodos definidores tendrías que hacerlo en ambas clases. La forma típica de hacer frente a los métodos comunes de estas clases relacionadas es extraerlas en una superclase::
+
+    namespace Acme\HelloBundle\Mail;
+
+    use Acme\HelloBundle\Mailer;
+    use Acme\HelloBundle\EmailFormatter;
+
+    abstract class MailManager
+    {
+        protected $mailer;
+        protected $emailFormatter;
+
+        public function setMailer(Mailer $mailer)
+        {
+            $this->mailer = $mailer;
+        }
+
+        public function setEmailFormatter(EmailFormatter $emailFormatter)
+        {
+            $this->emailFormatter = $emailFormatter;
+        }
+        // ...
+    }
+
+Entonces ``NewsletterManager`` y ``GreetingCardManager`` pueden extender esta
+superclase::
+
+    namespace Acme\HelloBundle\Mail;
+
+    class NewsletterManager extends MailManager
+    {
+        // ...
+    }
+
+y::
+
+    namespace Acme\HelloBundle\Mail;
+
+    class GreetingCardManager extends MailManager
+    {
+        // ...
+    }
+
+De manera similar, el contenedor de servicios de *Symfony2* también apoya la extensión de servicios en la configuración por lo que también puedes reducir la repetición especificando un padre para un servicio.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/HelloBundle/Resources/config/services.yml
+        parameters:
+            # ...
+            newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
+            greeting_card_manager.class: Acme\HelloBundle\Mail\GreetingCardManager
+            mail_manager.class: Acme\HelloBundle\Mail\MailManager
+        services:
+            my_mailer:
+                # ...
+            my_email_formatter:
+                # ...
+            mail_manager:
+                class:     %mail_manager.class%
+                abstract:  true
+                calls:
+                    - [ setMailer, [ @my_mailer ] ]
+                    - [ setEmailFormatter, [ @my_email_formatter] ]
+            
+            newsletter_manager:
+                class:     %newsletter_manager.class%
+                parent: mail_manager
+            
+            greeting_card_manager:
+                class:     %greeting_card_manager.class%
+                parent: mail_manager
+            
+    .. code-block:: xml
+
+        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
+        <parameters>
+            <!-- ... -->
+            <parameter key="newsletter_manager.class">Acme\HelloBundle\Mail\NewsletterManager</parameter>
+            <parameter key="greeting_card_manager.class">Acme\HelloBundle\Mail\GreetingCardManager</parameter>
+            <parameter key="mail_manager.class">Acme\HelloBundle\Mail\MailManager</parameter>
+        </parameters>
+
+            <services>
+            <service id="my_mailer" ... >
+              <!-- ... -->
+            </service>
+            <service id="my_email_formatter" ... >
+              <!-- ... -->
+            </service>
+            <service id="mail_manager" class="%mail_manager.class%" abstract="true">
+                <call method="setMailer">
+                     <argument type="service" id="my_mailer" />
+                </call>
+                <call method="setEmailFormatter">
+                     <argument type="service" id="my_email_formatter" />
+                </call>
+            </service>
+            <service id="newsletter_manager" class="%newsletter_manager.class%" parent="mail_manager"/>
+            <service id="greeting_card_manager" class="%greeting_card_manager.class%" parent="mail_manager"/>
+            </services>
+
+    .. code-block:: php
+
+        // src/Acme/HelloBundle/Resources/config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        // ...
+        $container->setParameter('newsletter_manager.class', 'Acme\HelloBundle\Mail\NewsletterManager');
+        $container->setParameter('greeting_card_manager.class', 'Acme\HelloBundle\Mail\GreetingCardManager');
+        $container->setParameter('mail_manager.class', 'Acme\HelloBundle\Mail\MailManager');
+
+        $container->setDefinition('my_mailer', ... );
+        $container->setDefinition('my_email_formatter', ... );
+        $container->setDefinition('mail_manager', new Definition(
+            '%mail_manager.class%'
+        ))->SetAbstract(
+            true
+        )->addMethodCall('setMailer', array(
+            new Reference('my_mailer')
+        ))->addMethodCall('setEmailFormatter', array(
+            new Reference('my_email_formatter')
+        ));
+        $container->setDefinition('newsletter_manager', new DefinitionDecorator(
+            'mail_manager'
+        ))->setClass(
+            '%newsletter_manager.class%'
+        );
+        $container->setDefinition('greeting_card_manager', new DefinitionDecorator(
+            'mail_manager'
+        ))->setClass(
+            '%greeting_card_manager.class%'
+        );
+
+En este contexto, tener un servicio ``padre`` implica que los argumentos y las llamadas a métodos del servicio padre se deben utilizar en los servicios descendientes.
+En concreto, los métodos definidores especificados para el servicio padre serán llamados cuando se crean instancias del servicio descendiente.
+
+.. note::
+
+   Si quitas la clave de configuración del ``padre``, el servicio todavía seguirá siendo una instancia, por supuesto, extendiendo la clase ``MailManager``. La diferencia es que la omisión del ``padre`` en la clave de configuración significa que las ``llamadas`` definidas en el servicio ``mail_manager`` no se ejecutarán al crear instancias de los servicios descendientes.
+
+La clase padre es abstracta, ya que no se deben crear instancias directamente. Al establecerla como abstracta en el archivo de configuración como se hizo anteriormente, significa que sólo se puede utilizar como un servicio primario y no se puede utilizar directamente como un servicio para inyectar y retirar en tiempo de compilación. En otras palabras, existe sólo como una "plantilla" que otros servicios pueden utilizar.
+
+Sustituyendo dependencias padre
+-------------------------------
+
+Puede haber ocasiones en las que deses sustituir que clase se pasa a una dependencia en un servicio hijo único. Afortunadamente, añadiendo la llamada al método de configuración para el servicio hijo, las dependencias establecidas por la clase principal se sustituyen. Así que si necesitas pasar una dependencia diferente sólo para la clase ``NewsletterManager``, la configuración sería la siguiente:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/HelloBundle/Resources/config/services.yml
+        parameters:
+            # ...
+            newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
+            greeting_card_manager.class: Acme\HelloBundle\Mail\GreetingCardManager
+            mail_manager.class: Acme\HelloBundle\Mail\MailManager
+        services:
+            my_mailer:
+                # ...
+            my_alternative_mailer:
+                # ...
+            my_email_formatter:
+                # ...
+            mail_manager:
+                class:     %mail_manager.class%
+                abstract:  true
+                calls:
+                    - [ setMailer, [ @my_mailer ] ]
+                    - [ setEmailFormatter, [ @my_email_formatter] ]
+            
+            newsletter_manager:
+                class:     %newsletter_manager.class%
+                parent: mail_manager
+                calls:
+                    - [ setMailer, [ @my_alternative_mailer ] ]
+            
+            greeting_card_manager:
+                class:     %greeting_card_manager.class%
+                parent: mail_manager
+            
+    .. code-block:: xml
+
+        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
+        <parameters>
+            <!-- ... -->
+            <parameter key="newsletter_manager.class">Acme\HelloBundle\Mail\NewsletterManager</parameter>
+            <parameter key="greeting_card_manager.class">Acme\HelloBundle\Mail\GreetingCardManager</parameter>
+            <parameter key="mail_manager.class">Acme\HelloBundle\Mail\MailManager</parameter>
+        </parameters>
+
+            <services>
+            <service id="my_mailer" ... >
+              <!-- ... -->
+            </service>
+            <service id="my_alternative_mailer" ... >
+              <!-- ... -->
+            </service>
+            <service id="my_email_formatter" ... >
+              <!-- ... -->
+            </service>
+            <service id="mail_manager" class="%mail_manager.class%" abstract="true">
+                <call method="setMailer">
+                     <argument type="service" id="my_mailer" />
+                </call>
+                <call method="setEmailFormatter">
+                     <argument type="service" id="my_email_formatter" />
+                </call>
+            </service>
+            <service id="newsletter_manager" class="%newsletter_manager.class%" parent="mail_manager">
+                 <call method="setMailer">
+                     <argument type="service" id="my_alternative_mailer" />
+                </call>
+            </service>
+            <service id="greeting_card_manager" class="%greeting_card_manager.class%" parent="mail_manager"/>
+            </services>
+
+    .. code-block:: php
+
+        // src/Acme/HelloBundle/Resources/config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        // ...
+        $container->setParameter('newsletter_manager.class', 'Acme\HelloBundle\Mail\NewsletterManager');
+        $container->setParameter('greeting_card_manager.class', 'Acme\HelloBundle\Mail\GreetingCardManager');
+        $container->setParameter('mail_manager.class', 'Acme\HelloBundle\Mail\MailManager');
+
+        $container->setDefinition('my_mailer', ... );
+        $container->setDefinition('my_alternative_mailer', ... );
+        $container->setDefinition('my_email_formatter', ... );
+        $container->setDefinition('mail_manager', new Definition(
+            '%mail_manager.class%'
+        ))->SetAbstract(
+            true
+        )->addMethodCall('setMailer', array(
+            new Reference('my_mailer')
+        ))->addMethodCall('setEmailFormatter', array(
+            new Reference('my_email_formatter')
+        ));
+        $container->setDefinition('newsletter_manager', new DefinitionDecorator(
+            'mail_manager'
+        ))->setClass(
+            '%newsletter_manager.class%'
+        )->addMethodCall('setMailer', array(
+            new Reference('my_alternative_mailer')
+        ));
+        $container->setDefinition('greeting_card_manager', new DefinitionDecorator(
+            'mail_manager'
+        ))->setClass(
+            '%greeting_card_manager.class%'
+        );
+
+El ``GreetingCardManager`` recibirá las mismas dependencias que antes, pero la ``NewsletterManager`` será pasada a ``my_alternative_mailer`` en lugar del servicio ``my_mailer``.
+
+Colección de dependencias
+-------------------------
+
+Cabe señalar que el método definidor sustituido en el ejemplo anterior en realidad se invoca dos veces --- una vez en la definición del padre y otra más en la definición del hijo. En el ejemplo anterior, esto estaba muy bien, ya que la segunda llamada a ``setMailer`` sustituye al objeto ``mailer`` establecido por la primera llamada.
+
+En algunos casos, sin embargo, esto puede ser un problema. Por ejemplo, si la sustitución a la llamada al método consiste en añadir algo a una colección, entonces se agregarán dos objetos a la colección. A continuación mostramos tal caso, si la clase padre se parece a esto::
+
+    namespace Acme\HelloBundle\Mail;
+
+    use Acme\HelloBundle\Mailer;
+    use Acme\HelloBundle\EmailFormatter;
+
+    abstract class MailManager
+    {
+        protected $filters;
+
+        public function setFilter($filter)
+        {
+            $this->filters[] = $filter;
+        }
+        // ...
+    }
+
+Si tienes la siguiente configuración:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/HelloBundle/Resources/config/services.yml
+        parameters:
+            # ...
+            newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
+            mail_manager.class: Acme\HelloBundle\Mail\MailManager
+        services:
+            my_filter:
+                # ...
+            another_filter:
+                # ...
+            mail_manager:
+                class:     %mail_manager.class%
+                abstract:  true
+                calls:
+                    - [ setFilter, [ @my_filter ] ]
+                    
+            newsletter_manager:
+                class:     %newsletter_manager.class%
+                parent: mail_manager
+                calls:
+                    - [ setFilter, [ @another_filter ] ]
+            
+    .. code-block:: xml
+
+        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
+        <parameters>
+            <!-- ... -->
+            <parameter key="newsletter_manager.class">Acme\HelloBundle\Mail\NewsletterManager</parameter>
+            <parameter key="mail_manager.class">Acme\HelloBundle\Mail\MailManager</parameter>
+        </parameters>
+
+            <services>
+            <service id="my_filter" ... >
+              <!-- ... -->
+            </service>
+            <service id="another_filter" ... >
+              <!-- ... -->
+            </service>
+            <service id="mail_manager" class="%mail_manager.class%" abstract="true">
+                <call method="setFilter">
+                     <argument type="service" id="my_filter" />
+                </call>
+            </service>
+            <service id="newsletter_manager" class="%newsletter_manager.class%" parent="mail_manager">
+                 <call method="setFilter">
+                     <argument type="service" id="another_filter" />
+                </call>
+            </service>
+            </services>
+
+    .. code-block:: php
+
+        // src/Acme/HelloBundle/Resources/config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        // ...
+        $container->setParameter('newsletter_manager.class', 'Acme\HelloBundle\Mail\NewsletterManager');
+        $container->setParameter('mail_manager.class', 'Acme\HelloBundle\Mail\MailManager');
+
+        $container->setDefinition('my_filter', ... );
+        $container->setDefinition('another_filter', ... );
+        $container->setDefinition('mail_manager', new Definition(
+            '%mail_manager.class%'
+        ))->SetAbstract(
+            true
+        )->addMethodCall('setFilter', array(
+            new Reference('my_filter')
+        ));
+        $container->setDefinition('newsletter_manager', new DefinitionDecorator(
+            'mail_manager'
+        ))->setClass(
+            '%newsletter_manager.class%'
+        )->addMethodCall('setFilter', array(
+            new Reference('another_filter')
+        ));
+
+En este ejemplo, el ``setFilter`` del servicio ``newsletter_manager`` se llamará dos veces, dando lugar a que el array ``$filters`` contenga ambos objetos ``my_filter`` y ``another_filter``. Esto es genial si sólo quieres agregar filtros adicionales para subclases. Si deseas reemplazar los filtros pasados a la subclase, elimina de la matriz el ajuste de la configuración, esto evitará que la clase ``setFilter`` base sea llamada.

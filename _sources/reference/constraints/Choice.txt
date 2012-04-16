@@ -1,0 +1,255 @@
+``Choice``
+==========
+
+Esta restricción se utiliza para asegurar que el valor dado es uno de un determinado conjunto de opciones *válidas*. También la puedes utilizar para comprobar que cada elemento de una matriz de elementos es una de esas opciones válidas.
+
++----------------+-----------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`                |
++----------------+-----------------------------------------------------------------------+
+| Opciones       | - `choices`_                                                          |
+|                | - `callback`_                                                         |
+|                | - `multiple`_                                                         |
+|                | - `min`_                                                              |
+|                | - `max`_                                                              |
+|                | - `message`_                                                          |
+|                | - `multipleMessage`_                                                  |
+|                | - `minMessage`_                                                       |
+|                | - `maxMessage`_                                                       |
+|                | - `strict`_                                                           |
++----------------+-----------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\Choice`           |
++----------------+-----------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\ChoiceValidator`  |
++----------------+-----------------------------------------------------------------------+
+
+Uso básico
+----------
+
+La idea básica de esta restricción es que le proporciones un arreglo de valores válidos (esto lo puedes hacer de varias maneras) y ella compruebe que el valor de la propiedad dada existe en el arreglo.
+
+Si tu lista de opciones válidas es simple, la puedes pasar directamente a través de la opción `choices`_:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/BlogBundle/Resources/config/validation.yml
+        Acme\BlogBundle\Entity\Author:
+            properties:
+                gender:
+                    - Choice:
+                        choices:  [male, female]
+                        message:  Choose a valid gender.
+
+    .. code-block:: xml
+
+        <!-- src/Acme/BlogBundle/Resources/config/validation.xml -->
+        <class name="Acme\BlogBundle\EntityAuthor">
+            <property name="gender">
+                <constraint name="Choice">
+                    <option name="choices">
+                        <value>male</value>
+                        <value>female</value>
+                    </option>
+                    <option name="message">Choose a valid gender.</option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\Choice(choices = {"male", "female"}, message = "Choose a valid gender.")
+             */
+            protected $gender;
+        }
+
+    .. code-block:: php
+
+        // src/Acme/BlogBundle/EntityAuthor.php
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints\Choice;
+        
+        class Autor
+        {
+            protected $gender;
+            
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('gender', new Choice(array(
+                    'choices' => array('male', 'female'),
+                    'message' => 'Choose a valid gender',
+                )));
+            }
+        }
+
+Suministrando opciones con una función retrollamada
+---------------------------------------------------
+
+También puedes utilizar una función retrollamada para especificar tus opciones. Esto es útil si deseas mantener tus opciones en una ubicación central para que, por ejemplo, puedas acceder fácilmente a las opciones para validación o para construir un elemento de formulario seleccionado.
+
+.. code-block:: php
+
+    // src/Acme/BlogBundle/Entity/Author.php
+    class Author
+    {
+        public static function getGenders()
+        {
+            return array('male', 'female');
+        }
+    }
+
+Puedes pasar el nombre de este método a la opción ``callback`` de la restricción ``Choice``.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/BlogBundle/Resources/config/validation.yml
+        Acme\BlogBundle\Entity\Author:
+            properties:
+                gender:
+                    - Choice: { callback: getGenders }
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\Choice(callback = "getGenders")
+             */
+            protected $gender;
+        }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/BlogBundle/Resources/config/validation.xml -->
+        <class name="Acme\BlogBundle\Entity\Author">
+            <property name="gender">
+                <constraint name="Choice">
+                    <option name="callback">getGenders</option>
+                </constraint>
+            </property>
+        </class>
+
+Si la retrollamada estática se almacena en una clase diferente, por ejemplo ``Util``, puedes pasar el nombre de clase y el método como una matriz.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/BlogBundle/Resources/config/validation.yml
+        Acme\BlogBundle\Entity\Author:
+            properties:
+                gender:
+                    - Choice: { callback: [Util, getGenders] }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/BlogBundle/Resources/config/validation.xml -->
+        <class name="Acme\BlogBundle\Entity\Author">
+            <property name="gender">
+                <constraint name="Choice">
+                    <option name="callback">
+                        <value>Util</value>
+                        <value>getGenders</value>
+                    </option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\Choice(callback = {"Util", "getGenders"})
+             */
+            protected $gender;
+        }
+
+Opciones disponibles
+--------------------
+
+``choices``
+~~~~~~~~~~~
+
+**tipo**: ``array`` [:ref:`opción predeterminada <validation-default-option>`]
+
+Una opción requerida (a menos que especifiques `callback`_) --- esta es la gran variedad de opciones que se deben considerar en el conjunto válido. El valor de entrada se compara contra esta matriz.
+
+``Callback``
+~~~~~~~~~~~~
+
+**tipo**: ``string|array|Closure``
+
+Este es un método retrollamado que puedes utilizar en lugar de la opción `choices`_ para devolver la matriz de opciones. Consulta `Suministrando opciones con una función retrollamada`_ para más detalles sobre su uso.
+
+``multiple``
+~~~~~~~~~~~~
+
+**tipo**: ``Boolean`` **predeterminado**: ``false``
+
+Si esta opción es ``true``, se espera que el valor de entrada sea una matriz en lugar de un solo valor escalar. La restricción debe verificar que cada valor de la matriz de entrada se pueda encontrar en el arreglo de opciones válidas. Si no se puede encontrar alguno de los valores ingresados, la validación fallará.
+
+``min``
+~~~~~~~
+
+**tipo**: ``integer``
+
+Si la opción ``multiple`` es ``true``, entonces puedes usar la opción ``min`` para forzar que por lo menos se seleccionen XX valores. Por ejemplo, si ``min`` es 3, pero la matriz de entrada sólo contiene dos elementos válidos, la validación fallará.
+
+``max``
+~~~~~~~
+
+**tipo**: ``integer``
+
+Si la opción ``multiple`` es ``true``, entonces puedes usar la opción ``max`` para forzar que no se seleccionen más de XX valores. Por ejemplo, si ``max`` es 3, pero la matriz ingresada consta de 4 elementos válidos, la validación fallará.
+
+``message``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``The value you selected is not a valid choice`` (``El valor que seleccionaste no es una opción válida``)
+
+Este es el mensaje que recibirás si la opción ``multiple`` se establece en ``false``, y el valor subyacente no es válido en la matriz de opciones.
+
+``multipleMessage``
+~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``One or more of the given values is invalid`` (``Uno o más de los valores indicados no es válido``)
+
+Este es el mensaje que recibirás si la opción ``multiple`` se establece en ``true``, y uno de los valores de la matriz subyacente que se está comprobando no está en la matriz de opciones válidas.
+
+``minMessage``
+~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``You must select at least {{ limit }} choices`` (``Por lo menos debes elegir {{ limit }} opciones``)
+
+Este es el mensaje de error de validación que se muestra cuando el usuario elige demasiado pocas opciones para la opción `min`_.
+
+``maxMessage``
+~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``You must select at most {{ limit }} choices`` (``Máximo debes elegir {{ limit }} opciones``)
+
+Este es el mensaje de error de validación que se muestra cuando el usuario elige más opciones para la opción `max`_.
+
+``strict``
+~~~~~~~~~~
+
+**tipo**: ``Boolean`` **predeterminado**: ``false``
+
+Si es ``true``, el validador también comprobará el tipo del valor ingresado. En concreto, este valor se pasa como el tercer argumento del método `in_array`_ de *PHP* cuando compruebe si un valor está en la matriz de opciones válidas.
+
+.. _`in_array`: http://www.php.net/manual/es/function.in-array.php

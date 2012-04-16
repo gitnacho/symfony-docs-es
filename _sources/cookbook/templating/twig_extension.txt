@@ -1,0 +1,121 @@
+.. index::
+   single: Extensiones Twig
+
+Cómo escribir una extensión Twig personalizada
+==============================================
+
+La principal motivación para escribir una extensión es mover el código usado frecuentemente a una clase reutilizable como agregar apoyo para la internacionalización. 
+Una extensión puede definir etiquetas, filtros, pruebas, operadores, variables globales, funciones y visitantes de nodo.
+
+La creación de una extensión también hace una mejor separación del código que se ejecuta en tiempo de compilación y el código necesario en tiempo de ejecución. Por lo tanto, hace que tu código sea más rápido.
+
+.. tip::
+
+    Antes de escribir tus propias extensiones, echa un vistazo al `Repositorio oficial de extensiones Twig`_:
+    
+Creando la clase de la extensión
+--------------------------------    
+
+Para obtener la funcionalidad personalizada primero debes crear la clase para la extensión *Twig*. 
+Como ejemplo vamos a crear un filtro para dar formato a un precio suministrando un número en el precio::
+
+    // src/Acme/DemoBundle/Twig/AcmeExtension.php
+
+    namespace Acme\DemoBundle\Twig;
+
+    use Twig_Extension;
+    use Twig_Filter_Method;
+    use Twig_Function_Method;
+
+    class AcmeExtension extends Twig_Extension
+    {
+        public function getFilters()
+        {
+            return array(
+                'price' => new Twig_Filter_Method($this, 'priceFilter'),
+            );
+        }
+        
+        public function priceFilter($number, $decimals = 0, $decPoint = '.', $thousandsSep = ',')
+        {
+            $price = number_format($number, $decimals, $decPoint, $thousandsSep);
+            $price = '$' . $price;
+
+            return $price;
+        }
+
+        public function getName()
+        {
+            return 'acme_extension';
+        }
+    }
+    
+.. tip::
+
+    Junto con los filtros personalizados, también puedes añadir `funciones`_ personalizadas y registrar `variables globales`_.    
+     
+Registrando una extensión como servicio
+---------------------------------------
+
+Ahora, debes permitir que el contenedor de servicios conozca la existencia de la nueva extensión *Twig*:
+
+.. configuration-block::
+
+    .. code-block:: xml
+
+        <!-- src/Acme/DemoBundle/Resources/config/services.xml -->
+            <services>
+            <service id="acme.twig.acme_extension" class="Acme\DemoBundle\Twig\AcmeExtension">
+                <tag name="twig.extension" />
+            </service>
+            </services>
+
+    .. code-block:: yaml
+
+        # src/Acme/DemoBundle/Resources/config/services.yml
+        services:
+            acme.twig.acme_extension:
+                class: Acme\DemoBundle\Twig\AcmeExtension
+                tags:
+                        - { name: twig.extension }
+
+    .. code-block:: php
+
+        // src/Acme/DemoBundle/Resources/config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+
+        $acmeDefinition = new Definition('\Acme\DemoBundle\Twig\AcmeExtension');
+        $acmeDefinition->addTag('twig.extension');
+        $container->setDefinition('acme.twig.acme_extension', $acmeDefinition);
+         
+.. note::
+
+   Ten en cuenta que las extensiones *Twig* no se cargan de manera diferida. Esto significa que hay una mayor probabilidad de que obtengas una **CircularReferenceException** o **ScopeWideningInjectionException** si cualquiera de los servicios (o tu extensión *Twig* ---en este caso---) sean dependientes del servicio ``petición``.
+   Para obtener más información, échale un vistazo a :doc:`/cookbook/service_container/scopes`.
+                
+Usando la extensión personalizada
+---------------------------------
+
+Usar tu recién creada extensión de *Twig* no es diferente a cualquier otra:
+
+.. code-block:: jinja
+
+    {# produce $5,500.00 #}
+    {{ '5500' | price }}
+    
+Pasando otros argumentos a tu filtro:
+
+.. code-block:: jinja
+
+    {# produce $5500,2516 #}
+    {{ '5500.25155' | price(4, ',', '') }}
+    
+Aprendiendo más
+---------------
+
+Para un análisis más profundo échale un vistazo a las extensiones *Twig*, por favor, ve la `documentación de las extensiones Twig`_.
+     
+.. _`Repositorio oficial de extensiones Twig`: http://github.com/fabpot/Twig-extensions
+.. _`documentación de las extensiones Twig`: http://gitnacho.github.com/Twig/extensions.html
+.. _`variables globales`: http://gitnacho.github.com/Twig/extensions.html#globales
+.. _`funciones`: http://gitnacho.github.com/Twig/extensions.html#funciones

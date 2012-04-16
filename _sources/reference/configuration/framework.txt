@@ -1,0 +1,289 @@
+.. index::
+   single: Referencia de configuración; Framework
+
+Configurando el ``FrameworkBundle`` ("framework")
+=================================================
+
+Este documento de referencia es un trabajo en progreso. Este debe ser preciso, pero aún no están cubiertas completamente todas las opciones.
+
+El ``FrameworkBundle`` contiene la mayor parte de la funcionalidad "base" de la plataforma y se puede configurar bajo la clave ``framework`` en la configuración de tu aplicación.
+Esto incluye ajustes relacionados con sesiones, traducción, formularios, validación, enrutado y mucho más.
+
+Configurando
+------------
+
+* `charset`_
+* `secret`_
+* `ide`_
+* `test`_
+* `form`_
+    * `enabled`
+* `csrf_protection`_
+    * `enabled`
+    * `field_name`
+* `session`_
+    * `lifetime`_
+* `templating`_
+    * `assets_base_urls`_
+    * `assets_version`_
+    * `assets_version_format`_
+
+``charset``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``UTF-8``
+
+El juego de caracteres utilizado en toda la plataforma. Se convierte en el parámetro del contenedor de servicios llamado ``kernel.charset``.
+
+``secret``
+~~~~~~~~~~
+
+**tipo**: ``string`` **required**
+
+Esta es una cadena que debe ser única para tu aplicación. En la práctica, se utiliza para generar los segmentos *CSRF*, pero se podría utilizar en cualquier otro contexto donde una cadena única sea útil. Se convierte en el parámetro llamado ``kernel.secret`` del contenedor de servicios.
+
+``ide``
+~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``null``
+
+Si estás utilizando un *IDE* como *TextMate* o *Vim Mac*, *Symfony* puede convertir todas las rutas de archivo en un mensaje de excepción en un enlace, el cual abrirá el archivo en el *IDE*.
+
+Si usas *TextMate* o *Vim Mac*, simplemente puedes utilizar uno de los siguientes valores integrados:
+
+* ``textmate``
+* ``macvim``
+
+También puedes especificar una cadena personalizada como enlace al archivo. Si lo haces, debes duplicar todos los signos de porcentaje (``%``) para escapar ese carácter. Por ejemplo, la cadena completa de *TextMate* se vería así:
+
+.. code-block:: yaml
+
+    framework:
+        ide:  "txmt://open?url=file://%%f&line=%%l"
+
+Por supuesto, debido a que cada desarrollador utiliza un *IDE* diferente, es mejor poner esto a nivel del sistema. Esto se puede hacer estableciendo en :file:`php.ini` el valor de ``xdebug.file_link_format`` a la cadena de enlace al archivo. Si estableces este valor de configuración, entonces no es necesario determinar la opción ``ide``.
+
+.. _reference-framework-test:
+
+``test``
+~~~~~~~~
+
+**tipo**: ``Boolean``
+
+Si este parámetro de configuración está presente (y no es ``false``), entonces se cargará el servicio relacionado para probar tu aplicación (por ejemplo, ``test.client``).
+Este valor debe estar presente en tu entorno ``test`` (por lo general a través de ``app/config/config_test.yml``). Para más información, consulta :doc:`/book/testing`.
+
+.. _reference-framework-form:
+
+``form``
+~~~~~~~~
+
+``csrf_protection``
+~~~~~~~~~~~~~~~~~~~
+
+``session``
+~~~~~~~~~~~
+
+``lifetime``
+............
+
+**tipo**: ``integer`` **predeterminado**: ``0``
+
+Esta determina la duración de la sesión --- en segundos. De manera predeterminada se utiliza ``0``, lo cual significa que la :dfn:`cookie` es válida para la duración de la sesión del navegador.
+
+``templating``
+~~~~~~~~~~~~~~
+
+``assets_base_urls``
+....................
+
+**predeterminado**: ``{ http: [], ssl: [] }``
+
+Esta opción te permite definir direcciones *URL* base que se utilizarán para referirte a los recursos desde las páginas ``http`` y ``ssl`` (``https``). Puedes proporcionar un valor de cadena en vez de una matriz de un solo elemento. Si proporcionas varias *URL* base, *Symfony2* seleccionará una de la colección cada vez que genere una ruta de activo.
+
+Para tu comodidad, puedes establecer directamente ``assets_base_urls`` con una cadena o una matriz de cadenas, que se organizan automáticamente en colecciones de *URL* base para peticiones ``http`` y ``https``. Si una *URL* comienza con ``https://`` o
+está `relacionada al protocolo`_ (es decir empieza con ``//``) esta se debe añadir en ambas colecciones. las *URL* que empiezan con ``http://`` sólo se agregarán a la colección ``http``.
+
+.. versionadded:: 2.1
+
+    A diferencia de la mayoría de los bloques de configuración, los valores sucesivos de ``assets_base_urls`` se deben redefinir unos a otros en lugar de fusionarlos. Este comportamiento fue elegido porque los desarrolladores típicamente definen la *URL* base para cada entorno.
+    Dado que la mayoría de los proyectos tienden a heredar las configuraciones (por ejemplo, :file:`config_test.yml` importa :file:`config_dev.yml`) y/o comparten una configuración base común (es decir, :file:`config.yml`), la fusión podría generar un conjunto de *URL* base para múltiples entornos.
+
+.. _ref-framework-assets-version:
+
+``assets_version``
+..................
+
+**tipo**: ``string``
+
+Esta opción se utiliza para *detener* la memorización en caché de activos a nivel global añadiendo un parámetro de consulta a todas las rutas de los activos reproducidos (por ejemplo ``/images/logo.png?v2``). Esto se aplica sólo a los activos reproducidos a través de la función ``asset`` de *Twig* (o su equivalente *PHP*), así como los activos reproducidos con ``Assetic``.
+
+Por ejemplo, supongamos que tienes lo siguiente:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        <img src="{{ asset('images/logo.png') }}" alt="Symfony!" />
+
+    .. code-block:: php
+
+        <img src="<?php echo $view['assets']->getUrl('images/logo.png') ?>" alt="Symfony!" />
+
+Por omisión, esto reproducirá la ruta hacia tu imagen tal como ``/images/logo.png``.
+Ahora, activa la opción ``assets_version``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        framework:
+            # ...
+            templating: { engines: ['twig'], assets_version: v2 }
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <framework:templating assets-version="v2">
+            <framework:engine id="twig" />
+        </framework:templating>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('framework', array(
+            // ...
+            'templating'      => array(
+                'engines' => array('twig'),
+                'assets_version' => 'v2',
+            ),
+        ));
+
+Ahora, el mismo activo se reproduce como ``/images/logo.png?v2``, Si utilizas esta función, **debes** incrementar manualmente el valor de ``assets_version`` antes de cada despliegue de modo que cambien los parámetros de consulta.
+
+También puedes controlar cómo funciona la cadena de consulta a través de la opción `assets_version_format`_.
+
+``assets_version_format``
+.........................
+
+**tipo**: ``string`` **predeterminado**: ``%%s?%%s``
+
+Esto especifica un patrón `sprintf()`_ que se debe utilizar con la opción `assets_version`_ para construir la ruta de un activo. Por omisión, el patrón añade la versión del activo como una cadena de consulta. Por ejemplo, si ``assets_version_format`` está establecido en ``%%s?version=%%s`` y ``assets_version`` está establecida en ``5``, la ruta del activo sería ``/images/logo.png?version=5``.
+
+.. note::
+
+    Todos los signos de porcentaje (``%``) en la cadena de formato se deben duplicar para escapar el carácter. Sin escapar, los valores se pueden interpretar inadvertidamente como :ref:`book-service-container-parameters`.
+
+.. tip::
+
+    Algunos *CDN* no son compatibles con ``caché rota`` a través de cadenas de consulta, por lo que la inyección de la versión en la ruta del archivo real es necesaria. Menos mal, ``assets_version_format`` no se limita a producir cadenas de consulta versionadas.
+
+    El patrón recibe la ruta original del activo y la versión de sus parámetros primero y segundo, respectivamente. Debido a que la ruta del activo es un parámetro, no la podemos modificar en el lugar (por ejemplo ``/images/logo-v5.png``); sin embargo, podemos prefijar la ruta del activo usando un patrón de ``version-%%2$s/%%1$s``, lo cual resultaría en la ruta ``version-5/images/logo.png``.
+
+    Las reglas de reescritura de *URL* entonces, se podrían utilizar para ignorar el prefijo de la versión antes de servir el activo. Como alternativa, puedes copiar los activos a la ruta de la versión apropiada como parte de tu proceso de despliegue y renunciar a toda la reescritura de *URL*.
+    La última opción es útil si deseas que las versiones anteriores de los activos permanezcan accesibles en la *URL* original.
+
+Configuración predeterminada completa
+-------------------------------------
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        framework:
+
+            # configuración general
+            charset:              ~
+            secret:               ~ # Required
+            ide:                  ~
+            test:                 ~
+            default_locale:       en
+            trust_proxy_headers:  false
+
+            # configuration de formulario
+            form:
+                enabled:              true
+            csrf_protection:
+                enabled:              true
+                field_name:           _token
+
+            # esi configuration
+            esi:
+                enabled:              true
+
+            # configuración del perfilador
+            profiler:
+                only_exceptions:      false
+                only_master_requests:  false
+                dsn:                  sqlite:%kernel.cache_dir%/profiler.db
+                username:
+                password:
+                lifetime:             86400
+                matcher:
+                    ip:                   ~
+                    path:                 ~
+                    service:              ~
+
+            # configuración de enrutador
+            router:
+                resource:             ~ # Required
+                type:                 ~
+                http_port:            80
+                https_port:           443
+
+            # configuración de sesión
+            session:
+                auto_start:           ~
+                storage_id:           session.storage.native
+                name:                 ~
+                lifetime:             0
+                path:                 ~
+                domain:               ~
+                secure:               ~
+                httponly:             ~
+
+            # configuración de plantillas
+            templating:
+                assets_version:       ~
+                assets_version_format:  "%%s?%%s"
+                assets_base_urls:
+                    http:                 []
+                    ssl:                  []
+                cache:                ~
+                engines:              # Required
+                form:
+                    resources:        [FrameworkBundle:Form]
+
+                    # Ejemplo:
+                    - twig
+                loaders:              []
+                packages:
+
+                    # Prototipo
+                    name:
+                        version:              ~
+                        version_format:       ~
+                        base_urls:
+                            http:                 []
+                    ssl:                  []
+
+            # configuración del traductor
+            translator:
+                enabled:              true
+                fallback:             en
+
+            # configuración de validación
+            validation:
+                enabled:              true
+                cache:                ~
+                enable_annotations:   false
+
+            # configuración de anotaciones
+            annotations:
+                caché:                file
+                file_cache_dir:       %kernel.cache_dir%/annotations
+                debug:                true
+
+.. _`relacionada al protocolo`: http://tools.ietf.org/html/rfc3986#section-4.2
+.. _`sprintf()`: http://www.php.net/manual/es/function.sprintf.php

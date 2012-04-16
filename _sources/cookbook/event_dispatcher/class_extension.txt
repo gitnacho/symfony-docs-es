@@ -1,0 +1,121 @@
+.. index::
+   single: Despachador de evento
+
+Cómo extender una clase sin necesidad de utilizar herencia
+==========================================================
+
+Para permitir que varias clases agreguen métodos a otra, puedes definir el método mágico ``__call()`` de la clase que deseas ampliar de esta manera:
+
+.. code-block:: php
+
+    class Foo
+    {
+        // ...
+
+        public function __call($method, $arguments)
+        {
+            // crea un evento llamado 'foo.method_is_not_found'
+            $event = new HandleUndefinedMethodEvent($this, $method, $arguments);
+            $this->dispatcher->dispatch($this, 'foo.method_is_not_found', $event);
+
+            // ¿ningún escucha es capaz de procesar el evento? El método no existe
+            if (!$event->isProcessed()) {
+                throw new \Exception(sprintf('Call to undefined method %s::%s.', get_class($this), $method));
+            }
+
+            // regresa el escucha que devolvió el valor
+            return $event->getReturnValue();
+        }
+    }
+
+Este utiliza un ``HandleUndefinedMethodEvent`` especial que también se debe crear. Esta es una clase genérica que podrías reutilizar cada vez que necesites usar este modelo para extender clases:
+
+.. code-block:: php
+
+    use Symfony\Component\EventDispatcher\Event;
+
+    class HandleUndefinedMethodEvent extends Event
+    {
+        protected $subject;
+        protected $method;
+        protected $arguments;
+        protected $returnValue;
+        protected $isProcessed = false;
+
+        public function __construct($subject, $method, $arguments)
+        {
+            $this->asunto = $asunto;
+            $this->metodo = $metodo;
+            $this->arguments = $arguments;
+        }
+
+        public function getSubject()
+        {
+            return $this->subject;
+        }
+
+        public function getMethod()
+        {
+            return $this->method;
+        }
+
+        public function getArguments()
+        {
+            return $this->arguments;
+        }
+
+        /**
+         * Fija el valor a devolver y detiene la notificación a otros escuchas
+         */
+        public function setReturnValue($val)
+        {
+            $this->returnValue = $val;
+            $this->isProcessed = true;
+            $this->stopPropagation();
+        }
+
+        public function getReturnValue($val)
+        {
+            return $this->returnValue;
+        }
+
+        public function isProcessed()
+        {
+            return $this->isProcessed;
+        }
+    }
+
+A continuación, crea una clase que debe escuchar el evento ``foo.method_is_not_found`` y *añade* el método ``bar()``:
+
+.. code-block:: php
+
+    class Bar
+    {
+        public function onFooMethodIsNotFound(HandleUndefinedMethodEvent $event)
+        {
+            // únicamente deseamos responder a las llamadas al método 'bar'
+            if ('bar' != $event->getMethod()) {
+                // permite que otro escucha se preocupe del método desconocido
+                return;
+            }
+
+            // el objeto subject (la instancia foo)
+            $foo = $event->getSubject();
+
+            // los argumentos del método bar
+            $arguments = $event->getArguments();
+
+            // Hacer alguna cosa
+            // ...
+
+            // fija el valor de retorno
+            $event->setReturnValue($someValue);
+        }
+    }
+
+Por último, agrega el nuevo método ``bar`` a la clase ``Foo`` registrando una instancia de ``Bar`` con el evento ``foo.method_is_not_found``:
+
+.. code-block:: php
+
+    $bar = new Bar();
+    $dispatcher->addListener('foo.method_is_not_found', $bar);

@@ -1,0 +1,133 @@
+.. index::
+   single: Validación; Restricciones personalizadas
+
+Cómo crear una restricción de validación personalizada
+------------------------------------------------------
+
+Puedes crear una restricción personalizada extendiendo la clase base "constraint", :class:`Symfony\\Component\\Validator\\Constraint`. Las opciones para tu restricción se representan como propiedades públicas de la clase ``constraint``. Por ejemplo, la restricción :doc:`URL </reference/constraints/Url>` incluye las propiedades ``message`` y ``protocols``:
+
+.. code-block:: php
+
+    namespace Symfony\Component\Validator\Constraints;
+    
+    use Symfony\Component\Validator\Constraint;
+
+    /**
+     * @Annotation
+     */
+    class Protocol extends Constraint
+    {
+        public $message = 'This value is not a valid protocol';
+        public $protocols = array('http', 'https', 'ftp', 'ftps');
+    }
+
+.. note::
+
+    La anotación ``@Annotation`` es necesaria para esta nueva restricción con el fin de hacerla disponible para su uso en clases vía anotaciones.
+
+Como puedes ver, una clase de restricción es bastante mínima. La validación real la lleva a cabo otra clase "validadora de restricción". La clase validadora de restricción se especifica con el método ``validatedBy()`` de la restricción, el cual por omisión incluye alguna lógica simple:
+
+.. code-block:: php
+
+    // en la clase base Symfony\Component\Validator\Constraint
+    public function validatedBy()
+    {
+        return get_class($this).'Validator';
+    }
+
+En otras palabras, si creas una ``restricción`` personalizada (por ejemplo, ``MyConstraint``), cuando *Symfony2* realmente lleve a cabo la validación automáticamente buscará otra clase, ``MyConstraintValidator``.
+
+La clase ``validator`` también es simple, y sólo tiene un método obligatorio: ``isValid``.
+Además de nuestro ejemplo, échale un vistazo al ``ProtocolValidator`` como ejemplo:
+
+.. code-block:: php
+
+    namespace Symfony\Component\Validator\Constraints;
+    
+    use Symfony\Component\Validator\Constraint;
+    use Symfony\Component\Validator\ConstraintValidator;
+
+    class ProtocolValidator extends ConstraintValidator
+    {
+        public function isValid($value, Constraint $constraint)
+        {
+            if (in_array($value, $constraint->protocols)) {
+                $this->setMessage($constraint->message, array('%protocols%' => $constraint->protocols));
+
+                    return true;
+            }
+
+                return false;
+        }
+    }
+
+.. note::
+
+    No olvides llamar a ``setMessage`` para construir un mensaje de error cuando el valor es incorrecto.
+
+Restricción de validadores con dependencias
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Si la restricción del validador tiene dependencias, tal como una conexión de base de datos, se tendrá que configurar como un servicio en el contenedor de inyección de dependencias. Este servicio debe incluir la etiqueta ``validator.constraint_validator`` y un atributo ``alias``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            validator.unique.your_validator_name:
+                class: Nombre\De\Clase\Validator\Completamente\Cualificado
+                tags:
+                        - { name: validator.constraint_validator, alias: alias_name }
+
+    .. code-block:: xml
+
+        <service id="validator.unique.your_validator_name" class="Nombre\De\Clase\Validator\Completamente\Cualificado">
+            <argument type="service" id="doctrine.orm.default_entity_manager" />
+            <tag name="validator.constraint_validator" alias="alias_name" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('validator.unique.your_validator_name', 'Nombre\De\Clase\Validator\Completamente\Cualificado')
+            ->addTag('validator.constraint_validator', array('alias' => 'alias_name'))
+        ;
+
+Tu clase restricción ahora debe usar este alias para hacer referencia al validador adecuado::
+
+    public function validatedBy()
+    {
+        return 'alias_name';
+    }
+
+Como mencionamos anteriormente, *Symfony2* buscará automáticamente una clase llamada ``after`` después de la restricción, con su ``Validador`` adjunto.  Si tu restricción de validación está definida como un servicio, es importante que redefinas el método ``validatedBy()`` para que devuelva el alias utilizado cuando definiste tu servicio, de lo contrario *Symfony2* no utilizará el servicio de la restricción de validación, y, en su lugar, creará una instancia de la clase, sin inyectar ningún tipo de dependencia.
+
+Clase para la validación de restricción
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Además de validar una propiedad de clase, una restricción puede tener un ámbito de clase proporcionándole un objetivo::
+
+    public function getTargets()
+    {
+        return self::CLASS_CONSTRAINT;
+    }
+
+Con esto, el método validador ``isValid()`` obtiene un objeto como primer argumento::
+
+    class ProtocolClassValidator extends ConstraintValidator
+    {
+        public function isValid($protocol, Constraint $constraint)
+        {
+            if ($protocol->getFoo() != $protocol->getBar()) {
+
+                // vincula el mensaje de error a la propiedad foo
+                $this->context->addViolationAtSubPath('foo', $constraint->getMessage(), array(), null);
+
+                    return true;
+            }
+
+                return false;
+        }
+    }
+

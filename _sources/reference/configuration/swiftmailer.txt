@@ -1,0 +1,178 @@
+.. index::
+   single: Referencia de configuración; Swiftmailer
+
+Configurando el ``SwiftmailerBundle`` (``"swiftmailer"``)
+=========================================================
+
+Este documento de referencia es un trabajo en progreso. Este debe ser preciso, pero aún no están cubiertas completamente todas las opciones. Para una lista completa de las opciones de configuración predefinidas, consulta la `Configuración predeterminada completa`_
+
+La clave ``swiftmailer`` configura la integración de *Symfony2* con ``Swiftmailer``, el cual es responsable de crear y entregar los mensajes de correo electrónico.
+
+Configurando
+------------
+
+* `transport`_
+* `username`_
+* `password`_
+* `host`_
+* `port`_
+* `encryption`_
+* `auth_mode`_
+* `spool`_
+    * `type`_
+    * `path`_
+* `sender_address`_
+* `antiflood`_
+    * `threshold`_
+    * `sleep`_
+* `delivery_address`_
+* `disable_delivery`_
+* `logging`_
+
+``transport``
+~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``smtp``
+
+El método exacto a utilizar para entregar el correo electrónico. Los valores válidos son los siguientes:
+
+* smtp
+* gmail (consulta :doc:`/cookbook/email/gmail`)
+* mail
+* sendmail
+* null (igual que configurar `disable_delivery`_ a ``true``)
+
+``username``
+~~~~~~~~~~~~
+
+**tipo**: ``string``
+
+El nombre de usuario al utilizar ``smtp`` como transporte.
+
+``password``
+~~~~~~~~~~~~
+
+**tipo**: ``string``
+
+La contraseña cuando se utiliza ``smtp`` como transporte.
+
+``host``
+~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``localhost``
+
+El servidor con el cual conectarse cuando se utiliza ``smtp`` como transporte.
+
+``port``
+~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: 25 o 465 (dependiendo de `encryption`_)
+
+El puerto al utilizar ``smtp`` como transporte. De manera predeterminada es 465 si la codificación es ``ssl`` y 25 en cualquier otro caso.
+
+``encryption``
+~~~~~~~~~~~~~~
+
+**tipo**: ``string``
+
+El modo de codificación a utilizar cuando se usa ``smtp`` como transporte. Los valores válidos son ``tls``, ``ssl``, o ``null`` (indicando que no hay codificación).
+
+``auth_mode``
+~~~~~~~~~~~~~
+
+**tipo**: ``string``
+
+El modo de autenticación a usar cuando se utiliza ``smtp`` como transporte. Los valores válidos son ``plain``, ``login``, ``cram-md5``, o ``null``.
+
+``spool``
+~~~~~~~~~
+
+Para detalles sobre la cola de correo, consulta :doc:`/cookbook/email/spool`.
+
+``Type``
+........
+
+**tipo**: ``string`` **predeterminado**: ``file``
+
+El método usado para guardar los mensajes en cola. Actualmente sólo es compatible con ``file``.
+No obstante, será posible una cola personalizada creando un servicio llamado ``swiftmailer.spool.myspool`` y este valor se establece a ``myspool``.
+
+``path``
+........
+
+**tipo**: ``string`` **predeterminado**: ``%kernel.cache_dir%/swiftmailer/spool``
+
+Cuando utilizas la cola de ``file``, esta es la ruta en dónde se deben guardar los mensajes en la cola.
+
+``sender_address``
+~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string``
+
+Si se establece, todos los mensajes serán entregados con esta dirección como la dirección de "ruta de retorno", que es a dónde llegarán los mensajes rebotados. Esto lo maneja internamente la clase ``Swift_Plugins_ImpersonatePlugin`` de ``Swiftmailer``.
+
+``antiflood``
+~~~~~~~~~~~~~
+
+``threshold``
+.............
+
+**tipo**: ``string`` **predeterminado**: ``99``
+
+Usado con ``Swift_Plugins_AntiFloodPlugin``. Este representa la cantidad de correos electrónicos a enviar antes de reiniciar el transporte.
+
+``sleep``
+.........
+
+**tipo**: ``string`` **predeterminado**: ``0``
+
+Usado con ``Swift_Plugins_AntiFloodPlugin``. Esta es la cantidad de segundos a esperar durante el reinicio del transporte.
+
+``delivery_address``
+~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string``
+
+Si se establece, todos los mensajes de correo serán enviados a esta dirección en lugar de enviarlos a su destinatario real. Esto a menudo es útil en el desarrollo. Por ejemplo, al configurar este en el archivo :file:`config_dev.yml`, puedes garantizar que todos los correos electrónicos se envían a una sola cuenta durante el desarrollo.
+
+Este usa el ``Swift_Plugins_RedirectingPlugin``. Los destinatarios originales están disponibles en las cabeceras  ``X-Swift-To``, ``X-Swift-Cc`` y ``X-Swift-Bcc``.
+
+``disable_delivery``
+~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``Boolean`` **predeterminado**: ``false``
+
+Si es ``true``, el ``transport`` será establecido automáticamente a ``null``, y en realidad no se entregará el correo.
+
+``logging``
+~~~~~~~~~~~
+
+**tipo**: ``Boolean`` **predeterminado**: ``%kernel.debug%``
+
+Si es ``true``, el recolector de datos de *Symfony2* será activado para ``Swiftmailer`` y la información estará disponible en el generador de perfiles.
+
+Configuración predeterminada completa
+-------------------------------------
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        swiftmailer:
+            transport:            smtp
+            username:             ~
+            password:             ~
+            host:                 localhost
+            port:                 false
+            encryption:           ~
+            auth_mode:            ~
+            spool:
+                type:                 file
+                path:                 %kernel.cache_dir%/swiftmailer/spool
+            sender_address:       ~
+            antiflood:
+                threshold:            99
+                sleep:                0
+            delivery_address:     ~
+            disable_delivery:     ~
+            logging:              %kernel.debug%

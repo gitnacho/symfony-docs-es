@@ -1,0 +1,366 @@
+Etiquetas de inyección de dependencias
+======================================
+
+Etiquetas:
+
+* ``data_collector``
+* ``form.type``
+* ``form.type_extension``
+* ``form.type_guesser``
+* ``kernel.cache_warmer``
+* ``kernel.event_listener``
+* ``kernel.event_subscriber``
+* ``monolog.logger``
+* ``monolog.processor``
+* ``templating.helper``
+* ``routing.loader``
+* ``translation.loader``
+* ``twig.extension``
+* ``validator.initializer``
+
+Habilitando ayudantes de plantilla *PHP* personalizados
+-------------------------------------------------------
+
+Para habilitar un ayudante de plantilla, añádelo como un servicio regular en una de tus configuraciones, etiquétalo con ``templating.helper`` y define un atributo ``alias`` (el ayudante será accesible a través de este alias en las plantillas):
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            templating.helper.your_helper_name:
+                class: Fully\Qualified\Helper\Class\Name
+                tags:
+                        - { name: templating.helper, alias: alias_name }
+
+    .. code-block:: xml
+
+        <service id="templating.helper.your_helper_name" class="Fully\Qualified\Helper\Class\Name">
+            <tag name="templating.helper" alias="alias_name" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('templating.helper.your_helper_name', 'Fully\Qualified\Helper\Class\Name')
+            ->addTag('templating.helper', array('alias' => 'alias_name'))
+        ;
+
+.. _reference-dic-tags-twig-extension:
+
+Habilitando extensiones *Twig* personalizadas
+---------------------------------------------
+
+Para habilitar una extensión *Twig*, añádela como un servicio regular en una de tus configuraciones, y etiquétala con ``twig.extension``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            twig.extension.your_extension_name:
+                class: Fully\Qualified\Extension\Class\Name
+                tags:
+                        - { name: twig.extension }
+
+    .. code-block:: xml
+
+        <service id="twig.extension.your_extension_name" class="Fully\Qualified\Extension\Class\Name">
+            <tag name="twig.extension" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('twig.extension.your_extension_name', 'Fully\Qualified\Extension\Class\Name')
+            ->addTag('twig.extension')
+        ;
+
+Para información sobre cómo crear la clase extensión de *Twig* real, consulta el tema en la `documentación de extensiones`_.
+
+Antes de escribir tus propias extensiones, echa un vistazo al `Repositorio oficial de extensiones Twig`_ el cual ya cuenta con varias útiles extensiones. Por ejemplo ``Intl`` y su filtro ``localizeddate`` que formatea una fecha según la configuración regional del usuario. Estas extensiones oficiales de *Twig* también se tienen que añadir como servicios normales:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            twig.extension.intl:
+                class: Twig_Extensions_Extension_Intl
+                tags:
+                        - { name: twig.extension }
+
+    .. code-block:: xml
+
+        <service id="twig.extension.intl" class="Twig_Extensions_Extension_Intl">
+            <tag name="twig.extension" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('twig.extension.intl', 'Twig_Extensions_Extension_Intl')
+            ->addTag('twig.extension')
+        ;
+
+.. _dic-tags-kernel-event-listener:
+
+Habilitando escuchas personalizados
+-----------------------------------
+
+Para habilitar un escucha personalizado, añádelo como un servicio regular en uno de tus archivos de configuración, y etiquétalo con ``kernel.event_listener``. Debes proporcionar el nombre del evento a tu servicio escucha, así como el método que deberá invocar:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            kernel.listener.your_listener_name:
+                class: Fully\Qualified\Listener\Class\Name
+                tags:
+                        - { name: kernel.event_listener, event: xxx, method: onXxx }
+
+    .. code-block:: xml
+
+        <service id="kernel.listener.your_listener_name" class="Fully\Qualified\Listener\Class\Name">
+            <tag name="kernel.event_listener" event="xxx" method="onXxx" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('kernel.listener.your_listener_name', 'Fully\Qualified\Listener\Class\Name')
+            ->addTag('kernel.event_listener', array('event' => 'xxx', 'method' => 'onXxx'))
+        ;
+
+.. note::
+
+    También puedes especificar la prioridad como un atributo de la etiqueta ``kernel.event_listener`` (al igual que el método o los atributos de eventos), ya sea con un número entero positivo o negativo. Esto te permite asegurarte de que tu escucha siempre se llama antes o después de otro escucha del mismo evento.
+
+
+
+.. _dic-tags-kernel-event-subscriber:
+
+Habilitando suscriptores personalizados
+---------------------------------------
+
+.. versionadded:: 2.1
+
+   La habilidad para añadir suscriptores a eventos del núcleo se agregó en la versión 2.1.
+
+Para habilitar un suscriptor personalizado, agrégalo como un servicio regular en una de tus configuraciones, y etiquétalo con ``kernel.event_subscriber``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            kernel.subscriber.your_subscriber_name:
+                class: Nombre\De\Clase\Del\Suscriptor\Completamente\Cualificado
+                tags:
+                        - { name: kernel.event_subscriber }
+
+    .. code-block:: xml
+
+        <service id="kernel.subscriber.your_subscriber_name" class="Fully\Qualified\Subscriber\Class\Name">
+            <tag name="kernel.event_subscriber" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('kernel.subscriber.your_subscriber_name', 'Fully\Qualified\Subscriber\Class\Name')
+            ->addTag('kernel.event_subscriber')
+        ;
+
+.. note::
+
+    Tu servicio debe implementar la interfaz :class:`Symfony\Component\EventDispatcher\EventSubscriberInterface`.
+
+.. note::
+
+    Si tu servicio es creado por una fábrica, **DEBES** establecer correctamente el parámetro ``class`` para que esta etiqueta trabaje correctamente.
+
+Habilitando motores de plantilla personalizados
+-----------------------------------------------
+
+Para activar un motor de plantillas personalizado, añádelo como un servicio regular en una de tus configuraciones, etiquétalo con ``templating.engine``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            templating.engine.your_engine_name:
+                class: Fully\Qualified\Engine\Class\Name
+                tags:
+                        - { name: templating.engine }
+
+    .. code-block:: xml
+
+        <service id="templating.engine.your_engine_name" class="Fully\Qualified\Engine\Class\Name">
+            <tag name="templating.engine" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('templating.engine.your_engine_name', 'Fully\Qualified\Engine\Class\Name')
+            ->addTag('templating.engine')
+        ;
+
+Habilitando cargadores de enrutado personalizados
+-------------------------------------------------
+
+Para habilitar un gestor de enrutado personalizado, añádelo como un servicio regular en una de tus configuraciones, y etiquétalo con ``routing.loader``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            routing.loader.your_loader_name:
+                class: Fully\Qualified\Loader\Class\Name
+                tags:
+                        - { name: routing.loader }
+
+    .. code-block:: xml
+
+        <service id="routing.loader.your_loader_name" class="Fully\Qualified\Loader\Class\Name">
+            <tag name="routing.loader" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('routing.loader.your_loader_name', 'Fully\Qualified\Loader\Class\Name')
+            ->addTag('routing.loader')
+        ;
+
+.. _dic_tags-monolog:
+
+Usando un canal de registro personalizado con ``Monolog``
+---------------------------------------------------------
+
+``Monolog`` te permite compartir sus controladores entre varios canales notariales.
+El servicio notarial utiliza el canal ``app`` pero puedes cambiar de canal cuando inyectes al notario en un servicio.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            my_service:
+                class: Fully\Qualified\Loader\Class\Name
+                arguments: [@logger]
+                tags:
+                        - { name: monolog.logger, channel: acme }
+
+    .. code-block:: xml
+
+        <service id="my_service" class="Fully\Qualified\Loader\Class\Name">
+            <argument type="service" id="logger" />
+            <tag name="monolog.logger" channel="acme" />
+        </service>
+
+    .. code-block:: php
+
+        $definition = new Definition('Fully\Qualified\Loader\Class\Name', array(new Reference('logger'));
+        $definition->addTag('monolog.logger', array('channel' => 'acme'));
+        $container->register('my_service', $definition);;
+
+.. note::
+
+    Esto sólo funciona cuando el servicio del notario es un argumento del constructor, no cuando se inyecta a través de un definidor.
+
+.. _dic_tags-monolog-processor:
+
+Agregando un procesador para ``Monolog``
+----------------------------------------
+
+``Monolog`` te permite agregar procesadores en el notario o en los controladores para añadir datos adicionales en los registros. Un procesador recibe el registro como argumento y lo tiene que devolver después de añadir alguna información adicional en el atributo ``extra`` del registro.
+
+Vamos a ver cómo puedes utilizar el ``IntrospectionProcessor`` integrado para agregar el archivo, la línea, la clase y el método en que se activó el notario.
+
+Puedes agregar un procesador globalmente:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            my_service:
+                class: Monolog\Processor\IntrospectionProcessor
+                tags:
+                        - { name: monolog.processor }
+
+    .. code-block:: xml
+
+        <service id="my_service" class="Monolog\Processor\IntrospectionProcessor">
+            <tag name="monolog.processor" />
+        </service>
+
+    .. code-block:: php
+
+        $definition = new Definition('Monolog\Processor\IntrospectionProcessor');
+        $definition->addTag('monolog.processor');
+        $container->register('my_service', $definition);
+
+.. tip::
+
+    Si el servicio no es ejecutable (con ``__invoke``) puedes agregar el atributo ``method`` en la etiqueta para utilizar un método específico.
+
+También puedes agregar un procesador para un controlador específico utilizando el atributo ``handler``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            my_service:
+                class: Monolog\Processor\IntrospectionProcessor
+                tags:
+                        - { name: monolog.processor, handler: firephp }
+
+    .. code-block:: xml
+
+        <service id="my_service" class="Monolog\Processor\IntrospectionProcessor">
+            <tag name="monolog.processor" handler="firephp" />
+        </service>
+
+    .. code-block:: php
+
+        $definition = new Definition('Monolog\Processor\IntrospectionProcessor');
+        $definition->addTag('monolog.processor', array('handler' => 'firephp');
+        $container->register('my_service', $definition);
+
+También puedes agregar un procesador para un canal notarial específico usando el atributo ``channel``. Esto registrará el procesador únicamente para el canal notarial de ``security`` utilizado en el componente de seguridad:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            my_service:
+                class: Monolog\Processor\IntrospectionProcessor
+                tags:
+                        - { name: monolog.processor, channel: security }
+
+    .. code-block:: xml
+
+        <service id="my_service" class="Monolog\Processor\IntrospectionProcessor">
+            <tag name="monolog.processor" channel="security" />
+        </service>
+
+    .. code-block:: php
+
+        $definition = new Definition('Monolog\Processor\IntrospectionProcessor');
+        $definition->addTag('monolog.processor', array('channel' => 'security');
+        $container->register('my_service', $definition);
+
+.. note::
+
+    No puedes utilizar ambos atributos ``handler`` y ``channel`` para la misma etiqueta debido a que los controladores son compartidos entre todos los canales.
+
+..  _`documentación de extensiones`: http://gitnacho.github.com/Twig/extensions.html
+..  _`Repositorio oficial de extensiones Twig`: http://github.com/fabpot/Twig-extensions

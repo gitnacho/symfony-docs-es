@@ -1,0 +1,158 @@
+Cómo aplicar un *filtro* ``Assetic`` a una extensión de archivo especifica
+==========================================================================
+
+Los *filtros* ``Assetic`` se pueden aplicar a archivos individuales, grupos de archivos o incluso, como veremos aquí, a archivos que tengan una determinada extensión. Para mostrarte cómo manejar cada opción, vamos a suponer que quieres usar el filtro ``CoffeeScript`` de ``Assetic``, el cual compila archivos de ``CoffeeScript`` en *Javascript*.
+
+La configuración principal sólo son las rutas a ``coffee`` y ``node``. Estas por omisión son ``/usr/bin/coffee`` y ``/usr/bin/node`` respectivamente:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        assetic:
+            filters:
+                coffee:
+                    bin: /usr/bin/coffee
+                    node: /usr/bin/node
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <assetic:config>
+            <assetic:filter
+                name="coffee"
+                bin="/usr/bin/coffee"
+                node="/usr/bin/node" />
+        </assetic:config>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('assetic', array(
+            'filters' => array(
+                'coffee' => array(
+                    'bin' => '/usr/bin/coffee',
+                    'node' => '/usr/bin/node',
+                ),
+            ),
+        ));
+
+Filtrando un solo archivo
+-------------------------
+
+Ahora puedes servir un solo archivo ``CoffeeScript`` como *JavaScript* dentro de tus plantillas:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% javascripts '@AcmeFooBundle/Resources/public/js/example.coffee'
+            filter='coffee'
+        %}
+        <script src="{{ asset_url }}" type="text/javascript"></script>
+        {% endjavascripts %}
+
+    .. code-block:: html+php
+
+        <?php foreach ($view['assetic']->javascripts(
+            array('@AcmeFooBundle/Resources/public/js/example.coffee'),
+            array('coffee')) as $url): ?>
+        <script src="<?php echo $view->escape($url) ?>" type="text/javascript"></script>
+        <?php endforeach; ?>
+
+Esto es todo lo que se necesita para compilar este archivo ``CoffeeScript`` y servirlo como *JavaScript* compilado.
+
+Filtrando múltiples archivos
+----------------------------
+
+También puedes combinar varios archivos ``CoffeeScript`` y producir un único archivo:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% javascripts '@AcmeFooBundle/Resources/public/js/example.coffee'
+                       '@AcmeFooBundle/Resources/public/js/another.coffee'
+            filter='coffee'
+        %}
+        <script src="{{ asset_url }}" type="text/javascript"></script>
+        {% endjavascripts %}
+
+    .. code-block:: html+php
+
+        <?php foreach ($view['assetic']->javascripts(
+            array('@AcmeFooBundle/Resources/public/js/example.coffee',
+                  '@AcmeFooBundle/Resources/public/js/another.coffee'),
+            array('coffee')) as $url): ?>
+        <script src="<?php echo $view->escape($url) ?>" type="text/javascript"></script>
+        <?php endforeach; ?>
+
+Ahora, ambos archivos se sirven como un solo archivo compilado en *JavaScript* regular.
+
+Filtrando en base a la extensión de archivo
+-------------------------------------------
+
+Una de las grandes ventajas de usar ``Assetic`` es minimizar el número de archivos de activos para reducir las peticiones ``HTTP``. Con el fin de usar esto completamente, sería bueno combinar *todos* los archivos *JavaScript* y ``CoffeeScript`` juntos puesto que en última instancia, todo se debe servir como *JavaScript*. Desafortunadamente sólo añadir los archivos *JavaScript* a los archivos combinados como el anterior no funciona puesto que los archivos *JavaScript* regulares no sobrevivirán a la compilación de ``CoffeeScript``.
+
+Este problema se puede evitar usando la opción ``apply_to`` en la configuración, lo cual te permite especificar que siempre se aplique un *filtro* a las extensiones de archivo en particular. En este caso puedes especificar que el *filtro* ``Coffee`` se aplique a todos los archivos ``.coffee``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        assetic:
+            filters:
+                coffee:
+                    bin: /usr/bin/coffee
+                    node: /usr/bin/node
+                    apply_to: "\.coffee$"
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <assetic:config>
+            <assetic:filter
+                name="coffee"
+                bin="/usr/bin/coffee"
+                node="/usr/bin/node"
+                apply_to="\.coffee$" />
+        </assetic:config>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('assetic', array(
+            'filters' => array(
+                'coffee' => array(
+                    'bin' => '/usr/bin/coffee',
+                    'node' => '/usr/bin/node',
+                    'apply_to' => '\.coffee$',
+                ),
+            ),
+        ));
+
+Con esto, ya no tendrás que especificar el *filtro* ``coffee`` en la plantilla.
+También puedes listar archivos *JavaScript* regulares, los cuales serán combinados y reproducidos como un único archivo *JavaScript* (con sólo ejecutar los archivos ``.coffee`` a través del *filtro* ``CoffeeScript``.)
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% javascripts '@AcmeFooBundle/Resources/public/js/example.coffee'
+                       '@AcmeFooBundle/Resources/public/js/another.coffee'
+                       '@AcmeFooBundle/Resources/public/js/regular.js'
+        %}
+        <script src="{{ asset_url }}" type="text/javascript"></script>
+        {% endjavascripts %}
+
+    .. code-block:: html+php
+
+        <?php foreach ($view['assetic']->javascripts(
+            array('@AcmeFooBundle/Resources/public/js/example.coffee',
+                  '@AcmeFooBundle/Resources/public/js/another.coffee',
+                  '@AcmeFooBundle/Resources/public/js/regular.js'),
+            as $url): ?>
+        <script src="<?php echo $view->escape($url) ?>" type="text/javascript"></script>
+        <?php endforeach; ?>

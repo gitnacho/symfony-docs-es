@@ -1,0 +1,73 @@
+.. index::
+   single: Selector CSS
+
+El componente ``CssSelector``
+=============================
+
+    El componente ``CssSelector`` convierte selectores *CSS* a expresiones ``XPath``.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/CssSelector);
+* Instalándolo a través de *PEAR* ( `pear.symfony.com/CssSelector`);
+* Instalándolo vía ``Composer`` (`symfony/css-selector` en Packagist).
+
+Usando
+------
+
+¿Por qué usar selectores *CSS*?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Cuando estás analizando un archivo *HTML* o un documento *XML*, con mucho, el método más poderoso
+es *XPath*.
+
+Las expresiones *XPath* son increíblemente flexibles, por lo tanto casi siempre hay una expresión *XPath* que encuentra el elemento que necesitas. Desafortunadamente, también puede llegar a ser muy complicado, y la curva de aprendizaje es muy empinada. Incluso operaciones comunes (por ejemplo, la búsqueda de un elemento con una clase en particular) puede requerir expresiones largas y difíciles de manejar.
+
+Muchos desarrolladores ---particularmente los desarrolladores web--- se sienten más cómodos usando selectores *CSS* para encontrar elementos. Además de trabajar en hojas de estilo, los selectores *CSS* se utilizan en *Javascript* con la función ``querySelectorAll`` y en las bibliotecas populares de *Javascript* como *jQuery*, *Prototype* y *MooTools*.
+
+Los selectores *CSS* son menos poderosos que *XPath*, pero mucho más fáciles de escribir, leer
+y entender. Debido a que son menos poderosos, casi todos los selectores *CSS* se pueden convertir a una expresión *XPath* equivalente. Entonces, puedes utilizar esta expresión *XPath* con otras funciones y clases que utilizan *XPath* para buscar elementos en un documento.
+
+El componente ``CssSelector``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+El único objetivo del componente es el de convertir selectores *CSS* a su *XPath*
+equivalente::
+
+    use Symfony\Component\CssSelector\CssSelector;
+
+    print CssSelector::toXPath('div.item > h4 > a');
+
+Esto produce el siguiente resultado:
+
+.. code-block:: text
+
+    descendant-or-self::div[contains(concat(' ',normalize-space(@class), ' '), ' item ')]/h4/a
+
+Puedes utilizar esta expresión con, por ejemplo, :phpclass:`DOMXPath` o :phpclass:`SimpleXMLElement` para encontrar elementos en un documento.
+
+.. tip::
+
+    El método :method:`Crawler::filter()<Symfony\\Component\\DomCrawler\\Crawler::filter>` utiliza el componente ``CssSelector`` para encontrar elementos basándose en una cadena selectora *CSS*. Ve :doc:`/components/dom_crawler` para más detalles.
+
+Limitaciones del componente ``cssSelector``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+No todos los selectores *CSS* se pueden convertir a *XPath* equivalentes.
+
+Hay varios selectores *CSS* que sólo tienen sentido en el contexto de un navegador *web*.
+
+* estado de selectores de enlace: ``:link``, ``:visited``, ``:target``
+* selectores basados en la acción del usuario: ``:hover``, ``:focus``, ``:active``
+* Estado de selectores de la interfaz del usuario: ``:enabled``, ``:disabled``, ``:indeterminate`` (``however``, ``:checked`` y ``:unchecked`` están disponibles)
+
+Seudoelementos (``:before``, ``:after``, ``:first-line``, ``:first-letter``) no son compatibles, debido a que seleccionan porciones de texto en lugar de elementos.
+
+Algunas seudoclases todavía no cuentan con soporte:
+
+* ``:lang(language)``
+* ``root``
+* ``*:first-of-type``, ``*:last-of-type``, ``*:nth-of-type``, ``*:nth-last-of-type``, ``*:only-of-type``. (Estas funcionan con un elemento nombre (por ejemplo ``li:first-of-type``), pero no con ``*``.

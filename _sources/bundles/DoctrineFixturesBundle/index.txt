@@ -1,0 +1,320 @@
+``DoctrineFixturesBundle``
+==========================
+
+Los accesorios se utilizan para cargar en una base de datos un juego de datos controlado. Puedes utilizar estos datos para pruebas o podrían ser los datos iniciales necesarios para ejecutar la aplicación sin problemas. *Symfony2* no tiene integrada forma alguna de administrar accesorios, pero *Doctrine2* cuenta con una biblioteca para ayudarte a escribir accesorios para el :doc:`ORM </book/doctrine>` u :doc:`ODM </bundles/DoctrineMongoDBBundle/index>` de *Doctrine*.
+
+Instalando y configurando
+-------------------------
+
+Si todavía no tienes configurada en *Symfony2* la biblioteca `Doctrine Data Fixtures`_, sigue estos pasos para hacerlo.
+
+Si estás utilizando la distribución estándar, agrega lo siguiente a tu archivo ``deps``:
+
+.. code-block:: text
+
+    [doctrine-fixtures]
+        git=http://github.com/doctrine/data-fixtures.git
+
+    [DoctrineFixturesBundle]
+        git=http://github.com/doctrine/DoctrineFixturesBundle.git
+        target=/bundles/Doctrine/Bundle/FixturesBundle
+
+Actualiza las bibliotecas de proveedores:
+
+.. code-block:: bash
+
+    $ php bin/vendors install
+
+Si todo funcionó, ahora puedes encontrar la biblioteca ``doctrine-fixtures`` en ``vendor/doctrine-fixtures``.
+
+Registra el espacio de nombres ``Doctrine\Common\DataFixtures`` en ``app/autoload.php``.
+
+.. code-block:: php
+
+    // ...
+    $loader->registerNamespaces(array(
+        // ...
+        'Doctrine\\Bundle' => __DIR__.'/../vendor/bundles',
+        'Doctrine\\Common\\DataFixtures' => __DIR__.'/../vendor/doctrine-fixtures/lib',
+        'Doctrine\\Common' => __DIR__.'/../vendor/doctrine-common/lib',
+        // ...
+    ));
+
+.. caution::
+
+    Asegúrate de registrar el nuevo espacio de nombres *antes* de ``Doctrine\Common``. De lo contrario, *Symfony* buscará clases accesorio dentro del directorio ``Doctrine\Common``. El autocargador de *Symfony*, siempre busca en primer lugar una clase dentro del directorio del espacio de nombres coincidente, los espacios de nombres más específicos *siempre* deben estar primero.
+
+Por último, registra el paquete ``DoctrineFixturesBundle`` en ``app/AppKernel.php``.
+
+.. code-block:: php
+
+    // ...
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+            new Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle(),
+            // ...
+        );
+        // ...
+    }
+
+Escribiendo accesorios sencillos
+--------------------------------
+
+Los accesorios de *Doctrine2* son clases *PHP* que pueden crear y persistir objetos a la base de datos. Al igual que todas las clases en *Symfony2*, los accesorios deben vivir dentro de uno de los paquetes de tu aplicación.
+
+Para un paquete situado en ``src/Acme/HelloBundle``, las clases accesorio deben vivir dentro de ``src/Acme/HelloBundle/DataFixtures/ORM`` o ``src/Acme/HelloBundle/DataFixtures/MongoDB``, para *ORM* y *ODM* respectivamente, esta guía asume que estás utilizando el *ORM* --- pero, los accesorios se pueden agregar con la misma facilidad si estás utilizando *ODM*.
+
+Imagina que tienes una clase ``User``, y te gustaría cargar un nuevo ``Usuario``:
+
+.. code-block:: php
+
+    // src/Acme/HelloBundle/DataFixtures/ORM/LoadUserData.php
+
+    namespace Acme\HelloBundle\DataFixtures\ORM;
+
+    use Doctrine\Common\DataFixtures\FixtureInterface;
+    use Doctrine\Common\Persistence\ObjectManager;
+    use Acme\HelloBundle\Entity\User;
+
+    class LoadUserData implements FixtureInterface
+    {
+        /**
+         * {@inheritDoc}
+         */
+        public function load(ObjectManager $manager)
+        {
+            $userAdmin = new User();
+            $userAdmin->setUsername('admin');
+            $userAdmin->setPassword('test');
+
+            $manager->persist($userAdmin);
+            $manager->flush();
+        }
+    }
+
+En *Doctrine2*, los accesorios sólo son objetos en los que cargas datos interactuando con tus entidades como lo haces normalmente. Esto te permite crear el accesorio exacto que necesitas para tu aplicación.
+
+La limitación más importante es que no puedes compartir objetos entre accesorios.
+Más adelante, veremos la manera de superar esta limitación.
+
+Ejecutando accesorios
+---------------------
+
+Una vez que has escrito tus accesorios, los puedes cargar a través de la línea de ordenes usando la orden ``doctrine:fixtures:load``
+
+.. code-block:: bash
+
+    php app/console doctrine:fixtures:load
+
+Si estás utilizando *ODM*, en su lugar usa la orden ``doctrine:mongodb:fixtures:load``:
+
+.. code-block:: bash
+
+    php app/console doctrine:mongodb:fixtures:load
+
+La tarea verá dentro del directorio ``DataFixtures/ORM`` (o ``DataFixtures/MongoDB`` para *ODM*) de cada paquete y ejecutará cada clase que implemente la ``FixtureInterface``.
+
+Ambas ordenes vienen con unas cuantas opciones:
+
+* ``--fixtures=/ruta/al/accesorio`` --- Usa esta opción para especificar manualmente el directorio de donde se deben cargar las clases accesorio;
+
+* ``--append`` --- Utiliza esta opción para añadir datos en lugar de eliminarlos antes de cargarlos (borrar primero es el comportamiento predeterminado);
+
+* ``--em=manager_name`` --- Especifica manualmente el gestor de la entidad a utilizar para cargar los datos.
+
+.. note::
+
+   Si utilizas la tarea ``doctrine:mongodb:fixtures:load``, reemplaza la opción ``--em=`` con ``--dm=`` para especificar manualmente el gestor de documentos.
+
+Un ejemplo de uso completo podría tener este aspecto:
+
+.. code-block:: bash
+
+   php app/console doctrine:fixtures:load --fixtures=/ruta/al/accesorio1 --fixtures=/ruta/al/accesorio2 --append --em=gestor_foo
+
+Compartiendo objetos entre accesorios
+-------------------------------------
+
+Escribir un accesorio básico es sencillo. Pero, ¿si tienes varias clases de accesorios y quieres poder referirte a los datos cargados en otras clases accesorio?
+Por ejemplo, ¿qué pasa si cargas un objeto ``Usuario`` en un accesorio, y luego quieres mencionar una referencia a un accesorio diferente con el fin de asignar dicho usuario a un grupo particular?
+
+La biblioteca de accesorios de *Doctrine* maneja esto fácilmente permitiéndote especificar el orden en que se cargan los accesorios.
+
+.. code-block:: php
+
+    // src/Acme/HelloBundle/DataFixtures/ORM/LoadUserData.php
+    namespace Acme\HelloBundle\DataFixtures\ORM;
+
+    use Doctrine\Common\DataFixtures\AbstractFixture;
+    use Doctrine\Common\DataFixtures\OrderedFixtureInterface;
+    use Doctrine\Common\Persistence\ObjectManager;
+    use Acme\HelloBundle\Entity\User;
+
+    class LoadUserData extends AbstractFixture implements OrderedFixtureInterface
+    {
+        /**
+         * {@inheritDoc}
+         */
+        public function load(ObjectManager $manager)
+        {
+            $userAdmin = new User();
+            $userAdmin->setUsername('admin');
+            $userAdmin->setPassword('test');
+
+            $manager->persist($userAdmin);
+            $manager->flush();
+
+            $this->addReference('admin-user', $userAdmin);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public function getOrder()
+        {
+            return 1; // el orden en el cual serán cargados los accesorios
+        }
+    }
+
+La clase accesorio ahora implementa la ``OrderedFixtureInterface``, la cual dice a *Doctrine* que deseas controlar el orden de tus accesorios. Crea otra clase accesorio y haz que se cargue después de ``LoadUserData`` devolviendo un orden de 2:
+
+.. code-block:: php
+
+    // src/Acme/HelloBundle/DataFixtures/ORM/LoadGroupData.php
+
+    namespace Acme\HelloBundle\DataFixtures\ORM;
+
+    use Doctrine\Common\DataFixtures\AbstractFixture;
+    use Doctrine\Common\DataFixtures\OrderedFixtureInterface;
+    use Doctrine\Common\Persistence\ObjectManager;
+    use Acme\HelloBundle\Entity\Group;
+
+    class LoadGroupData extends AbstractFixture implements OrderedFixtureInterface
+    {
+        /**
+         * {@inheritDoc}
+         */
+        public function load(ObjectManager $manager)
+        {
+            $groupAdmin = new Group();
+            $groupAdmin->setGroupName('admin');
+
+            $manager->persist($groupAdmin);
+            $manager->flush();
+
+            $this->addReference('admin-group', $groupAdmin);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public function getOrder()
+        {
+            return 2; // el orden en el cual serán cargados los accesorios
+        }
+    }
+
+Ambas clases accesorio extienden ``AbstractFixture``, lo cual te permite crear objetos y luego ponerlos como referencias para que se puedan utilizar posteriormente en otros accesorios. Por ejemplo, más tarde puedes referirte a los objetos ``$userAdmin`` y ``$groupAdmin`` a través de las referencias ``admin-user`` y ``admin-group``:
+
+.. code-block:: php
+
+    // src/Acme/HelloBundle/DataFixtures/ORM/LoadUserGroupData.php
+
+    namespace Acme\HelloBundle\DataFixtures\ORM;
+
+    use Doctrine\Common\DataFixtures\AbstractFixture;
+    use Doctrine\Common\DataFixtures\OrderedFixtureInterface;
+    use Doctrine\Common\Persistence\ObjectManager;
+    use Acme\HelloBundle\Entity\UserGroup;
+
+    class LoadUserGroupData extends AbstractFixture implements OrderedFixtureInterface
+    {
+        /**
+         * {@inheritDoc}
+         */
+        public function load(ObjectManager $manager)
+        {
+            $userGroupAdmin = new UserGroup();
+            $userGroupAdmin->setUser($manager->merge($this->getReference('admin-user')));
+            $userGroupAdmin->setGroup($manager->merge($this->getReference('admin-group')));
+
+            $manager->persist($userGroupAdmin);
+            $manager->flush();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public function getOrder()
+        {
+            return 3;
+        }
+    }
+
+Los accesorios ahora se ejecutan en el orden ascendente del valor devuelto por ``getOrder()``. Cualquier objeto que se establece con el método ``setReference()`` se puede acceder a través de ``getReference()`` en las clases accesorio que tienen un orden superior.
+
+Los accesorios te permiten crear cualquier tipo de dato que necesites a través de la interfaz normal de *PHP* para crear y persistir objetos. Al controlar el orden de los accesorios y establecer referencias, puedes manejar casi todo por medio de accesorios.
+
+Usando el contenedor en los accesorios
+--------------------------------------
+
+En algunos casos necesitarás acceder a algunos servicios para cargar los accesorios.
+*Symfony2* hace esto realmente fácil. El contenedor se inyectará en todas las clases accesorio que implementen la :class:`Symfony\\Component\\DependencyInjection\\ContainerAwareInterface`.
+
+Vamos a rescribir el primer accesorio para codificar la contraseña antes de almacenarla en la base de datos (una muy buena práctica). Esto utilizará el generador de codificadores para codificar la contraseña, garantizando que está codificada en la misma forma que la utiliza el componente de seguridad al efectuar la verificación:
+
+.. code-block:: php
+
+    // src/Acme/HelloBundle/DataFixtures/ORM/LoadUserData.php
+
+    namespace Acme\HelloBundle\DataFixtures\ORM;
+
+    use Doctrine\Common\DataFixtures\FixtureInterface;
+    use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+    use Symfony\Component\DependencyInjection\ContainerInterface;
+    use Acme\HelloBundle\Entity\User;
+
+    class LoadUserData implements FixtureInterface, ContainerAwareInterface
+    {
+        /**
+         * @var ContainerInterface
+         */
+        private $container;
+
+        /**
+         * {@inheritDoc}
+         */
+        public function setContainer(ContainerInterface $container = null)
+        {
+            $this->container = $container;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public function load(ObjectManager $manager)
+        {
+            $user = new User();
+            $user->setUsername('admin');
+            $user->setSalt(md5(uniqid()));
+
+            $encoder = $this->container
+                ->get('security.encoder_factory')
+                ->getEncoder($user)
+            ;
+            $user->setPassword($encoder->encodePassword('secret', $user->getSalt()));
+
+            $manager->persist($user);
+            $manager->flush();
+        }
+    }
+
+Como puedes ver, todo lo que necesitas hacer es agregar :class:`Symfony\\Component\\DependencyInjection\\ContainerAwareInterface` a la clase y luego crear un nuevo método :method:`Symfony\\Component\\DependencyInjection\\ContainerInterface::setContainer` que implemente esa interfaz. Antes de ejecutar el accesorio, *Symfony*  automáticamente llamará al método :method:`Symfony\\Component\\DependencyInjection\\ContainerInterface::setContainer`. Siempre y cuando guardes el contenedor como una propiedad en la clase (como se muestra arriba), puedes acceder a él en el método ``load()``.
+
+.. note::
+
+    Si te da flojera implementar el método necesario :method:`Symfony\\Component\\DependencyInjection\\ContainerInterface::setContainer`, entonces, puedes extender tu clase con :class:`Symfony\\Component\\DependencyInjection\\ContainerAware`.
+
+.. _`Doctrine Data Fixtures`: https://github.com/doctrine/data-fixtures

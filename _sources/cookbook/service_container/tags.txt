@@ -1,0 +1,184 @@
+.. index::
+   single: Contenedor de servicios; Etiquetas
+
+Cómo hacer que tus servicios utilicen etiquetas
+===============================================
+
+Varios de los servicios básicos de *Symfony2* dependen de etiquetas para reconocer cuales servicios se deben cargar, notificar eventos, o manipular de alguna manera especial.
+Por ejemplo, *Twig* utiliza la etiqueta ``twig.extension`` para cargar extensiones adicionales.
+
+Pero también puedes utilizar etiquetas en tus propios paquetes. Por ejemplo, en caso de que tu servicio maneje una colección de algún tipo, o implementa una "cadena", en la cual varias estrategias alternativas son juzgadas hasta que una de ellas tiene éxito. En este artículo voy a utilizar el ejemplo de una "cadena de transporte", que es una colección de clases que implementan el ``\Swift_Transport``.
+Utilizando la cadena, el cliente de correo de ``Swift`` puede intentar varias formas de transporte, hasta que uno lo consigue.
+Este artículo se centra principalmente en la parte de inyección de dependencias de la historia.
+
+En primer lugar, define la clase ``TransportChain``::
+
+    namespace Acme\MailerBundle;
+    
+    class TransportChain
+    {
+        private $transports;
+    
+        public function __construct()
+        {
+            $this->transports = array();
+        }
+    
+        public function addTransport(\Swift_Transport  $transport)
+        {
+            $this->transports[] = $transport;
+        }
+    }
+
+Entonces, define la cadena como un servicio:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/MailerBundle/Resources/config/services.yml
+        parameters:
+            acme_mailer.transport_chain.class: Acme\MailerBundle\TransportChain
+
+        services:
+            acme_mailer.transport_chain:
+                class: %acme_mailer.transport_chain.class%
+
+    .. code-block:: xml
+
+        <!-- src/Acme/MailerBundle/Resources/config/services.xml -->
+
+        <parameters>
+            <parameter key="acme_mailer.transport_chain.class">Acme\MailerBundle\TransportChain</parameter>
+        </parameters>
+    
+            <services>
+            <service id="acme_mailer.transport_chain" class="%acme_mailer.transport_chain.class%" />
+            </services>
+        
+    .. code-block:: php
+    
+        // src/Acme/MailerBundle/Resources/config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+        
+        $container->setParameter('acme_mailer.transport_chain.class', 'Acme\MailerBundle\TransportChain');
+        
+        $container->setDefinition('acme_mailer.transport_chain', new Definition('%acme_mailer.transport_chain.class%'));
+
+Definiendo servicios con una etiqueta personalizada
+---------------------------------------------------
+
+Ahora queremos que varias de las clases ``\Swift_Transport`` para ejecutarse y añadirse a la cadena automáticamente usando el método ``addTransport()``.
+Como ejemplo podemos añadir los siguientes transportes como los servicios de:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/MailerBundle/Resources/config/services.yml
+        services:
+            acme_mailer.transport.smtp:
+                class: \Swift_SmtpTransport
+                arguments:
+                    - %mailer_host%
+                tags:
+                    -  { name: acme_mailer.transport }
+            acme_mailer.transport.sendmail:
+                class: \Swift_SendmailTransport
+                tags:
+                    -  { name: acme_mailer.transport }
+    
+    .. code-block:: xml
+
+        <!-- src/Acme/MailerBundle/Resources/config/services.xml -->
+        <service id="acme_mailer.transport.smtp" class="\Swift_SmtpTransport">
+            <argument>%mailer_host%</argument>
+            <tag name="acme_mailer.transport" />
+        </service>
+    
+        <service id="acme_mailer.transport.sendmail" class="\Swift_SendmailTransport">
+            <tag name="acme_mailer.transport" />
+        </service>
+        
+    .. code-block:: php
+    
+        // src/Acme/MailerBundle/Resources/config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+        
+        $definitionSmtp = new Definition('\Swift_SmtpTransport', array('%mailer_host%'));
+        $definitionSmtp->addTag('acme_mailer.transport');
+        $container->setDefinition('acme_mailer.transport.smtp', $definitionSmtp);
+        
+        $definitionSendmail = new Definition('\Swift_SendmailTransport');
+        $definitionSendmail->addTag('acme_mailer.transport');
+        $container->setDefinition('acme_mailer.transport.sendmail', $definitionSendmail);
+
+Observa las etiquetas de nombre "acme_mailer.transport". Queremos que el paquete reconozca estos transportes y los añada a la cadena por sí mismo. A fin de conseguirlo, tenemos que añadir un método ``build()`` para la clase ``AcmeMailerBundle``::
+
+    namespace Acme\MailerBundle;
+    
+        use Symfony\Component\HttpKernel\Bundle\Bundle;
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    
+    use Acme\MailerBundle\DependencyInjection\Compiler\TransportCompilerPass;
+    
+    class AcmeMailerBundle extends Bundle
+    {
+        public function build(ContainerBuilder $container)
+        {
+            parent::build($container);
+    
+            $container->addCompilerPass(new TransportCompilerPass());
+        }
+    }
+
+Crear un ``CompilerPass``
+-------------------------
+
+Habrás detectado una referencia a alguna clase ``TransportCompilerPass`` que todavía no existe.
+Esta clase se asegurará de que se agreguen todos los servicios con una etiqueta ``acme_mailer.transport`` a la clase ``TransportChain`` llamando al
+método ``addTransport()``. El ``TransportCompilerPass`` debería tener este aspecto::
+
+    namespace Acme\MailerBundle\DependencyInjection\Compiler;
+    
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+    use Symfony\Component\DependencyInjection\Reference;
+    
+    class TransportCompilerPass implements CompilerPassInterface
+    {
+        public function process(ContainerBuilder $container)
+        {
+            if (false === $container->hasDefinition('acme_mailer.transport_chain')) {
+                return;
+            }
+    
+            $definition = $container->getDefinition('acme_mailer.transport_chain');
+    
+            foreach ($container->findTaggedServiceIds('acme_mailer.transport') as $id => $attributes) {
+                $definition->addMethodCall('addTransport', array(new Reference($id)));
+            }
+        }
+    }
+
+El método ``process()`` comprueba la existencia del servicio ``acme_mailer.transport_chain``, a continuación, busca todos los servicios etiquetados cómo ``acme_mailer.transport``. Los añade a la definición del servicio ``acme_mailer.transport_chain`` llamando a ``addTransport()`` por cada servicios ``"acme_mailer.transport"`` que haya encontrado.
+El primer argumento de cada una de estas llamadas será el servicio de transporte de correo en sí mismo.
+
+.. note::
+
+    Por convención, los nombres de las etiquetas consisten del nombre del paquete (en minúsculas, y guiones bajos como separadores), seguido de un punto, y finalmente el  nombre "real", por lo que la etiqueta ``"transport"`` en el ``AcmeMailerBundle`` debe ser: ``acme_mailer.transport``.
+
+Definiendo el servicio compilado
+--------------------------------
+
+Añadir el compilador pasado dará como resultado la generación automática de las siguientes líneas de código en el contenedor del servicio compilado. En caso de que estés trabajando en el entorno ``"dev"``, abre el archivo ``/cache/dev/appDevDebugProjectContainer.php`` y busca el método ``getTransportChainService()``. Este debe tener este aspecto::
+
+    protected function getAcmeMailer_TransportChainService()
+    {
+        $this->services['acme_mailer.transport_chain'] = $instance = new \Acme\MailerBundle\TransportChain();
+
+        $instance->addTransport($this->get('acme_mailer.transport.smtp'));
+        $instance->addTransport($this->get('acme_mailer.transport.sendmail'));
+
+        return $instance;
+    }

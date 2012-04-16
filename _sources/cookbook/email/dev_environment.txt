@@ -1,0 +1,135 @@
+Cómo trabajar con correos electrónicos durante el desarrollo
+============================================================
+
+Cuando estás creando una aplicación que envía mensajes de correo electrónico, a menudo, mientras desarrollas, no quieres enviar realmente los correos electrónicos al destinatario especificado. Si estás utilizando el ``SwiftmailerBundle`` con *Symfony2*, puedes lograr fácilmente esto a través de ajustes de configuración sin tener que realizar ningún cambio en el código de tu aplicación en absoluto. Hay dos opciones principales cuando se trata de manejar correos electrónicos durante el desarrollo: (a) desactivar el envío de correos electrónicos por completo o (b) enviar todos los mensajes de correo electrónico a una dirección específica.
+
+Desactivando el envío
+---------------------
+
+Puedes desactivar el envío de correos electrónicos estableciendo la opción ``disable_delivery`` a ``true``. Este es el predeterminado en el entorno ``test`` de la distribución estándar. Si haces esto en la configuración específica de ``test``, los mensajes de correo electrónico no se enviarán cuando ejecutas las pruebas, pero se seguirán enviando en los entornos ``prod`` y ``dev``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config_test.yml
+        swiftmailer:
+            disable_delivery:  true
+
+    .. code-block:: xml
+
+        <!-- app/config/config_test.xml -->
+
+        <!--
+        xmlns:swiftmailer="http://symfony.com/schema/dic/swiftmailer"
+        http://symfony.com/schema/dic/swiftmailer http://symfony.com/schema/dic/swiftmailer/swiftmailer-1.0.xsd
+        -->
+
+        <swiftmailer:config
+            disable-delivery="true" />
+
+    .. code-block:: php
+
+        // app/config/config_test.php
+        $container->loadFromExtension('swiftmailer', array(
+            'disable_delivery'  => "true",
+        ));
+
+Si también deseas inhabilitar el envío en el entorno ``dev``, sólo tienes que añadir esta misma configuración en el archivo :file:`config_dev.yml`.
+
+Enviando a una dirección específica
+-----------------------------------
+
+También puedes optar por hacer que todos los correos sean enviados a una dirección específica, en vez de la dirección real especificada cuando se envía el mensaje. Esto se puede conseguir a través de la opción ``delivery_address``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config_dev.yml
+        swiftmailer:
+            delivery_address:  dev@example.com
+
+    .. code-block:: xml
+
+        <!-- app/config/config_dev.xml -->
+
+        <!--
+        xmlns:swiftmailer="http://symfony.com/schema/dic/swiftmailer"
+        http://symfony.com/schema/dic/swiftmailer http://symfony.com/schema/dic/swiftmailer/swiftmailer-1.0.xsd
+        -->
+
+        <swiftmailer:config
+            delivery-address="dev@example.com" />
+
+    .. code-block:: php
+
+        // app/config/config_dev.php
+        $container->loadFromExtension('swiftmailer', array(
+            'delivery_address'  => "dev@example.com",
+        ));
+
+Ahora, supongamos que estás enviando un correo electrónico a ``recipient@example.com``.
+
+.. code-block:: php
+
+    public function indexAction($name)
+    {
+        $message = \Swift_Message::newInstance()
+            ->setSubject('Hello Email')
+            ->setFrom('send@example.com')
+            ->setTo('recipient@example.com')
+            ->setBody($this->renderView('HelloBundle:Hello:email.txt.twig', array('name' => $name)))
+        ;
+        $this->get('mailer')->send($message);
+
+        return $this->render(...);
+    }
+
+En el entorno ``dev``, el correo electrónico será enviado a ``dev@example.com``.
+``SwiftMailer`` añadirá una cabecera adicional al correo electrónico, ``X-Swift-To``, conteniendo la dirección reemplazada, por lo tanto todavía serás capaz de ver qué se ha enviado.
+
+.. note::
+
+    Además de las direcciones ``para``, también se detendrá el correo electrónico que se envíe a cualquier dirección ``CC`` y ``BCC`` establecida. ``SwiftMailer`` agregará encabezados adicionales al correo electrónico con la dirección reemplazada en ellos.
+    Estas son ``X-Swift-CC`` y ``X-Swift-CCO`` para las direcciones ``CC`` y ``BCC``, respectivamente.
+
+Visualizando desde la barra de depuración web
+---------------------------------------------
+
+Puedes ver cualquier correo electrónico enviado por una respuesta cuando estás en el entorno ``dev`` usando la barra de depuración web. El icono de correo electrónico en la barra de herramientas mostrará cuántos correos electrónicos fueron enviados. Si haces clic en él, se abrirá un informe mostrando los detalles de los mensajes de correo electrónico enviados.
+
+Si estás enviando un correo electrónico e inmediatamente rediriges a otra página, la barra de herramientas de depuración web no mostrará un icono de correo electrónico o un informe en la siguiente página.
+
+En su lugar, puedes ajustar la opción ``intercept_redirects`` a ``true`` en el archivo :file:`config_dev.yml`, lo cual provocará que la redirección se detenga y te permitirá abrir el informe con los detalles de los correos enviados.
+
+.. tip::
+
+    Como alternativa, puedes abrir el perfilador después de la redirección y buscar la *URL* utilizada en la petición anterior (por ejemplo ``/contact/handle``).
+    La característica de búsqueda del perfilador te permite cargar información del perfil de peticiones anteriores.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config_dev.yml
+        web_profiler:
+            intercept_redirects: true
+
+    .. code-block:: xml
+
+        <!-- app/config/config_dev.xml -->
+
+        <!-- xmlns:webprofiler="http://symfony.com/schema/dic/webprofiler" -->
+        <!-- xsi:schemaLocation="http://symfony.com/schema/dic/webprofiler http://symfony.com/schema/dic/webprofiler/webprofiler-1.0.xsd"> -->
+
+        <webprofiler:config
+            intercept-redirects="true"
+        />
+
+    .. code-block:: php
+
+        // app/config/config_dev.php
+        $container->loadFromExtension('web_profiler', array(
+            'intercept_redirects' => 'true',
+        ));

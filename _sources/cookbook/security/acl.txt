@@ -1,0 +1,168 @@
+.. index::
+   single: Seguridad; Listas de control de acceso (ACL)
+
+Listas de control de acceso (*ACL*)
+===================================
+
+En aplicaciones complejas, a menudo te enfrentas al problema de que las decisiones de acceso no se pueden basar únicamente en la persona (``Token``) que está solicitando el acceso, sino también implica un objeto dominio al cual se está solicitando acceso. Aquí es donde entra en juego el sistema *ACL*.
+
+Imagina que estás diseñando un sistema de *blog* donde los usuarios pueden comentar tus entradas. Ahora, deseas que un usuario pueda editar sus propios comentarios, pero no los de otros usuarios. Además, como usuario ``admin``, quieres tener la posibilidad de editar *todos* los comentarios. En este escenario, ``Comentario`` sería nuestro objeto dominio al cual deseas restringir el acceso. Podrías tomar varios enfoques para lograr esto usando *Symfony2*, dos enfoques básicos (no exhaustivos) son:
+
+- *Reforzar la seguridad en los métodos de tu negocio*: Básicamente, significa mantener una referencia dentro de cada ``comentario`` a todos los usuarios que tienen acceso, y luego comparar estos usuarios al ``Token``  provisto.
+- *Reforzar la seguridad con roles*:  En este enfoque, debes agregar un rol a cada objeto ``comentario``, es decir, ``ROLE_COMMENT_1``, ``ROLE_COMMENT_2``, etc.
+
+Ambos enfoques son perfectamente válidos. Sin embargo, su pareja lógica de autorización a tu código del negocio lo hace menos reutilizable en otros lugares, y también aumenta la dificultad de las pruebas unitarias. Además, posiblemente tengas problemas de rendimiento si muchos usuarios tuvieran acceso a un único objeto dominio.
+
+Afortunadamente, hay una manera mejor, de la cual vamos a hablar ahora.
+
+Proceso de arranque
+-------------------
+
+Ahora, antes de que finalmente puedas entrar en acción, tenemos que hacer algún proceso de arranque.
+En primer lugar, tenemos que configurar la conexión al sistema *ACL* que se supone vamos a emplear:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/security.yml
+        security:
+            acl:
+                connection: predeterminado
+
+    .. code-block:: xml
+
+        <!-- app/config/security.xml -->
+        <acl>
+            <connection>default</connection>
+        </acl>
+
+    .. code-block:: php
+
+        // app/config/security.php
+        $container->loadFromExtension('security', 'acl', array(
+            'connection' => 'default',
+        ));
+
+
+.. note::
+
+    El sistema *ACL* requiere al menos configurar una conexión *DBAL* con *Doctrine*. Sin embargo, eso no significa que tengas que utilizar *Doctrine* para asignar tus objetos del dominio. Puedes usar cualquier asignador de objetos que te guste, ya sea el *ORM* de *Doctrine*, *Mongo* *ODM*, *Propel*, o *SQL* crudo, la elección es tuya.
+
+Después de configurar la conexión, tenemos que importar la estructura de la base de datos.
+Afortunadamente, tenemos una tarea para eso. Basta con ejecutar la siguiente orden:
+
+.. code-block:: text
+
+    php app/console init:acl
+
+Cómo empezar
+------------
+
+Volviendo a nuestro pequeño ejemplo desde el principio, vamos a implementar *ACL* para ello.
+
+Crea una *ACL*, y añade una *ACE*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: php
+
+    use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+    use Symfony\Component\Security\Acl\Domain\ObjectIdentity;
+    use Symfony\Component\Security\Acl\Domain\UserSecurityIdentity;
+    use Symfony\Component\Security\Acl\Permission\MaskBuilder;
+    // ...
+    
+    // BlogController.php
+    public function addCommentAction(Post $post)
+    {
+        $comment = new Comment();
+
+        // configura $form, y vincula datos
+        // ...
+
+        if ($form->isValid()) {
+            $entityManager = $this->get('doctrine.orm.default_entity_manager');
+            $entityManager->persist($comment);
+            $entityManager->flush();
+
+            // creando la ACL
+            $aclProvider = $this->get('security.acl.provider');
+            $objectIdentity = ObjectIdentity::fromDomainObject($comment);
+            $acl = $aclProvider->createAcl($objectIdentity);
+
+            // recupera la identidad de seguridad del usuario registrado actual
+            $securityContext = $this->get('security.context');
+            $user = $securityContext->getToken()->getUser();
+            $securityIdentity = UserSecurityIdentity::fromAccount($user);
+
+            // otorga permiso de propietario
+            $acl->insertObjectAce($securityIdentity, MaskBuilder::MASK_OWNER);
+            $aclProvider->updateAcl($acl);
+        }
+    }
+
+Hay un par de decisiones de implementación importantes en este fragmento de código.
+Por ahora, sólo quiero destacar dos:
+
+En primer lugar, te habrás dado cuenta de que ``->createAcl()`` no acepta objetos de dominio directamente, sino sólo implementaciones de ``ObjectIdentityInterface``.
+Este paso adicional de desvío te permite trabajar con *ACL*, incluso cuando no tienes a mano ninguna instancia real del objeto dominio. Esto será muy útil si deseas comprobar los permisos de un gran número de objetos sin tener que hidratar estos objetos.
+
+La otra parte interesante es la llamada a ``->insertObjectAce()``. En nuestro ejemplo, estamos otorgando al usuario que ha iniciado sesión acceso de propietario al comentario. ``MaskBuilder::MASK_OWNER`` es una máscara predefinida de bits enteros;
+no te preocupes que el constructor de la máscara debe abstraer la mayoría de los detalles técnicos, pero gracias a esta técnica puedes almacenar muchos permisos diferentes en la fila de la base de datos lo cual nos da un impulso considerable en cuanto a rendimiento.
+
+.. tip::
+
+    El orden en que las *ACE* son revisadas ​​es significativo. Como regla general, debes poner más entradas específicas al principio.
+
+Comprobando el acceso
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: php
+
+    // BlogController.php
+    public function editCommentAction(Comment $comment)
+    {
+        $securityContext = $this->get('security.context');
+
+        // verifica el acceso para edición
+        if (false === $securityContext->isGranted('EDIT', $comment))
+        {
+            throw new AccessDeniedException();
+        }
+
+        // recupera el objeto comentario actual, y realiza tu edición aquí
+        // ...
+    }
+
+En este ejemplo, comprobamos si el usuario tiene el permiso de ``EDICIÓN``.
+Internamente, *Symfony2* asigna el permiso a varias máscaras de bits enteros, y comprueba si el usuario tiene alguno de ellos.
+
+.. note::
+
+    Puedes definir hasta 32 permisos base (dependiendo de tu sistema operativo, *PHP* puede variar entre 30 a 32). Además, también puedes definir permisos acumulados.
+
+Permisos acumulados
+-------------------
+
+En nuestro primer ejemplo anterior, sólo concedemos al usuario el permiso ``OWNER`` base. Si bien este además permite efectivamente al usuario realizar cualquier operación, como ver, editar, etc., sobre el objeto dominio, hay casos en los que deseas conceder estos permisos de forma explícita.
+
+El ``MaskBuilder`` se puede utilizar para crear máscaras de bits fácilmente combinando varios permisos base:
+
+.. code-block:: php
+
+    $builder = new MaskBuilder();
+    $builder
+        ->add('view')
+        ->add('edit')
+        ->add('delete')
+        ->add('undelete')
+    ;
+    $mask = $builder->get(); // int(15)
+
+Esta máscara de bits de enteros, entonces se puede utilizar para conceder a un usuario los permisos base que se añaden por encima:
+
+.. code-block:: php
+
+    $acl->insertObjectAce(new UserSecurityIdentity('johannes'), $mask);
+
+El usuario ahora puede ver, editar, borrar, y recuperar objetos eliminados.

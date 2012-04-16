@@ -1,0 +1,178 @@
+``Collection``
+==============
+
+Esta restricción se utiliza cuando los datos subyacentes son una colección (es decir, una matriz o un objeto que implemente ``Traversable`` y ``ArrayAccess``), pero que te gustaría validar las distintas claves de la colección de diferentes maneras. Por ejemplo, puedes validar la clave ``email`` usando la restricción ``Email`` y la clave ``inventario`` de la colección con la restricción ``min``.
+
+Esta restricción también puede asegurarse de que ciertas claves de la colección están presentes y que no se entregan claves adicionales.
+
++----------------+--------------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`                   |
++----------------+--------------------------------------------------------------------------+
+| Opciones       | - `fields`_                                                              |
+|                | - `allowExtraFields`_                                                    |
+|                | - `extraFieldsMessage`_                                                  |
+|                | - `allowMissingFields`_                                                  |
+|                | - `missingFieldsMessage`_                                                |
++----------------+--------------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\Collection`          |
++----------------+--------------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\CollectionValidator` |
++----------------+--------------------------------------------------------------------------+
+
+Uso básico
+----------
+
+La restricción ``Collection`` te permite validar individualmente las diferentes claves de una colección. Tomemos el siguiente ejemplo::
+
+    namespace Acme\BlogBundle\Entity;
+    
+    class Author
+    {
+        protected $profileData = array(
+            'personal_email',
+            'short_bio',
+        );
+
+        public function setProfileData($key, $value)
+        {
+            $this->profileData[$key] = $value;
+        }
+    }
+
+Para validar que el elemento ``correo_electronico_personal`` de la propiedad ``datosDelPerfil`` es una dirección de correo electrónico válida y que el elemento ``mini_biografia`` no está en blanco, pero no tiene más de 100 caracteres de longitud, debes hacer lo siguiente:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        properties:
+            profileData:
+                - Collection:
+                    fields:
+                        personal_email: Email
+                        short_bio:
+                            - NotBlank
+                            - MaxLength:
+                                limit:   100
+                                message: Your short bio is too long!
+                    allowMissingfields: true
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\Collection(
+             *     fields = {
+             *         "personal_email" = @Assert\Email,
+             *         "short_bio" = {
+             *             @Assert\NotBlank(),
+             *             @Assert\MaxLength(
+             *                 limit = 100,
+             *                 message = "Your bio is too long!"
+             *             )
+             *         }
+             *     },
+             *     allowMissingfields = true
+             * )
+             */
+             protected $profileData = array(
+                 'personal_email',
+                 'short_bio',
+             );
+        }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/BlogBundle/Resources/config/validation.xml -->
+        <class name="Acme\BlogBundle\Entity\Author">
+            <property name="profileData">
+                <constraint name="Collection">
+                    <option name="fields">
+                        <value key="personal_email">
+                            <constraint name="Email" />
+                        </value>
+                        <value key="short_bio">
+                            <constraint name="NotBlank" />
+                            <constraint name="MaxLength">
+                                <option name="limit">100</option>
+                                <option name="message">Your bio is too long!</option>
+                            </constraint>
+                        </value>
+                    </option>
+                    <option name="allowMissingFields">true</option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints\Collection;
+        use Symfony\Component\Validator\Constraints\Email;
+        use Symfony\Component\Validator\Constraints\MaxLength;
+
+        class Autor
+        {
+            private $options = array();
+
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('profileData', new Collection(array(
+                    'fields' => array(
+                        'personal_email' => new Email(),
+                        'lastName' => array(new NotBlank(), new MaxLength(100)),
+                    ),
+                    'allowMissingFields' => true,
+                )));
+            }
+        }
+
+Presencia y ausencia de campos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+De manera predeterminada, esta restricción valida más que simplemente cuando o no los campos individuales de la colección pasan sus restricciones asignadas. De hecho, si falta cualquiera de las claves de una colección o si hay alguna clave desconocida en la colección, lanzará errores de validación.
+
+Si deseas permitir que las claves de la colección estén ausentes o si quisieras permitir claves "extra" en la colección, puedes modificar las opciones `allowMissingFields`_ y `allowExtraFields`_, respectivamente. En el ejemplo anterior, la opción ``allowMissingFields`` se fijó en ``true``, lo cual significa que si cualquiera de las propiedades ``personal_email`` o ``short_bio`` no estuviera en ``$personalData``, no ocurrirá ningún error de validación.
+
+Opciones
+--------
+
+``fields``
+~~~~~~~~~~
+
+**tipo**: ``array`` [:ref:`opción predeterminada <validation-default-option>`]
+
+Esta opción es obligatoria, y es una matriz asociativa que define todas las claves de la colección y, para cada clave, exactamente, qué validaciones se deben ejecutar contra ese elemento de la colección.
+
+``allowExtraFields``
+~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``Boolean`` **predeterminado**: false
+
+Si esta opción está establecida en ``false`` y la colección subyacente contiene uno o más elementos que no están incluidos en la opción `fields`_, devolverá un error de validación. Si se define como ``true``, está bien tener campos adicionales.
+
+``extraFieldsMessage``
+~~~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``Boolean`` **predeterminado**: ``The fields {{ fields }} were not expected`` (``Los campos {{ fields }} no se esperaban``)
+
+El mensaje aparece si `allowExtraFields`_ es ``false`` y se detecta un campo adicional.
+
+``allowMissingFields``
+~~~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``Boolean`` **predeterminado**: false
+
+Si esta opción está establecida en ``false`` y uno o más campos de la opción `fields`_ no están presentes en la colección subyacente, devolverá un error de validación. Si se define como ``true``, está bien si algunos campos de la opción `fields`_ no están presentes en la colección subyacente.
+
+``missingFieldsMessage``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``Boolean`` **predeterminado**: ``The fields {{ fields }} are missing``  (``Faltan los campos {{ fields }}``)
+
+El mensaje aparece si `allowMissingFields`_ es ``false`` y uno o más campos no se encuentran en la colección subyacente.

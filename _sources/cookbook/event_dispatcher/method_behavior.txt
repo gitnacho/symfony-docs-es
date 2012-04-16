@@ -1,0 +1,48 @@
+.. index::
+   single: Despachador de evento
+
+Cómo personalizar el comportamiento de un método sin utilizar herencia
+======================================================================
+
+Haciendo algo antes o después de llamar a un método
+---------------------------------------------------
+
+Si quieres hacer algo justo antes o justo después de invocar a un método, puedes enviar un evento, al principio o al final del método, respectivamente::
+
+    class Foo
+    {
+        // ...
+
+        public function send($foo, $bar)
+        {
+            // hace algo antes que el método
+            $event = new FilterBeforeSendEvent($foo, $bar);
+            $this->dispatcher->dispatch('foo.pre_send', $event);
+
+            // obtiene $foo y $bar desde el evento, esto se puede modificar
+            $foo = $event->getFoo();
+            $bar = $event->getBar();
+            // aquí va la implementación real del método
+            // $ret = ...;
+
+            // hace algo después del método
+            $event = new FilterSendReturnValue($ret);
+            $this->dispatcher->dispatch('foo.post_send', $event);
+
+            return $event->getReturnValue();
+        }
+    }
+
+En este ejemplo, se lanzan dos eventos: ``foo.pre_send``, antes de ejecutar el método, y ``foo.post_send`` después de ejecutar el método. Cada uno utiliza una clase Evento personalizada para comunicar información a los escuchas de los dos eventos. Estas clases de evento se tendrían que crear por ti y deben permitir que, en este ejemplo, las variables ``$foo``, ``$bar`` y ``$ret`` sean recuperadas y establecidas por los escuchas.
+
+Por ejemplo, suponiendo que el ``FilterSendReturnValue`` tiene un método ``setReturnValue``, un escucha puede tener este aspecto:
+
+.. code-block:: php
+
+    public function onFooPostSend(FilterSendReturnValue $event)
+    {
+        $ret = $event->getReturnValue();
+        // modifica el valor original de ``$ret``
+
+        $event->setReturnValue($ret);
+    }

@@ -1,0 +1,548 @@
+.. index::
+   single: Formulario; Integrar colección de formularios
+
+Cómo integrar una colección de formularios
+==========================================
+
+En este artículo, aprenderás cómo crear un formulario que integra una colección de muchos otros formularios. Esto podría ser útil, por ejemplo, si tienes una clase ``Tarea`` y quieres crear/editar/eliminar muchos objetos ``Etiqueta`` relacionados con esa ``Tarea``, justo dentro del mismo formulario.
+
+.. note::
+
+    En este artículo, vamos a suponer vagamente que estás utilizando *Doctrine* como almacén de base de datos. Pero si no estás usando *Doctrine* (por ejemplo, *Propel* o simplemente una conexión directa a la base de datos), es casi lo mismo. Sólo hay unas cuantas partes de este guía que realmente se preocupan de la "persistencia".
+    
+    Si utilizas *Doctrine*, tendrás que añadir los metadatos de *Doctrine*, incluyendo las etiquetas ``MuchosAMuchos`` en la propiedad ``etiquetas`` de la ``Tarea``.
+
+Vamos a empezar por ahí: Supongamos que cada ``Tarea`` pertenece a múltiples objetos ``Etiquetas``. Empecemos creando una sencilla clase ``Tarea``:
+
+.. code-block:: php
+
+    // src/Acme/TaskBundle/Entity/Task.php
+    namespace Acme\TaskBundle\Entity;
+    
+    use Doctrine\Common\Collections\ArrayCollection;
+
+    class Task
+    {
+        protected $description;
+
+        protected $tags;
+
+        public function __construct()
+        {
+            $this->tags = new ArrayCollection();
+        }
+        
+        public function getDescription()
+        {
+            return $this->description;
+        }
+
+        public function setDescription($description)
+        {
+            $this->description = $description;
+        }
+
+        public function getTags()
+        {
+            return $this->etiquetas;
+        }
+
+        public function setTags(ArrayCollection $tags)
+        {
+            $this->tags = $tags;
+        }
+    }
+
+.. note::
+
+    El ``ArrayCollection`` es específico de *Doctrine* y básicamente es lo mismo que usar un ``array`` (pero este debe ser un ``ArrayCollection``) si estás usando *Doctrine*.
+
+Ahora, crea una clase ``Etiqueta``. Cómo vimos arriba, una ``Tarea`` puede tener muchos objetos ``Etiqueta``::
+
+    // src/Acme/TaskBundle/Entity/Tag.php
+    namespace Acme\TaskBundle\Entity;
+
+    class Tag
+    {
+        public $name;
+    }
+
+.. tip::
+
+    Aquí, la propiedad ``name`` es pública, pero fácilmente puede ser solo protegida o privada (pero entonces necesitaríamos métodos ``getName`` y ``setName``).
+
+Ahora veamos los formularios. Crea una clase formulario para que el usuario pueda modificar un objeto ``Tag``::
+
+    // src/Acme/TaskBundle/Form/Type/TagType.php
+    namespace Acme\TaskBundle\Form\Type;
+
+    use Symfony\Component\Form\AbstractType;
+    use Symfony\Component\Form\FormBuilder;
+
+    class TagType extends AbstractType
+    {
+        public function buildForm(FormBuilder $builder, array $options)
+        {
+            $builder->add('name');
+        }
+
+        public function getDefaultOptions()
+        {
+            return array(
+                'data_class' => 'Acme\TaskBundle\Entity\Tag',
+            );
+        }
+
+        public function getName()
+        {
+            return 'tag';
+        }
+    }
+
+Con esto, tenemos suficiente para reproducir una forma de etiqueta por sí misma. Pero debido a que el objetivo final es permitir que las etiquetas de una ``Tarea`` sean modificadas directamente dentro del formulario de la tarea en sí mismo, crea un formulario para la clase ``Tarea``.
+
+Ten en cuenta que integramos una colección de formularios ``TagType`` usando el tipo de campo :doc:`collection</reference/forms/types/collection>`::
+
+    // src/Acme/TaskBundle/Form/Type/TaskType.php
+    namespace Acme\TaskBundle\Form\Type;
+
+    use Symfony\Component\Form\AbstractType;
+    use Symfony\Component\Form\FormBuilder;
+
+    class TaskType extends AbstractType
+    {
+        public function buildForm(FormBuilder $builder, array $options)
+        {
+            $builder->add('description');
+
+            $builder->add('tags', 'collection', array('type' => new TagType()));
+        }
+
+        public function getDefaultOptions()
+        {
+            return array(
+                'data_class' => 'Acme\TaskBundle\Entity\Task',
+            );
+        }
+
+        public function getName()
+        {
+            return 'task';
+        }
+    }
+
+En tu controlador, ahora tendrás que iniciar una nueva instancia de ``TaskType``::
+
+    // src/Acme/TaskBundle/Controller/TaskController.php
+    namespace Acme\TaskBundle\Controller;
+    
+    use Acme\TaskBundle\Entity\Task;
+    use Acme\TaskBundle\Entity\Tag;
+    use Acme\TaskBundle\Form\Type\TaskType;
+    use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+    
+    class TaskController extends Controller
+    {
+        public function newAction(Request $request)
+        {
+            $task = new Task();
+            
+            // código ficticio - esto está aquí sólo para que la tarea tenga algunas
+            // etiquetas, de lo contrario, este no sería un ejemplo interesante
+            $tag1 = new Tag();
+            $tag1->name = 'tag1';
+            $task->getTags()->add($tag1);
+            $tag2 = new Tag();
+            $tag2->name = 'tag2';
+            $task->getTags()->add($tag2);
+            // fin de código ficticio
+
+            $form = $this->createForm(new TaskType(), $task);
+            
+            // procesa el formulario en POST
+            if ('POST' === $request->getMethod()) {
+                $form->bindRequest($request);
+                if ($form->isValid()) {
+                    // posiblemente hagas algún procesamiento del formulario,
+                    // tal como guardar los objetos Task y Tag
+                }
+            }
+            
+            return $this->render('AcmeTaskBundle:Task:new.html.twig', array(
+                'form' => $form->createView(),
+            ));
+        }
+    }
+
+La plantilla correspondiente, ahora es capaz de reproducir tanto el campo ``descripción`` del formulario de ``Tarea``, así como todos los formularios ``TagType`` de las etiquetas que ya están relacionados con esta ``Tarea``. En el controlador anterior, agregamos cierto código ficticio para poder ver esto en acción (debido a que una ``tarea`` tiene cero etiquetas al crearla por primera vez).
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {# src/Acme/TaskBundle/Resources/views/Task/new.html.twig #}
+        {# ... #}
+
+        <form action="..." method="POST" {{ form_enctype(form) }}>
+            {# reproduce únicamente los campos task: descripción #}
+            {{ form_row(form.description) }}
+
+            <h3>Tags</h3>
+            <ul class="tags">
+                {# itera sobre cada etiqueta existente y reproduce su único campo: name #}
+                {% for tag in form.tags %}
+                    <li>{{ form_row(tag.name) }}</li>
+                {% endfor %}
+            </ul>
+
+            {{ form_rest(form) }}
+            {# ... #}
+        </form>
+
+    .. code-block:: html+php
+
+        <!-- src/Acme/TaskBundle/Resources/views/Task/new.html.php -->
+        <!-- ... -->
+
+        <form action="..." method="POST" ...>
+            <h3>Tags</h3>
+            <ul class="tags">
+                <?php foreach($form['tags'] as $tag): ?>
+                    <li><?php echo $view['form']->row($tag['name']) ?></li>
+                <?php endforeach; ?>
+            </ul>
+
+            <?php echo $view['form']->rest($form) ?>
+        </form>
+        
+        <!-- ... -->
+
+Cuando el usuario envía el formulario, los datos presentados por los campos ``Tag`` se utilizan para construir un ``ArrayCollection`` de los objetos ``Tag``, que luego se establecen en el campo ``tag`` de la instancia ``Tarea``.
+
+La colección ``Tags``, naturalmente, es accesible a través de ``$task->getTags()`` y se puede persistir en la base de datos o utilizar sin embargo donde sea necesaria.
+
+Hasta el momento, esto funciona muy bien, pero aún no te permite agregar dinámicamente nuevas etiquetas o eliminar existentes. Por lo tanto, durante la edición de etiquetas existentes funcionará bien, tu usuario en realidad no puede añadir ninguna nueva etiqueta, todavía.
+
+
+.. _cookbook-form-collections-new-prototype:
+
+Permitiendo "nuevas" etiquetas con el "prototipo"
+-------------------------------------------------
+
+Permitir al usuario añadir nuevas etiquetas dinámicamente significa que necesitarás usar algo de *JavaScript*. Anteriormente, añadimos dos etiquetas a nuestro formulario en el controlador.
+Ahora, tenemos que dejar que el usuario añada tantas etiquetas de formulario como necesite directamente en el navegador.
+Esto se hará a través de un poco de *JavaScript*.
+
+Lo primero que tenemos que hacer es darle a conocer a la colección del formulario que va a recibir una cantidad desconocida de etiquetas. Hasta ahora, hemos añadido dos etiquetas y el tipo de formulario espera recibir exactamente dos, de lo contrario será lanzado un error:
+``Este formulario no debe contener campos adicionales``. Para que esto sea flexible, añade la opción ``allow_add`` a nuestro campo colección::
+
+    // src/Acme/TaskBundle/Form/Type/TaskType.php
+    // ...
+
+    public function buildForm(FormBuilder $builder, array $options)
+    {
+        $builder->add('description');
+
+        $builder->add('tags', 'collection', array(
+            'type' => new TagType(),
+            'allow_add' => true,
+            'by_reference' => false,
+        ));
+    }
+
+Ten en cuenta que también hemos añadido ``'by_reference' => false``. Normalmente, la plataforma de formularios modificaría las etiquetas en un objeto ``Tarea``  *sin* llamar en realidad a ``setTags``. Al configurar :ref:`by_reference <reference-form-types-by-reference>` a ``false``, llamará a ``setTags``. Esto, como verás, será muy importante más adelante.
+
+Además de decirle al campo que acepte cualquier número de objetos presentados, ``allow_add`` también pone a tu disposición una variable "prototipo". Este "prototipo" es como una "plantilla" que contiene todo el código *HTML* necesario para poder pintar cualquier nueva ``etiqueta`` del formulario. Para ello, haz el siguiente cambio en tu plantilla:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        <ul class="tags" data-prototype="{{ form_widget(form.tags.get('prototype')) | e }}">
+            ...
+        </ul>
+    
+    .. code-block:: html+php
+
+        <ul class="tags" data-prototype="<?php echo $view->escape($view['form']->row($form['tags']->get('prototype'))) ?>">
+            ...
+        </ul>
+
+.. note::
+
+    Si pintas todas tus ``etiquetas`` en subformularios simultáneamente (por ejemplo, ``form_row(form.tags)``), entonces el prototipo estará disponible automáticamente en el ``div`` externo como el atributo ``data-prototype``, similar a lo que ves arriba.
+
+.. tip::
+
+    El ``form.tags.get('prototype)`` es el elemento formulario que se ve y se siente igual que los elementos ``form_widget(tag)`` individuales dentro de nuestro bucle ``for``.
+    Esto significa que allí puedes llamar a ``form_widget``, ``form_row``, o ``form_label``. Incluso puedes optar por pintar sólo uno de tus campos (por ejemplo, el campo ``nombre``):
+    
+    .. code-block:: html+jinja
+
+        {{ form_widget(form.tags.get('prototype').name) | e }}
+
+En la página producida, el resultado será muy parecido a este:
+
+.. code-block:: html
+
+    <ul class="tags" data-prototype="&lt;div&gt;&lt;label class=&quot; required&quot;&gt;__name__&lt;/label&gt;&lt;div id=&quot;task_tags___name__&quot;&gt;&lt;div&gt;&lt;label for=&quot;task_tags___name___name&quot; class=&quot; required&quot;&gt;Name&lt;/label&gt;&lt;input type=&quot;text&quot; id=&quot;task_tags___name___name&quot; name=&quot;task[tags][__name__][name]&quot; required=&quot;required&quot; maxlength=&quot;255&quot; /&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;">
+
+El objetivo de esta sección es usar *JavaScript* para leer este atributo y agregar dinámicamente nuevas etiquetas al formulario cuando el usuario haga clic en un enlace "Agregar una etiqueta".
+Para simplificar las cosas, vamos a usar *jQuery* que, se supone, lo has incluido en algún lugar de tu página.
+
+Agrega una etiqueta ``script`` en algún lugar de tu página para que podamos empezar a escribir algo de *JavaScript*.
+
+En primer lugar, añade un enlace a la parte inferior de la lista de ``"tags"`` a través de *JavaScript*. En segundo lugar, vincula el evento ``"click"`` de ese enlace para que podamos añadir una nueva etiqueta al formulario (con ``addTagForm`` tal como se muestra a continuación):
+
+.. code-block:: javascript
+
+    // Obtiene el div que contiene la colección de etiquetas
+    var collectionHolder = $('ul.tags');
+
+    // configura una enlace "Agregar una etiqueta"
+    var $addTagLink = $('<a href="#" class="add_tag_link">Add a tag</a>');
+    var $newLinkLi = $('<li></li>').append($addTagLink);
+
+    jQuery(document).ready(function() {
+        // Añade el ancla "Agregar una etiqueta" y las etiquetas li y ul
+        collectionHolder.append($newLinkLi);
+
+        $addTagLink.on('click', function(e) {
+            // evita crear el enlace con una "#" en la URL
+            e.preventDefault();
+
+            // Añade una nueva etiqueta al formulario (ve el siguiente bloque de código)
+            addTagForm();
+        });
+    });
+
+El trabajo de la función ``addTagForm`` será el de utilizar el atributo ``data-prototype`` para agregar dinámicamente un nuevo formulario cuando se haga clic en ese enlace. El *HTML* del ``data-prototype`` contiene el elemento ``input`` de la etiqueta ``text`` con el nombre de ``task[tags][__name__][nombre] ``y el identificador de ``task_tags___name___name``. El ``__name__`` es una especie de "comodín", que vamos a sustituir con un número único, incrementando (por ejemplo, ``task[tags][3][nombre]``).
+
+.. versionadded:: 2.1
+    El marcador de posición cambió de nombre de ``$$name$$`` a ``__name__`` en *Symfony 2.1*
+
+El código real necesario para hacer que todo esto trabaje puede variar un poco, pero aquí está un ejemplo:
+
+.. code-block:: javascript
+
+    function addTagForm() {
+        // Obtiene el data-prototype que explicamos anteriormente
+        var prototype = collectionHolder.attr('data-prototype');
+
+        // Sustituye "__name__" en el prototipo HTML para que
+        // en su lugar sea un número basado en la longitud de la colección actual.
+        var newForm = prototype.replace(/__name__/g, collectionHolder.children().length);
+
+        // Muestra el formulario en la página en un li, antes del enlace "Agregar una etiqueta"
+        var $newFormLi = $('<li></li>').append(newForm);
+        $newLinkLi.before($newFormLi);
+    }
+
+.. note::
+
+    Es mejor separar tu *JavaScript* en archivos *JavaScript* reales que escribirlo en el interior del *HTML* como lo estamos haciendo aquí.
+
+Ahora, cada vez que un usuario hace clic en el enlace ``Agregar una etiqueta``, aparece un nuevo subformulario en la página. Cuando enviamos, alguna nueva etiqueta al formulario se convertirá en nuevos objetos ``Etiqueta`` y se añadirán a la propiedad ``etiquetas`` del objeto ``Tarea``.
+
+.. sidebar:: Doctrine: Las relaciona en cascada y guarda el lado "Inverso"
+
+    Para obtener las nuevas etiquetas para guardar en *Doctrine*, debes tener en cuenta un par de cosas más. En primer lugar, a menos que iteres sobre todos los nuevos objetos ``etiqueta`` y llames a ``$em->persist($tag)`` en cada una, recibirás un error de *Doctrine*:
+    
+        Una nueva entidad se encontró a través de la relación ``Acme\TaskBundle\Entity\Task#tags`` que no se ha configurado para persistir en las operaciones en cascada de la entidad...
+
+    Para solucionar este problema, puedes optar por persistir el objeto en la operación "cascada" automáticamente desde el objeto ``Task`` a cualquier etiqueta relacionada. Para ello, agrega la opción ``cascade`` a tus metadatos ``MuchosAMuchos``:
+    
+    .. configuration-block::
+    
+        .. code-block:: php-annotations
+
+            /**
+             * @ORM\ManyToMany(targetEntity="Tag", cascade={"persist"})
+             */
+            protected $tags;
+
+        .. code-block:: yaml
+
+            # src/Acme/TaskBundle/Resources/config/doctrine/Task.orm.yml
+            Acme\TaskBundle\Entity\Task:
+                type: entity
+                # ...
+                oneToMany:
+                    tags:
+                        targetEntity: Tag
+                        cascade:      [persist]
+
+    Se trata del segundo problema potencial con el `Propio lado y el lado inverso`_ de las relaciones de *Doctrine*. En este ejemplo, si el lado "propio" de la relación es la ``Tarea``, entonces la persistencia no tendrá ningún problema en las etiquetas que son agregadas correctamente a la tarea. Sin embargo, si el lado propio es la ``"Tag"``, entonces tendrás que trabajar un poco más para asegurarte de modificar el lado correcto de la relación.
+
+    El truco está en asegurarte de establecer una única ``"Tarea"`` en cada ``"Etiqueta"``.
+    Una forma fácil de hacerlo es añadir un poco de lógica adicional a ``setTags()``, que es llamado por la plataforma de formularios desde que establece :ref:`by_reference <reference-form-types-by-reference>` en ``false``::
+    
+        // src/Acme/TaskBundle/Entity/Task.php
+        // ...
+
+        public function setTags(ArrayCollection $tags)
+        {
+            foreach ($tags as $tag) {
+                $tag->addTask($this);
+            }
+
+            $this->tags = $tags;
+        }
+
+    En ``Tag``, solo asegúrate de tener un método ``addTask``::
+
+        // src/Acme/TaskBundle/Entity/Tag.php
+        // ...
+
+        public function addTask(Task $task)
+        {
+            if (!$this->tasks->contains($task)) {
+                $this->tasks->add($task);
+            }
+        }
+    
+    Si tienes una relación ``UnoAMuchos``, entonces la solución es similar, excepto que simplemente puedes llamar a ``setTask`` desde el interior de ``setTags``.
+
+.. _cookbook-form-collections-remove:
+
+Permitiendo la remoción de etiquetas
+------------------------------------
+
+El siguiente paso es permitir la supresión de un elemento particular en la colección.
+La solución es similar a permitir la adición de etiquetas.
+
+Comienza agregando la opción ``allow_delete`` en el ``Tipo`` del formulario::
+    
+    // src/Acme/TaskBundle/Form/Type/TaskType.php
+    // ...
+
+    public function buildForm(FormBuilder $builder, array $options)
+    {
+        $builder->add('description');
+
+        $builder->add('tags', 'collection', array(
+            'type' => new TagType(),
+            'allow_add' => true,
+            'allow_delete' => true,
+            'by_reference' => false,
+        ));
+    }
+
+Modificaciones en las plantillas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+La opción ``allow_delete`` tiene una consecuencia: si un elemento de una colección no se envía en la presentación, los datos relacionados se quitan de la colección en el servidor. La solución es pues, eliminar el elemento del *DOM* del formulario.
+
+En primer lugar, añade un enlace "eliminar esta etiqueta" a cada etiqueta del formulario:
+
+.. code-block:: javascript
+
+    jQuery(document).ready(function() {
+        // Añade un enlace para borrar todas las etiquetas existentes
+        // en elementos li del formulario
+        collectionHolder.find('li').each(function() {
+            addTagFormDeleteLink($(this));
+        });
+    
+        // ... el resto del bloque de arriba
+    });
+    
+    function addTagForm() {
+        // ...
+        
+        // Añade un enlace borrar al nuevo formulario
+        addTagFormDeleteLink($newFormLi);
+    }
+
+La función ``addTagFormDeleteLink`` se verá similar a esta:
+
+.. code-block:: javascript
+
+    function addTagFormDeleteLink($tagFormLi) {
+        var $removeFormA = $('<a href="#">delete this tag</a>');
+        $tagFormLi.append($removeFormA);
+
+        $removeFormA.on('click', function(e) {
+            // evita crear el enlace con una "#" en la URL
+            e.preventDefault();
+
+            // quita el li de la etiqueta del formulario
+            $tagFormLi.remove();
+        });
+    }
+
+Cuando se quita una etiqueta del *DOM* del formulario y se envía, el objeto ``Etiqueta`` eliminado no se incluirá en la colección pasada a ``setTags``. Dependiendo de tu capa de persistencia, esto puede o no ser suficiente para eliminar de hecho la relación entre la ``etiqueta`` retirada y el objeto ``Tarea``.
+
+.. sidebar:: Doctrine: Garantizando la persistencia en la base de datos
+
+    Al retirar objetos de esta manera, posiblemente necesites hacer un poco más de trabajo para asegurarte de que la relación entre la tarea y la etiqueta retirada se elimina correctamente.
+
+    En *Doctrine*, tienes dos lados de la relación: el lado propietario y el lado inverso. Normalmente, en este caso, tendrás una relación ``MuchosAMuchos`` y las etiquetas eliminadas desaparecerán y persistirán correctamente (añadiendo nuevas etiquetas también funciona sin esfuerzo).
+
+    Pero si tiene una relación ``UnoAMuchos`` o una ``MuchosAMuchos`` con un ``mappedBy`` en la entidad (significa que la ``Tarea`` es el lado "inverso"), tendrás que hacer más trabajo para eliminar las etiquetas persistidas correctamente.
+
+    En este caso, puedes modificar el controlador para eliminar la relación en las etiquetas eliminadas. Esto supone que tienes algún ``editAction``, que se encarga de "actualizar" tu ``Tarea``::
+
+        // src/Acme/TaskBundle/Controller/TaskController.php
+        // ...
+
+        public function editAction($id, Request $request)
+        {
+            $em = $this->getDoctrine()->getEntityManager();
+            $task = $em->getRepository('AcmeTaskBundle:Task')->find($id);
+    
+            if (!$task) {
+                throw $this->createNotFoundException('No task found for is '.$id);
+            }
+
+            // Se crea una matriz de los objetos etiqueta actuales en la base de datos
+            foreach ($task->getTags() as $tag) $originalTags[] = $tag;
+          
+            $editForm = $this->createForm(new TaskType(), $task);
+
+               if ('POST' === $request->getMethod()) {
+                $editForm->bindRequest($this->getRequest());
+
+                if ($editForm->isValid()) {
+        
+                    // filtra $originalTags para que contenga las etiquetas
+                    // que ya no están presentes
+                    foreach ($task->getTags() as $tag) {
+                        foreach ($originalTags as $key => $toDel) {
+                            if ($toDel->getId() === $tag->getId()) {
+                                unset($originalTags[$key]);
+                            }
+                        }
+                    }
+
+                    // Elimina la relación entre la etiqueta y la Tarea
+                    foreach ($originalTags as $tag) {
+                        // Elimina la Tarea de la Etiqueta
+                        $tag->getTasks()->removeElement($task);
+    
+                        // Si se tratara de una relación MuchosAUno, elimina la relación con esto
+                        // $tag->setTask(null);
+                        
+                        $em->persist($tag);
+
+                        // Si deseas eliminar la etiqueta completamente, también lo puedes hacer
+                        // $em->remove($tag);
+                    }
+
+                    $em->persist($task);
+                    $em->flush();
+
+                    // Redirige de nuevo a alguna página de edición
+                    return $this->redirect($this->generateUrl('task_edit', array('id' => $id)));
+                }
+            }
+            
+            // pinta algún formulario en la plantilla
+        }
+
+    Como puedes ver, agregar y quitar elementos correctamente puede ser complicado.
+    A menos que tengas una relación ``MuchosAMuchos`` donde la ``Tarea`` es el lado "propietario", tendrás que hacer trabajo extra para asegurarte de que la relación se actualiza correctamente (si vas a añadir nuevas etiquetas o eliminar etiquetas existentes) en cada objeto ``Etiqueta`` en sí.
+
+
+.. _`Propio lado y el lado inverso`: http://docs.doctrine-project.org/en/latest/reference/unitofwork-associations.html

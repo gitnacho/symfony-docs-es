@@ -1,0 +1,462 @@
+.. index::
+   single: Seguridad; Proveedor de autenticación personalizado
+
+Cómo crear un proveedor de autenticación personalizado
+======================================================
+
+Si has leído el capítulo sobre :doc:`/book/security`, entiendes la distinción que *Symfony2* hace entre autenticación y autorización en la implementación de la seguridad. Este capítulo cubre las clases del núcleo involucradas en el proceso de autenticación, y cómo implementar un proveedor de autenticación personalizado. Dado que la autenticación y autorización son conceptos independientes, esta extensión será un proveedor de usuario agnóstico, y funcionará con los proveedores de usuario de la aplicación, posiblemente basado en memoria, en una base de datos, o en cualquier otro lugar que elijas almacenarlos.
+
+Conociendo *WSSE*
+-----------------
+
+El siguiente capítulo demuestra cómo crear un proveedor de autenticación personalizado para la autenticación *WSSE*. El protocolo de seguridad para *WSSE* proporciona varias ventajas de seguridad:
+
+1. Cifrado del Nombre de usuario/Contraseña
+2. Salvaguardado contra ataques repetitivos
+3. No requiere configuración del servidor web
+
+*WSSE* es muy útil para proteger servicios *web*, pudiendo ser *SOAP* o *REST*.
+
+Hay un montón de excelente documentación sobre `WSSE`_, pero este artículo no se enfocará en el protocolo de seguridad, sino más bien en la manera en que puedes personalizar el protocolo para añadirlo a tu aplicación *Symfony2*. La base de *WSSE* es que un encabezado de la petición comprueba si las credenciales están cifradas, verificando una marca de tiempo y `nonce`_, y autenticado por el usuario de la petición asimilando una contraseña.
+
+.. note::
+
+    WSSE también es compatible con aplicaciones de validación de clave, lo cual es útil para los servicios web, pero está fuera del alcance de este capítulo.
+
+El testigo
+----------
+
+El papel del testigo en el contexto de la seguridad en *Symfony2* es muy importante.
+Un testigo representa los datos de autenticación del usuario en la petición. Una vez se ha autenticado una petición, el testigo conserva los datos del usuario, y proporciona estos datos a través del contexto de seguridad. En primer lugar, vamos a crear nuestra clase testigo.
+Esta permitirá pasar toda la información pertinente a nuestro proveedor de autenticación.
+
+.. code-block:: php
+
+    // src/Acme/DemoBundle/Security/Authentication/Token/WsseUserToken.php
+    namespace Acme\DemoBundle\Security\Authentication\Token;
+
+    use Symfony\Component\Security\Core\Authentication\Token\AbstractToken;
+
+    class WsseUserToken extends AbstractToken
+    {
+        public $created;
+        public $digest;
+        public $nonce;
+
+        public function getCredentials()
+        {
+            return '';
+        }
+    }
+
+.. note::
+
+    La clase ``WsseUserToken`` extiende la clase componente de ``seguridad`` :class:`Symfony\\Component\\Security\\Core\\Autenticación\\Token\\AbstractToken`, que proporciona una funcionalidad de testigo básica. Implementa la clase :class:`Symfony\\Component\\Security\\Core\\Authentication\\Token\\TokenInterface` en cualquier clase que utilices como testigo.
+
+El escucha
+----------
+
+Después, necesitas un escucha para que esté atento al contexto de seguridad. El escucha es el responsable de capturar las peticiones de seguridad al servidor e invocar al proveedor de autenticación. Un escucha debe ser una instancia de :class:`Symfony\\Component\\Security\\Http\\Firewall\\ListenerInterface`.
+Un escucha de seguridad debería manejar el evento :class:`Symfony\\Component\\HttpKernel\\Event\\GetResponseEvent`, y establecer el testigo autenticado en el contexto de seguridad en caso de éxito.
+
+.. code-block:: php
+
+    // src/Acme/DemoBundle/Security/Firewall/WsseListener.php
+    namespace Acme\DemoBundle\Security\Firewall;
+
+    use Symfony\Component\HttpFoundation\Response;
+    use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+    use Symfony\Component\Security\Http\Firewall\ListenerInterface;
+    use Symfony\Component\Security\Core\Exception\AuthenticationException;
+    use Symfony\Component\Security\Core\SecurityContextInterface;
+    use Symfony\Component\Security\Core\Authentication\AuthenticationManagerInterface;
+    use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+    use Acme\DemoBundle\Security\Authentication\Token\WsseUserToken;
+
+    class WsseListener implements ListenerInterface
+    {
+        protected $securityContext;
+        protected $authenticationManager;
+
+        public function __construct(SecurityContextInterface $securityContext, AuthenticationManagerInterface $authenticationManager)
+        {
+            $this->securityContext = $securityContext;
+            $this->authenticationManager = $authenticationManager;
+        }
+
+        public function handle(GetResponseEvent $event)
+        {
+            $request = $event->getRequest();
+
+            if ($request->headers->has('x-wsse')) {
+
+                $wsseRegex = '/UsernameToken Username="([^"]+)", PasswordDigest="([^"]+)", Nonce="([^"]+)", Creado="([^"]+)"/';
+
+                if (preg_match($wsseRegex, $request->headers->get('x-wsse'), $matches)) {
+                    $token = new WsseUserToken();
+                    $token->setUser($matches[1]);
+
+                    $token->digest   = $matches[2];
+                    $token->nonce    = $matches[3];
+                    $token->created  = $matches[4];
+
+                    try {
+                        $returnValue = $this->authenticationManager->authenticate($token);
+
+                        if ($returnValue instanceof TokenInterface) {
+                            return $this->securityContext->setToken($returnValue);
+                        } else if ($returnValue instanceof Response) {
+                            return $event->setResponse($returnValue);
+                        }
+                    } catch (AuthenticationException $e) {
+                        // aquí puedes hacer algunas anotaciones
+                    }
+                }
+            }
+
+            $response = new Response();
+            $response->setStatusCode(403);
+            $event->setResponse($response);
+        }
+    }
+
+Este escucha comprueba que la petición tenga la cabecera ``X-WSSE`` esperada, empareja el valor devuelto con la información ``WSSE`` esperada, crea un testigo utilizando esa información, y pasa el testigo al gestor de autenticación. Si no proporcionas la información adecuada, o el gestor de autenticación lanza una :class:`Symfony\\Component\\Security\\Core\\Exception\\AuthenticationException`, devuelve una respuesta 403.
+
+.. note::
+
+    Una clase no usada arriba, :class:`Symfony\\Component\\Security\\Http\\Firewall\\AbstractAuthenticationListener`, es una clase base muy útil que proporciona funcionalidad necesaria comúnmente por las extensiones de seguridad. Esto incluye mantener al testigo en la sesión, proporcionando manipuladores de éxito / fallo, *url* del formulario de acceso y mucho más. Puesto que *WSSE* no requiere mantener la autenticación entre sesiones o formularios de acceso, no la utilizaremos para este ejemplo.
+
+Proveedor de autenticación
+--------------------------
+
+El proveedor de autenticación debe hacer la verificación del ``WsseUserToken``.
+Es decir, el proveedor verificará si es válido el valor de la cabecera ``Created`` dentro de los cinco minutos, el valor de la cabecera ``Nonce`` es único dentro de los cinco minutos, y  el valor de la cabecera ``PasswordDigest`` coincide con la contraseña del usuario.
+
+.. code-block:: php
+
+    // src/Acme/DemoBundle/Security/Authentication/Provider/WsseProvider.php
+    namespace Acme\DemoBundle\Security\Authentication\Provider;
+
+    use Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProviderInterface;
+    use Symfony\Component\Security\Core\User\UserProviderInterface;
+    use Symfony\Component\Security\Core\Exception\AuthenticationException;
+    use Symfony\Component\Security\Core\Exception\NonceExpiredException;
+    use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+    use Acme\DemoBundle\Security\Authentication\Token\WsseUserToken;
+
+    class WsseProvider implements AuthenticationProviderInterface
+    {
+        private $userProvider;
+        private $cacheDir;
+
+        public function __construct(UserProviderInterface $userProvider, $cacheDir)
+        {
+            $this->userProvider = $userProvider;
+            $this->cacheDir     = $cacheDir;
+        }
+
+        public function authenticate(TokenInterface $token)
+        {
+            $user = $this->userProvider->loadUserByUsername($token->getUsername());
+
+            if ($user && $this->validateDigest($token->digest, $token->nonce, $token->created, $user->getPassword())) {            
+                $authenticatedToken = new WsseUserToken($user->getRoles());
+                $authenticatedToken->setUser($user);
+
+                return $authenticatedToken;
+            }
+
+            throw new AuthenticationException('The WSSE authentication failed.');
+        }
+
+        protected function validateDigest($digest, $nonce, $created, $secret)
+        {
+            // la marca de tiempo caduca después de 5 minutos
+            if (time() - strtotime($created) > 300) {
+                    return false;
+            }
+
+            // Valida que $nonce es única en 5 minutos
+            if (file_exists($this->cacheDir.'/'.$nonce) && file_get_contents($this->cacheDir.'/'.$nonce) + 300 < time()) {
+                throw new NonceExpiredException('Previously used nonce detected');
+            }
+            file_put_contents($this->cacheDir.'/'.$nonce, time());
+
+            // Valida secreto
+            $expected = base64_encode(sha1(base64_decode($nonce).$created.$secret, true));
+
+            return $digest === $expected;
+        }
+
+        public function supports(TokenInterface $token)
+        {
+            return $token instanceof WsseUserToken;
+        }
+    }
+
+.. note::
+
+    La :class:`Symfony\\Component\\Security\\Core\\Authentication\\Provider\\AuthenticationProviderInterface` requiere un método ``authenticate`` en el testigo del usuario, y un método ``supports``, el cual informa al gestor de autenticación cuando o no utilizar este proveedor para el testigo dado. En el caso de múltiples proveedores, el gestor de autenticación entonces pasa al siguiente proveedor en la lista.
+
+La fábrica
+----------
+
+Has creado un testigo personalizado, escucha personalizado y proveedor personalizado. Ahora necesitas mantener todo junto. ¿Cómo hacer disponible tu proveedor en la configuración de seguridad? La respuesta es usando una ``fábrica``. Una fábrica es donde enganchas el componente de seguridad, diciéndole el nombre de tu proveedor y las opciones de configuración disponibles para ello. En primer lugar, debes crear una clase que implemente :class:`Symfony\\Bundle\\SecurityBundle\\DependencyInjection\\Security\\Factory\\SecurityFactoryInterface`.
+
+.. code-block:: php
+
+    // src/Acme/DemoBundle/DependencyInjection/Security/Factory/WsseFactory.php
+    namespace Acme\DemoBundle\DependencyInjection\Security\Factory;
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Reference;
+    use Symfony\Component\DependencyInjection\DefinitionDecorator;
+    use Symfony\Component\Config\Definition\Builder\NodeDefinition;
+    use Symfony\Bundle\SecurityBundle\DependencyInjection\Security\Factory\SecurityFactoryInterface;
+
+    class WsseFactory implements SecurityFactoryInterface
+    {
+        public function create(ContainerBuilder $container, $id, $config, $userProvider, $defaultEntryPoint)
+        {
+            $providerId = 'security.authentication.provider.wsse.'.$id;
+            $container
+                ->setDefinition($providerId, new DefinitionDecorator('wsse.security.authentication.provider'))
+                ->replaceArgument(0, new Reference($userProvider))
+            ;
+
+            $listenerId = 'security.authentication.listener.wsse.'.$id;
+            $listener = $container->setDefinition($listenerId, new DefinitionDecorator('wsse.security.authentication.listener'));
+
+            return array($providerId, $listenerId, $defaultEntryPoint);
+        }
+
+        public function getPosition()
+        {
+            return 'pre_auth';
+        }
+
+        public function getKey()
+        {
+            return 'wsse';
+        }
+
+        public function addConfiguration(NodeDefinition $node)
+        {}
+    }
+
+La :class:`Symfony\\Bundle\\SecurityBundle\\DependencyInjection\\Security\\Factory\\SecurityFactoryInterface` requiere los siguientes métodos:
+
+* el método ``create``, el cual añade el escucha y proveedor de autenticación para el contenedor de ID en el contexto de seguridad adecuado;
+
+* el método ``getPosition``, el cual debe ser del tipo ``pre_auth``, ``form``, ``http`` y ``remember_me`` define la posición en la que se llama al proveedor;
+
+* el método ``getKey`` el cual define la clave de configuración utilizada para hacer referencia al proveedor;
+
+* el método ``addConfiguration`` el cual se utiliza para definir las opciones de configuración bajo la clave de configuración en tu configuración de seguridad.
+  Cómo ajustar las opciones de configuración se explica más adelante en este capítulo.
+
+.. note::
+
+    Una clase no utilizada en este ejemplo, :class:`Symfony\\Bundle\\SecurityBundle\\DependencyInjection\\Security\\Factory\\AbstractFactory`, es una clase base muy útil que proporciona una funcionalidad común necesaria para proteger la fábrica. Puede ser útil en la definición de un tipo proveedor de autenticación diferente.
+
+Ahora que has creado una clase fábrica, puedes utilizar la clave ``wsse`` como un cortafuegos en tu configuración de seguridad.
+
+.. note::
+
+    Te estarás preguntando "¿por qué necesitamos una clase fábrica especial para añadir escuchas y proveedores en el contenedor de inyección de dependencias?". Esta es una muy buena pregunta. La razón es que puedes utilizar tu cortafuegos varias veces, para proteger varias partes de tu aplicación. Debido a esto, cada vez que utilizas tu cortafuegos, se crea un nuevo servicio en el contenedor de ID.
+    La fábrica es la que crea estos nuevos servicios.
+
+Configurando
+------------
+
+Es hora de ver en acción tu proveedor de autenticación. Tendrás que hacer algunas cosas a fin de hacerlo funcionar. Lo primero es añadir los servicios mencionados al contenedor de ID. Tu clase fábrica anterior hace referencia a identificadores de servicio que aún no existen: ``wsse.security.authentication.provider`` y
+``wsse.security.authentication.listener``. Es hora de definir esos servicios.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/DemoBundle/Resources/config/services.yml
+        services:
+          wsse.security.authentication.provider:
+            class:  Acme\DemoBundle\Security\Authentication\Provider\WsseProvider
+            arguments: ['', %kernel.cache_dir%/security/nonces]
+
+          wsse.security.authentication.listener:
+            class:  Acme\DemoBundle\Security\Firewall\WsseListener
+            arguments: [@security.context, @security.authentication.manager]
+
+
+    .. code-block:: xml
+
+        <!-- src/Acme/DemoBundle/Resources/config/services.xml -->
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+               <services>
+               <service id="wsse.security.authentication.provider"
+                 class="Acme\DemoBundle\Security\Authentication\Provider\WsseProvider" public="false">
+                   <argument /> <!-- User Provider -->
+                   <argument>%kernel.cache_dir%/security/nonces</argument>
+               </service>
+
+               <service id="wsse.security.authentication.listener"
+                 class="Acme\DemoBundle\Security\Firewall\WsseListener" public="false">
+                   <argument type="service" id="security.context"/>
+                   <argument type="service" id="security.authentication.manager" />
+               </service>
+               </services>
+        </container>
+
+    .. code-block:: php
+
+        // src/Acme/DemoBundle/Resources/config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        $container->setDefinition('wsse.security.authentication.provider',
+          new Definition(
+            'Acme\DemoBundle\Security\Authentication\Provider\WsseProvider',
+            array('', '%kernel.cache_dir%/security/nonces')
+        ));
+
+        $container->setDefinition('wsse.security.authentication.listener',
+          new Definition(
+            'Acme\DemoBundle\Security\Firewall\WsseListener', array(
+              new Reference('security.context'),
+              new Reference('security.authentication.manager'))
+        ));
+
+Ahora que tus servicios están definidos, informa de tu fábrica al contexto de seguridad. Las fábricas se deben incluir en un archivo de configuración individual, al momento de escribir este artículo. Por lo tanto, empieza creando el archivo con el servicio fábrica, etiquetado como ``security.listener.factory``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/DemoBundle/Resources/config/security_factories.yml
+        services:
+            security.authentication.factory.wsse:
+                class:  Acme\DemoBundle\DependencyInjection\Security\Factory\WsseFactory
+                tags:
+                        - { name: security.listener.factory }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/DemoBundle/Resources/config/security_factories.xml -->
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+                <services>
+                <service id="security.authentication.factory.wsse"
+                  class="Acme\DemoBundle\DependencyInjection\Security\Factory\WsseFactory" public="false">
+                    <tag name="security.listener.factory" />
+                </service>
+                </services>
+        </container>
+
+.. versionadded:: 2.1
+    Antes de 2.1, se añadió la fábrica de abajo a través de :file:`security.yml` en su lugar.
+
+Como paso final, añade la fábrica a la extensión de seguridad en tu clase del paquete.
+
+.. code-block:: php
+
+    // src/Acme/DemoBundle/AcmeDemoBundle.php
+    namespace Acme\DemoBundle;
+
+    use Acme\DemoBundle\DependencyInjection\Security\Factory\WsseFactory;
+        use Symfony\Component\HttpKernel\Bundle\Bundle;
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    class AcmeDemoBundle extends Bundle
+    {
+        public function build(ContainerBuilder $container)
+        {
+            parent::build($container);
+
+            $extension = $container->getExtension('security');
+            $extension->addSecurityListenerFactory(new WsseFactory());
+        }
+    }
+
+¡Y está listo! Ahora puedes definir las partes de tu aplicación como bajo la protección del *WSSE*.
+
+.. code-block:: yaml
+
+    security:
+        firewalls:
+            wsse_secured:
+                pattern:   /api/.*
+                wsse:      true
+
+¡Enhorabuena!  ¡Has escrito tu propio proveedor de autenticación de seguridad!
+
+Un poco más allá
+----------------
+
+¿Qué hay de hacer de tu proveedor de autenticación *WSSE* un poco más emocionante? Las posibilidades son infinitas. ¿Por qué no empezar agregando algo de brillo a la pasta?
+
+Configurando
+~~~~~~~~~~~~
+
+Puedes añadir opciones personalizadas bajo la clave ``wsse`` en tu configuración de seguridad.
+Por ejemplo, el tiempo permitido antes de expirar el elemento de encabezado Creado, por omisión, es de 5 minutos. Hazlo configurable, por lo tanto distintos cortafuegos pueden tener diferentes magnitudes del tiempo de espera.
+
+En primer lugar, tendrás que editar ``WsseFactory`` y definir la nueva opción en el método ``addConfiguration``.
+
+.. code-block:: php
+
+    class WsseFactory implements SecurityFactoryInterface
+    {
+        # ...
+
+        public function addConfiguration(NodeDefinition $node)
+        {
+          $node
+            ->children()
+            ->scalarNode('lifetime')->defaultValue(300)
+            ->end()
+          ;
+        }
+    }
+
+Ahora, en el método ``create`` de la fábrica, el argumento ``$config`` contendrá una clave "lifetime", establecida en 5 minutos (300 segundos) a menos que se establezca en la configuración. Pasa este argumento a tu proveedor de autenticación a fin de utilizarlo.
+
+.. code-block:: php
+
+    class WsseFactory implements SecurityFactoryInterface
+    {
+        public function create(ContainerBuilder $container, $id, $config, $userProvider, $defaultEntryPoint)
+        {
+            $providerId = 'security.authentication.provider.wsse.'.$id;
+            $container
+                ->setDefinition($providerId,
+                  new DefinitionDecorator('wsse.security.authentication.provider'))
+                ->replaceArgument(0, new Reference($userProvider))
+                ->replaceArgument(2, $config['lifetime'])
+            ;
+            // ...
+        }
+        // ...
+    }
+
+.. note::
+
+    También tendrás que añadir un tercer argumento a la configuración del servicio ``wsse.security.authentication.provider``, el cual puede estar en blanco, pero se completará con la vida útil en la fábrica. La clase ``WsseProvider`` ahora también tiene que aceptar un tercer argumento en el constructor ---``lifetime``--- el cual se debe utilizar en lugar de los rígidos 300 segundos. Estos dos pasos no se muestran aquí.
+
+La vida útil de cada petición *WSSE* ahora es configurable y se puede ajustar a cualquier valor deseado por el cortafuegos.
+
+.. code-block:: yaml
+
+    security:
+        firewalls:
+            wsse_secured:
+                pattern:   /api/.*
+                wsse:      { lifetime: 30 }
+
+¡El resto depende de ti! Todos los elementos de configuración correspondientes se pueden definir en la fábrica y consumirse o pasarse a las otras clases en el contenedor.
+
+.. _`WSSE`: http://www.xml.com/pub/a/2003/12/17/dive.html
+.. _`nonce`: http://en.wikipedia.org/wiki/Cryptographic_nonce

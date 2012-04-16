@@ -1,0 +1,230 @@
+.. index::
+   single: Paquetes; Buenas prácticas
+
+Estructura de un paquete y buenas prácticas
+===========================================
+
+Un paquete es un directorio que tiene una estructura bien definida y puede alojar cualquier cosa, desde clases hasta controladores y recursos web. A pesar de que los paquetes son tan flexibles, se deben seguir algunas recomendaciones si deseas distribuirlos.
+
+.. index::
+   pair: Paquetes; Convenciones de nomenclatura
+
+.. _bundles-naming-conventions:
+
+Nombre de paquete
+-----------------
+
+Un paquete también es un espacio de nombres *PHP*. El espacio de nombres debe seguir los `estándares`_ de interoperabilidad técnica de los espacios de nombres y nombres de clases de *PHP* 5.3: comienza con un segmento de proveedor, seguido por cero o más segmentos de categoría, y termina con el nombre corto del espacio de nombres, el cual debe terminar con el sufijo ``Bundle``.
+
+Un espacio de nombres se convierte en un paquete tan pronto como se agrega una clase ``bundle`` al mismo. El nombre de la clase ``bundle`` debe seguir estas sencillas reglas:
+
+* Solo utiliza caracteres alfanuméricos y guiones bajos;
+* Usa mayúsculas intercaladas en el nombre;
+* Usa un nombre corto pero descriptivo (de no más de dos palabras);
+* Prefija el nombre con la concatenación del proveedor (y, opcionalmente, la categoría del espacio de nombres);
+* Sufija el nombre con ``Bundle``.
+
+Estos son algunos espacios de nombres y nombres de clase ``bundle`` válidos:
+
++-----------------------------------+----------------------------+
+| Espacio de nombres                | Nombre de clase ``Bundle`` |
++===================================+============================+
+| ``Acme\Bundle\BlogBundle``        | ``AcmeBlogBundle``         |
++-----------------------------------+----------------------------+
+| ``Acme\Bundle\Social\BlogBundle`` | ``AcmeSocialBlogBundle``   |
++-----------------------------------+----------------------------+
+| ``Acme\BlogBundle``               | ``AcmeBlogBundle``         |
++-----------------------------------+----------------------------+
+
+Por convención, el método ``getName()`` de la clase ``bundle`` debe devolver el nombre de la clase.
+
+.. note::
+
+    Si compartes tu paquete públicamente, debes utilizar el nombre de la clase ``bundle`` como nombre del repositorio (``AcmeBlogBundle`` y no ``BlogBundle`` por ejemplo).
+
+.. note::
+
+    Los paquetes del núcleo de *Symfony2* no prefijan la clase ``Bundle`` con ``Symfony`` y siempre agregan un subespacio de nombres ``Bundle``; por ejemplo:
+    :class:`Symfony\\Bundle\\FrameworkBundle\\FrameworkBundle`.
+
+Cada paquete tiene un alias, el cual es la versión corta en minúsculas del nombre del paquete con guiones bajos (``acme_hello`` para ``AcmeHelloBundle``, o ``acme_social_blog``  para  ``Acme\Social\BlogBundle`` por ejemplo). Este alias se utiliza para forzar la exclusividad dentro de un paquete (ve abajo algunos ejemplos de uso).
+
+Estructura del directorio
+-------------------------
+
+La estructura básica del directorio del paquete ``HelloBundle`` se debe leer de la siguiente manera:
+
+.. code-block:: text
+
+    XXX/...
+        HelloBundle/
+            HelloBundle.php
+            Controller/
+            Resources/
+                meta/
+                    LICENSE
+                config/
+                doc/
+                    index.rst
+                translations/
+                views/
+                public/
+            Tests/
+
+Los directorios ``XXX`` reflejan la estructura del espacio de nombres del paquete.
+
+Los siguientes archivos son obligatorios:
+
+* :file:`HelloBundle.php`;
+* ``Resources/meta/LICENSE``: La licencia completa para el código;
+* ``Resources/doc/index.rst``: El archivo raíz de la documentación del paquete.
+
+.. note::
+
+    Estos convenios garantizan que las herramientas automatizadas pueden trabajar confiablemente en esta estructura predeterminada.
+
+La profundidad de los subdirectorios se debe reducir al mínimo en la mayoría de las clases y archivos utilizados (2 niveles como máximo). Puedes definir más niveles para archivos no estratégicos, los menos utilizados.
+
+El directorio del paquete es de sólo lectura. Si necesitas escribir archivos temporales, guárdalos en el directorio ``cache/`` o ``log/`` de la aplicación anfitriona. Las herramientas pueden generar archivos en la estructura de directorios del paquete, pero sólo si los archivos generados van a formar parte del repositorio.
+
+Las siguientes clases y archivos tienen emplazamientos específicos:
+
++---------------------------------------+-----------------------------+
+| Tipo                                  | Directorio                  |
++=======================================+=============================+
+| Ordenes                               | ``Command/``                |
++---------------------------------------+-----------------------------+
+| Controladores                         | ``Controller/``             |
++---------------------------------------+-----------------------------+
+| Extensiones contenedoras de servicios | ``DependencyInjection/``    |
++---------------------------------------+-----------------------------+
+| Escuchas de eventos                   | ``EventListener/``          |
++---------------------------------------+-----------------------------+
+| Configuración                         | ``Resources/config/``       |
++---------------------------------------+-----------------------------+
+| Recursos *Web*                        | ``Resources/public/``       |
++---------------------------------------+-----------------------------+
+| Archivos de traducción                | ``Resources/translations/`` |
++---------------------------------------+-----------------------------+
+| Plantillas                            | ``Resources/views/``        |
++---------------------------------------+-----------------------------+
+| Pruebas unitarias y funcionales       | ``Tests/``                  |
++---------------------------------------+-----------------------------+
+
+Clases
+------
+
+La estructura del directorio de un paquete se utiliza como la jerarquía del espacio de nombres. Por ejemplo, un controlador ``HelloController`` se almacena en ``/HelloBundle/Controller/HelloController.php`` y el nombre de clase completamente cualificado es ``Bundle\HelloBundle\Controller\HelloController``.
+
+Todas las clases y archivos deben seguir los :doc:`estándares </contributing/code/standards>` de codificación *Symfony2*.
+
+Algunas clases se deben ver como fachada y deben ser lo más breves posible, al igual que las ordenes, ayudantes, escuchas y controladores.
+
+Las clases que conectan el Evento al Despachador deben llevar el posfijo ``Listener``.
+
+Las clases de excepciones se deben almacenar en un subespacio de nombres ``Exception``.
+
+Terceros
+--------
+
+Un paquete no debe integrar bibliotecas *PHP* de terceros. Se debe confiar en la carga automática estándar de *Symfony2* en su lugar.
+
+Un paquete no debería integrar bibliotecas de terceros escritas en *JavaScript*, *CSS* o cualquier otro lenguaje.
+
+Pruebas
+-------
+
+Un paquete debe venir con un banco de pruebas escritas con *PHPUnit* , las cuales se deben almacenar en el directorio ``Test/``. Las pruebas deben seguir los siguientes principios:
+
+* El banco de pruebas se debe ejecutar con una simple orden ``phpunit`` desde una aplicación de ejemplo;
+* Las pruebas funcionales sólo se deben utilizar para probar la respuesta de salida y alguna información de perfilado si tiene alguno;
+* La cobertura de código por lo menos debe cubrir el 95% del código base.
+
+.. note::
+   Un banco de pruebas no debe contener archivos :file:`AllTests.php`, sino que se debe basar en la existencia de un archivo :file:`phpunit.xml.dist`.
+
+Documentación
+-------------
+
+Todas las clases y funciones deben venir con *PHPDoc* completo.
+
+También deberá proporcionar abundante documentación provista en formato :doc:`reStructuredText </contributing/documentation/format>`, bajo el directorio ``Resources/doc/``; el archivo ``Resources/doc/index.rst`` es el único archivo obligatorio y debe ser el punto de entrada para la documentación.
+
+Controladores
+-------------
+
+Como práctica recomendada, los controladores en un paquete que está destinado a ser distribuido a otros no debe extender la clase base :class:`Symfony\\Bundle\\FrameworkBundle\\Controller\\Controller``.
+Puede implementar la :class:`Symfony\\Component\\DependencyInjection\\ContainerAwareInterface` o en su lugar extender la clase :class:`Symfony\\Component\\DependencyInjection\\ContainerAware`.
+
+.. note::
+
+    Si echas un vistazo a los métodos de la clase :class:`Symfony\\Bundle\\FrameworkBundle\\Controller\\Controller`, podrás ver que sólo son buenos accesos directos para facilitar la curva de aprendizaje.
+
+Enrutado
+--------
+
+Si el paquete proporciona rutas, estas se deben prefijar con el alias del paquete.
+Para un ``AcmeBlogBundle`` por ejemplo, todas las rutas deben llevar el prefijo ``acme_blog_``.
+
+Plantillas
+----------
+
+Si un paquete proporciona plantillas, estas deben utilizar *Twig*. Un paquete no debe proporcionar un diseño principal, salvo si ofrece una aplicación completa.
+
+Archivos de traducción
+----------------------
+
+Si un paquete proporciona traducción de mensajes, se deben definir en formato *XLIFF*; el dominio se debe nombrar después del nombre del paquete (``bundle.hello``).
+
+Un paquete no debe reemplazar los mensajes de otro paquete existente.
+
+Configurando
+------------
+
+Para proporcionar mayor flexibilidad, un paquete puede proporcionar opciones configurables utilizando los mecanismos integrados de *Symfony2*.
+
+Para ajustes de configuración simples, confía en los ``parámetros`` predeterminados de la configuración de *Symfony2*. Los parámetros de *Symfony2* simplemente son pares clave/valor; un valor es cualquier valor *PHP* válido. El nombre de cada parámetro debe comenzar con el alias del paquete, aunque esto es sólo una sugerencia de buenas prácticas. El resto del nombre del parámetro utiliza un punto (``.``) para separar las diferentes partes (por ejemplo, ``acme_hello.email.from``).
+
+El usuario final puede proporcionar valores en cualquier archivo de configuración:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        parameters:
+            acme_hello.email.from: fabien@example.com
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <parameters>
+            <parameter key="acme_hello.email.from">fabien@example.com</parameter>
+        </parameters>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->setParameter('acme_hello.email.from', 'fabien@example.com');
+
+    .. code-block:: ini
+
+        [parameters]
+        acme_hello.email.from = fabien@example.com
+
+Recupera los parámetros de configuración en tu código desde el contenedor::
+
+    $container->getParameter('acme_hello.email.from');
+
+Incluso si este mecanismo es bastante simple, te animamos a usar la configuración semántica descrita en el recetario.
+
+.. note::
+
+    Si vas a definir servicios, estos también se deben prefijar con el alias del paquete.
+
+Aprende más en el recetario
+---------------------------
+
+* :doc:`/cookbook/bundles/extension`
+
+.. _`estándares`: http://symfony.com/PSR0

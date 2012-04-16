@@ -1,0 +1,178 @@
+.. index::
+   single: Sesión; Almacenamiento en la base de datos
+
+Cómo utilizar ``PdoSessionStorage`` para almacenar sesiones en la base de datos
+===============================================================================
+
+El almacenamiento de sesiones predeterminado de *Symfony2* escribe la información de la sesión en archivo(s). La mayoría desde medianos hasta grandes sitios web utilizan una base de datos para almacenar valores de sesión en lugar de archivos, porque las bases de datos son más fáciles de usar y escalar en un entorno web multiservidor.
+
+*Symfony2* ha incorporado una solución para el almacenamiento de la sesión en la base de datos denominada :class:`Symfony\\\Component\\HttpFoundation\\SessionStorage\\PdoSessionStorage`.
+Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` (o el formato de configuración de tu elección):
+
+.. versionadded:: 2.1
+    En *Symfony2.1* la clase y el espacio de nombres se han modificado significativamente. Ahora puede encontrar la clase ``PdoSessionStorage`` en el espacio de nombres ``Session\\Storage``:
+    ``Symfony\Component\HttpFoundation\Session\Storage\PdoSessionStorage``. Además debes tener en cuenta que ha cambiado el orden del segundo y tercer argumentos de la clase. Abajo, notarás que ``%session.storage.options%`` y ``%pdo.db_options%`` conmutaron su lugar.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        framework:
+            session:
+                # ...
+                storage_id:     session.storage.pdo
+
+        parameters:
+            pdo.db_options:
+                db_table:    session
+                db_id_col:   session_id
+                db_data_col: session_value
+                db_time_col: session_time
+
+        services:
+            pdo:
+                class: PDO
+                arguments:
+                    dsn:      "mysql:dbname=mydatabase"
+                    user:     myuser
+                    password: mypassword
+
+            session.storage.pdo:
+                class:     Symfony\Component\HttpFoundation\Session\Storage\PdoSessionStorage
+                arguments: [@pdo, %pdo.db_options%, %session.storage.options%]
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <framework:config>
+            <framework:session storage-id="session.storage.pdo" lifetime="3600" auto-start="true"/>
+        </framework:config>
+
+        <parameters>
+            <parameter key="pdo.db_options" type="collection">
+                <parameter key="db_table">session</parameter>
+                <parameter key="db_id_col">session_id</parameter>
+                <parameter key="db_data_col">session_value</parameter>
+                <parameter key="db_time_col">session_time</parameter>
+            </parameter>
+        </parameters>
+
+            <services>
+            <service id="pdo" class="PDO">
+                <argument>mysql:dbname=mydatabase</argument>
+                <argument>myuser</argument>
+                <argument>mypassword</argument>
+            </service>
+
+            <service id="session.storage.pdo" class="Symfony\Component\HttpFoundation\Session\Storage\PdoSessionStorage">
+                <argument type="service" id="pdo" />
+                <argument>%pdo.db_options%</argument>
+                <argument>%session.storage.options%</argument>
+            </service>
+            </services>
+
+    .. code-block:: php
+
+        // app/config/config.yml
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        $container->loadFromExtension('framework', array(
+            // ...
+            'session' => array(
+                // ...
+                'storage_id' => 'session.storage.pdo',
+            ),
+        ));
+
+        $container->setParameter('pdo.db_options', array(
+            'db_table'      => 'session',
+            'db_id_col'     => 'session_id',
+            'db_data_col'   => 'session_value',
+            'db_time_col'   => 'session_time',
+        ));
+
+        $pdoDefinition = new Definition('PDO', array(
+            'mysql:dbname=mydatabase',
+            'myuser',
+            'mypassword',
+        ));
+        $container->setDefinition('pdo', $pdoDefinition);
+
+        $storageDefinition = new Definition('Symfony\Component\HttpFoundation\Session\Storage\PdoSessionStorage', array(
+            new Reference('pdo'),
+            '%pdo.db_options%',
+            '%session.storage.options%',
+        ));
+        $container->setDefinition('session.storage.pdo', $storageDefinition);
+
+* ``db_table``: El nombre de la tabla de sesiones en tu base de datos
+* ``db_id_col``: El nombre de la columna ``id`` en la tabla de sesiones (``VARCHAR (255)`` o más grande)
+* ``db_data_col``: El nombre de la columna de valores en tu tabla de sesiones (``TEXT`` o ``CLOB``)
+* ``db_time_col``: El nombre de la columna de tiempo en tu tabla de sesiones (``INTEGER``)
+
+Compartiendo información de conexión a tu base de datos
+-------------------------------------------------------
+
+Con la configuración dada, la configuración de conexión de la base de datos únicamente se define para la conexión de almacenamiento de sesión. Esto está bien cuando utilizas una base de datos para los datos de sesión.
+
+Pero si deseas almacenar los datos de sesión en la misma base que el resto de los datos de tu proyecto, puedes utilizar la configuración de conexión de :file:`parameters.yml` refiriendo los parámetros relacionados con la base de datos definidos allí:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        pdo:
+            class: PDO
+            arguments:
+                - "mysql:dbname=%database_name%"
+                - %database_user%
+                - %database_password%
+
+    .. code-block:: xml
+
+        <service id="pdo" class="PDO">
+            <argument>mysql:dbname=%database_name%</argument>
+            <argument>%database_user%</argument>
+            <argument>%database_password%</argument>
+        </service>
+
+    .. code-block:: xml
+
+        $pdoDefinition = new Definition('PDO', array(
+            'mysql:dbname=%database_name%',
+            '%database_user%',
+            '%database_password%',
+        ));
+
+Ejemplo de instrucciones *SQL*
+------------------------------
+
+*MySQL*
+~~~~~~~
+
+La declaración *SQL* necesaria para crear la tabla en la base de datos podría ser similar a la siguiente (*MySQL*):
+
+.. code-block:: sql
+
+    CREATE TABLE `session` (
+        `session_id` varchar(255) NOT NULL,
+        `session_value` text NOT NULL,
+        `session_time` int(11) NOT NULL,
+        PRIMARY KEY (`session_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+*PostgreSQL*
+~~~~~~~~~~~~
+
+Para *PostgreSQL*, la declaración debe tener este aspecto:
+
+.. code-block:: sql
+
+    CREATE TABLE session (
+        session_id character varying(255) NOT NULL,
+        session_value text NOT NULL,
+        session_time integer NOT NULL,
+        CONSTRAINT session_pkey PRIMARY KEY (session_id),
+    );

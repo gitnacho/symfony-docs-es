@@ -1,0 +1,294 @@
+.. index::
+   single: DomCrawler
+
+El componente ``DomCrawler``
+============================
+
+    El componente ``DomCrawler`` facilita la navegación por el *DOM* de los documentos *HTML* y *XML*.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/DomCrawler);
+* Instalándolo a través de *PEAR* ( `pear.symfony.com/DomCrawler`);
+* Instalándolo vía ``Composer`` (`symfony/dom-crawler` en Packagist).
+
+Usando
+------
+
+La clase :class:`Symfony\\Component\\DomCrawler\\Crawler` proporciona métodos para consultar y manipular documentos *HTML* y *XML*.
+
+Una instancia del rastreador (Crawler) representa un conjunto (:phpclass:`SplObjectStorage`)
+de objetos :phpclass:`DOMElement`, los cuales básicamente son nodos que puedes recorrer fácilmente::
+
+    use Symfony\Component\DomCrawler\Crawler;
+
+    $html = <<<'HTML'
+    <html>
+            <body>
+            <p class="message">Hello World!</p>
+            <p>Hello Crawler!</p>
+            </body>
+        </html>
+    HTML;
+
+    $crawler = new Crawler($html);
+
+    foreach ($crawler as $domElement) {
+        print $domElement->nodeName;
+    }
+
+Las clases especializadas :class:`Symfony\\Component\\DomCrawler\\Link` y :class:`Symfony\\Component\\DomCrawler\\Form` son útiles para interactuar con enlaces y formularios *html* conforme recorres el árbol *HTML*.
+
+Filtrando nodos
+~~~~~~~~~~~~~~~
+
+Usando expresiones *XPath* esto es realmente fácil::
+
+    $crawler = $crawler->filterXPath('descendant-or-self::body/p');
+
+.. tip::
+
+    ``DOMXPath::query`` se utiliza internamente para llevar a cabo una consulta *XPath* realmente.
+
+El filtrado incluso es mucho más fácil si tienes instalado el componente ``CssSelector``.
+Este te permite utilizar selectores similares a ``jQuery`` para recorrerlos::
+
+    $crawler = $crawler->filter('body > p');
+
+Puedes utilizar funciones anónimas para filtrar con criterios más complejos::
+
+    $crawler = $crawler->filter('body > p')->reduce(function ($node, $i) {
+        // filtra nodos pares
+        return ($i % 2) == 0;
+    });
+
+Para eliminar un nodo la función anónima debe regresar ``false``.
+
+.. note::
+
+    Todos los métodos devuelven una nueva instancia de la clase :class:`Symfony\\Component\\DomCrawler\\Crawler` con contenido filtrado.
+
+Recorriendo nodos
+~~~~~~~~~~~~~~~~~
+
+Accede al nodo por su posición en la lista::
+
+    $crawler->filter('body > p')->eq(0);
+
+Obtiene el primero o último nodo de la selección actual::
+
+    $crawler->filter('body > p')->first();
+    $crawler->filter('body > p')->last();
+
+Obtiene los nodos del mismo nivel de la selección actual::
+
+    $crawler->filter('body > p')->siblings();
+
+Obtiene los nodos del mismo nivel después o antes de la selección actual::
+
+    $crawler->filter('body > p')->nextAll();
+    $crawler->filter('body > p')->previousAll();
+
+Obtiene todos los nodos hijos o padres::
+
+    $crawler->filter('body')->children();
+    $crawler->filter('body > p')->parents();
+
+.. note::
+
+    Todos los métodos de recorrido devuelven una nueva instancia de la clase :class:`Symfony\\Component\\DomCrawler\\Crawler`.
+
+Accediendo a valores de nodo
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Accede al valor del primer nodo de la selección actual::
+
+    $message = $crawler->filterXPath('//body/p')->text();
+
+Accede al valor del atributo del primer nodo de la selección actual::
+
+    $class = $crawler->filterXPath('//body/p')->attr('class');
+
+Extrae el atributo y/o los valores del nodo desde la lista de nodos::
+
+    $attributes = $crawler->filterXpath('//body/p')->extract(array('_text', 'class'));
+
+.. note::
+
+    El atributo especial ``_text`` representa el valor de un nodo.
+
+Invoca a una función anónima en cada nodo de la lista::
+
+    $nodeValues = $crawler->filter('p')->each(function ($node, $i) {
+        return $node->nodeValue;
+    });
+
+La función anónima recibe como argumentos la posición y el nodo.
+El resultado es una matriz de valores devueltos por las llamadas a la función anónima.
+
+Añadiendo contenido
+~~~~~~~~~~~~~~~~~~~
+
+El ``crawler`` cuenta con soporte para múltiples formas de añadir contenido::
+
+    $crawler = new Crawler('<html><body /></html>');
+
+    $crawler->addHtmlContent('<html><body /></html>');
+    $crawler->addXmlContent('<root><node /></root>');
+
+    $crawler->addContent('<html><body /></html>');
+    $crawler->addContent('<root><node /></root>', 'text/xml');
+
+    $crawler->add('<html><body /></html>');
+    $crawler->add('<root><node /></root>');
+
+Puesto que la implementación del ``Crawler`` está basada en la extensión *DOM*, esta también puede interactuar con los objetos nativos :phpclass:`DOMDocument`, :phpclass:`DOMNodeList` y :phpclass:`DOMNode`:
+
+.. code-block:: php
+
+    $document = new \DOMDocument();
+    $document->loadXml('<root><node /><node /></root>');
+    $nodeList = $document->getElementsByTagName('node');
+    $node = $document->getElementsByTagName('node')->item(0);
+
+    $crawler->addDocument($document);
+    $crawler->addNodeList($nodeList);
+    $crawler->addNodes(array($node));
+    $crawler->addNode($node);
+    $crawler->add($document);
+
+Compatibilidad con formularios y enlaces
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dentro del árbol del *DOM* los enlaces y formularios reciben un tratamiento especial.
+
+Enlaces
+.......
+
+Para un enlace por nombre (o una imagen clicable por su atributo ``alt``), usa el método ``selectLink`` en un ``crawler`` existente. Este devuelve una instancia de un rastreador con únicamente el/los enlace(s) seleccionado(s). Al invocar a ``link()`` recibes un objeto :class:`Symfony\\Component\\DomCrawler\\Link`::
+
+    $linksCrawler = $crawler->selectLink('Go elsewhere...');
+    $link = $linksCrawler->link();
+
+    // O haz todo esto de una vez
+    $link = $crawler->selectLink('Go elsewhere...')->link();
+
+El objeto :class:`Symfony\\Component\\DomCrawler\\Link` tiene varios métodos útiles para obtener más información sobre el propio enlace seleccionado::
+
+    // Devuelve el valor href crudo
+    $href = $link->getRawUri();
+
+    // Devuelve la URI adecuada que puedes utilizar para hacer otra petición
+    $uri = $link->getUri();
+
+Especialmente es útil el ``getUri()``, ya que limpia el valor ``href`` y lo transforma en la manera en que se debe procesar realmente. Por ejemplo, para un enlace con ``href="#foo"``, esto devolvería la *URI* completa con el prefijo ``#foo`` de la página actual. ``getUri()`` siempre devuelve una *URI* completa en la cual puedes actuar.
+
+Formularios
+...........
+
+También se dá un trato especial a los formularios. Hay disponible un método ``selectButton()`` en el rastreador, el cual devuelve otro rastreador que coincide con un botón (``input[type=submit]``, ``input[type=image]``, o un ``button``) con el
+texto dado. Este método es especialmente útil porque lo puedes utilizar para devolver un objeto :class:`Symfony\\Component\\DomCrawler\\Form` que representa al formulario en el que vive el botón::
+
+    $form = $crawler->selectButton('validate')->form();
+
+    // o "llena" los campos del formulario con datos
+    $form = $crawler->selectButton('validate')->form(array(
+        'name' => 'Ryan',
+    ));
+
+El objeto :class:`Symfony\\Component\\DomCrawler\\Form` tiene un montón de métodos muy útiles para trabajar con formularios:
+
+.. code-block:: php
+
+    $uri = $form->getUri();
+
+    $method = $form->getMethod();
+
+El método :method:`Symfony\\Component\\DomCrawler\\Form::getUri` hace más que solo devolver el atributo ``action`` del formulario. Si el método del formulario es ``GET``, entonces imita el comportamiento del navegador y devuelve el atributo ``action`` seguido de una cadena de consulta con todos los valores del formulario.
+
+Prácticamente puedes configurar y obtener valores en el formulario::
+
+    // Internamente configura valores en el formulario
+    $form->setValues(array(
+        'registration[username]' => 'symfonyfan',
+        'registration[terms]'    => 1,
+    ));
+
+    // recupera una matriz de valores - en la matriz "plana" como la de arriba
+    $values = $form->getValues();
+
+    // devuelve los valores como los devolvería PHP, en el "registro" de su propia matriz
+    $values = $form->getPhpValues();
+
+Para trabajar con campos multidimensionales::
+
+    <form>
+        <input name="multi[]" />
+        <input name="multi[]" />
+        <input name="multi[dimensional]" />
+    </form>
+
+Debes especificar el nombre completamente cualificado del campo::
+
+    // Establece un solo campo
+    $form->setValue('multi[0]', 'value');
+
+    // Establece varios campos a la vez
+    $form->setValue('multi', array(
+        1             => 'value',
+        'dimensional' => 'an other value'
+    ));
+
+¡Esto es muy bueno, pero se pone mejor! El objeto ``formulario`` te permite interactuar con tu formulario como un navegador, seleccionando los valores de radio, casillas de verificación marcadas, y archivos cargados::
+
+    $form['registration[username]']->setValue('symfonyfan');
+
+    // Activar o desactiva una casilla de verificación
+    $form['registration[terms]']->tick();
+    $form['registration[terms]']->untick();
+
+    // selecciona una opción
+    $form['registration[birthday][year]']->select(1984);
+
+    // selecciona varias opciones en una "select o checkboxes" múltiple
+    $form['registration[interests]']->select(array('symfony', 'cookies'));
+
+    / / Incluso finge una carga de archivo
+    $form['registration[photo]']->upload('/path/to/lucas.jpg');
+
+¿Cuál es el punto de hacer todo esto? Si estás probando internamente, puedes tomar la información de tu formulario, como si sólo se hubiera presentado utilizando valores *PHP*::
+
+    $values = $form->getPhpValues();
+    $files = $form->getPhpFiles();
+
+Si estás usando un cliente *HTTP* externo, puedes utilizar el formulario para recuperar toda la información que necesites para crear una petición ``POST`` para el formulario::
+
+    $uri = $form->getUri();
+    $method = $form->getMethod();
+    $values = $form->getValues();
+    $files = $form->getFiles();
+
+    // Ahora usa un cliente *HTTP* y después utiliza esa información
+
+Un gran ejemplo de un sistema integrado que utiliza todo esto es `Goutte`_.
+``Goutte`` entiende el objeto rastreador de *Symfony* y lo puedes utilizar para enviar formularios
+directamente::
+
+    use Goutte\Client;
+
+    // hace una petición real a un sitio externo
+    $client = new Client();
+    $crawler = $client->request('GET', 'https://github.com/login');
+
+    // selecciona el formulario y completa algunos valores
+    $form = $crawler->selectButton('Log in')->form();
+    $form['login'] = 'symfonyfan';
+    $form['password'] = 'anypass';
+
+    // envía el formulario
+    $crawler = $client->submit($form);
+
+.. _`Goutte`: https://github.com/fabpot/goutte

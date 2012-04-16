@@ -1,0 +1,636 @@
+``DoctrineMongoDBBundle``
+=========================
+
+.. toctree::
+   :hidden:
+
+   config
+   form
+
+El asignador de objeto a documento `MongoDB`_ (*ODM* por Object Document Mapper) es muy similar al *ORM* de *Doctrine2* en su filosofía y funcionamiento. En otras palabras, similar al :doc:`ORM de Doctrine2 </book/doctrine>`, con el *ODM* de *Doctrine*, sólo tratas con objetos *PHP* simples, los cuales luego se persisten de forma transparente hacia y desde *MongoDB*.
+
+.. tip::
+
+    Puedes leer más acerca del *ODM* de *Doctrine MongoDB* en la `documentación`_ del proyecto.
+
+Está disponible el paquete que integra el *ODM MongoDB de Doctrine* en *Symfony*, por lo tanto es fácil configurarlo y usarlo.
+
+.. note::
+
+    Este capítulo lo debes de sentir muy parecido al capítulo :doc:`ORM de Doctrine2 </book/doctrine>`, que habla de cómo puedes utilizar el *ORM* de *Doctrine* para guardar los datos en bases de datos relacionales (por ejemplo, *MySQL*). Esto es a propósito --- si persistes en una base de datos relacional por medio del *ORM* o a través del *ODM MongoDB*, las filosofías son muy parecidas.
+
+Instalando
+----------
+
+Para utilizar el *ODM MongoDB*, necesitarás dos bibliotecas proporcionadas por *Doctrine* y un paquete que las integra en *Symfony*. Si estás usando la distribución estándar de *Symfony*, agrega lo siguiente al archivo ``deps`` en la raíz de tu proyecto:
+
+.. code-block:: text
+
+    [doctrine-mongodb]
+        git=http://github.com/doctrine/mongodb.git
+
+    [doctrine-mongodb-odm]
+        git=http://github.com/doctrine/mongodb-odm.git
+
+    [DoctrineMongoDBBundle]
+        git=http://github.com/doctrine/DoctrineMongoDBBundle.git
+        target=/bundles/Doctrine/Bundle/MongoDBBundle
+
+Ahora, actualiza las bibliotecas de proveedores ejecutando:
+
+.. code-block:: bash
+
+    $ php bin/vendors install
+
+A continuación, agrega los espacios de nombres ``Doctrine\ODM\MongoDB`` y ``Doctrine\MongoDB`` al archivo ``app/autoload.php`` para que estas bibliotecas se puedan cargar automáticamente.
+Asegúrate de añadirlas en cualquier lugar *por encima* del espacio de nombres *Doctrine* (cómo se muestra aquí)::
+
+    // app/autoload.php
+    $loader->registerNamespaces(array(
+        // ...
+        'Doctrine\\Bundle'          => __DIR__.'/../vendor/bundles',
+        'Doctrine\\Common'          => __DIR__.'/../vendor/doctrine-common/lib',
+        'Doctrine\\ODM\\MongoDB'    => __DIR__.'/../vendor/doctrine-mongodb-odm/lib',
+        'Doctrine\\MongoDB'         => __DIR__.'/../vendor/doctrine-mongodb/lib',
+        'Doctrine'                  => __DIR__.'/../vendor/doctrine/lib',
+        // ...
+    ));
+
+A continuación, registra la biblioteca de anotaciones añadiendo las siguientes acciones al cargador (debajo de la línea ``AnnotationRegistry::registerFile`` existente)::
+
+    // app/autoload.php
+    AnnotationRegistry::registerFile(
+        __DIR__.'/../vendor/doctrine-mongodb-odm/lib/Doctrine/ODM/MongoDB/Mapping/Annotations/DoctrineAnnotations.php'
+    );
+
+Por último, activa el nuevo paquete en el núcleo::
+
+    // app/AppKernel.php
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+            new Doctrine\Bundle\MongoDBBundle\DoctrineMongoDBBundle(),
+        );
+
+        // ...
+    }
+
+¡Enhorabuena! Estás listo para empezar a trabajar.
+
+Configurando
+------------
+
+Para empezar, necesitarás una estructura básica que configure el gestor de documentos. La forma más fácil es habilitar el ``auto_mapping``, el cual activará al *ODM MongoDB* a través de tu aplicación:
+
+.. code-block:: yaml
+
+    # app/config/config.yml
+    doctrine_mongodb:
+        connections:
+            default:
+                server: mongodb://localhost:27017
+                options:
+                    connect: true
+        default_database: test_database
+        document_managers:
+            default:
+                auto_mapping: true
+
+.. note::
+
+    Por supuesto, también tienes que asegurarte de que se ejecute en segundo plano el servidor *MongoDB*. Para más información, consulta la `Guía de inicio rápido`_ de *MongoDB*.
+
+Un sencillo ejemplo: Un producto
+--------------------------------
+
+La mejor manera de entender el *ODM* de *Doctrine MongoDB* es verlo en acción.
+En esta sección, recorreremos cada paso necesario para empezar a persistir documentos hacia y desde *MongoDB*.
+
+.. sidebar:: El código del ejemplo
+
+    Si quieres seguir el ejemplo de este capítulo, crea el paquete ``AcmeStoreBundle`` ejecutando la orden:
+
+    .. code-block:: bash
+
+        php app/console generate:bundle --namespace=Acme/StoreBundle
+
+Creando una clase Documento
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Supongamos que estás construyendo una aplicación donde necesitas mostrar tus productos.
+Sin siquiera pensar en *Doctrine* o *MongoDB*, ya sabes que necesitas un objeto ``Producto`` para representar los productos. Crea esta clase en el directorio ``Document`` de tu ``AcmeStoreBundle``::
+
+    // src/Acme/StoreBundle/Document/Product.php
+    namespace Acme\StoreBundle\Document;
+
+    class Product
+    {
+        protected $name;
+
+        protected $price;
+    }
+
+La clase --- a menudo llamada "documento", es decir, *una clase básica que contiene los datos* --- es simple y ayuda a cumplir con el requisito del negocio de que tu aplicación necesita productos. Esta clase, todavía no se puede persistir a *Doctrine MongoDB* --- es sólo una clase *PHP* simple.
+
+Agregando información de asignación
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Doctrine* te permite trabajar con *MongoDB* de una manera mucho más interesante que solo recuperar datos de un lado a otro como una matriz. En cambio, *Doctrine* te permite persistir *objetos* completos a *MongoDB* y recuperar objetos enteros desde *MongoDB*. Esto funciona asignando una clase *PHP* y sus propiedades a las entradas de una colección *MongoDB*.
+
+Para que *Doctrine* sea capaz de hacer esto, sólo tienes que crear "metadatos", o la configuración que le dice a *Doctrine* exactamente cómo se deben *asignar* a *MongoDB* la clase ``Producto`` y sus propiedades. Estos metadatos se pueden especificar en una variedad de formatos diferentes, incluyendo *YAML*, *XML* o directamente dentro de la clase ``Producto`` a través de anotaciones:
+
+.. configuration-block::
+
+    .. code-block:: php-annotations
+
+        // src/Acme/StoreBundle/Document/Product.php
+        namespace Acme\StoreBundle\Document;
+
+        use Doctrine\ODM\MongoDB\Mapping\Annotations as MongoDB;
+
+        /**
+         * @MongoDB\Document
+         */
+        class Product
+        {
+            /**
+             * @MongoDB\Id
+             */
+            protected $id;
+
+            /**
+             * @MongoDB\String
+             */
+            protected $name;
+
+            /**
+             * @MongoDB\Float
+             */
+            protected $price;
+        }
+
+    .. code-block:: yaml
+
+        # src/Acme/StoreBundle/Resources/config/doctrine/Product.mongodb.yml
+        Acme\StoreBundle\Document\Product:
+            fields:
+                id:
+                    id:  true
+                name:
+                    type: string
+                price:
+                    type: float
+
+    .. code-block:: xml
+
+        <!-- src/Acme/StoreBundle/Resources/config/doctrine/Product.mongodb.xml -->
+        <doctrine-mongo-mapping xmlns="http://doctrine-project.org/schemas/odm/doctrine-mongo-mapping"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://doctrine-project.org/schemas/odm/doctrine-mongo-mapping
+                            http://doctrine-project.org/schemas/odm/doctrine-mongo-mapping.xsd">
+
+            <documenté name="Acme\StoreBundle\Document\Product">
+                <field fieldName="id" id="true" />
+                <field fieldName="name" type="string" />
+                <field fieldName="price" type="float" />
+            </document>
+        </doctrine-mongo-mapping>
+
+*Doctrine* te permite elegir entre una amplia variedad de tipos de campo diferentes, cada uno con sus propias opciones. Para más información sobre los tipos de campo disponibles, consulta la sección :ref:`cb-mongodb-field-types`.
+
+.. seealso::
+
+    También puedes consultar la `Documentación de asignación básica`_ de *Doctrine* para todos los detalles sobre la información de asignación. Si utilizas anotaciones, tendrás que prefijar todas tus anotaciones con ``MongoDB\`` (por ejemplo, ``MongoDB\Cadena``), lo cual no se muestra en la documentación de *Doctrine*. También tendrás que incluir la declaración ``use Doctrine\ODM\MongoDB\Mapping\Annotations as MongoDB;``, la cual *importa* el prefijo ``MongoDB`` para las anotaciones.
+
+Generando captadores y definidores
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A pesar de que *Doctrine* ya sabe cómo persistir un objeto ``Producto`` a *MongoDB*, la clase en sí en realidad todavía no es útil. Puesto que ``Producto`` es sólo una clase *PHP* regular, es necesario crear métodos captadores y definidores (por ejemplo, ``getNombre()``, ``setNombre()``) para poder acceder a sus propiedades (ya que las propiedades son ``protegidas``). Afortunadamente, *Doctrine* puede hacer esto por ti con la siguiente orden:
+
+.. code-block:: bash
+
+    php app/console doctrine:mongodb:generate:documents AcmeStoreBundle
+
+Esta orden se asegura de que se generen todos los captadores y definidores para la clase ``Producto``. Esta es una orden segura --- la puedes ejecutar una y otra vez: sólo genera captadores y definidores que no existen (es decir, no sustituye métodos existentes).
+
+.. note::
+
+    A *Doctrine* no le importa si tus propiedades son ``protegidas`` o ``privadas``, o si una propiedad tiene o no una función captadora o definidora.
+    Aquí, los captadores y definidores se generan sólo porque los necesitarás para interactuar con tu objeto *PHP*.
+
+Persistiendo objetos a *MongoDB*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ahora que tienes asignado un documento ``Producto`` completo, con métodos captadores y definidores, estás listo para persistir los datos a *MongoDB*. Desde el interior de un controlador, esto es bastante fácil. Agrega el siguiente método al ``DefaultController`` del paquete:
+
+.. code-block:: php
+    :linenos:
+
+    // src/Acme/StoreBundle/Controller/DefaultController.php
+    use Acme\StoreBundle\Document\Product;
+    use Symfony\Component\HttpFoundation\Response;
+    // ...
+
+    public function createAction()
+    {
+        $product = new Product();
+        $product->setName('A Foo Bar');
+        $product->setPrice('19.99');
+
+        $dm = $this->get('doctrine.odm.mongodb.document_manager');
+        $dm->persist($product);
+        $dm->flush();
+
+        return new Response('Created product id '.$product->getId());
+    }
+
+.. note::
+
+    Si estás siguiendo este ejemplo, tendrás que crear una ruta que apunte a esta acción para verla trabajar.
+
+Vamos a recorrer este ejemplo:
+
+* **Líneas 8-10** En esta sección, creas una instancia y trabajas con el objeto ``$product`` como cualquier otro objeto *PHP* normal;
+
+* **Línea 12** Esta línea recupera el objeto *gestor de documentos*, el cual es responsable de manejar el proceso de persistir y recuperar objetos hacia y desde *MongoDB*;
+
+* **Línea 13** El método ``persist()`` dice a *Doctrine* que "procese" el objeto ``$product``. Esto en realidad no resulta en una consulta que se deba hacer a *MongoDB* (todavía).
+
+* **Línea 14** Cuando se llama al método ``flush()``, *Doctrine* mira todos los objetos que está gestionando para ver si es necesario persistirlos a *MongoDB*. En este ejemplo, el objeto ``$product`` aún no se ha persistido, por lo que el gestor de documentos hace una consulta a *MongoDB*, la cual añade una nueva entrada.
+
+.. note::
+
+    De hecho, ya que *Doctrine* está consciente de todos los objetos gestionados, cuando llamas al método ``flush()``, se calcula un conjunto de cambios y ejecuta la operación más eficiente posible.
+
+Al crear o actualizar objetos, el flujo de trabajo siempre es el mismo. En la siguiente sección, verás cómo *Doctrine* es lo suficientemente inteligente como para actualizar las entradas, si ya existen en *MongoDB*.
+
+.. tip::
+
+    *Doctrine* proporciona una biblioteca que te permite cargar en tu proyecto mediante programación los datos de prueba (es decir, "datos accesorios"). Para más información, consulta :doc:`/bundles/DoctrineFixturesBundle/index`.
+
+Recuperando objetos desde *MongoDB*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Recuperar un objeto de *MongoDB* incluso es más fácil. Por ejemplo, supongamos que has configurado una ruta para mostrar un ``Producto`` específico en función del valor de su ``id``::
+
+    public function showAction($id)
+    {
+        $product = $this->get('doctrine.odm.mongodb.document_manager')
+            ->getRepository('AcmeStoreBundle:Product')
+            ->find($id);
+
+        if (!$product) {
+            throw $this->createNotFoundException('No product found for id '.$id);
+        }
+
+        // haz algo, como pasar el objeto $product a una plantilla
+    }
+
+Al consultar por un determinado tipo de objeto, siempre utilizas lo que se conoce como "repositorio". Puedes pensar en un repositorio como una clase *PHP*, cuyo único trabajo consiste en ayudarte a buscar los objetos de una determinada clase. Puedes acceder al objeto repositorio de una clase documento vía::
+
+    $repository = $this->get('doctrine.odm.mongodb.document_manager')
+        ->getRepository('AcmeStoreBundle:Product');
+
+.. note::
+
+    La cadena ``AcmeStoreBundle:Product`` es un método abreviado que puedes utilizar en cualquier lugar de *Doctrine* en lugar del nombre de clase completo de la entidad (es decir, ``Acme\StoreBundle\Entity\Product``).
+    Mientras tu documento viva en el espacio de nombres ``Document`` de tu paquete, esto va a funcionar.
+
+Una vez que tengas tu repositorio, tienes acceso a todo tipo de útiles métodos::
+
+    // consulta por la clave principal (generalmente "id")
+    $product = $repository->find($id);
+
+    // nombres de método dinámicos para búsquedas basadas en
+    // el valor de una columna
+    $product = $repository->findOneById($id);
+    $product = $repository->findOneByName('foo');
+
+    // recupera TODOS los productos
+    $products = $repository->findAll();
+
+    // busca un grupo de productos basándose en el
+    // valor de una columna arbitraria
+    $products = $repository->findByPrice(19.99);
+
+.. note::
+
+    Por supuesto, también puedes realizar consultas complejas, acerca de las cuales aprenderás más en la sección :ref:`book-doctrine-queries`.
+
+También puedes tomar ventaja de los útiles métodos ``findBy`` y ``findOneBy`` para recuperar objetos fácilmente basándote en varias condiciones::
+
+    // consulta por un producto que coincide en nombre y precio
+    $product = $repository->findOneBy(array('name'  => 'foo',
+                                            'price' => 19.99));
+
+    // consulta por todos los productos que coinciden
+    // con el nombre, y los ordena por precio
+    $product = $repository->findBy(
+        array('name' => 'foo'),
+        array('price', 'ASC')
+    );
+
+Actualizando un objeto
+~~~~~~~~~~~~~~~~~~~~~~
+
+Una vez que hayas extraído un objeto de *Doctrine*, actualizarlo es relativamente fácil. Supongamos que tienes una ruta que asigna un identificador de producto a una acción de actualización de un controlador::
+
+    public function updateAction($id)
+    {
+        $dm = $this->get('doctrine.odm.mongodb.document_manager');
+        $product = $dm->getRepository('AcmeStoreBundle:Product')->find($id);
+
+        if (!$product) {
+            throw $this->createNotFoundException('No product found for id '.$id);
+        }
+
+        $product->setName('New product name!');
+        $dm->flush();
+
+        return $this->redirect($this->generateUrl('homepage'));
+    }
+
+La actualización de un objeto únicamente consiste de tres pasos:
+
+1. Recuperar el objeto desde *Doctrine*;
+2. Modificar el objeto;
+3. Llamar a ``flush()`` en el gestor del documento;
+
+Ten en cuenta que ``$dm->persist($product)`` no es necesario. Recuerda que este método simplemente dice a *Doctrine* que procese o "vea" el objeto ``$product``.
+En este caso, ya que recuperaste el objeto ``$product`` desde *Doctrine*, este ya está gestionado.
+
+Eliminando un objeto
+~~~~~~~~~~~~~~~~~~~~
+
+La eliminación de un objeto es muy similar, pero requiere una llamada al método ``remove()`` del gestor de documentos::
+
+    $dm->remove($product);
+    $dm->flush();
+
+Como es de esperar, el método ``remove()`` notifica a *Doctrine* que deseas eliminar el documento propuesto de *MongoDB*. La operación real de eliminar sin embargo, no se ejecuta efectivamente hasta que invocas al método ``flush()``.
+
+Consultando por objetos
+-----------------------
+
+Como vimos anteriormente, la clase ``repositorio`` integrada te permite consultar por uno o varios objetos basándote en una serie de diferentes parámetros. Cuando esto es suficiente, esta es la forma más sencilla de consultar documentos. Por supuesto, también puedes crear consultas más complejas.
+
+Usando el generador de consultas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+El *ODM* de *Doctrine* viene con un objeto "Generador" de consultas, el cual te permite construir una consulta para exactamente los documentos que deseas devolver. Si usas un *IDE*, también puedes tomar ventaja del autocompletado a medida que escribes los nombres de métodos.
+Desde el interior de un controlador::
+
+    $products = $this->get('doctrine.odm.mongodb.document_manager')
+        ->createQueryBuilder('AcmeStoreBundle:Product')
+        ->field('name')->equals('foo')
+        ->limit(10)
+        ->sort('price', 'ASC')
+        ->getQuery()
+        ->execute()
+
+En este caso, devuelve 10 productos con el nombre "foo", ordenados de menor a mayor precio.
+
+El objeto ``QueryBuilder`` contiene todos los métodos necesarios para construir tu consulta. Para más información sobre el generador de consultas de *Doctrine*, consulta la documentación del `Generador de consultas`_ de *Doctrine*. Para una lista de las condiciones disponibles que puedes colocar en la consulta, ve la documentación específica a los `Operadores condicionales`_.
+
+Repositorio de clases personalizado
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+En la sección anterior, comenzaste a construir y utilizar consultas más complejas desde el interior de un controlador. A fin de aislar, probar y reutilizar esas consultas, es buena idea crear una clase repositorio personalizada para tu documento y allí agregar métodos con la lógica de la consulta.
+
+Para ello, agrega el nombre de la clase del repositorio a la definición de asignación.
+
+.. configuration-block::
+
+    .. code-block:: php-annotations
+
+        // src/Acme/StoreBundle/Document/Product.php
+        namespace Acme\StoreBundle\Document;
+
+        use Doctrine\ODM\MongoDB\Mapping\Annotations as MongoDB;
+
+        /**
+         * @MongoDB\Document(repositoryClass="Acme\StoreBundle\Repository\ProductRepository")
+         */
+        class Product
+        {
+            //...
+        }
+
+    .. code-block:: yaml
+
+        # src/Acme/StoreBundle/Resources/config/doctrine/Product.mongodb.yml
+        Acme\StoreBundle\Document\Product:
+            repositoryClass: Acme\StoreBundle\Repository\ProductRepository
+            # ...
+
+    .. code-block:: xml
+
+        <!-- src/Acme/StoreBundle/Resources/config/doctrine/Product.mongodb.xml -->
+        <!-- ... -->
+        <doctrine-mongo-mapping xmlns="http://doctrine-project.org/schemas/odm/doctrine-mongo-mapping"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://doctrine-project.org/schemas/odm/doctrine-mongo-mapping
+                            http://doctrine-project.org/schemas/odm/doctrine-mongo-mapping.xsd">
+
+            <document name="Acme\StoreBundle\Document\Product"
+                    repository-class="Acme\StoreBundle\Repository\ProductRepository">
+                <!-- ... -->
+            </document>
+
+        </doctrine-mong-mapping>
+
+*Doctrine* puede generar la clase repositorio para ti ejecutando:
+
+.. code-block:: bash
+
+    php app/console doctrine:mongodb:generate:repositories AcmeStoreBundle
+
+A continuación, agrega un nuevo método --- ``findAllOrderedByName()`` --- a la clase repositorio recién generada. Este método deberá consultar por todos los documentos ``Producto``, ordenados alfabéticamente.
+
+.. code-block:: php
+
+    // src/Acme/StoreBundle/Repository/ProductRepository.php
+    namespace Acme\StoreBundle\Repository;
+
+    use Doctrine\ODM\MongoDB\DocumentRepository;
+
+    class ProductRepository extends DocumentRepository
+    {
+        public function findAllOrderedByName()
+        {
+            return $this->createQueryBuilder()
+                ->sort('name', 'ASC')
+                ->getQuery()
+                ->execute();
+        }
+    }
+
+Puedes utilizar este nuevo método al igual que los métodos de búsqueda predeterminados del repositorio::
+
+    $product = $this->get('doctrine.odm.mongodb.document_manager')
+        ->getRepository('AcmeStoreBundle:Product')
+        ->findAllOrderedByName();
+
+
+.. note::
+
+    Al utilizar una clase repositorio personalizada, todavía tienes acceso a los métodos de búsqueda predeterminados como ``find()`` y ``findAll()``.
+
+Extensiones *Doctrine*: ``Timestampable``, ``Sluggable``, etc.
+--------------------------------------------------------------
+
+*Doctrine* es bastante flexible, y dispone de una serie de extensiones de terceros que te permiten realizar fácilmente tareas repetitivas y comunes en tus entidades.
+Estas incluyen cosas tales como ``Sluggable``, ``Timestampable``, ``registrable``, ``traducible`` y ``Tree``.
+
+Para más información sobre cómo encontrar y utilizar estas extensiones, ve el artículo sobre el uso de :doc:`extensiones comunes de Doctrine </cookbook/doctrine/common_extensions>`.
+
+.. _cb-mongodb-field-types:
+
+Referencia de tipos de campo *Doctrine*
+---------------------------------------
+
+*Doctrine* dispone de una gran cantidad de tipos de campo. Cada uno de estos asigna un tipo de dato *PHP* a un determinado `tipo de MongoDB`_. Los siguientes son sólo *algunos* de los tipos admitidos por *Doctrine*:
+
+* ``string``
+* ``int``
+* ``float``
+* ``date``
+* ``timestamp``
+* ``boolean``
+* ``file``
+
+Para más información, consulta la sección `Asignando tipos`_ en la documentación de *Doctrine*.
+
+.. index::
+   single: Doctrine; Ordenes de consola ODM
+   single: CLI; ODM de Doctrine
+
+Ordenes de consola
+------------------
+
+La integración *ODM* de *Doctrine2* ofrece varias ordenes de consola en el espacio de nombres ``doctrine:mongodb``. Para ver la lista de ordenes puedes ejecutar la consola sin ningún tipo de argumento:
+
+.. code-block:: bash
+
+    php app/console
+
+Mostrará una lista con las ordenes disponibles, muchas de las cuales comienzan con el prefijo ``doctrine:mongodb``. Puedes encontrar más información sobre cualquiera de estas ordenes (o cualquier orden de *Symfony*) ejecutando la orden ``help``.
+Por ejemplo, para obtener detalles acerca de la tarea ``doctrine:mongodb:query``, ejecuta:
+
+.. code-block:: bash
+
+    php app/console help doctrine:mongodb:query
+
+.. note::
+
+   Para poder cargar accesorios en *MongoDB*, necesitas tener instalado el paquete ``DoctrineFixturesBundle``. Para saber cómo hacerlo, lee el artículo ":doc:`/bundles/DoctrineFixturesBundle/index`" de la documentación.
+
+.. index::
+   single: Configuración; ODM  MongoDB de Doctrine
+   single: Doctrine; Configurando el ODM MongoDB
+
+Configurando
+------------
+
+Para información más detallada sobre las opciones de configuración disponibles cuando utilizas el *ODM* de *Doctrine*, consulta la sección :doc:`Referencia MongoDB </bundles/DoctrineMongoDBBundle/config>`.
+
+Registrando escuchas y suscriptores de eventos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Doctrine* te permite registrar escuchas y suscriptores que recibirán una notificación cuando se produzcan diferentes eventos al interior del *ODM Doctrine*. Para más información, consulta la sección `Documentación de eventos`_ de *Doctrine*.
+
+.. tip::
+
+    Además de los eventos ``ODM``, también puedes escuchar los eventos de bajo nivel de `` MongoDB``, que encontrarás definidos en la clase :class:`Doctrine\MongoDB\Events`.
+
+.. note::
+
+    Cada conexión de *Doctrine* tiene su propio gestor de eventos, el cual se comparte con los gestores de documentos vinculados a esa conexión. Los escuchas y suscriptores pueden estar registrados con todos gestores de eventos o sólo uno (usando el nombre de la conexión).
+
+En *Symfony*, puedes registrar un escucha o suscriptor creando un :term:`servicio` y, a continuación :ref:`marcarlo <book-service-container-tags>` con una etiqueta específica.
+
+*   **escucha de evento**: Utiliza la etiqueta ``doctrine.odm.mongodb.event_listener`` para registrar un escucha. El atributo ``event`` es necesario y debe indicar el evento a escuchar. De forma predeterminada, los escuchas serán registrados con los gestores de eventos para todas las conexiones. Para restringir un escucha a una única conexión, especifica su nombre en la etiqueta del atributo ``connection``.
+
+    El atributo ``priority``, el cual de manera predefinida es ``0`` si se omite, se puede utilizar para controlar el orden en que se registran los escuchas. Al igual que el :ref:`despachador de eventos <event_dispatcher>` de *Symfony2*, un mayor número dará lugar a que el escucha se ejecute primero y los escuchas con la misma prioridad se ejecutan en el orden en que fueron registrados en el gestor de eventos.
+
+    Por último, el atributo ``lazy``, que de manera predeterminada es `false`` si se omite, se puede utilizar para solicitar que gestor del evento cargue al escucha de manera diferida cuando se distribuya el evento.
+
+    .. configuration-block::
+
+        .. code-block:: yaml
+
+            services:
+                my_doctrine_listener:
+                    class:   Acme\HelloBundle\Listener\MyDoctrineListener
+                    # ...
+                    tags:
+                        -  { name: doctrine.odm.mongodb.event_listener, event: postPersist }
+
+        .. code-block:: xml
+
+            <service id="my_doctrine_listener" class="Acme\HelloBundle\Listener\MyDoctrineListener">
+                <!-- ... -->
+                <tag name="doctrine.odm.mongodb.event_listener" event="postPersist" />
+            </service>.
+
+        .. code-block:: php
+
+            $definition = new Definition('Acme\HelloBundle\Listener\MyDoctrineListener');
+            // ...
+            $definition->addTag('doctrine.odm.mongodb.event_listener', array(
+                'event' => 'postPersist',
+            ));
+            $container->setDefinition('my_doctrine_listener', $definition);
+
+*   **suscriptor de evento**: Usa la etiqueta ``doctrine.odm.mongodb.event_subscriber`` para un suscriptor. Los suscriptores son responsables de implementar al ``Doctrine\Common\EventSubscriber`` y suplir un método que devuelva los eventos que escuchará. Por esta razón, esta etiqueta no tiene el atributo ``event``;
+    No obstante, dispone de los atributos ``connection``, ``priority`` y ``lazy``.
+
+.. note::
+
+    A diferencia de los escuchas de eventos de *Symfony2*, el gestor de eventos de *Doctrine* espera que cada escucha y suscriptor tenga un nombre de método correspondiente al/los evento(s) observado(s). Por esta razón, las etiquetas antes mencionadas no tienen atributo ``method``.
+
+Integrando el ``SecurityBundle``
+--------------------------------
+
+Un proveedor de usuario está disponible para los documentos ``MongoDB``, trabajando exactamente igual que el proveedor de ``entidad`` descrito en el :doc:`recetario </cookbook/security/entity_provider>`
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        security:
+            providers:
+                my_mongo_provider:
+                    mongodb: {class: Acme\DemoBundle\Document\User, property: username}
+
+    .. code-block:: xml
+
+        <!-- app/config/security.xml -->
+        <config>
+            <provider name="my_mongo_provider">
+                <mongodb class="Acme\DemoBundle\Document\User" property="username" />
+            </provider>
+        </config>
+
+Resumen
+-------
+
+Con *Doctrine*, te puedes enfocar en los objetos y la forma en que son útiles en tu aplicación y en segundo lugar preocuparte por la persistencia a través de *MongoDB*. Esto se debe a que *Doctrine* te permite utilizar cualquier objeto *PHP* para almacenar los datos y confía en la información de asignación de metadatos para asignar los datos de un objeto a una colección *MongoDB*.
+
+Y aunque *Doctrine* gira en torno a un concepto simple, es increíblemente poderoso, permitiéndote crear consultas complejas y suscribirte a los eventos que te permiten realizar diferentes acciones conforme los objetos recorren su ciclo de vida en la persistencia.
+
+Aprende más en el recetario
+---------------------------
+
+* :doc:`/bundles/DoctrineMongoDBBundle/form`
+
+.. _`MongoDB`:          http://www.mongodb.org/
+.. _`documentación`:    http://www.doctrine-project.org/docs/mongodb_odm/1.0/en
+.. _`Guía de inicio rápido`:      http://www.mongodb.org/display/DOCS/Quickstart
+.. _`Documentación de asignación básica`: http://www.doctrine-project.org/docs/mongodb_odm/1.0/en/reference/basic-mapping.html
+.. _`tipo de MongoDB`: http://us.php.net/manual/en/mongo.types.php
+.. _`Asignando tipos`: http://www.doctrine-project.org/docs/mongodb_odm/1.0/en/reference/basic-mapping.html#doctrine-mapping-types
+.. _`Generador de consultas`: http://www.doctrine-project.org/docs/mongodb_odm/1.0/en/reference/query-builder-api.html
+.. _`Operadores condicionales`: http://www.doctrine-project.org/docs/mongodb_odm/1.0/en/reference/query-builder-api.html#conditional-operators
+.. _`Documentación de eventos`: http://www.doctrine-project.org/docs/mongodb_odm/1.0/en/reference/events.html

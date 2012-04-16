@@ -1,0 +1,590 @@
+.. index::
+   single: Controlador
+
+Controlador
+===========
+
+Un controlador es una función *PHP* que tú creas, misma que toma información desde la petición *HTTP* y construye una respuesta *HTTP* y la devuelve (como un objeto ``Respuesta`` de *Symfony2*). La respuesta podría ser una página *HTML*, un documento *XML*, una matriz *JSON* serializada, una imagen, una redirección, un error 404 o cualquier otra cosa que se te ocurra. El controlador contiene toda la lógica arbitraria que *tu aplicación necesita* para reproducir el contenido de la página.
+
+Para ver lo sencillo que es esto, echemos un vistazo a un controlador de *Symfony2* en acción.
+El siguiente controlador reproducirá una página que simplemente imprime ``Hello world!``::
+
+    use Symfony\Component\HttpFoundation\Response;
+
+    public function helloAction()
+    {
+        return new Response('Hello world!');
+    }
+
+El objetivo de un controlador siempre es el mismo: crear y devolver un objeto ``Respuesta``. Por el camino, este puede leer la información de la petición, cargar un recurso de base de datos, enviar un correo electrónico, o fijar información en la sesión del usuario.
+Pero en todos los casos, el controlador eventualmente devuelve el objeto ``Respuesta`` que será entregado al cliente.
+
+¡No hay magia y ningún otro requisito del cual preocuparse! Aquí tienes unos cuantos ejemplos comunes:
+
+* *Controlador A* prepara un objeto ``Respuesta`` que reproduce el contenido de la página principal del sitio.
+
+* *Controlador B* lee el parámetro ``slug`` de la petición para cargar una entrada del *blog* desde la base de datos y crear un objeto ``Respuesta`` exhibiendo ese *blog*. Si el ``slug`` no se puede encontrar en la base de datos, crea y devuelve un objeto ``Respuesta`` con un código de estado 404.
+
+* *Controlador C* procesa la información presentada en un formulario de contacto. Este lee la información del formulario desde la petición, guarda la información del contacto en la base de datos y envía mensajes de correo electrónico con la información de contacto al administrador del sitio web. Por último, crea un objeto ``Respuesta`` que redirige el navegador del cliente desde el formulario de contacto a la página de *"agradecimiento"*.
+
+.. index::
+   single: Controlador; Ciclo de vida de la petición, controlador, respuesta
+
+Ciclo de vida de la petición, controlador, respuesta
+----------------------------------------------------
+
+Cada petición manejada por un proyecto *Symfony2* pasa por el mismo ciclo de vida básico.
+La plataforma se encarga de las tareas repetitivas y, finalmente, ejecuta el controlador, que contiene el código personalizado de tu aplicación:
+
+#. Cada petición es manejada por un único archivo controlador frontal (por ejemplo, :file:`app.php` o :file:`app_dev.php`) el cual es responsable de arrancar la aplicación;
+
+#. El ``Enrutador`` lee la información de la petición (por ejemplo, la *URI*), encuentra una ruta que coincida con esa información, y lee el parámetro ``_controller`` de la ruta;
+
+#. El controlador de la ruta encontrada es ejecutado y el código dentro del controlador crea y devuelve un objeto ``Respuesta``;
+
+#. Las cabeceras *HTTP* y el contenido del objeto ``Respuesta`` se envían de vuelta al cliente.
+
+La creación de una página es tan fácil como crear un controlador (#3) y hacer una ruta que vincula una *URI* con ese controlador (#2).
+
+.. note::
+
+    Aunque nombrados de manera similar, un "controlador frontal" es diferente de los "controladores" vamos a hablar acerca de eso en este capítulo. Un controlador frontal es un breve archivo *PHP* que vive en tu directorio web raíz y a través del cual se dirigen todas las peticiones. Una aplicación típica tendrá un controlador frontal de producción (por ejemplo, :file:`app.php`) y un controlador frontal de desarrollo (por ejemplo, :file:`app_dev.php`). Probablemente nunca necesites editar, ver o preocuparte por los controladores frontales en tu aplicación.
+
+.. index::
+   single: Controlador; Ejemplo sencillo
+
+Un controlador sencillo
+-----------------------
+
+Mientras que un controlador puede ser cualquier ejecutable *PHP* (una función, un método en un objeto o un ``Cierre``), en *Symfony2*, un controlador suele ser un único método dentro de un objeto controlador. Los controladores también se conocen como *acciones*.
+
+.. code-block:: php
+    :linenos:
+
+    // src/Acme/HelloBundle/Controller/HelloController.php
+
+    namespace Acme\HelloBundle\Controller;
+    use Symfony\Component\HttpFoundation\Response;
+
+    class HelloController
+    {
+        public function indexAction($name)
+        {
+          return new Response('<html><body>Hello '.$name.'!</body></html>');
+        }
+    }
+
+.. tip::
+
+    Ten en cuenta que el *controlador* es el método ``indexAction``, que vive dentro de una *clase controlador* (``HelloController``). No te dejes confundir por la nomenclatura: una *clase controlador* simplemente es una conveniente forma de agrupar varios controladores/acciones. Generalmente, la clase controlador albergará varios controladores (por ejemplo, ``updateAction``, ``deleteAction``, etc.).
+
+Este controlador es bastante sencillo, pero vamos a revisarlo línea por línea:
+
+* *línea 3*: *Symfony2* toma ventaja de la funcionalidad del espacio de nombres de *PHP 5.3* para el espacio de nombres de la clase del controlador completa. La palabra clave ``use`` importa la clase ``Respuesta``, misma que nuestro controlador debe devolver.
+
+* *línea 6*: El nombre de clase es la concatenación del nombre de la clase controlador (es decir ``Hello``) y la palabra ``Controller``. Esta es una convención que proporciona consistencia a los controladores y permite hacer referencia sólo a la primera parte del nombre (es decir, ``Hello``) en la configuración del enrutador.
+
+* *línea 8*: Cada acción en una clase controlador se sufija con ``Action`` y en la configuración de enrutado se refiere con el nombre de la acción (``index``).
+  En la siguiente sección, crearás una ruta que asigna una *URI* a esta acción.
+  Aprenderás cómo los marcadores de posición de la ruta (``{name}``) se convierten en argumentos para el método de acción (``$name``).
+
+* *línea 10*: el controlador crea y devuelve un objeto ``Respuesta``.
+
+.. index::
+   single: Controlador; Rutas y controladores
+
+Asignando una *URI* a un controlador
+------------------------------------
+
+El nuevo controlador devuelve una página *HTML* simple. Para realmente ver esta página en tu navegador, necesitas crear una ruta, la cual corresponda a un patrón de *URL* específico para el controlador:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/routing.yml
+        hello:
+            pattern:      /hello/{name}
+            defaults:     { _controller: AcmeHelloBundle:Hello:index }
+
+    .. code-block:: xml
+
+        <!-- app/config/routing.xml -->
+        <route id="hello" pattern="/hello/{name}">
+            <default key="_controller">AcmeHelloBundle:Hello:index</default>
+        </route>
+
+    .. code-block:: php
+
+        // app/config/routing.php
+        $collection->add('hello', new Route('/hello/{name}', array(
+            '_controller' => 'AcmeHelloBundle:Hello:index',
+        )));
+
+Yendo ahora a ``/hello/ryan`` se ejecuta el controlador ``HelloController::indexAction()`` y pasa ``ryan`` a la variable ``$name``. Crear una "página" significa simplemente que debes crear un método controlador y una ruta asociada.
+
+Observa la sintaxis utilizada para referirse al controlador: ``AcmeHelloBundle:Hello:index``.
+*Symfony2* utiliza una flexible notación de cadena para referirse a diferentes controladores.
+Esta es la sintaxis más común y le dice a *Symfony2* que busque una clase controlador llamada ``HelloController`` dentro de un paquete llamado ``AcmeHelloBundle``. Entonces ejecuta el método ``indexAction()``.
+
+Para más detalles sobre el formato de cadena utilizado para referir a diferentes controladores, consulta el :ref:`controller-string-syntax`.
+
+.. note::
+
+    Este ejemplo coloca la configuración de enrutado directamente en el directorio ``app/config/``. Una mejor manera de organizar tus rutas es colocar cada ruta en el paquete al que pertenece. Para más información sobre este tema, consulta :ref:`routing-include-external-resources`.
+
+.. tip::
+
+    Puedes aprender mucho más sobre el sistema de enrutado en el :doc:`capítulo de enrutado </book/routing>`.
+
+.. index::
+   single: Controlador; Argumentos del controlador
+
+.. _route-parameters-controller-arguments:
+
+Parámetros de ruta como argumentos para el controlador
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ya sabes que el parámetro ``_controller`` en ``AcmeHelloBundle:Hello:index`` se refiere al método ``HelloController::indexAction()`` que vive dentro del paquete ``AcmeHelloBundle``. Lo más interesante de esto son los argumentos que se pasan a este método:
+
+.. code-block:: php
+
+    <?php
+    // src/Acme/HelloBundle/Controller/HelloController.php
+
+    namespace Acme\HelloBundle\Controller;
+    use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+
+    class HelloController extends Controller
+    {
+        public function indexAction($name)
+        {
+          // ...
+        }
+    }
+
+El controlador tiene un solo argumento, ``$name``, el cual corresponde al parámetro ``{name}`` de la ruta coincidente (``ryan`` en nuestro ejemplo). De hecho, cuando ejecutas tu controlador, *Symfony2* empareja cada argumento del controlador con un parámetro de la ruta coincidente. Tomemos el siguiente ejemplo:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/routing.yml
+        hello:
+            pattern:      /hello/{first_name}/{last_name}
+            defaults:     { _controller: AcmeHelloBundle:Hello:index, color: green }
+
+    .. code-block:: xml
+
+        <!-- app/config/routing.xml -->
+        <route id="hello" pattern="/hello/{first_name}/{last_name}">
+            <default key="_controller">AcmeHelloBundle:Hello:index</default>
+            <default key="color">green</default>
+        </route>
+
+    .. code-block:: php
+
+        // app/config/routing.php
+        $collection->add('hello', new Route('/hello/{first_name}/{last_name}', array(
+            '_controller' => 'AcmeHelloBundle:Hello:index',
+            'color'       => 'green',
+        )));
+
+El controlador para esto puede tomar varios argumentos::
+
+    public function indexAction($first_name, $last_name, $color)
+    {
+        // ...
+    }
+
+Ten en cuenta que ambas variables marcadoras de posición (``{first_name}``, ``{last_name}``) así como la variable predeterminada ``color`` están disponibles como argumentos en el controlador. Cuando una ruta corresponde, las variables marcadoras de posición se combinan con ``defaults`` para hacer que una matriz esté disponible para tu controlador.
+
+Asignar parámetros de ruta a los argumentos del controlador es fácil y flexible. Ten muy en cuenta las siguientes pautas mientras desarrollas.
+
+* **El orden de los argumentos del controlador no tiene importancia**
+
+    *Symfony2* es capaz de igualar los nombres de los parámetros de la ruta con los nombres de las variables en la firma del método controlador. En otras palabras, se da cuenta de que el parámetro ``{last_name}`` coincide con el argumento ``$last_name``.
+    Los argumentos del controlador se pueden reorganizar completamente y aún así siguen funcionando perfectamente::
+
+        public function indexAction($last_name, $color, $first_name)
+        {
+            // ..
+        }
+
+* **Cada argumento requerido del controlador debe coincidir con un parámetro de enrutado**
+
+    Lo siguiente lanzará una ``RuntimeException`` porque no hay ningún parámetro ``foo`` definido en la ruta::
+
+        public function indexAction($first_name, $last_name, $color, $foo)
+        {
+            // ..
+        }
+
+    Sin embargo, hacer que el argumento sea opcional, es perfectamente legal. El siguiente ejemplo no lanzará una excepción::
+
+        public function indexAction($first_name, $last_name, $color, $foo = 'bar')
+        {
+            // ..
+        }
+
+* **No todos los parámetros de enrutado deben ser argumentos en tu controlador**
+
+    Si por ejemplo, ``last_name`` no es tan importante para tu controlador, lo puedes omitir por completo::
+
+        public function indexAction($first_name, $color)
+        {
+            // ..
+        }
+
+.. tip::
+
+    Además, todas las rutas tienen un parámetro especial ``_route``, el cual es igual al nombre de la ruta con la que fue emparejado (por ejemplo, ``hello``). Aunque no suele ser útil, igualmente está disponible como un argumento del controlador.
+
+.. _book-controller-request-argument:
+
+La ``Petición`` como argumento para el controlador
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Para mayor comodidad, también puedes hacer que *Symfony* pase el objeto ``Petición`` como un argumento a tu controlador. Esto es conveniente especialmente cuando trabajas con formularios, por ejemplo::
+
+    use Symfony\Component\HttpFoundation\Request;
+
+    public function updateAction(Request $request)
+    {
+        $form = $this->createForm(...);
+
+        $form->bindRequest($request);
+        // ...
+    }
+
+.. index::
+   single: Controlador; Clase base controlador
+
+La clase base del controlador
+-----------------------------
+
+Para mayor comodidad, *Symfony2* viene con una clase ``Controller`` base, que te ayuda en algunas de las tareas más comunes del ``Controlador`` y proporciona acceso a cualquier recurso que tu clase controlador pueda necesitar. Al extender esta clase ``Controlador``, puedes tomar ventaja de varios métodos ayudantes.
+
+Agrega la instrucción ``use`` en lo alto de la clase ``Controlador`` y luego modifica ``HelloController`` para extenderla:
+
+.. code-block:: php
+
+    // src/Acme/HelloBundle/Controller/HelloController.php
+
+    namespace Acme\HelloBundle\Controller;
+    use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+    use Symfony\Component\HttpFoundation\Response;
+
+    class HelloController extends Controller
+    {
+        public function indexAction($name)
+        {
+          return new Response('<html><body>Hello '.$name.'!</body></html>');
+        }
+    }
+
+Esto, en realidad no cambia nada acerca de cómo funciona el controlador. En la siguiente sección, aprenderás acerca de los métodos ayudantes que la clase base del controlador pone a tu disposición. Estos métodos sólo son atajos para utilizar la funcionalidad del núcleo de *Symfony2* que está a nuestra disposición, usando o no la clase base ``Controller``. Una buena manera de ver la funcionalidad del núcleo en acción es buscar en la misma clase :class:`Symfony\\Bundle\\FrameworkBundle\\Controller\\Controller`.
+
+.. tip::
+
+    Extender la clase base ``Controller`` en *Symfony* es opcional; esta contiene útiles atajos, pero no es obligatorio. También puedes extender la clase ``Symfony\Component\DependencyInjection\ContainerAware``. El objeto contenedor del servicio será accesible a través de la propiedad ``container``.
+
+.. note::
+
+    Puedes definir tus :doc:`Controladores como Servicios </cookbook/controller/service>`.
+
+.. index::
+   single: Controlador; Tareas comunes
+
+Tareas comunes del controlador
+------------------------------
+
+A pesar de que un controlador puede hacer prácticamente cualquier cosa, la mayoría de los controladores se encargarán de las mismas tareas básicas una y otra vez. Estas tareas, tal como redirigir, procesar plantillas y acceder a servicios básicos, son muy fáciles de manejar en *Symfony2*.
+
+.. index::
+   single: Controlador; Redirigiendo
+
+Redirigiendo
+~~~~~~~~~~~~
+
+Si deseas redirigir al usuario a otra página, utiliza el método ``redirect()``::
+
+    public function indexAction()
+    {
+        return $this->redirect($this->generateUrl('homepage'));
+    }
+
+El método ``generateUrl()`` es sólo una función auxiliar que genera la *URL* de una determinada ruta. Para más información, consulta el capítulo :doc:`Enrutando </book/routing>`.
+
+Por omisión, el método ``redirect()`` produce una redirección 302 (temporal). Para realizar una redirección 301 (permanente), modifica el segundo argumento::
+
+    public function indexAction()
+    {
+        return $this->redirect($this->generateUrl('homepage'), 301);
+    }
+
+.. tip::
+
+    El método ``redirect()`` simplemente es un atajo que crea un objeto ``Respuesta`` que se especializa en redirigir a los usuarios. Es equivalente a:
+
+    .. code-block:: php
+
+        use Symfony\Component\HttpFoundation\RedirectResponse;
+
+        return new RedirectResponse($this->generateUrl('homepage'));
+
+.. index::
+   single: Controlador; Reenviando
+
+Reenviando
+~~~~~~~~~~
+
+Además, fácilmente puedes redirigir internamente hacia a otro controlador con el método ``forward()``. En lugar de redirigir el navegador del usuario, este hace una subpetición interna, y llama el controlador especificado. El método ``forward()`` devuelve el objeto ``Respuesta``, el cual es devuelto desde el controlador::
+
+    public function indexAction($name)
+    {
+        $response = $this->forward('AcmeHelloBundle:Hello:fancy', array(
+            'name'  => $name,
+            'color' => 'green'
+        ));
+
+        // adicionalmente modifica la respuesta o la devuelve directamente
+
+        return $response;
+    }
+
+Ten en cuenta que el método ``forward()`` utiliza la misma representación de cadena del controlador utilizada en la configuración de enrutado. En este caso, la clase controlador de destino será ``HelloController`` dentro de algún ``AcmeHelloBundle``.
+La matriz pasada al método convierte los argumentos en el controlador resultante.
+Esta misma interfaz se utiliza al incrustar controladores en las plantillas (consulta :ref:`templating-embedding-controller`). El método del controlador destino debe tener un aspecto como el siguiente::
+
+    public function fancyAction($name, $color)
+    {
+        // ... crea y devuelve un objeto Response
+    }
+
+Y al igual que al crear un controlador para una ruta, el orden de los argumentos para ``fancyAction`` no tiene la menor importancia. *Symfony2* empareja las claves nombre con el índice (por ejemplo, ``name``) con el argumento del método (por ejemplo, ``$name``). Si cambias el orden de los argumentos, *Symfony2* todavía pasará el valor correcto a cada variable.
+
+.. tip::
+
+    Al igual que otros métodos del ``Controller`` base, el método ``forward`` sólo es un atajo para la funcionalidad del núcleo de *Symfony2*. Puedes redirigir directamente por medio del servicio ``http_kernel``. Un reenvío devuelve un objeto ``Respuesta``::
+
+        $httpKernel = $this->container->get('http_kernel');
+        $response = $httpKernel->forward('AcmeHelloBundle:Hello:fancy', array(
+            'name'  => $name,
+            'color' => 'green',
+        ));
+
+.. index::
+   single: Controlador; Reproduciendo plantillas
+
+.. _controller-rendering-templates:
+
+Procesando plantillas
+~~~~~~~~~~~~~~~~~~~~~
+
+Aunque no es un requisito, la mayoría de los controladores en última instancia, reproducen una plantilla que es responsable de generar el código *HTML* (u otro formato) para el controlador.
+El método ``renderView()`` procesa una plantilla y devuelve su contenido. Puedes usar el contenido de la plantilla para crear un objeto ``Respuesta``::
+
+    $content = $this->renderView('AcmeHelloBundle:Hello:index.html.twig', array('name' => $name));
+
+    return new Response($content);
+
+Incluso puedes hacerlo en un solo paso con el método ``render()``, el cual devuelve un objeto ``Respuesta`` con el contenido de la plantilla::
+
+    return $this->render('AcmeHelloBundle:Hello:index.html.twig', array('name' => $name));
+
+En ambos casos, se reproducirá la plantilla ``Resources/views/Hello/index.html.twig`` dentro del ``AcmeHelloBundle``.
+
+El motor de plantillas de *Symfony* se explica con gran detalle en el capítulo :doc:`Plantillas </book/templating>`.
+
+.. tip::
+
+    El método ``renderView`` es un atajo para usar el servicio de ``plantillas``. También puedes usar directamente el servicio de ``plantillas``::
+
+        $templating = $this->get('templating');
+        $content = $templating->render('AcmeHelloBundle:Hello:index.html.twig', array('name' => $name));
+
+.. index::
+   single: Controlador; Accediendo a servicios
+
+Accediendo a otros servicios
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Al extender la clase base del controlador, puedes acceder a cualquier servicio de *Symfony2* a través del método ``get()``. Aquí hay varios servicios comunes que puedes necesitar::
+
+    $request = $this->getRequest();
+
+    $templating = $this->get('templating');
+
+    $router = $this->get('router');
+
+    $mailer = $this->get('mailer');
+
+Hay un sinnúmero de servicios disponibles y te animamos a definir tus propios servicios. Para listar todos los servicios disponibles, utiliza la orden ``container:debug`` de la consola:
+
+.. code-block:: bash
+
+    php app/console container:debug
+
+Para más información, consulta el capítulo :doc:`/book/service_container`.
+
+.. index::
+   single: Controlador; Gestionando errores
+   single: Controlador; páginas 404
+
+Gestionando errores y páginas 404
+---------------------------------
+
+Cuando no se encuentra algo, debes jugar bien con el protocolo *HTTP* y devolver una respuesta 404. Para ello, debes lanzar un tipo de excepción especial.
+Si estás extendiendo la clase base del controlador, haz lo siguiente::
+
+    public function indexAction()
+    {
+        $product = // recupera el objeto desde la base de datos
+        if (!$product) {
+            throw $this->createNotFoundException('The product does not exist');
+        }
+
+        return $this->render(...);
+    }
+
+El método ``createNotFoundException()`` crea un objeto ``NotFoundHttpException`` especial, que en última instancia, desencadena una respuesta *HTTP 404* en el interior de *Symfony*.
+
+Por supuesto, estás en libertad de lanzar cualquier clase de ``Excepción`` en tu controlador ---*Symfony2* automáticamente devolverá una respuesta *HTTP* con código 500.
+
+.. code-block:: php
+
+    throw new \Exception('Something went wrong!');
+
+En todos los casos, el usuario final ve una página de error estilizada y a los desarrolladores se les muestra una página de depuración de error completa (cuando visualizas la página en modo de depuración).
+Puedes personalizar ambas páginas de error. Para más detalles, lee ":doc:`/cookbook/controller/error_pages`" en el recetario.
+
+.. index::
+   single: Controlador; La sesión
+   single: Sesión
+
+Gestionando la sesión
+---------------------
+
+*Symfony2* proporciona un agradable objeto sesión que puedes utilizar para almacenar información sobre el usuario (ya sea una persona real usando un navegador, un robot o un servicio web) entre las peticiones. De manera predeterminada, *Symfony2* almacena los atributos de una :dfn:`cookie` usando las sesiones nativas de *PHP*.
+
+Almacenar y recuperar información de la sesión se puede conseguir fácilmente desde cualquier controlador::
+
+    $session = $this->getRequest()->getSession();
+
+    // guarda un atributo para reutilizarlo durante una posterior petición del usuario
+    $session->set('foo', 'bar');
+
+    // en otro controlador por otra petición
+    $foo = $session->get('foo');
+
+    // usa un valor predefinido de no existir la clave
+    $filters = $session->set('filters', array());
+
+Estos atributos se mantendrán en la sesión del usuario por el resto de esa sesión.
+
+.. index::
+   Sesión única; Mensajes flash
+
+Mensajes flash
+~~~~~~~~~~~~~~
+
+También puedes almacenar pequeños mensajes que se pueden guardar en la sesión del usuario para exactamente una petición adicional. Esto es útil cuando procesas un formulario:
+deseas redirigir y proporcionar un mensaje especial que aparezca en la *siguiente* petición.
+Este tipo de mensajes se conocen como mensajes "flash".
+
+Por ejemplo, imagina que estás procesando el envío de un formulario::
+
+    public function updateAction()
+    {
+        $form = $this->createForm(...);
+
+        $form->bindRequest($this->getRequest());
+        if ($form->isValid()) {
+            // hace algún tipo de procesamiento
+
+            $this->get('session')->getFlashBag()->add('notice', 'Your changes were saved!');
+
+            return $this->redirect($this->generateUrl(...));
+        }
+
+        return $this->render(...);
+    }
+
+Después de procesar la petición, el controlador establece un mensaje flash ``notice`` y luego redirige al usuario. El nombre (``aviso``) no es significativo ---es lo que estás usando para identificar el tipo del mensaje.
+
+En la siguiente acción de la plantilla, podrías utilizar el siguiente código para reproducir el mensaje de ``aviso``:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% for flashMessage in app.session.flashbag.get('notice') %}
+            <div class="flash-notice">
+                {{ flashMessage }}
+                </div>
+        {% endfor %}
+
+    .. code-block:: php
+
+        <?php foreach ($view['session']->getFlashBag()->get('notice') as $message): ?>
+            <div class="flash-notice">
+                <?php echo "<div class='flash-error'>$message</div>" ?>
+                </div>
+        <?php endforeach; ?>
+
+Por diseño, los mensajes flash están destinados a vivir por exactamente una petición (estos "desaparecen con un destello"). Están diseñados para utilizarlos a través de redirecciones exactamente como lo hemos hecho en este ejemplo.
+
+.. index::
+   single: Controlador; Objeto Respuesta
+
+El objeto ``Respuesta``
+-----------------------
+
+El único requisito para un controlador es que devuelva un objeto ``Respuesta``. La clase :class:`Symfony\\Component\\HttpFoundation\\Response` es una abstracción *PHP* en torno a la respuesta *HTTP* ---el mensaje de texto, relleno con cabeceras *HTTP* y el contenido que se envía de vuelta al cliente::
+
+    // crea una simple respuesta con un código de estado 200 (el predeterminado)
+    $response = new Response('Hello '.$name, 200);
+
+    // crea una respuesta JSON con código de estado 200
+    $response = new Response(json_encode(array('name' => $name)));
+    $response->headers->set('Content-Type', 'application/json');
+
+.. tip::
+
+    La propiedad ``headers`` es un objeto :class:`Symfony\\Component\\HttpFoundation\\HeaderBag` con varios métodos útiles para lectura y mutación de las cabeceras del objeto ``Respuesta``. Los nombres de las cabeceras están normalizados para que puedas usar ``Content-Type`` y este sea equivalente a ``content-type``, e incluso a ``content_type``.
+
+.. index::
+   single: Controlador; Objeto Petición
+
+El objeto ``Petición``
+----------------------
+
+Además de los valores de los marcadores de posición de enrutado, el controlador también tiene acceso al objeto ``Petición`` al extender la clase base ``Controlador``::
+
+    $request = $this->getRequest();
+
+    $request->isXmlHttpRequest(); // ¿es una petición Ajax?
+
+    $request->getPreferredLanguage(array('en', 'fr'));
+
+    $request->query->get('page'); // obtiene un parámetro $_GET
+
+    $request->request->get('page'); // obtiene un parámetro $_POST
+
+Al igual que el objeto ``Respuesta``, las cabeceras de la petición se almacenan en un objeto ``HeaderBag`` y son fácilmente accesibles.
+
+Consideraciones finales
+-----------------------
+
+Siempre que creas una página, en última instancia, tendrás que escribir algún código que contenga la lógica para esa página. En *Symfony*, a esto se le llama *controlador*, y es una función *PHP* que puede hacer cualquier cosa que necesites a fin de devolver el objeto ``Respuesta`` que se entregará al usuario final.
+
+Para facilitarte la vida, puedes optar por extender la clase base ``Controller``, la cual contiene atajos a métodos para muchas tareas de control comunes. Por ejemplo, puesto que no deseas poner el código *HTML* en tu controlador, puedes usar el método ``render()`` para reproducir y devolver el contenido desde una plantilla.
+
+En otros capítulos, veremos cómo puedes usar el controlador para conservar y recuperar objetos desde una base de datos, procesar formularios presentados, manejar el almacenamiento en caché y mucho más.
+
+Aprende más en el recetario
+---------------------------
+
+* :doc:`/cookbook/controller/error_pages`
+* :doc:`/cookbook/controller/service`

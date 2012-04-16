@@ -1,0 +1,99 @@
+.. _doctrine-event-config:
+
+Registrando escuchas y suscriptores de eventos
+==============================================
+
+*Doctrine* cuenta con un rico sistema de eventos que lanza eventos en casi todo lo que sucede dentro del sistema. Para ti, esto significa que puedes crear :doc:`servicios</book/service_container>` arbitrarios y decirle a *Doctrine* que notifique a esos objetos cada vez que ocurra una determinada acción (por ejemplo, ``PrePersist``) dentro de *Doctrine*.
+Esto podría ser útil, por ejemplo, para crear un índice de búsqueda independiente cuando se guarde un objeto en tu base de datos.
+
+*Doctrine* define dos tipos de objetos que pueden escuchar los eventos de *Doctrine*:
+escuchas y suscriptores. Ambos son muy similares, pero los escuchas son un poco más sencillos. Para más información, consulta el `Sistema de eventos`_ en el sitio web de *Doctrine*.
+
+Configurando escuchas/suscriptores
+----------------------------------
+
+Para registrar un servicio para que actúe como un escucha o suscriptor de eventos sólo lo tienes que :ref:`etiquetar <book-service-container-tags>` con el nombre apropiado. Dependiendo de tu caso de uso, puedes enganchar un escucha en cada conexión *DBAL* y gestor de entidad *ORM* o simplemente en una conexión *DBAL* específica y todos los gestores de entidad que utilicen esta conexión.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        doctrine:
+            dbal:
+                default_connection: default
+                connections:
+                    default:
+                        driver: pdo_sqlite
+                        memory: true
+
+        services:
+            my.listener:
+                class: Acme\SearchBundle\Listener\SearchIndexer
+                tags:
+                        - { name: doctrine.event_listener, event: postPersist }
+            my.listener2:
+                class: Acme\SearchBundle\Listener\SearchIndexer2
+                tags:
+                        - { name: doctrine.event_listener, event: postPersist, connection: default }
+            my.subscriber:
+                class: Acme\SearchBundle\Listener\SearchIndexerSubscriber
+                tags:
+                        - { name: doctrine.event_subscriber, connection: default }
+
+    .. code-block:: xml
+
+        <?xml version="1.0" ?>
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:doctrine="http://symfony.com/schema/dic/doctrine">
+
+            <doctrine:config>
+                <doctrine:dbal default-connection="default">
+                    <doctrine:connection driver="pdo_sqlite" memory="true" />
+                </doctrine:dbal>
+            </doctrine:config>
+
+                <services>
+                <service id="my.listener" class="Acme\SearchBundle\Listener\SearchIndexer">
+                    <tag name="doctrine.event_listener" event="postPersist" />
+                </service>
+                <service id="my.listener2" class="Acme\SearchBundle\Listener\SearchIndexer2">
+                    <tag name="doctrine.event_listener" event="postPersist" connection="default" />
+                </service>
+                <service id="my.subscriber" class="Acme\SearchBundle\Listener\SearchIndexerSubscriber">
+                    <tag name="doctrine.event_subscriber" connection="default" />
+                </service>
+                </services>
+        </container>
+
+Creando la clase Escucha
+------------------------
+
+En el ejemplo anterior, se configuró un servicio ``my.listener`` como un escucha de *Doctrine* del evento ``postPersist``. Que detrás de la clase de ese servicio debe tener un método ``postPersist``, que se llama cuando se lanza el evento:
+
+.. code-block:: php
+
+    // src/Acme/SearchBundle/Listener/SearchIndexer.php
+    namespace Acme\SearchBundle\Listener;
+    
+    use Doctrine\ORM\Event\LifecycleEventArgs;
+    use Acme\StoreBundle\Entity\Product;
+    
+    class SearchIndexer
+    {
+        public function postPersist(LifecycleEventArgs $args)
+        {
+            $entity = $args->getEntity();
+            $entityManager = $args->getEntityManager();
+            
+            // tal vez sólo quieres actuar en alguna entidad "producto"
+            if ($entity instanceof Product) {
+                // haz algo con el Producto
+            }
+        }
+    }
+
+En cada caso, tienes acceso a un objeto ``LifecycleEventArgs``, el cual te da acceso tanto al objeto entidad del evento como al mismo gestor de la entidad.
+
+Una cosa importante a resaltar es que un escucha debe estar atento a *todas* las entidades en tu aplicación. Por lo tanto, si estás interesado sólo en manejar un tipo de entidad específico (por ejemplo, una entidad ``Producto``, pero no en una entidad ``BlogPost``), debes verificar el nombre de clase de la entidad en tu método (como se muestra arriba).
+
+.. _`Sistema de eventos`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html

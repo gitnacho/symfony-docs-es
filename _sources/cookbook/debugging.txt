@@ -1,0 +1,54 @@
+.. index::
+   single: Depurando
+
+Cómo optimizar tu entorno de desarrollo para depuración
+=======================================================
+
+Cuando trabajas en un proyecto de *Symfony* en tu equipo local, debes usar el entorno ``dev`` (con el controlador frontal :file:`app_dev.php`). Esta configuración del entorno se ha optimizado para dos propósitos principales:
+
+* Proporcionar retroalimentación de desarrollo precisa cada vez que algo sale mal (barra de herramientas de depuración *web*, páginas de excepción agradables, perfiles, ...);
+
+* Ser lo más parecido posible al entorno de producción para evitar problemas al desplegar el proyecto.
+
+.. _cookbook-debugging-disable-bootstrap:
+
+Desactivando el archivo de arranque y la caché de clase
+-------------------------------------------------------
+
+Y para que el entorno de producción sea lo más rápido posible, *Symfony* crea grandes archivos *PHP* en la memoria caché que contienen la agregación de las clases *PHP* que tu proyecto necesita para cada petición. Sin embargo, este comportamiento puede confundir a tu *IDE* o depurador. Esta fórmula muestra cómo puedes ajustar este mecanismo de memorización para que sea más amigable cuando necesitas depurar código que incluye clases de *Symfony*.
+
+El controlador frontal :file:`app_dev.php` por omisión lee lo siguiente::
+
+    // ...
+
+    require_once __DIR__.'/../app/bootstrap.php.cache';
+    require_once __DIR__.'/../app/AppKernel.php';
+
+    use Symfony\Component\HttpFoundation\Request;
+
+    $kernel = new AppKernel('dev', true);
+    $kernel->loadClassCache();
+    $kernel->handle(Request::createFromGlobals())->send();
+
+Para contentar a tu depurador, desactiva toda la caché de las clases *PHP* eliminando la llamada a ``loadClassCache()`` y sustituyendo las declaraciones `require` como la siguiente::
+
+    // ...
+
+    // require_once __DIR__.'/../app/bootstrap.php.cache';
+    require_once __DIR__.'/../vendor/symfony/symfony/src/Symfony/Component/ClassLoader/UniversalClassLoader.php';
+    require_once __DIR__.'/../app/autoload.php';
+    require_once __DIR__.'/../app/AppKernel.php';
+
+    use Symfony\Component\HttpFoundation\Request;
+
+    $kernel = new AppKernel('dev', true);
+    // $kernel->loadClassCache();
+    $kernel->handle(Request::createFromGlobals())->send();
+
+.. tip::
+
+    Si desactivas la caché *PHP*, no olvides reactivarla después de tu sesión de depuración.
+
+A algunos *IDE* no les gusta el hecho de que algunas clases se almacenen en lugares diferentes. Para evitar problemas, puedes decirle a tu *IDE* que omita los archivos de cache *PHP*, o puedes cambiar la extensión utilizada por *Symfony* para estos archivos::
+
+    $kernel->loadClassCache('classes', '.php.cache');

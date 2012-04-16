@@ -1,0 +1,95 @@
+``UniqueEntity``
+================
+
+Valida que un campo en particular (o campos) en una entidad *Doctrine* sea único. Este se utiliza comúnmente, por ejemplo, para prevenir que un nuevo usuario se registre con una dirección de correo electrónico existente en el sistema.
+
++----------------+-------------------------------------------------------------------------------------+
+| Aplica a       | :ref:`clase<validation-class-target>`                                               |
++----------------+-------------------------------------------------------------------------------------+
+| Opciones       | - `fields`_                                                                         |
+|                | - `message`_                                                                        |
+|                | - `em`_                                                                             |
++----------------+-------------------------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Bridge\\Doctrine\\Validator\\Constraints\\UniqueEntity`            |
++----------------+-------------------------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Bridge\\Doctrine\\Validator\\Constraints\\UniqueEntity\\Validator` |
++----------------+-------------------------------------------------------------------------------------+
+
+Uso básico
+----------
+
+Supongamos que tienes un ``AcmeUserBundle`` con una entidad ``User`` que tiene un campo ``email``. Puedes utilizar la restricción ``UniqueEntity`` para garantizar que el campo ``email`` siga siendo único en toda tu tabla ``User``:
+
+.. configuration-block::
+
+    .. code-block:: php-annotations
+
+        // Acme/UserBundle/Entity/User.php
+        use Symfony\Component\Validator\Constraints as Assert;
+        use Doctrine\ORM\Mapping as ORM;
+
+        // ¡NO OLVIDES usar esta declaración!
+        use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+
+        /**
+         * @ORM\Entity
+         * @UniqueEntity("email")
+         */
+        class Author
+        {
+            /**
+             * @var string $email
+             *
+             * @ORM\Column(name="email", type="string", length=255, unique=true)
+             * @Assert\Email()
+             */
+            protected $email;
+            
+            // ...
+        }
+
+    .. code-block:: yaml
+
+        # src/Acme/UserBundle/Resources/config/validation.yml
+        Acme\UserBundle\Entity\Author:
+            constraints:
+                - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: email
+            properties:
+                email:
+                    - Email: ~
+
+    .. code-block:: xml
+
+        <class name="Acme\UserBundle\Entity\Author">
+            <constraint name="Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity">
+                <option name="fields">email</option>
+                <option name="message">This email already exists.</option>
+            </constraint>
+             <property name="email">
+                <constraint name="Email" />
+            </property>
+        </class>
+
+Opciones
+--------
+
+``fields``
+~~~~~~~~~~
+
+**tipo**: ``array`` | ``string`` [:ref:`opción predeterminada <validation-default-option>`]
+
+Esta opción requerida es el campo (o lista de campos) en el cual esta entidad debe ser única. Por ejemplo, puedes especificar que tanto el campo ``email`` como ``name`` en el ejemplo ``User`` anterior deben ser únicos.
+
+``message``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``This value is already used.`` (``Este valor ya se está usando``)
+
+El mensaje a mostrar cuando esta restricción falla.
+
+``em``
+~~~~~~
+
+**tipo**: ``string``
+
+El nombre del gestor de entidades que hará la consulta para determinar la singularidad. Si lo dejas en blanco, el gestor de entidades correcto será determinado por esta clase. Por esa razón, probablemente no será necesario utilizar esta opción.

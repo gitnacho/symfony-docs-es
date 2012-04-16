@@ -1,0 +1,107 @@
+``Regex``
+=========
+
+Valida que un valor coincide con una expresión regular.
+
++----------------+-----------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`                |
++----------------+-----------------------------------------------------------------------+
+| Opciones       | - `pattern`_                                                          |
+|                | - `match`_                                                            |
+|                | - `message`_                                                          |
++----------------+-----------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\Regex`            |
++----------------+-----------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\RegexValidator`   |
++----------------+-----------------------------------------------------------------------+
+
+Uso básico
+----------
+
+Supongamos que tienes un campo ``descripción`` y que deseas verificar que comienza con un carácter constituyente de palabra válido. La expresión regular para comprobar esto sería ``/^\w+/``, la cual indica que estás buscando al menos uno o más caracteres constituyentes de palabra al principio de la cadena:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/BlogBundle/Resources/config/validation.yml
+        Acme\BlogBundle\Entity\Author:
+            properties:
+                description:
+                    - Regex: "/^\w+/"
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        namespace Acme\BlogBundle\Entity;
+        
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\Regex("/^\w+/")
+             */
+            protected $description;
+        }
+
+Alternativamente, puedes fijar la opción `match`_ a ``false`` con el fin de afirmar que una determinada cadena *no* coincide. En el siguiente ejemplo, afirmas que el campo ``firstName`` no contiene ningún número y proporcionas un mensaje personalizado:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/BlogBundle/Resources/config/validation.yml
+        Acme\BlogBundle\Entity\Author:
+            properties:
+                firstName:
+                    - Regex:
+                        pattern: "/\d/"
+                        match:   false
+                        message: Your name cannot contain a number
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        namespace Acme\BlogBundle\Entity;
+        
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\Regex(
+             *     pattern="/\d/",
+             *     match=false,
+             *     message="Your name cannot contain a number"
+             * )
+             */
+            protected $firstName;
+        }
+
+Opciones
+--------
+
+``pattern``
+~~~~~~~~~~~
+
+**tipo**: ``string`` [:ref:`default option<validation-default-option>`]
+
+Esta opción requerida es el patrón de la expresión regular con el cual se comparará lo ingresado. Por omisión, este validador no funcionará si la cadena introducida *no* coincide con la expresión regular (a través de la función `preg_match`_ de *PHP*).
+Sin embargo, si estableces `match`_ en ``false``, la validación fallará si la cadena ingresada *no* coincide con este patrón.
+
+``match``
+~~~~~~~~~
+
+**tipo**: ``Boolean`` **predeterminado**: ``true``
+
+Si es ``true`` (o no se ha fijado), este validador pasará si la cadena dada coincide con el patrón (`pattern`_) de la expresión regular. Sin embargo, cuando estableces esta opción en ``false``, ocurrirá lo contrario: la validación pasará si la cadena ingresada **no** coincide con el patrón de la expresión regular.
+
+``message``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``This value is not valid`` (``Este valor no es válido``)
+
+Este es el mensaje que se mostrará si el validador falla.
+
+.. _`preg_match`: http://www.php.net/manual/es/function.preg-match.php

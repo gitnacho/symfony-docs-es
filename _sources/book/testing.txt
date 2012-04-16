@@ -1,0 +1,663 @@
+.. index::
+   single: Pruebas
+
+Probando
+========
+
+Cada vez que escribes una nueva línea de código, potencialmente, también, añades nuevos errores.
+Para construir mejores y más confiables aplicaciones, debes probar tu código usando ambas pruebas unitarias y funcionales.
+
+La plataforma de pruebas *PHPUnit*
+----------------------------------
+
+*Symfony2* integra una biblioteca independiente --- llamada *PHPUnit* --- para proporcionarte un rico marco de pruebas. Esta parte no cubre *PHPUnit* en sí mismo, puesto que la biblioteca cuenta con su propia y excelente `documentación`_.
+
+.. note::
+
+    *Symfony2* trabaja con *PHPUnit* 3.5.11 o posterior, aunque se necesita la versión 3.6.4 para probar el código del núcleo de Symfony.
+
+Cada prueba --- si se trata de una prueba unitaria o una prueba funcional --- es una clase *PHP* que debe vivir en el subdirectorio ``Tests/`` de tus paquetes. Si sigues esta regla, entonces puedes ejecutar todas las pruebas de tu aplicación con la siguiente orden:
+
+.. code-block:: bash
+
+    # especifica la configuración del directorio en la línea de ordenes
+    $ phpunit -c app/
+
+La opción ``-c`` le dice a *PHPUnit* que busque el archivo de configuración en el directorio ``app/``. Si tienes curiosidad sobre qué significan las opciones de *PHPUnit*, dale un vistazo al archivo ``app/phpunit.xml.dist``.
+
+.. tip::
+
+    La cobertura de código se puede generar con la opción ``--coverage-html``.
+
+.. index::
+   single: Pruebas; Pruebas unitarias
+
+Pruebas unitarias
+-----------------
+
+Una prueba unitaria normalmente es una prueba contra una clase *PHP* específica. Si deseas probar el comportamiento de tu aplicación en conjunto, ve la sección sobre las `Pruebas funcionales`_.
+
+Escribir pruebas unitarias en *Symfony2* no es diferente a escribir pruebas unitarias *PHPUnit* normales. Supongamos, por ejemplo, que tienes una clase *increíblemente* simple llamada ``Calculator`` en el directorio ``Utility/`` de tu paquete::
+
+    // src/Acme/DemoBundle/Utility/Calculator.php
+    namespace Acme\DemoBundle\Utility;
+    
+    class Calculator
+    {
+        public function add($a, $b)
+        {
+            return $a + $b;
+        }
+    }
+
+Para probarla, crea un archivo ``CalculatorTest`` en el directorio ``Tests/Utility`` de tu paquete::
+
+    // src/Acme/DemoBundle/Tests/Utility/CalculatorTest.php
+    namespace Acme\DemoBundle\Tests\Utility;
+
+    use Acme\DemoBundle\Utility\Calculator;
+
+    class CalculatorTest extends \PHPUnit_Framework_TestCase
+    {
+        public function testAdd()
+        {
+            $calc = new Calculator();
+            $result = $calc->add(30, 12);
+
+            // ¡afirma que nuestra calculadora suma dos números correctamente!
+            $this->assertEquals(42, $result);
+        }
+    }
+
+.. note::
+
+    Por convención, el subdirectorio ``Tests/`` debería replicar al directorio de tu paquete. Por lo tanto, si estás probando una clase en el directorio ``Utility/`` de tu paquete, pon tus pruebas en el directorio ``Tests/Utility``.
+
+Al igual que en tu aplicación real ---el archivo ``bootstrap.php.cache`` automáticamente activa el autocargador (como si lo hubieras configurado por omisión en el archivo ``phpunit.xml.dist``).
+
+Correr las pruebas de un determinado archivo o directorio también es muy fácil:
+
+.. code-block:: bash
+
+    # ejecuta todas las pruebas en el directorio 'Utility'
+    $ phpunit -c app src/Acme/DemoBundle/Tests/Utility/
+
+    # corre las pruebas para la clase Calculator
+    $ phpunit -c app src/Acme/DemoBundle/Tests/Utility/CalculatorTest.php
+
+    # corre todas las pruebas del paquete entero
+    $ phpunit -c app src/Acme/DemoBundle/
+
+.. index::
+   single: Pruebas; Pruebas funcionales
+
+Pruebas funcionales
+-------------------
+
+Las pruebas funcionales verifican la integración de las diferentes capas de una aplicación (desde el enrutado hasta la vista). Ellas no son diferentes de las pruebas unitarias en cuanto a *PHPUnit* se refiere, pero tienen un flujo de trabajo muy específico:
+
+* Envían una petición;
+* Prueban la respuesta;
+* Hacen clic en un enlace o envían un formulario;
+* Prueban la respuesta;
+* Enjuagan y repiten.
+
+Tu primera prueba funcional
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Las pruebas funcionales son simples archivos *PHP* que suelen vivir en el directorio ``Tests/Controller`` de tu paquete. Si deseas probar las páginas a cargo de tu clase ``DemoController``, empieza creando un nuevo archivo :file:`DemoControllerTest.php` que extiende una clase ``WebTestCase`` especial.
+
+Por ejemplo, la *edición estándar de Symfony2* proporciona una sencilla prueba funcional para ``DemoController`` (`DemoControllerTest`_) que dice lo siguiente::
+
+    // src/Acme/DemoBundle/Tests/Controller/DemoControllerTest.php
+    namespace Acme\DemoBundle\Tests\Controller;
+
+    use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+
+    class DemoControllerTest extends WebTestCase
+    {
+        public function testIndex()
+        {
+            $client = static::createClient();
+
+            $crawler = $client->request('GET', '/demo/hello/Fabien');
+
+            $this->assertTrue($crawler->filter('html:contains("Hello Fabien")')->count() > 0);
+        }
+    }
+
+.. tip::
+
+    Para ejecutar tus pruebas funcionales, la clase ``WebTestCase`` arranca el núcleo de tu aplicación. En la mayoría de los casos, esto sucede automáticamente.
+    Sin embargo, si tu núcleo se encuentra en un directorio no estándar, deberás modificar tu archivo ``phpunit.xml.dist`` para ajustar la variable de entorno ``KERNEL_DIR`` al directorio de tu núcleo::
+
+        <phpunit
+            <!-- ... -->
+            <php>
+                <server name="KERNEL_DIR" value="/path/to/your/app/" />
+            </php>
+            <!-- ... -->
+        </phpunit>
+
+El método ``createClient()`` devuelve un cliente, el cual es como un navegador que debes usar para explorar tu sitio::
+
+    $crawler = $client->request('GET', '/demo/hello/Fabien');
+
+El método ``request()`` (consulta :ref:`más sobre el método request <book-testing-request-method-sidebar>`) devuelve un objeto :class:`Symfony\\Component\\DomCrawler\\Crawler` que puedes utilizar para seleccionar elementos en la respuesta, hacer clic en enlaces, y enviar formularios.
+
+.. tip::
+
+    El ``Crawler`` únicamente trabaja cuando la respuesta es *XML* o un documento *HTML*.
+    Para conseguir el contenido crudo de la respuesta, llama a ``$client->getResponse()->getContent()``.
+
+Haz clic en un enlace seleccionándolo primero con el ``Crawler`` utilizando una expresión ``XPath`` o un selector *CSS*, luego utiliza el cliente para hacer clic en él. Por ejemplo, el siguiente código buscará todos los enlaces con el texto ``Greet``, a continuación, selecciona el segundo, y en última instancia, hace clic en él::
+
+    $link = $crawler->filter('a:contains("Greet")')->eq(1)->link();
+
+    $crawler = $client->click($link);
+
+El envío de un formulario es muy similar; selecciona un botón del formulario, opcionalmente sustituye algunos valores del formulario, y ​​envía el formulario correspondiente::
+
+    $form = $crawler->selectButton('submit')->form();
+
+    // sustituye algunos valores
+    $form['name'] = 'Lucas';
+    $form['form_name[subject]'] = 'Hey there!';
+
+    // envía el formulario
+    $crawler = $client->submit($form);
+
+.. tip::
+
+    El formulario también puede manejar archivos subidos y contiene métodos para llenar los diferentes tipos de campos del formulario (por ejemplo, ``select()`` y ``tick()``). Para más detalles, consulta la sección `Formularios`_ más adelante.
+
+Ahora que puedes navegar fácilmente a través de una aplicación, utiliza las aserciones para probar que en realidad hace lo que se espera. Utiliza el ``Crawler`` para hacer aserciones sobre el *DOM*::
+
+    // Afirma que la respuesta concuerda con un determinado selector CSS.
+    $this->assertTrue($crawler->filter('h1')->count() > 0);
+
+O bien, prueba contra el contenido de la respuesta directamente si lo que deseas es acertar que el contenido contiene algún texto, o si la respuesta no es un documento *XML* o *HTML*::
+
+    $this->assertRegExp('/Hello Fabien/', $client->getResponse()->getContent());
+
+.. _book-testing-request-method-sidebar:
+
+.. sidebar:: Más sobre el método ``request()``:
+
+    La firma completa del método ``request()`` es la siguiente::
+
+        request(
+            $method,
+            $uri, 
+            array $parameters = array(), 
+            array $files = array(), 
+            array $server = array(), 
+            $content = null, 
+            $changeHistory = true
+        )
+
+    El arreglo ``server`` son los valores crudos que esperarías encontrar normalmente en la superglobal `$_SERVER`_ de *PHP*. Por ejemplo, para establecer las cabeceras *HTTP* ``Content-Type`` y ``Referer``, deberías pasar lo siguiente::
+
+        $client->request(
+            'GET',
+            '/demo/hello/Fabien',
+            array(),
+            array(),
+            array(
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_REFERER' => '/foo/bar',
+            )
+        );
+
+.. index::
+   single: Pruebas; Aserciones
+
+.. sidebar:: Útiles aserciones
+
+    Para empezar más rápido, aquí tienes una lista de las aserciones más comunes y útiles::
+
+        // Afirma que hay más de una etiqueta h2 con la clase "subtitle"
+        $this->assertTrue($crawler->filter('h2.subtitle')->count() > 0);
+
+        // Afirma que en la página hay exactamente 4 etiquetas h2
+        $this->assertEquals(4, $crawler->filter('h2')->count());
+
+        // Afirma que la cabecera "Content-Type" es "application/json"
+        $this->assertTrue($client->getResponse()->headers->contains('Content-Type', 'application/json'));
+
+        // Afirma que el contenido de la respuesta concuerda con una expresión regular.
+        $this->assertRegExp('/foo/', $client->getResponse()->getContent());
+
+        // Afirma que el código de estado de la respuesta es 2xx
+        $this->assertTrue($client->getResponse()->isSuccessful());
+        // Afirma que el código de estado de la respuesta es 404
+        $this->assertTrue($client->getResponse()->isNotFound());
+        // Afirma un código de estado 200 específico
+        $this->assertEquals(200, $client->getResponse()->getStatusCode());
+
+        // Afirma que la respuesta es una redirección a '/demo/contact'
+        $this->assertTrue($client->getResponse()->isRedirect('/demo/contact'));
+        // o simplemente comprueba que la respuesta es una redirección a cualquier URL
+        $this->assertTrue($client->getResponse()->isRedirect());
+
+.. index::
+   single: Pruebas; Cliente
+
+Trabajando con el Cliente de pruebas
+------------------------------------
+
+El Cliente de prueba simula un cliente *HTTP* tal como un navegador y hace peticiones a tu aplicación *Symfony2*::
+
+    $crawler = $client->request('GET', '/hello/Fabien');
+
+El método ``request()`` toma el método *HTTP* y una *URL* como argumentos y devuelve una instancia de ``Crawler``.
+
+Utiliza el rastreador para encontrar elementos del *DOM* en la respuesta. Puedes utilizar estos elementos para hacer clic en los enlaces y presentar formularios::
+
+    $link = $crawler->selectLink('Go elsewhere...')->link();
+    $crawler = $client->click($link);
+
+    $form = $crawler->selectButton('validate')->form();
+    $crawler = $client->submit($form, array('name' => 'Fabien'));
+
+Ambos métodos ``click()`` y ``submit()`` devuelven un objeto ``Crawler``.
+Estos métodos son la mejor manera para navegar por tu aplicación permitiéndole se preocupe de un montón de detalles por ti, tal como detectar el método *HTTP* de un formulario y proporcionándote una buena *API* para cargar archivos.
+
+.. tip::
+
+    Aprenderás más sobre los objetos ``Link`` y ``Form`` más adelante en la sección :ref:`Crawler <book-testing-crawler>`.
+
+También puedes usar el método ``request`` para simular el envío de formularios directamente o realizar peticiones más complejas::
+
+    // envía un formulario directamente (¡Pero es más fácil usando el 'Crawler'!)
+    $client->request('POST', '/submit', array('name' => 'Fabien'));
+
+    // envía un formulario con un campo para subir un archivo
+    use Symfony\Component\HttpFoundation\File\UploadedFile;
+
+    $photo = new UploadedFile(
+        '/path/to/photo.jpg',
+        'photo.jpg',
+        'image/jpeg',
+        123
+    );
+    // o
+    $photo = array(
+        'tmp_name' => '/path/to/photo.jpg',
+        'name' => 'photo.jpg',
+        'type' => 'image/jpeg',
+        'size' => 123,
+        'error' => UPLOAD_ERR_OK
+    );
+    $client->request(
+        'POST',
+        '/submit',
+        array('name' => 'Fabien'),
+        array('photo' => $photo)
+    );
+
+    // Realiza una petición DELETE, y pasa las cabeceras HTTP
+    $client->request(
+        'DELETE',
+        '/post/12',
+        array(),
+        array(),
+        array('PHP_AUTH_USER' => 'username', 'PHP_AUTH_PW' => 'pa$$word')
+    );
+
+Por último pero no menos importante, puedes hacer que cada petición se ejecute en su propio proceso *PHP* para evitar efectos secundarios cuando se trabaja con varios clientes en el mismo archivo::
+
+    $client->insulate();
+
+Navegando
+~~~~~~~~~
+
+El cliente es compatible con muchas operaciones que se pueden hacer en un navegador real::
+
+    $client->back();
+    $client->forward();
+    $client->reload();
+
+    // Limpia todas las cookies y el historial
+    $client->restart();
+
+Accediendo a objetos internos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Si utilizas el cliente para probar tu aplicación, posiblemente quieras acceder a los objetos internos del cliente::
+
+    $history   = $client->getHistory();
+    $cookieJar = $client->getCookieJar();
+
+También puedes obtener los objetos relacionados con la última petición::
+
+    $request  = $client->getRequest();
+    $response = $client->getResponse();
+    $crawler  = $client->getCrawler();
+
+Si tus peticiones no son aisladas, también puedes acceder al ``Contenedor`` y al ``kernel``::
+
+    $container = $client->getContainer();
+    $kernel    = $client->getKernel();
+
+Accediendo al contenedor
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Es altamente recomendable que una prueba funcional sólo pruebe la respuesta. Sin embargo, bajo ciertas circunstancias muy raras, posiblemente desees acceder a algunos objetos internos para escribir aserciones. En tales casos, puedes acceder al contenedor de inyección de dependencias::
+
+    $container = $client->getContainer();
+
+Ten en cuenta que esto no tiene efecto si aíslas el cliente o si utilizas una capa *HTTP*. Para listar todos los servicios disponibles en tu aplicación, utiliza la orden ``container:debug`` de la consola.
+
+.. tip::
+
+    Si la información que necesitas comprobar está disponible desde el generador de perfiles, úsala en su lugar.
+
+Accediendo a los datos del perfil
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+En cada petición, el generador de perfiles de *Symfony* recoge y guarda una gran variedad de datos sobre el manejo interno de la petición. Por ejemplo, puedes usar el generador de perfiles para verificar que cuando se carga una determinada página ejecuta menos de una cierta cantidad de consultas a la base de datos.
+
+Para obtener el generador de perfiles de la última petición, haz lo siguiente::
+
+    $profile = $client->getProfile();
+
+Para detalles específicos en el uso del generador de perfiles en una prueba, consulta el artículo :doc:`/cookbook/testing/profiling` en el recetario.
+
+Redirigiendo
+~~~~~~~~~~~~
+
+Cuando una petición devuelve una respuesta de redirección, el cliente la sigue automáticamente. Si deseas examinar la ``Respuesta`` antes de redirigir, puedes hacer que el cliente no siga los cambios de dirección con el método ``followRedirects()``::
+
+    $client->followRedirects(false);
+
+Cuando el cliente no sigue los cambios de dirección, puedes forzar el cambio de dirección con el método ``followRedirect()``::
+
+    $crawler = $client->followRedirect();
+
+.. index::
+   single: Pruebas; Crawler
+
+.. _book-testing-crawler:
+
+El ``Crawler``
+--------------
+
+Cada vez que hagas una petición con el cliente devolverá una instancia del ``Crawler``.
+Este nos permite recorrer documentos *HTML*, seleccionar nodos, encontrar enlaces y formularios.
+
+Recorriendo
+~~~~~~~~~~~
+
+Al igual que *jQuery*, el ``Crawler`` tiene métodos para recorrer el *DOM* de un documento *HTML*/*XML*: Por ejemplo, el siguiente fragmento encuentra todos los elementos ``input[type=submit]``, selecciona el último en la página, y luego selecciona el elemento padre inmediato::
+
+    $newCrawler = $crawler->filter('input[type=submit]')
+        ->last()
+        ->parents()
+        ->first()
+    ;
+
+Disponemos de muchos otros métodos:
+
++------------------------+----------------------------------------------------+
+| Método                 | Descripción                                        |
++========================+====================================================+
+| ``filter('h1.title')`` | Nodos que coinciden con el selector *CSS*          |
++------------------------+----------------------------------------------------+
+| ``filterXpath('h1')``  | Nodos que coinciden con la expresión *XPath*       |
++------------------------+----------------------------------------------------+
+| ``eq(1)``              | Nodo para el índice especificado                   |
++------------------------+----------------------------------------------------+
+| ``first()``            | Primer nodo                                        |
++------------------------+----------------------------------------------------+
+| ``last()``             | Último nodo                                        |
++------------------------+----------------------------------------------------+
+| ``siblings()``         | Hermanos                                           |
++------------------------+----------------------------------------------------+
+| ``nextAll()``          | Todos los hermanos siguientes                      |
++------------------------+----------------------------------------------------+
+| ``previousAll()``      | Todos los hermanos precedentes                     |
++------------------------+----------------------------------------------------+
+| ``parents()``          | Devuelve los nodos padre                           |
++------------------------+----------------------------------------------------+
+| ``children()``         | Devuelve los nodos hijo                            |
++------------------------+----------------------------------------------------+
+| ``reduce($lambda)``    | Nodos para los cuales el ejecutable no devuelve    |
+|                        | ``false``                                          |
++------------------------+----------------------------------------------------+
+
+Debido a que cada uno de estos métodos devuelve una nueva instancia del ``Crawler``, puedes reducir tu selección de nodos encadenando las llamadas al método::
+
+    $crawler
+        ->filter('h1')
+        ->reduce(function ($node, $i)
+        {
+            if (!$node->getAttribute('class')) {
+                    return false;
+            }
+        })
+        ->first();
+
+.. tip::
+
+    Usa la función ``count()`` para obtener el número de nodos almacenados en un ``Crawler``:
+    ``count($crawler)``
+
+Extrayendo información
+~~~~~~~~~~~~~~~~~~~~~~
+
+El ``Crawler`` puede extraer información de los nodos::
+
+    // Devuelve el valor del atributo del primer nodo
+    $crawler->attr('class');
+
+    // Devuelve el valor del nodo para el primer nodo
+    $crawler->text();
+
+    // Extrae un arreglo de atributos de todos los nodos (_text devuelve el valor del nodo)
+    // devuelve un arreglo de cada elemento en 'crawler', cada cual con su valor y href
+    $info = $crawler->extract(array('_text', 'href'));
+
+    // Ejecuta una función anónima por cada nodo y devuelve un arreglo de resultados
+    $data = $crawler->each(function ($node, $i)
+    {
+        return $node->attr('href');
+    });
+
+Enlaces
+~~~~~~~
+
+Para seleccionar enlaces, puedes usar los métodos de recorrido anteriores o el conveniente atajo ``selectLink()``::
+
+    $crawler->selectLink('Click here');
+
+Este selecciona todos los enlaces que contienen el texto dado, o hace clic en las imágenes en que el atributo ``alt`` contiene el texto dado. Al igual que los otros métodos de filtrado, devuelve otro objeto ``Crawler``.
+
+Una vez seleccionado un enlace, tienes acceso al objeto especial ``Link``, el cual tiene útiles métodos específicos para enlaces (tal como ``getMethod()`` y
+``getUri()``). Para hacer clic en el enlace, usa el método ``click()`` del cliente suministrando un objeto ``Link``::
+
+    $link = $crawler->selectLink('Click here')->link();
+
+    $client->click($link);
+
+Formularios
+~~~~~~~~~~~
+
+Al igual que con cualquier otro enlace, seleccionas el formulario con el método ``selectButton()``::
+
+    $buttonCrawlerNode = $crawler->selectButton('submit');
+
+.. note::
+
+    Ten en cuenta que seleccionamos botones del formulario y no el formulario porque un formulario puede tener varios botones; si utilizas la *API* para recorrerlo, ten en cuenta que debes buscar un botón.
+
+El método ``selectButton()`` puede seleccionar etiquetas ``button`` y enviar etiquetas ``input``; Este usa diferentes partes de los botones para encontrarlos:
+
+* El valor del atributo ``value``;
+
+* El valor del atributo ``id`` o ``alt`` de imágenes;
+
+* El valor del atributo ``id`` o ``name`` de las etiquetas ``button``.
+
+Una vez que tienes un ``Crawler`` que representa un botón, invoca al método ``form()`` para obtener la instancia del ``Formulario`` del nodo del formulario que envuelve al botón::
+
+    $form = $buttonCrawlerNode->form();
+
+Cuando llamas al método ``form()``, también puedes pasar una matriz de valores de campo que sustituyan los valores predeterminados::
+
+    $form = $buttonCrawlerNode->form(array(
+        'name'              => 'Fabien',
+        'my_form[subject]'  => 'Symfony rocks!',
+    ));
+
+Y si quieres simular un método *HTTP* específico del formulario, pásalo como segundo argumento::
+
+    $form = $buttonCrawlerNode->form(array(), 'DELETE');
+
+El cliente puede enviar instancias de ``Form``::
+
+    $client->submit($form);
+
+Los valores del campo también se pueden pasar como segundo argumento del método ``submit()``::
+
+    $client->submit($form, array(
+        'name'              => 'Fabien',
+        'my_form[subject]'  => 'Symfony rocks!',
+    ));
+
+Para situaciones más complejas, utiliza la instancia de ``Form`` como una matriz para establecer el valor de cada campo individualmente::
+
+    // Cambia el valor de un campo
+    $form['name'] = 'Fabien';
+    $form['my_form[subject]'] = 'Symfony rocks!';
+
+También hay una buena *API* para manipular los valores de los campos de acuerdo a su tipo::
+
+    // selecciona una opción o un botón de radio
+    $form['country']->select('France');
+
+    // marca una casilla de verificación (checkbox)
+    $form['like_symfony']->tick();
+
+    // carga un archivo
+    $form['photo']->upload('/ruta/a/lucas.jpg');
+
+.. tip::
+
+    Puedes conseguir los valores que se enviarán llamando al método ``getValues()`` del objeto ``Form``. Los archivos subidos están disponibles en un arreglo separado devuelto por ``getFiles()``. Los métodos ``getPhpValues()`` y ``getPhpFiles()`` también devuelven los valores enviados, pero en formato *PHP* (este convierte las claves en notación con paréntesis cuadrados ---por ejemplo, ``my_form[subject]``--- a arreglos *PHP*).
+
+.. index::
+   pair: Pruebas; Configuración
+
+Probando la configuración
+-------------------------
+
+El cliente utilizado por las pruebas funcionales crea un núcleo que se ejecuta en un entorno de ``prueba`` especial. Debido a que *Symfony* carga el ``app/config/config_test.yml``
+en el entorno ``test``, puedes ajustar cualquiera de las opciones de tu aplicación específicamente para pruebas.
+
+Por ejemplo, por omisión, el ``swiftmailer`` está configurado para que en el entorno ``test`` *no* se entregue realmente el correo electrónico. Lo puedes ver bajo la opción de configuración ``swiftmailer``.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config_test.yml
+        # ...
+
+        swiftmailer:
+            disable_delivery: true
+
+    .. code-block:: xml
+
+        <!-- app/config/config_test.xml -->
+        <container>
+            <!-- ... -->
+
+            <swiftmailer:config disable-delivery="true" />
+        </container>
+
+    .. code-block:: php
+
+        // app/config/config_test.php
+        // ...
+
+        $container->loadFromExtension('swiftmailer', array(
+            'disable_delivery' => true
+        ));
+
+Además, puedes usar un entorno completamente diferente, o redefinir el modo de depuración predeterminado (``true``) pasando cada opción al método ``createClient()``::
+
+    $client = static::createClient(array(
+        'environment' => 'my_test_env',
+        'debug'       => false,
+    ));
+
+Si tu aplicación se comporta de acuerdo a algunas cabeceras *HTTP*, pásalas como segundo argumento de ``createClient()``::
+
+    $client = static::createClient(array(), array(
+        'HTTP_HOST'       => 'en.example.com',
+        'HTTP_USER_AGENT' => 'MySuperBrowser/1.0',
+    ));
+
+También puedes reemplazar cabeceras *HTTP* en base a la petición::
+
+    $client->request('GET', '/', array(), array(), array(
+        'HTTP_HOST'       => 'en.example.com',
+        'HTTP_USER_AGENT' => 'MySuperBrowser/1.0',
+    ));
+
+.. tip::
+
+    El cliente de prueba está disponible como un servicio en el contenedor del entorno ``test`` (o cuando está habilitada la opción :ref:`framework.test <reference-framework-test>`). Esto significa que ---de ser necesario--- puedes redefinir el servicio completamente.
+
+.. index::
+   pair: PHPUnit; Configuración
+
+Configuración de *PHPUnit*
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Cada aplicación tiene su propia configuración de *PHPUnit*, almacenada en el archivo ``phpunit.xml.dist``. Puedes editar este archivo para cambiar los valores predeterminados o crear un archivo :file:`phpunit.xml` para modificar la configuración de tu máquina local.
+
+.. tip::
+
+    Guarda el archivo :file:`phpunit.xml.dist` en tu repositorio de código, e ignora el archivo :file:`phpunit.xml`.
+
+De forma predeterminada, la orden ``PHPUnit`` sólo ejecuta las pruebas almacenadas en los paquetes "estándar" (las pruebas estándar están en el directorio :file:`src/*/Bundle/Tests` o :file:`src/*/Bundle/*Bundle/Tests`), pero fácilmente puedes añadir más directorios. Por ejemplo, la siguiente configuración añade las pruebas de los paquetes de terceros que has instalado:
+
+.. code-block:: xml
+
+    <!-- hello/phpunit.xml.dist -->
+    <testsuites>
+        <testsuite name="Project Test Suite">
+            <directory>../src/*/*Bundle/Tests</directory>
+            <directory>../src/Acme/Bundle/*Bundle/Tests</directory>
+        </testsuite>
+    </testsuites>
+
+Para incluir otros directorios en la cobertura de código, también edita la sección ``<filter>``:
+
+.. code-block:: xml
+
+    <filter>
+        <whitelist>
+            <directory>../src</directory>
+            <exclude>
+                <directory>../src/*/*Bundle/Resources</directory>
+                <directory>../src/*/*Bundle/Tests</directory>
+                <directory>../src/Acme/Bundle/*Bundle/Resources</directory>
+                <directory>../src/Acme/Bundle/*Bundle/Tests</directory>
+            </exclude>
+        </whitelist>
+    </filter>
+
+Aprende más en el recetario
+---------------------------
+
+* :doc:`/cookbook/testing/http_authentication`
+* :doc:`/cookbook/testing/insulating_clients`
+* :doc:`/cookbook/testing/profiling`
+
+
+.. _`DemoControllerTest`: https://github.com/symfony/symfony-standard/blob/master/src/Acme/DemoBundle/Tests/Controller/DemoControllerTest.php
+.. _`$_SERVER`: http://www.php.net/manual/es/reserved.variables.server.php
+.. _`documentación`: http://www.phpunit.de/manual/3.5/en/

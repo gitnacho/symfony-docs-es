@@ -1,0 +1,315 @@
+.. index::
+    single: Console; CLI
+
+El componente ``Console``
+=========================
+
+    El componente ``Console`` facilita la creación de bellas y comprobables interfaces de línea de ordenes.
+
+El componente ``Console`` te permite crear instrucciones para la línea de ordenes. Tus ordenes de consola se pueden utilizar para cualquier tarea repetitiva, como tareas programadas (``cronjobs``), importaciones, u otros trabajos por lotes.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/Console);
+* Instalándolo a través de *PEAR* (`pear.symfony.com/Console`);
+* Instalándolo vía ``Composer`` (`symfony/console` en Packagist).
+
+Creando una orden básica
+------------------------
+
+Para hacer una orden de consola que nos de la bienvenida desde la línea de ordenes, crea el archivo :file:`GreetCommand.php` y agrégale lo siguiente:
+
+.. code-block:: php
+
+    use Symfony\Component\Console\Command\Command;
+    use Symfony\Component\Console\Input\InputArgument;
+    use Symfony\Component\Console\Input\InputInterface;
+    use Symfony\Component\Console\Input\InputOption;
+    use Symfony\Component\Console\Output\OutputInterface;
+
+    class GreetCommand extends Command
+    {
+        protected function configure()
+        {
+            $this
+                ->setName('demo:greet')
+                ->setDescription('Greet someone')
+                ->addArgument('name', InputArgument::OPTIONAL, 'Who do you want to greet?')
+                ->addOption('yell', null, InputOption::VALUE_NONE, 'If set, the task will yell in uppercase letters')
+            ;
+        }
+
+        protected function execute(InputInterface $input, OutputInterface $output)
+        {
+            $name = $input->getArgument('name');
+            if ($name) {
+                $text = 'Hello '.$name;
+            } else {
+                $text = 'Hello';
+            }
+
+            if ($input->getOption('yell')) {
+                $text = strtoupper($text);
+            }
+
+            $output->writeln($text);
+        }
+    }
+
+También necesitas crear el archivo para ejecutar la línea de ordenes, el cual crea una ``Application`` y le agrega ordenes:
+
+.. code-block:: html+php
+
+    #!/usr/bin/env php
+    # app/console
+    <?php 
+
+    use Acme\DemoBundle\Command\GreetCommand;
+    use Symfony\Component\Console\Application;
+
+    $application = new Application();
+    $application->add(new GreetCommand);
+    $application->run();
+
+Prueba la nueva consola de ordenes ejecutando lo siguiente
+
+.. code-block:: bash
+
+    app/console demo:greet Fabien
+
+Esto imprimirá lo siguiente en la línea de ordenes:
+
+.. code-block:: text
+
+    Hello Fabien
+
+También puedes utilizar la opción ``--yell`` para convertir todo a mayúsculas:
+
+.. code-block:: bash
+
+    app/console demo:greet Fabien --yell
+
+Esto imprime::
+
+    HELLO FABIEN
+
+Coloreando la salida
+~~~~~~~~~~~~~~~~~~~~
+
+Cada vez que produces texto, puedes escribir el texto con etiquetas para colorear tu salida. Por ejemplo::
+
+    // texto verde
+    $output->writeln('<info>foo</info>');
+
+    // texto amarillo
+    $output->writeln('<comment>foo</comment>');
+
+    // texto negro sobre fondo cían
+    $output->writeln('<question>foo</question>');
+
+    // texto blanco sobre fondo rojo
+    $output->writeln('<error>foo</error>');
+
+Es posible definir tu propio estilo usando la clase :class:`Symfony\\Component\\Console\\Formatter\\OutputFormatterStyle`::
+
+    $style = new OutputFormatterStyle('red', 'yellow', array('bold', 'blink'));
+    $output->getFormatter()->setStyle('fire', $style);
+    $output->writeln('<fire>foo</fire>');
+
+Los colores disponibles para el fondo y primer plano son: ``black``, ``red``, ``green``, ``yellow``, ``blue``, ``magenta``, ``cyan`` y ``white``.
+
+Y las opciones disponibles son: ``bold``, ``underscore``, ``blink``, ``reverse`` y ``conceal``.
+
+Utilizando argumentos de ordenes
+--------------------------------
+
+La parte más interesante de las ordenes son los argumentos y opciones que puedes hacer disponibles. Los argumentos son cadenas ---separadas por espacios--- que vienen después del nombre de la orden misma. Ellos están ordenados, y pueden ser opcionales u obligatorios. Por ejemplo, añade un argumento ``last_name`` opcional a la orden y haz que el argumento ``name`` sea obligatorio::
+
+    $this
+        // ...
+        ->addArgument('name', InputArgument::REQUIRED, 'Who do you want to greet?')
+        ->addArgument('last_name', InputArgument::OPTIONAL, 'Your last name?')
+        // ...
+
+Ahora tienes acceso a un argumento ``last_name`` en la orden::
+
+    if ($lastName = $input->getArgument('last_name')) {
+        $text .= ' '.$lastName;
+    }
+
+Ahora la orden se puede utilizar en cualquiera de las siguientes maneras:
+
+.. code-block:: bash
+
+    app/console demo:greet Fabien
+    app/console demo:greet Fabien Potencier
+
+Usando las opciones de la orden
+-------------------------------
+
+A diferencia de los argumentos, las opciones no están ordenadas (lo cual significa que las puedes especificar en cualquier orden) y se especifican con dos guiones (por ejemplo, ``--yell`` también puedes declarar un atajo de una letra que puedes invocar con un único guión como ``-y``). Las opciones son: *always* opcional, y se puede configurar para aceptar un valor (por ejemplo, ``dir=src``) o simplemente como una variable lógica sin valor (por ejemplo, ``yell``).
+
+.. tip::
+
+    También es posible hacer que un argumento *opcionalmente* acepte un valor (de modo que ``--yell`` o ``yell=loud`` funcione). Las opciones también se pueden configurar para aceptar una matriz de valores.
+
+Por ejemplo, añadir una nueva opción a la orden que se puede usar para especificar cuántas veces se debe imprimir el mensaje en una fila::
+
+    $this
+        // ...
+        ->addOption('iterations', null, InputOption::VALUE_REQUIRED, 'How many times should the message be printed?', 1)
+
+A continuación, utilízalo en la orden para imprimir el mensaje varias veces:
+
+.. code-block:: php
+
+    for ($i = 0; $i < $input->getOption('iterations'); $i++) {
+        $output->writeln($text);
+    }
+
+Ahora, al ejecutar la tarea, si lo deseas, puedes especificar un indicador ``--iterations``:
+
+.. code-block:: bash
+
+    app/console demo:greet Fabien
+
+    app/console demo:greet Fabien --iterations=5
+
+El primer ejemplo sólo se imprimirá una vez, ya que ``iterations`` está vacía y el predeterminado es ``1`` (el último argumento de ``addOption``). El segundo ejemplo se imprimirá cinco veces.
+
+Recordemos que a las opciones no les preocupa su orden. Por lo tanto, cualquiera de las siguientes trabajará:
+
+.. code-block:: bash
+
+    app/console demo:greet Fabien --iterations=5 --yell
+    app/console demo:greet Fabien --yell --iterations=5
+
+Hay 4 variantes de la opción que puedes utilizar:
+
+===========================  ============================================================
+Opción                       Valor
+===========================  ============================================================
+InputOption::VALUE_IS_ARRAY  Esta opción acepta múltiples valores
+InputOption::VALUE_NONE      No acepta entradas para esta opción (por ejemplo ``--yell``)
+InputOption::VALUE_REQUIRED  Este valor es obligatorio (por ejemplo ``iterations=5``)
+InputOption::VALUE_OPTIONAL  Este valor es opcional
+===========================  ============================================================
+
+Puedes combinar el VALUE_IS_ARRAY con VALUE_REQUIRED o VALUE_OPTIONAL de la siguiente manera:
+
+.. code-block:: php
+
+    $this
+        // ...
+        ->addOption('iterations', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'How many times should the message be printed?', 1)
+
+Pidiendo información al usuario
+-------------------------------
+
+Al crear ordenes, tienes la capacidad de recopilar más información de los usuarios haciéndoles preguntas. Por ejemplo, supongamos que deseas confirmar una acción antes de llevarla a cabo realmente. Añade lo siguiente a tu orden::
+
+    $dialog = $this->getHelperSet()->get('dialog');
+    if (!$dialog->askConfirmation($output, '<question>Continue with this action?</question>', false)) {
+        return;
+    }
+
+En este caso, el usuario tendrá que "Continuar con esta acción", y, a menos que responda con ``y``, la tarea se detendrá. El tercer argumento de ``askConfirmation`` es el valor predeterminado que se devuelve si el usuario no introduce algo.
+
+También puedes hacer preguntas con más que una simple respuesta sí/no. Por ejemplo, si necesitas saber el nombre de algo, puedes hacer lo siguiente::
+
+    $dialog = $this->getHelperSet()->get('dialog');
+    $name = $dialog->ask($output, 'Please enter the name of the widget', 'foo');
+
+Probando ordenes
+----------------
+
+*Symfony2* proporciona varias herramientas para ayudarte a probar las ordenes. La más útil es la clase :class:`Symfony\\Component\\Console\\Tester\\CommandTester`. Esta utiliza clases entrada y salida especiales para facilitar la prueba sin una consola real::
+
+    use Symfony\Component\Console\Application;
+    use Symfony\Component\Console\Tester\CommandTester;
+
+    class ListCommandTest extends \PHPUnit_Framework_TestCase
+    {
+        public function testExecute()
+        {
+            $application = new Application();
+            $application->add(new GreetCommand());
+
+            $command = $application->find('demo:greet');
+            $commandTester = new CommandTester($command);
+            $commandTester->execute(array('command' => $command->getName()));
+
+            $this->assertRegExp('/.../', $commandTester->getDisplay());
+
+            // ...
+        }
+    }
+
+El método :method:`Symfony\\Component\\Console\\Tester\\CommandTester::getDisplay` devuelve lo que se ha exhibido durante una llamada normal de la consola.
+
+Puedes probar enviando argumentos y opciones a la orden pasándolos como una matriz al método :method:`symfony\\Component\\Console\\Tester\\CommandTester::getDisplay`::
+
+    use Symfony\Component\Console\Tester\CommandTester;
+    use Symfony\Component\Console\Application;
+    use Acme\DemoBundle\Command\GreetCommand;
+
+    class ListCommandTest extends \PHPUnit_Framework_TestCase
+    {
+
+        //--
+
+        public function testNameIsOutput()
+        {
+            $application = new Application();
+            $application->add(new GreetCommand());
+
+            $command = $application->find('demo:greet');
+            $commandTester = new CommandTester($command);
+            $commandTester->execute(
+                array('command' => $command->getName(), 'name' => 'Fabien')
+            );
+
+            $this->assertRegExp('/Fabien/', $commandTester->getDisplay());
+        }
+    }
+
+.. tip::
+
+    También puedes probar toda una aplicación de consola utilizando :class:`Symfony\\Component\\Console\\Tester\\ApplicationTester`.
+
+Llamando una orden existente
+----------------------------
+
+Si una orden depende de que se ejecute otra antes, en lugar de obligar al usuario a recordar el orden de ejecución, puedes llamarla directamente tú mismo.
+Esto también es útil si deseas crear una "metaorden" que ejecute un montón de otras ordenes (por ejemplo, todas las ordenes que se deben ejecutar cuando el código del proyecto ha cambiado en los servidores de producción: vaciar la caché, generar delegados *Doctrine2*, volcar activos ``Assetic``, ...).
+
+Llamar a una orden desde otra es sencillo::
+
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $command = $this->getApplication()->find('demo:greet');
+
+        $arguments = array(
+            'command' => 'demo:greet',
+            'name'    => 'Fabien',
+            '--yell'  => true,
+        );
+
+        $input = new ArrayInput($arguments);
+        $returnCode = $command->run($input, $output);
+
+        // ...
+    }
+
+En primer lugar, :method:`Symfony\\Component\\Console\\Command\\Command::find` busca la orden que deseas ejecutar pasando el nombre de la orden.
+
+Entonces, es necesario crear una nueva clase :class:`Symfony\\Component\\Console\\Input\\ArrayInput` con los argumentos y opciones que desees pasar a la orden.
+
+Eventualmente, llamar al método ``run()`` en realidad ejecuta la orden y regresa el código devuelto por la orden (``0`` si todo va bien, cualquier otro número entero de otra manera).
+
+.. note::
+
+    La mayor parte del tiempo, llamar a una orden desde código que no se ejecuta en la línea de ordenes no es una buena idea por varias razones. En primer lugar, la salida de la orden se ha optimizado para la consola. Pero lo más importante, puedes pensar de una orden como si fuera un controlador; este debe utilizar el modelo para hacer algo y mostrar algún comentario al usuario. Así, en lugar de llamar una orden desde la *Web*, reconstruye tu código y mueve la lógica a una nueva clase.

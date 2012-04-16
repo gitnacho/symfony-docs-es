@@ -1,0 +1,72 @@
+.. index::
+   single: Petición; Añade un formato de petición y tipo MIME
+
+Cómo registrar un nuevo formato de petición y tipo *MIME*
+=========================================================
+
+Cada ``Petición`` tiene un "formato" (por ejemplo, ``html``, ``json``), el cual se utiliza para determinar qué tipo de contenido regresar en la ``Respuesta``. De hecho, el formato de petición, accesible a través del método :method:`Symfony\\Component\\HttpFoundation\\Request::getRequestFormat`, se utiliza para establecer el tipo MIME de la cabecera ``Content-Type`` en el objeto ``Respuesta``. Internamente, *Symfony* incluye un mapa de los formatos más comunes (por ejemplo, ``html``, ``json``) y sus correspondientes tipos MIME (por ejemplo, ``text/html``, ``application/json``). Por supuesto, se pueden agregar entradas de formato tipo MIME adicionales fácilmente. Este documento te mostrará cómo puedes agregar el formato ``jsonp`` y el tipo MIME correspondiente.
+
+Crea un escucha ``kernel.request``
+----------------------------------
+
+La clave para definir un nuevo tipo MIME es crear una clase que debe "escuchar" el evento ``kernel.request`` enviado por el núcleo de *Symfony*. El evento ``kernel.request`` se difunde temprano en *Symfony*, el manipulador de la petición lo procesa y te permite modificar el objeto ``Petición``.
+
+Crea la siguiente clase, sustituyendo la ruta con una ruta a un paquete en tu proyecto::
+
+    // src/Acme/DemoBundle/RequestListener.php
+    namespace Acme\DemoBundle;
+
+    use Symfony\Component\HttpKernel\HttpKernelInterface;
+    use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+
+    class RequestListener
+    {
+        public function onKernelRequest(GetResponseEvent $event)
+        {
+            $event->getRequest()->setFormat('jsonp', 'application/javascript');
+        }
+    }
+
+Registrando tu escucha
+----------------------
+
+Como para cualquier otro escucha, tienes que añadirlo en uno de tus archivos de configuración y registrarlo como un escucha añadiendo la etiqueta ``kernel.event_listener``:
+
+.. configuration-block::
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <?xml version="1.0" ?>
+
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+                <services>
+            <service id="acme.demobundle.listener.request" class="Acme\DemoBundle\RequestListener">
+                <tag name="kernel.event_listener" event="kernel.request" method="onKernelRequest" />
+            </service>
+                </services>
+        </container>
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        services:
+            acme.demobundle.listener.request:
+                class: Acme\DemoBundle\RequestListener
+                tags:
+                        - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
+
+    .. code-block:: php
+
+        # app/config/config.php
+        $definition = new Definition('Acme\DemoBundle\RequestListener');
+        $definition->addTag('kernel.event_listener', array('event' => 'kernel.request', 'method' => 'onKernelRequest'));
+        $container->setDefinition('acme.demobundle.listener.request', $definition);
+
+En este punto, el servicio ``acme.demobundle.listener.request`` se ha configurado y será notificado cuando el núcleo de *Symfony* difunda el evento ``kernel.request``.
+
+.. tip::
+
+    También puedes registrar el escucha en una clase extensión de configuración (consulta :ref:`service-container-extension-configuration` para más información).

@@ -1,0 +1,73 @@
+``False``
+=========
+
+Valida que un valor es ``false``. En concreto, esta comprueba si el valor es exactamente ``false``, exactamente el número entero ``0``, o exactamente la cadena "``0``".
+
+Además consulta :doc:`True <True>`.
+
++----------------+---------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`              |
++----------------+---------------------------------------------------------------------+
+| Opciones       | - `message`_                                                        |
++----------------+---------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\False`          |
++----------------+---------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\FalseValidator` |
++----------------+---------------------------------------------------------------------+
+
+Uso básico
+----------
+
+La restricción ``False`` se puede aplicar a una propiedad o a un método "captador", pero comúnmente, es más útil en este último caso. Por ejemplo, supongamos que quieres garantizar que una propiedad ``state`` *no* está en una matriz dinámica de ``invalidStates``. En primer lugar, crearías un método "captador"::
+
+    protected $state;
+
+    protected $invalidStates = array();
+
+    public function isStateInvalid()
+    {
+        return in_array($this->state, $this->invalidStates);
+    }
+
+En este caso, el objeto subyacente es válido sólo si el método ``isStateInvalid`` devuelve ``false``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/BlogBundle/Resources/config/validation.yml
+        Acme\BlogBundle\Entity\Author
+            getters:
+                stateInvalid:
+                    - "False":
+                        mensaje: You've entered an invalid state.
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\False()
+             */
+             public function isStateInvalid($message = "You've entered an invalid state.")
+             {
+                // ...
+             }
+        }
+
+.. caution::
+
+    Cuando utilices *YAML*, asegúrate de rodear ``False`` entre comillas (``"False"``) o de lo contrario *YAML* lo convertirá en un valor booleano.
+
+Opciones
+--------
+
+``message``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``This value should be false`` (``Este valor debe ser 'false'``)
+
+Este mensaje se muestra si el dato subyacente no es ``false``.

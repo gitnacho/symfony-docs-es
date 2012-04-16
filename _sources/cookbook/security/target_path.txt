@@ -1,0 +1,60 @@
+.. index::
+   single: Seguridad; Ruta destino de reorientación
+
+Cómo cambiar el comportamiento predeterminado de la ruta destino
+================================================================
+
+De manera predeterminada, el componente de seguridad retiene información de la *URI* de la petición anterior en una variable de sesión llamada ``_security.target_path``. Tras un inicio de sesión exitoso, el usuario es redirigido a esa ruta, para ayudarle a continuar a partir de la última página conocida que visitó.
+
+En algunas ocasiones, esto es inesperado. Por ejemplo, cuando la *URI* de la última petición *HTTP POST* contra una ruta que está configurada para permitir sólo un método *POST*, el usuario es redirigido a esta ruta sólo para obtener un error 404.
+
+Para evitar este comportamiento, sólo tendrías que extender la  clse ``ExceptionListener`` y anular el método llamado ``setTargetPath()``.
+
+En primer lugar, redefine el parámetro ``security.exception_listener.class`` en el archivo de configuración. Lo puedes hacer en tu archivo de configuración (en ``app/config``) o en un archivo de configuración importado desde un paquete:
+
+.. configuration-block::
+
+        .. code-block:: yaml
+
+            # src/Acme/HelloBundle/Resources/config/services.yml
+            parameters:
+                # ...
+                security.exception_listener.class: Acme\HelloBundle\Security\Firewall\ExceptionListener
+
+        .. code-block:: xml
+
+            <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
+            <parameters>
+                <!-- ... -->
+                <parameter key="security.exception_listener.class">Acme\HelloBundle\Security\Firewall\ExceptionListener</parameter>
+            </parameters>
+
+        .. code-block:: php
+
+            // src/Acme/HelloBundle/Resources/config/services.php
+            // ...
+            $container->setParameter('security.exception_listener.class', 'Acme\HelloBundle\Security\Firewall\ExceptionListener');
+
+A continuación, crea tu propio escucha ``ExceptionListener``::
+
+    // src/Acme/HelloBundle/Security/Firewall/ExceptionListener.php
+    namespace Acme\HelloBundle\Security\Firewall;
+
+    use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Component\Security\Http\Firewall\ExceptionListener as BaseExceptionListener;
+
+    class ExceptionListener extends BaseExceptionListener
+    {
+        protected function setTargetPath(Request $request)
+        {
+            // no guarda la ruta destino de peticiones XHR y distintas de GET
+            // Puedes añadir cualquier lógica que quieras
+            if ($request->isXmlHttpRequest() || 'GET' !== $request->getMethod()) {
+                return;
+            }
+
+            $request->getSession()->set('_security.target_path', $request->getUri());
+        }
+    }
+
+¡Aquí añade tanta lógica como requieras para tu escenario!

@@ -1,0 +1,154 @@
+``@Route`` y ``@Method``
+========================
+
+Usando
+------
+
+La anotación ``@Route`` asigna un patrón de ruta a un controlador::
+
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+
+    class PostController extends Controller
+    {
+        /**
+         * @Route("/")
+         */
+        public function indexAction()
+        {
+            // ...
+        }
+    }
+
+La acción ``index`` del controlador ``Post`` ya está asignada a la dirección ``/``. Esto es equivalente a la siguiente configuración *YAML*:
+
+.. code-block:: yaml
+
+    blog_home:
+        pattern:  /
+        defaults: { _controller: SensioBlogBundle:Post:index }
+
+Al igual que cualquier patrón de ruta, puedes definir marcadores de posición, requisitos y valores predeterminados::
+
+    /**
+     * @Route("/{id}", requirements={"id" = "\d+"}, defaults={"foo" = "bar"})
+     */
+    public function showAction($id)
+    {
+    }
+
+También puedes combinar más de una *URL* definiendo una anotación ``@Route`` adicional::
+
+    /**
+     * @Route("/", defaults={"id" = 1})
+     * @Route("/{id}")
+     */
+    public function showAction($id)
+    {
+    }
+
+Activando
+---------
+
+Las rutas se deben importar para estar activas como cualquier otro recurso de enrrutado (observa el tipo ``annotation``):
+
+.. code-block:: yaml
+
+    # app/config/routing.yml
+
+    # importa las rutas desde una clase controlador
+    post:
+        resource: "@SensioBlogBundle/Controller/PostController.php"
+        type:     annotation
+
+También puedes importar un directorio completo:
+
+.. code-block:: yaml
+
+    # importa rutas desde el directorio de controladores
+    blog:
+        resource: "@SensioBlogBundle/Controller"
+        type:     annotation
+
+Como para cualquier otro recurso, puedes "montar" las rutas bajo un determinado prefijo:
+
+.. code-block:: yaml
+
+    post:
+        resource: "@SensioBlogBundle/Controller/PostController.php"
+        prefix:   /blog
+        type:     annotation
+
+Nombre de ruta
+--------------
+
+A una ruta definida con la anotación ``@Route`` se le asigna un nombre predeterminado, el cual está compuesto por el nombre del paquete, el nombre del controlador y el nombre de la acción. En el caso del ejemplo anterior sería
+``sensio_blog_comunicado_index``;
+
+Puedes utilizar el atributo ``name`` para reemplazar este nombre de ruta predeterminado::
+
+    /**
+     * @Route("/", name="blog_home")
+     */
+    public function indexAction()
+    {
+        // ...
+    }
+
+Prefijo de ruta
+---------------
+
+Una anotación ``@Route`` en una clase controlador define un prefijo para todas las rutas de acción::
+
+    /**
+     * @Route("/blog")
+     */
+    class PostController extends Controller
+    {
+        /**
+         * @Route("/{id}")
+         */
+        public function showAction($id)
+        {
+        }
+    }
+
+La acción ``show`` ahora se asigna al patrón ``/blog/{id}``.
+
+Método de la ruta
+-----------------
+
+Hay un atajo en la anotación ``@Method`` para especificar el método *HTTP* permitido para la ruta. Para usarlo, importa el espacio de nombres de la anotación ``Method``::
+
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+
+    /**
+     * @Route("/blog")
+     */
+    class PostController extends Controller
+    {
+        /**
+         * @Route("/edit/{id}")
+         * @Method({"GET", "POST"})
+         */
+        public function editAction($id)
+        {
+        }
+    }
+
+La acción ``editar`` ahora es asignada al patrón ``/blog/editar/{id}`` si el método *HTTP* utilizado es *GET* o *POST*.
+
+La anotación ``@Method`` sólo se toma en cuenta cuando una acción se anota con ``@Route``.
+
+Controlador como servicio
+-------------------------
+
+También puedes utilizar la anotación ``@Route`` en una clase de controlador para asignar la clase controlador a un servicio para que el resolutor de controlador cree una instancia del controlador obteniendo el ``ID`` del contenedor en lugar de llamar a ``new PostController()`` en sí mismo::
+
+    /**
+     * @Route(service="my_post_controller_service")
+     */
+    class PostController extends Controller
+    {
+        // ...
+    }

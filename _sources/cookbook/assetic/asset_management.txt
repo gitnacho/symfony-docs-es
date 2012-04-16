@@ -1,0 +1,325 @@
+Cómo utilizar ``Assetic`` para gestionar activos
+================================================
+
+``Assetic`` combina dos ideas principales: *activos* y *filtros*. Los *activos* son archivos tal como los archivos *CSS*, *JavaScript* e imágenes. Los *filtros* son cosas que se pueden aplicar a estos archivos antes de servirlos al navegador. Esto te permite una separación entre los archivos de activos almacenados en tu aplicación y los archivos presentados realmente al usuario.
+
+Sin ``Assetic``, sólo sirves los archivos que están almacenados directamente en la aplicación:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        <script src="{{ asset('js/script.js') }}" type="text/javascript" />
+
+    .. code-block:: php
+
+        <script src="<?php echo $view['assets']->getUrl('js/script.js') ?>"
+                type="text/javascript" />
+
+Sin embargo, *con* ``Assetic``, puedes manipular estos activos como quieras (o cargarlos desde cualquier lugar) antes de servirlos. Esto significa que puedes:
+
+* Minimizarlos con ``minify`` y combinar todos tus archivos *CSS* y *JS*
+
+* Ejecutar todos (o algunos) de tus archivos *CSS* o *JS* a través de algún tipo de compilador, como *LESS*, *SASS* o *CoffeeScript*
+
+* Ejecutar la optimización de imagen en tus imágenes
+
+Activos
+-------
+
+``Assetic`` ofrece muchas ventajas sobre los archivos que sirves directamente.
+Los archivos no se tienen que almacenar dónde son servidos y se pueden obtener de diversas fuentes, tal como desde dentro de un paquete:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% javascripts
+            '@AcmeFooBundle/Resources/public/js/*'
+        %}
+        <script type="text/javascript" src="{{ asset_url }}"></script>
+        {% endjavascripts %}
+
+    .. code-block:: html+php
+
+        <?php foreach ($view['assetic']->javascripts(
+            array('@AcmeFooBundle/Resources/public/js/*')) as $url): ?>
+        <script type="text/javascript" src="<?php echo $view->escape($url) ?>"></script>
+        <?php endforeach; ?>
+
+.. tip::
+
+    Para procesar tus hojas de estilo *CSS*, puedes utilizar las metodologías vistas en esta entrada, salvo que con la etiqueta ``stylesheets``:
+
+    .. configuration-block::
+
+        .. code-block:: html+jinja
+
+            {% stylesheets
+                '@AcmeFooBundle/Resources/public/css/*'
+            %}
+            <link rel="stylesheet" href="{{ asset_url }}" />
+            {% endstylesheets %}
+
+        .. code-block:: html+php
+
+            <?php foreach ($view['assetic']->stylesheets(
+                array('@AcmeFooBundle/Resources/public/css/*')) as $url): ?>
+            <link rel="stylesheet" href="<?php echo $view->escape($url) ?>" />
+            <?php endforeach; ?>
+
+En este ejemplo, todos los archivos en el directorio ``Resources/public/js/`` del ``AcmeFooBundle`` se cargan y sirven desde un lugar diferente.
+En realidad la etiqueta reproducida simplemente podría ser:
+
+.. code-block:: html
+
+    <script src="/app_dev.php/js/abcd123.js"></script>
+
+.. note::
+
+    Este es un punto clave: una vez permitas que ``Assetic`` maneje tus activos, los archivos se sirven desde un lugar diferente. Esto puede *causar* problemas con los archivos *CSS* que se refieren a imágenes por su ruta relativa. Sin embargo, esto se puede solucionar usando el filtro ``cssrewrite``, que actualiza las rutas de archivos *CSS* para reflejar su nueva ubicación.
+
+Combinando activos
+~~~~~~~~~~~~~~~~~~
+
+También puedes combinar varios archivos en uno solo. Esto ayuda a reducir el número de peticiones *HTTP*, lo cual es bueno para un rendimiento frontal extremo. También te permite mantener los archivos con mayor facilidad dividiéndolos en partes manejables.
+Esto también te puede ayudar con la reutilización puesto que fácilmente puedes dividir los archivos de proyectos específicos de los que puedes utilizar en otras aplicaciones, pero aún los servirás como un solo archivo:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% javascripts
+            '@AcmeFooBundle/Resources/public/js/*'
+            '@AcmeBarBundle/Resources/public/js/form.js'
+            '@AcmeBarBundle/Resources/public/js/calendar.js'
+        %}
+        <script src="{{ asset_url }}"></script>
+        {% endjavascripts %}
+
+    .. code-block:: html+php
+
+        <?php foreach ($view['assetic']->javascripts(
+            array('@AcmeFooBundle/Resources/public/js/*',
+                  '@AcmeBarBundle/Resources/public/js/form.js',
+                  '@AcmeBarBundle/Resources/public/js/calendar.js')) as $url): ?>
+        <script src="<?php echo $view->escape($url) ?>"></script>
+        <?php endforeach; ?>
+
+En el entorno ``dev``, cada archivo todavía se sirve de forma individual, para que puedas depurar problemas con mayor facilidad. Sin embargo, en el entorno ``prod``, estos se reproducirán como una sola etiqueta ``script``.
+
+.. tip::
+
+    Si eres nuevo en ``Assetic`` y tratas de usar la aplicación en el entorno ``prod`` (usando el controlador :file:`app.php`), lo más probable es que se rompan todos tus *CSS* y *JS*. ¡No te preocupes! Esto es a propósito.
+    Para más información sobre el uso de ``Assetic`` en el entorno ``prod``, consulta :ref:`cookbook-assetic-dumping`.
+
+Y la combinación de archivos no sólo se aplica a *tus* archivos. También puedes usar ``Assetic`` para combinar activos de terceros, como *jQuery*, con tu propio *JavaScript* en un solo archivo:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% javascripts
+            '@AcmeFooBundle/Resources/public/js/thirdparty/jquery.js'
+            '@AcmeFooBundle/Resources/public/js/*'
+        %}
+        <script src="{{ asset_url }}"></script>
+        {% endjavascripts %}
+
+    .. code-block:: html+php
+
+        <?php foreach ($view['assetic']->javascripts(
+            array('@AcmeFooBundle/Resources/public/js/thirdparty/jquery.js',
+                  '@AcmeFooBundle/Resources/public/js/*')) as $url): ?>
+        <script src="<?php echo $view->escape($url) ?>"></script>
+        <?php endforeach; ?>
+
+Filtros
+-------
+
+Una vez que son gestionados por ``Assetic``, puedes aplicar filtros a tus activos antes de servirlos. Esto incluye filtros que comprimen la salida de tus activos a un archivo más pequeño (y mejor optimización en la interfaz de usuario). Otros filtros incluyen la compilación de archivos *JavaScript* desde archivos *CoffeeScript* y *SASS* a *CSS*.
+De hecho, ``Assetic`` tiene una larga lista de filtros disponibles.
+
+Muchos de los filtros no hacen el trabajo directamente, sino que utilizan otras bibliotecas para hacerlo, a menudo, esta es la razón por la que tienes que instalar esos programas también. Esto significa que a menudo tendrás que instalar una biblioteca de terceros para usar un filtro.  La gran ventaja de utilizar ``Assetic`` para invocar estas bibliotecas (en lugar de utilizarlas directamente) es que en lugar de tener que ejecutarlo manualmente cuando has trabajado en los archivos, ``Assetic`` se hará cargo de esto por ti y elimina por completo este paso de tu proceso de desarrollo y despliegue.
+
+Para usar un filtro debes especificarlo en la configuración de ``Assetic``.
+Añadir un filtro aquí no quiere decir que se está utilizando ---sólo significa que está disponible para su uso (vamos a utilizar el filtro en seguida).
+
+Por ejemplo, para utilizar el *JavaScript YUI Compressor* debes añadir la siguiente configuración:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        assetic:
+            filters:
+                yui_js:
+                    jar: "%kernel.root_dir%/Resources/java/yuicompressor.jar"
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <assetic:config>
+            <assetic:filter
+                name="yui_js"
+                jar="%kernel.root_dir%/Resources/java/yuicompressor.jar" />
+        </assetic:config>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('assetic', array(
+            'filters' => array(
+                'yui_js' => array(
+                    'jar' => '%kernel.root_dir%/Resources/java/yuicompressor.jar',
+                ),
+            ),
+        ));
+
+Ahora, para realmente *usar* el filtro en un grupo de archivos *JavaScript*, añade esto a tu plantilla:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% javascripts
+            '@AcmeFooBundle/Resources/public/js/*'
+            filter='yui_js'
+        %}
+        <script src="{{ asset_url }}"></script>
+        {% endjavascripts %}
+
+    .. code-block:: html+php
+
+        <?php foreach ($view['assetic']->javascripts(
+            array('@AcmeFooBundle/Resources/public/js/*'),
+            array('yui_js')) as $url): ?>
+        <script src="<?php echo $view->escape($url) ?>"></script>
+        <?php endforeach; ?>
+
+Puedes encontrar una guía más detallada sobre la configuración y uso de filtros ``Assetic`` así como detalles del modo de depuración ``Assetic`` en :doc:`/cookbook/assetic/yuicompressor`.
+
+Controlando la *URL* utilizada
+------------------------------
+
+Si quieres, puedes controlar las *URL* que produce *Assetic*. Esto se hace desde la plantilla y es relativo a la raíz del documento público:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% javascripts
+            '@AcmeFooBundle/Resources/public/js/*'
+            output='js/compiled/main.js'
+        %}
+        <script src="{{ asset_url }}"></script>
+        {% endjavascripts %}
+
+    .. code-block:: html+php
+
+        <?php foreach ($view['assetic']->javascripts(
+            array('@AcmeFooBundle/Resources/public/js/*'),
+            array(),
+            array('output' => 'js/compiled/main.js')
+        ) as $url): ?>
+        <script src="<?php echo $view->escape($url) ?>"></script>
+        <?php endforeach; ?>
+
+.. note::
+
+    *Symfony* también contiene un método para caché *rota*, donde la *URL* final generada por ``Assetic`` en el entorno ``prod`` contiene un parámetro de consulta que puedes incrementar por medio de configuración en cada despliegue. Para más información, consulta la opción de configuración :ref:`ref-framework-assets-version`.
+
+.. _cookbook-assetic-dumping:
+
+Volcando archivos de activos
+----------------------------
+
+En el entorno ``dev``, ``Assetic`` genera rutas para los archivos *CSS* y *JavaScript* que no existen físicamente en el ordenador. Pero, sin embargo, los reproduce porque un controlador interno de *Symfony* abre y sirve los archivos volcando el contenido (después de ejecutar todos los filtros).
+
+Este tipo de servicio dinámico de procesar los activos es muy bueno porque significa que puedes ver inmediatamente el nuevo estado de los archivos de activos que cambies.
+Por otro lado es malo, porque puede ser bastante lento. Si estás utilizando una gran cantidad de filtros, puede ser realmente frustrante.
+
+Afortunadamente, ``Assetic`` proporciona una manera de volcar tus activos a los archivos reales, en lugar de generarlos dinámicamente.
+
+Volcando archivos de activos en el entorno ``prod``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+En entorno ``prod``, cada uno de tus archivos *JS* y *CSS* está representado por una sola etiqueta. En otras palabras, en lugar de incluir cada archivo *JavaScript* en tu código fuente, probablemente acabes viendo algo como esto:
+
+.. code-block:: html
+
+    <script src="/app_dev.php/js/abcd123.js"></script>
+
+Por otra parte, ese archivo **no** existe en realidad, ni es reproducido dinámicamente por *Symfony* (debido a que los archivos de activos se encuentran en el entorno ``dev``). Esto es a propósito ---permitir que *Symfony* genere estos archivos de forma dinámica en un entorno de producción es demasiado lento.
+
+En cambio, cada vez que utilices tu aplicación en el entorno ``prod`` (y por lo tanto, cada vez que la despliegues), debes ejecutar la siguiente tarea:
+
+.. code-block:: bash
+
+    php app/console assetic:dump --env=prod --no-debug
+
+Esto va a generar y escribir físicamente todos los archivos que necesitas (por ejemplo ``/js/abcd123.js``).
+Si actualizas cualquiera de tus activos, tendrás que ejecutarlo de nuevo para generar el archivo.
+
+Volcando archivos de activos en el entorno ``dev``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Por omisión, *Symfony* procesa dinámicamente cada ruta de activo generada en el entorno ``dev``. Esto no tiene ninguna desventaja (puedes ver tus cambios inmediatamente), salvo que los activos se pueden cargar notablemente lento. Si sientes que tus activos se cargan demasiado lento, sigue esta guía.
+
+En primer lugar, dile a *Symfony* que deje de intentar procesar estos archivos de forma dinámica. Haz el siguiente cambio en tu archivo :file:`config_dev.yml`:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config_dev.yml
+        assetic:
+            use_controller: false
+
+    .. code-block:: xml
+
+        <!-- app/config/config_dev.xml -->
+        <assetic:config use-controller="false" />
+
+    .. code-block:: php
+
+        // app/config/config_dev.php
+        $container->loadFromExtension('assetic', array(
+            'use_controller' => false,
+        ));
+
+A continuación, debido a que *Symfony* ya no genera estos activos para ti, tendrás que deshacerte de ellos manualmente. Para ello, ejecuta lo siguiente:
+
+.. code-block:: bash
+
+    php app/console assetic:dump
+
+Esto escribe físicamente todos los archivos de activos que necesita tu entorno ``dev``. La gran desventaja es que necesitas hacerlo manualmente cada vez que actualizas tus activos. Afortunadamente, pasando la opción ``--watch``, la orden regenerará automáticamente tus *activos a medida que cambien*:
+
+.. code-block:: bash
+
+    php app/console assetic:dump --watch
+
+Debido a que ejecutas esta orden en el entorno ``dev`` puede generar un montón de archivos, por lo general es una buena idea apuntar tus archivos de activos a un directorio aislado (por ejemplo ``/js/compiled``), para mantener las cosas organizadas:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% javascripts
+            '@AcmeFooBundle/Resources/public/js/*'
+            output='js/compiled/main.js'
+        %}
+        <script src="{{ asset_url }}"></script>
+        {% endjavascripts %}
+
+    .. code-block:: html+php
+
+        <?php foreach ($view['assetic']->javascripts(
+            array('@AcmeFooBundle/Resources/public/js/*'),
+            array(),
+            array('output' => 'js/compiled/main.js')
+        ) as $url): ?>
+        <script src="<?php echo $view->escape($url) ?>"></script>
+        <?php endforeach; ?>

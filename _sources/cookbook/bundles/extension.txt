@@ -1,0 +1,474 @@
+.. index::
+   single: Configuración; Semántica
+   single: Paquete; Configuración de extensión
+
+Cómo exponer la configuración semántica de un paquete
+=====================================================
+
+Si abres el archivo de configuración de tu aplicación (por lo general ``app/config/config.yml``), puedes encontrar una serie de configuraciones de diferentes "espacios de nombres", como ``framework``, ``twig`` y ``doctrine``. Cada una de estas configura un paquete específico, lo cual te permite configurar las cosas a nivel superior y luego dejar que el paquete haga todo lo de bajo nivel, haciendo los cambios complejos que resulten.
+
+Por ejemplo, el siguiente fragmento le dice al ``FrameworkBundle`` que habilite la integración de formularios, lo cual implica la definición de unos cuantos servicios, así como la integración de otros componentes relacionados:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        framework:
+            # ...
+            form:            true
+
+    .. code-block:: xml
+
+        <framework:config>
+            <framework:form />
+        </framework:config>
+
+    .. code-block:: php
+
+        $container->loadFromExtension('framework', array(
+            // ...
+            'form'            => true,
+            // ...
+        ));
+
+Cuando creas un paquete, tienes dos opciones sobre cómo manejar la configuración:
+
+1. **Configuración normal del servicio** (*fácil*):
+
+    Puedes especificar tus servicios en un archivo de configuración (por ejemplo, :file:`services.yml`) que vive en tu paquete y luego importarlo desde la configuración principal de tu aplicación. Esto es realmente fácil, rápido y completamente eficaz. Si usas :ref:`parámetros <book-service-container-parameters>`, entonces todavía tienes cierta flexibilidad para personalizar el paquete desde la configuración de tu aplicación. Consulta ":ref:`service-container-imports-directive`" para más detalles.
+
+2. **Exponiendo la configuración semántica** (*avanzado*):
+
+    Esta es la forma de configuración que se hace con los paquetes básicos (como se describió anteriormente). La idea básica es que, en lugar de permitir al usuario sustituir parámetros individuales, permites al usuario configurar unos cuantos, en concreto la creación de opciones. A medida que desarrollas el paquete, vas analizando la configuración y cargas tus servicios en una clase "Extensión". Con este método, no tendrás que importar ningún recurso de configuración desde la configuración principal de tu aplicación: la clase Extensión puede manejar todo esto.
+
+La segunda opción ---de la cual aprenderás en este artículo--- es mucho más flexible, pero también requiere más tiempo de configuración. Si te preguntas qué método debes utilizar, probablemente sea una buena idea empezar con el método #1, y  más adelante, si es necesario, cambiar al #2.
+
+El segundo método tiene varias ventajas específicas:
+
+* Es mucho más poderoso que la simple definición de parámetros: un valor de opción específico podría inducir la creación de muchas definiciones de servicios;
+
+* La habilidad de tener jerarquías de configuración
+
+* La fusión inteligente de varios archivos de configuración (por ejemplo, :file:`config_dev.yml` y :file:`config.yml`) sustituye los demás ajustes;
+
+* Configurando la validación (si utilizas una :ref:`clase Configuración <cookbook-bundles-extension-config-class>`);
+
+* Autocompletado en tu *IDE* cuando creas un *XSD* y los desarrolladores del *IDE* utilizan *XML*.
+
+.. sidebar:: Sustituyendo parámetros del paquete
+
+    Si un paquete proporciona una clase *Extension*, entonces, generalmente *no debes* reemplazar los parámetros del contenedor de servicios de ese paquete. La idea es que si está presente una clase Extensión, cada ajuste que deba ser configurable debe estar presente en la configuración disponible en esa clase. En otras palabras, la clase Extensión define cómo dibulgas todas las opciones de configuración apoyadas para las cuales, por mantenimiento, existe compatibilidad hacia atrás.
+
+.. index::
+   single: Paquetes; Extensión
+   single: Inyección de dependencia, Extensión
+
+Creando una clase Extensión
+---------------------------
+
+Si eliges exponer una configuración semántica de tu paquete, primero tendrás que crear una nueva clase "Extensión", la cual debe manipular el proceso.
+Esta clase debe vivir en el directorio ``DependencyInjection`` de tu paquete y su nombre se debe construir reemplazando el sufijo ``Bundle`` del nombre de la clase del paquete con ``Extension``. Por ejemplo, la clase Extensión de ``AcmeHelloBundle`` se llamaría ``AcmeHelloExtension``::
+
+    // Acme/HelloBundle/DependencyInjection/AcmeHelloExtension.php
+    use Symfony\Component\HttpKernel\DependencyInjection\Extension;
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    class AcmeHelloExtension extends Extension
+    {
+        public function load(array $configs, ContainerBuilder $container)
+        {
+            // aquí se lleva a cabo toda la lógica
+        }
+
+        public function getXsdValidationBasePath()
+        {
+            return __DIR__.'/../Resources/config/';
+        }
+
+        public function getNamespace()
+        {
+            return 'http://www.ejemplo.com/symfony/schema/';
+        }
+    }
+
+.. note::
+
+    Los métodos ``getXsdValidationBasePath`` y ``getNamespace`` sólo son necesarios si el paquete opcional XSD proporciona la configuración.
+
+La presencia de la clase anterior significa que ahora puedes definir una configuración de espacio de nombres ``acme_hello`` en cualquier archivo de configuración. El espacio de nombres ``acme_hello`` se construyó a partir del nombre en minúsculas de la clase extensión eliminando la palabra ``Extension``, a continuación un guión bajo y el resto del nombre. En otras palabras, ``AcmeHelloExtension`` se convierte en ``acme_hello``.
+
+Puedes empezar de inmediato, especificando la configuración en este espacio de nombres:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        acme_hello: ~
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <?xml version="1.0" ?>
+
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:acme_hello="http://www.ejemplo.com/symfony/schema/"
+            xsi:schemaLocation="http://www.ejemplo.com/symfony/schema/ http://www.ejemplo.com/symfony/schema/hello-1.0.xsd">
+
+           <acme_hello:config />
+           ...
+
+        </container>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('acme_hello', array());
+
+.. tip::
+
+    Si sigues las convenciones de nomenclatura mencionadas anteriormente, entonces el método ``load()`` el cual carga el código de tu extensión es llamado siempre que tu paquete sea registrado en el núcleo. En otras palabras, incluso si el usuario no proporciona ninguna configuración (es decir, la entrada ``acme_hello`` ni siquiera figura), el método ``load()`` será llamado y se le pasará una matriz ``$configs`` vacía. Todavía puedes proporcionar algunos parámetros predeterminados para tu paquete si lo deseas.
+
+Analizando la matriz ``$configs``
+---------------------------------
+
+Cada vez que un usuario incluya el espacio de nombres ``acme_hello`` en un archivo de configuración, la configuración bajo este se agrega a una gran matriz de configuraciones y se pasa al método ``load()`` de tu extensión (*Symfony2* convierte automáticamente *XML* y *YAML* a una matriz).
+
+Tomemos la siguiente configuración:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        acme_hello:
+            foo: fooValue
+            bar: barValue
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <?xml version="1.0" ?>
+
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:acme_hello="http://www.ejemplo.com/symfony/schema/"
+            xsi:schemaLocation="http://www.ejemplo.com/symfony/schema/ http://www.ejemplo.com/symfony/schema/hello-1.0.xsd">
+
+            <acme_hello:config foo="fooValue">
+                <acme_hello:bar>barValue</acme_hello:bar>
+            </acme_hello:config>
+
+        </container>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('acme_hello', array(
+            'foo' => 'fooValue',
+            'bar' => 'barValue',
+        ));
+
+La matriz pasada a tu método ``load()`` se verá así::
+
+    array(
+        array(
+            'foo' => 'fooValue',
+            'bar' => 'barValue',
+        )
+    )
+
+Ten en cuenta que se trata de una *matriz de matrices*, y no sólo una única matriz plana con los valores de configuración. Esto es intencional. Por ejemplo, si ``acme_hello`` aparece en otro archivo de configuración ---digamos en :file:`config_dev.yml`--- con diferentes valores bajo él, entonces la matriz entrante puede tener este aspecto::
+
+    array(
+        array(
+            'foo' => 'fooValue',
+            'bar' => 'barValue',
+        ),
+        array(
+            'foo' => 'fooDevValue',
+            'baz' => 'newConfigEntry',
+        ),
+    )
+
+El orden de las dos matrices depende de cuál es el primer conjunto.
+
+Entonces, es tu trabajo, decidir cómo se fusionan estas configuraciones. Es posible que, por ejemplo, después tengas que sustituir valores anteriores o alguna combinación de ellos.
+
+Más tarde, en la sección :ref:`clase Configuración <cookbook-bundles-extension-config-class>`, aprenderás una forma realmente robusta para manejar esto. Pero por ahora, sólo puedes combinarlos manualmente::
+
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        $config = array();
+        foreach ($configs as $subConfig) {
+            $config = array_merge($config, $subConfig);
+        }
+
+        // Ahora usa la matriz simple $config
+    }
+
+.. caution::
+
+    Asegúrate de que la técnica de fusión anterior tenga sentido para tu paquete. Este es sólo un ejemplo, y debes tener cuidado de no usarlo a ciegas.
+
+Usando el método ``load()``
+---------------------------
+
+Dentro de ``load()``, la variable ``$container`` se refiere a un contenedor que sólo sabe acerca de esta configuración de espacio de nombres (es decir, no contiene información de los servicios cargados por otros paquetes). El objetivo del método ``load()`` es manipular el contenedor, añadir y configurar cualquier método o servicio necesario por tu paquete.
+
+Cargando la configuración de recursos externos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Una de las cosas comunes por hacer es cargar un archivo de configuración externo que puede contener la mayor parte de los servicios que necesita tu paquete. Por ejemplo, supongamos que tienes un archivo ``services.xml`` el cual contiene gran parte de la configuración de los servicios en tu paquete::
+
+    use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+    use Symfony\Component\Config\FileLocator;
+
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        // prepara tu variable $config
+
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader->load('services.xml');
+    }
+
+Incluso lo podrías hacer condicionalmente, basándote en uno de los valores de configuración.
+Por ejemplo, supongamos que sólo deseas cargar un conjunto de servicios si una opción ``habilitado`` es pasada y fijada en ``true``::
+
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        // prepara tu variable $config
+
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+
+        if (isset($config['enabled']) && $config['enabled']) {
+            $loader->load('services.xml');
+        }
+    }
+
+Configurando servicios y ajustando parámetros
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Una vez que hayas cargado alguna configuración de servicios, posiblemente necesites modificar la configuración basándote en alguno de los valores entrantes. Por ejemplo, supongamos que tienes un servicio cuyo primer argumento es algún "tipo" de cadena que se debe utilizar internamente. Quisieras que el usuario del paquete lo configurara fácilmente, por tanto en el archivo de configuración de tu servicio (por ejemplo, ``services.xml``), defines este servicio y utilizas un parámetro en blanco ---``acme_hello.my_service_options``--- como primer argumento:
+
+.. code-block:: xml
+
+    <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
+    <container xmlns="http://symfony.com/schema/dic/services"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+        <parameters>
+            <parameter key="acme_hello.my_service_type" />
+        </parameters>
+
+            <services>
+            <service id="acme_hello.my_service" class="Acme\HelloBundle\MyService">
+                <argument>%acme_hello.my_service_type%</argument>
+            </service>
+            </services>
+    </container>
+
+Pero ¿por qué definir un parámetro vacío y luego pasarlo a tu servicio?
+La respuesta es que vas a establecer este parámetro en tu clase Extensión, basándote en los valores de configuración entrantes. Supongamos, por ejemplo, que deseas permitir al usuario definir esta opción de *tipo* en una clave denominada ``my_type``.
+Para hacerlo agrega lo siguiente al método ``load()``::
+
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        // prepara tu variable $config
+
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader->load('services.xml');
+
+        if (!isset($config['my_type'])) {
+            throw new \InvalidArgumentException('The "my_type" option must be set');
+        }
+
+        $container->setParameter('acme_hello.my_service_type', $config['my_type']);
+    }
+
+Ahora, el usuario puede configurar eficientemente el servicio especificando el valor de configuración ``my_type``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        acme_hello:
+            my_type: foo
+            # ...
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <?xml version="1.0" ?>
+
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:acme_hello="http://www.ejemplo.com/symfony/schema/"
+            xsi:schemaLocation="http://www.ejemplo.com/symfony/schema/ http://www.ejemplo.com/symfony/schema/hello-1.0.xsd">
+
+            <acme_hello:config my_type="foo">
+                <!-- ... -->
+            </acme_hello:config>
+
+        </container>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('acme_hello', array(
+            'my_type' => 'foo',
+            // ...
+        ));
+
+Parámetros globales
+~~~~~~~~~~~~~~~~~~~
+
+Cuando configures el contenedor, tienes que estar consciente de que los siguientes parámetros globales están disponibles para que los utilices:
+
+* ``kernel.name``
+* ``kernel.environment``
+* ``kernel.debug``
+* ``kernel.root_dir``
+* ``kernel.cache_dir``
+* ``kernel.logs_dir``
+* ``kernel.bundle_dirs``
+* ``kernel.bundles``
+* ``kernel.charset``
+
+.. caution::
+
+    Todos los nombres de los parámetros y servicios que comienzan con un guión bajo ``_`` están reservados para la plataforma, y no los debes definir en tus nuevos paquetes.
+
+.. _cookbook-bundles-extension-config-class:
+
+Validando y fusionando con una clase configuración
+--------------------------------------------------
+
+Hasta ahora, has fusionado manualmente las matrices de configuración y las has comprobado por medio de la presencia de los valores de configuración utilizando la función ``isset()`` de *PHP*. También hay disponible un sistema de *configuración* opcional, el cual puede ayudar con la fusión, validación, valores predeterminados y normalización de formato.
+
+.. note::
+
+    *Normalización de formato* se refiere al hecho de que ciertos formatos ---en su mayoría *XML*--- resultan en matrices de configuración ligeramente diferentes, y que estas matrices se deben "normalizar" para que coincidan con todo lo demás.
+
+Para aprovechar las ventajas de este sistema, debes crear una clase ``Configuración`` y construir un árbol que define tu configuración en esa clase:
+
+.. code-block:: php
+
+    // src/Acme/HelloBundle/DependencyInjection/Configuration.php
+    namespace Acme\HelloBundle\DependencyInjection;
+
+    use Symfony\Component\Config\Definition\Builder\TreeBuilder;
+    use Symfony\Component\Config\Definition\ConfigurationInterface;
+
+    class Configuration implements ConfigurationInterface
+    {
+        public function getConfigTreeBuilder()
+        {
+            $treeBuilder = new TreeBuilder();
+            $rootNode = $treeBuilder->root('acme_hello');
+
+            $rootNode
+                ->children()
+                    ->scalarNode('my_type')->defaultValue('bar')->end()
+                ->end()
+            ;
+
+            return $treeBuilder;
+        }
+
+Se trata de un ejemplo *muy* sencillo, pero ahora puedes utilizar esta clase en el método ``load()`` para combinar tu configuración y forzar su validación. Si se pasan las demás opciones salvo ``my_type``, el usuario recibirá una notificación con una excepción de que se ha pasado una opción no admitida::
+
+    use Symfony\Component\Config\Definition\Processor;
+    // ...
+
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        $processor = new Processor();
+        $configuration = new Configuration();
+        $config = $processor->processConfiguration($configuration, $configs);
+
+        // ...
+    }
+
+El método ``processConfiguration()`` utiliza el árbol de configuración que has definido en la clase ``Configuración`` para validar, normalizar y fusionar todas las matrices de configuración.
+
+La clase ``Configuración`` puede ser mucho más complicada de lo que se muestra aquí, apoyando matrices de nodos, nodos "prototipo", validación avanzada, normalización *XML* específica y fusión avanzada. La mejor manera de ver esto en acción es revisando algunas de las clases configuración del núcleo, como la `configuración del FrameworkBundle`_  o la `configuración del TwigBundle`_.
+
+Volcado de la configuración predefinida
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.1
+    La orden ``config:dump-reference`` se añadió en *Symfony* 2.1
+
+La orden `config:dump-reference`` permite volcar en consola la configuración predefinida en *YAML* de un paquete.
+
+Mientras que la configuración de tu paquete se encuentre en la ubicación estándar (``TuPaquete\DependencyInjection\Configuration``) y no tiene un ``__construct()`` funcionará automáticamente.  Si tienes algo diferente en tu clase ``Extensión`` tendrás que sobrescribir el método ``Extension::getConfiguration()``.  Para que devuelva una instancia de tu ``Configuración``.
+
+Puedes agregar comentarios y ejemplos a los nodos de configuración usando los métodos ``->setinfo()`` y ``->setExample()``::
+
+    // src/Acme/HelloBundle/DependencyExtension/Configuration.php
+    namespace Acme\HelloBundle\DependencyInjection;
+
+    use Symfony\Component\Config\Definition\Builder\TreeBuilder;
+    use Symfony\Component\Config\Definition\ConfigurationInterface;
+
+    class Configuration implements ConfigurationInterface
+    {
+        public function getConfigTreeBuilder()
+        {
+            $treeBuilder = new TreeBuilder();
+            $rootNode = $treeBuilder->root('acme_hello');
+
+            $rootNode
+                ->children()
+                    ->scalarNode('my_type')
+                        ->defaultValue('bar')
+                        ->setInfo('what my_type configures')
+                        ->setExample('example setting')
+                    ->end()
+                ->end()
+            ;
+
+            return $treeBuilder;
+        }
+
+Este texto aparece en comentarios *YAML* en el resultado de la orden ``config:dump-reference``.
+
+.. index::
+   pair: Convención; Configuración
+
+Convenciones de extensión
+-------------------------
+
+Al crear una extensión, sigue estas simples convenciones:
+
+* La extensión se debe almacenar en el subespacio de nombres ``DependencyInjection``;
+
+* La extensión se debe nombrar después del nombre del paquete y con el sufijo ``Extension`` (``AcmeHelloExtension`` para ``AcmeHelloBundle``);
+
+* La extensión debe proporcionar un esquema *XSD*.
+
+Si sigues estas simples convenciones, *Symfony2* registrará automáticamente las extensiones. Si no es así, sustituye el método :method:`Symfony\\Component\\HttpKernel\\Bundle\\Bundle::build` en tu paquete::
+
+    use Acme\HelloBundle\DependencyInjection\UnconventionalExtensionClass;
+
+    class AcmeHelloBundle extends Bundle
+    {
+        public function build(ContainerBuilder $container)
+        {
+            parent::build($container);
+
+            // registra manualmente las extensiones que no siguen las convenciones
+            $container->registerExtension(new UnconventionalExtensionClass());
+        }
+    }
+
+En este caso, la clase Extensión también debe implementar un método ``getAlias()`` que devuelva un alias único nombrado después del paquete (por ejemplo, ``acme_hello``). Esto es necesario porque el nombre de clase no sigue la norma de terminar en ``Extension``.
+
+Además, el método ``load()`` de tu extensión *sólo* se llama si el usuario especifica el alias ``acme_hello`` en por lo menos un archivo de configuración. Una vez más, esto se debe a que la clase Extensión no se ajusta a las normas establecidas anteriormente, por lo tanto nada sucede automáticamente.
+
+.. _`configuración del FrameworkBundle`: https://github.com/symfony/symfony/blob/master/src/Symfony/Bundle/FrameworkBundle/DependencyInjection/Configuration.php
+.. _`configuración del TwigBundle`: https://github.com/symfony/symfony/blob/master/src/Symfony/Bundle/TwigBundle/DependencyInjection/Configuration.php

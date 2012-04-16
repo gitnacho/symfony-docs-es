@@ -1,0 +1,207 @@
+``File``
+========
+
+Valida que un valor es un "archivo" válido, el cual puede ser uno de los siguientes:
+
+* Una cadena (u objeto con un método ``__toString()``) que representa una ruta a un archivo existente;
+
+* Un objeto :class:`Symfony\\Component\\HttpFoundation\\File\\File` válido (incluidos los objetos de la clase :class:`Symfony\\Component\\HttpFoundation\\File\\UploadedFile`).
+
+Esta restricción se usa comúnmente en formularios con el tipo de formulario :doc:`file (archivo) </reference/forms/types/file>`.
+
+.. tip::
+
+    Si el archivo que estás validando es una imagen, prueba la restricción :doc:`Image </reference/constraints/Image>`.
+
++----------------+---------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`              |
++----------------+---------------------------------------------------------------------+
+| Opciones       | - `maxSize`_                                                        |
+|                | - `mimeTypes`_                                                      |
+|                | - `maxSizeMessage`_                                                 |
+|                | - `mimeTypesMessage`_                                               |
+|                | - `notFoundMessage`_                                                |
+|                | - `notReadableMessage`_                                             |
+|                | - `uploadIniSizeErrorMessage`_                                      |
+|                | - `uploadFormSizeErrorMessage`_                                     |
+|                | - `uploadErrorMessage`_                                             |
++----------------+---------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\File`           |
++----------------+---------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\FileValidator`  |
++----------------+---------------------------------------------------------------------+
+
+Uso básico
+----------
+
+Esta restricción se utiliza comúnmente en una propiedad que se debe pintar en un formulario con tipo de formulario :doc:`archivo </reference/forms/types/file>`. Por ejemplo, supongamos que estás creando un formulario de autor donde puedes cargar una "bio" *PDF* para el autor. En tu formulario, la propiedad ``archivoBio`` sería de tipo ``file``.
+La clase ``Autor`` podría ser la siguiente::
+
+    // src/Acme/BlogBundle/Entity/Author.php
+    namespace Acme\BlogBundle\Entity;
+
+    use Symfony\Component\HttpFoundation\File\File;
+
+    class Author
+    {
+        protected $bioFile;
+
+        public function setBioFile(File $file = null)
+        {
+            $this->bioFile = $file;
+        }
+
+        public function getBioFile()
+        {
+            return $this->bioFile;
+        }
+    }
+
+Para garantizar que el objeto ``bioFile`` es un ``File`` válido, y que está por debajo de un determinado tamaño de archivo y es un archivo *PDF* válido, añade lo siguiente:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/BlogBundle/Resources/config/validation.yml
+        Acme\BlogBundle\Entity\Author
+            properties:
+                bioFile:
+                    - File:
+                        maxSize: 1024k
+                        mimeTypes: [application/pdf, application/x-pdf]
+                        mimeTypesMessage: Please upload a valid PDF
+                        
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\File(
+             *     maxSize = "1024k",
+             *     mimeTypes = {"application/pdf", "application/x-pdf"},
+             *     mimeTypesMessage = "Please upload a valid PDF"
+             * )
+             */
+            protected $bioFile;
+        }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/BlogBundle/Resources/config/validation.xml -->
+        <class name="Acme\BlogBundle\Entity\Author">
+            <property name="bioFile">
+                <constraint name="File">
+                    <option name="maxSize">1024k</option>
+                    <option name="mimeTypes">
+                        <value>application/pdf</value>
+                        <value>application/x-pdf</value>
+                    </option>
+                    <option name="mimeTypesMessage">Please upload a valid PDF</option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        // ...
+
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints\File;
+
+        class Autor
+        {
+            // ...
+
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('bioFile', new File(array(
+                    'maxSize' => '1024k',
+                    'mimeTypes' => array(
+                        'application/pdf',
+                        'application/x-pdf',
+                    ),
+                    'mimeTypesMessage' => 'Please upload a valid PDF',
+                )));
+            }
+        }
+
+La propiedad ``bioFile`` es validada para garantizar que se trata de un archivo real.
+Su tamaño y tipo *MIME* también son validados por las correspondientes opciones especificadas.
+
+Opciones
+--------
+
+``maxSize``
+~~~~~~~~~~~
+
+**tipo**: ``mixed``
+
+Si se establece, el tamaño del archivo subyacente debe estar por debajo de ese tamaño de archivo para ser válido. El tamaño del archivo se puede dar en uno de los siguientes formatos:
+
+* **bytes**: Para especificar el ``maxSize`` en *bytes*, pasa un valor que sea totalmente numérico (por ejemplo, ``4096``);
+
+* **kilobytes**: Para especificar el ``maxSize`` en *kilobytes*, pasa un número con una "k" minúscula como sufijo (por ejemplo, ``200k``);
+
+* **megabytes**: Para especificar el ``maxSize`` en *megabytes*, pasa un número con una "M" como sufijo (por ejemplo, ``4M``).
+
+``mimeTypes``
+~~~~~~~~~~~~~
+
+**tipo**: ``array`` o ``string``
+
+Si lo estableces, el validador comprobará que el tipo *mime* del archivo subyacente sea igual al tipo *mime* proporcionado (en el caso de una cadena) o existe en la colección de determinados tipos *mime* (en el caso de una matriz).
+
+``maxSizeMessage``
+~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``The file is too large ({{ size }}). Allowed maximum size is {{ limit }}`` (``El archivo es demasiado grande. El tamaño máximo permitido es {{ limit }}``)
+
+El mensaje mostrado si el archivo es mayor que la opción `maxSize`_.
+
+``mimeTypesMessage``
+~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``The mime type of the file is invalid ({{ type }}). Allowed mime types are {{ types }}`` (``El tipo mime del archivo ({{ type }}) no es válido. Los tipos mime permitidos son {{ types }}``)
+
+El mensaje mostrado si el tipo *mime* del archivo no es un tipo *mime* válido para la opción `mimeTypes`_.
+
+``notFoundMessage``
+~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``The file could not be found`` (``No se pudo encontrar el archivo``)
+
+El mensaje aparece si no se puede encontrar algún archivo en la ruta especificada. Este error sólo es probable si el valor subyacente es una cadena de ruta, puesto que un objeto ``File`` no se puede construir con una ruta de archivo no válida.
+
+``notReadableMessage``
+~~~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``The file is not readable`` (``No se puede leer el archivo``)
+
+El mensaje aparece si el archivo existe, pero la función ``is_readable`` de *PHP* falla cuando se le pasa la ruta del archivo.
+
+``uploadIniSizeErrorMessage``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``The file is too large. Allowed maximum size is {{ limit }}`` (``El archivo es demasiado grande. El tamaño máximo permitido es {{ limit }}``)
+
+El mensaje que se muestra si el archivo subido es mayor que la configuración de ``upload_max_filesize`` en :file:`php.ini`.
+
+``uploadFormSizeErrorMessage``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``The file is too large`` (``El archivo es demasiado grande``)
+
+El mensaje que se muestra si el archivo subido es mayor que el permitido por el campo *HTML* para la entrada de archivos.
+
+``uploadErrorMessage``
+~~~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``The file could not be uploaded`` (``No se puede subir el archivo``)
+
+El mensaje que se muestra si el archivo cargado no se puede subir por alguna razón desconocida, tal como cuando la subida del archivo ha fallado o no se puede escribir en el disco.

@@ -1,0 +1,36 @@
+.. index::
+   single: Pruebas
+
+Cómo probar la interacción de varios clientes
+=============================================
+
+Si necesitas simular la interacción entre diferentes clientes (piensa en un chat, por ejemplo), crea varios clientes::
+
+    $harry = static::createClient();
+    $sally = static::createClient();
+
+    $harry->request('POST', '/say/sally/Hello');
+    $sally->request('GET', '/messages');
+
+    $this->assertEquals(201, $harry->getResponse()->getStatusCode());
+    $this->assertRegExp('/Hello/', $sally->getResponse()->getContent());
+
+Esto funciona, excepto cuando el código mantiene un estado global o si depende de bibliotecas de terceros que tienen algún tipo de estado global. En tal caso, puedes aislar a tus clientes::
+
+    $harry = static::createClient();
+    $sally = static::createClient();
+
+    $harry->insulate();
+    $sally->insulate();
+
+    $harry->request('POST', '/say/sally/Hello');
+    $sally->request('GET', '/messages');
+
+    $this->assertEquals(201, $harry->getResponse()->getStatusCode());
+    $this->assertRegExp('/Hello/', $sally->getResponse()->getContent());
+
+Los clientes con aislamiento transparente ejecutan sus peticiones en un proceso *PHP* específico y limpio, evitando así efectos secundarios.
+
+.. tip::
+
+    Como un cliente con aislamiento es más lento, puedes mantener a un cliente en el proceso principal, y aislar a los demás.

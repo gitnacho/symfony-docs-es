@@ -1,0 +1,74 @@
+.. index::
+   single: Process
+
+El componente ``Process``
+=========================
+
+    El componente ``Process`` ejecuta ordenes en subprocesos.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/Process);
+* Instalándolo a través de *PEAR* ( `pear.symfony.com/Process`);
+* Instalándolo vía ``Composer`` (`symfony/process` en Packagist).
+
+Usando
+------
+
+La clase :class:`Symfony\\Component\\Process\\Process` te permite ejecutar una orden en un subproceso:
+
+.. code-block:: php
+
+    use Symfony\Component\Process\Process;
+
+    $process = new Process('ls -lsa');
+    $process->setTimeout(3600);
+    $process->run();
+    if (!$process->isSuccessful()) {
+        throw new RuntimeException($process->getErrorOutput());
+    }
+
+    print $process->getOutput();
+
+El método :method:`Symfony\\Component\\Process\\Process:run()` se encarga de las sutiles diferencias entre las diferentes plataformas cuando ejecuta la orden.
+
+Cuando se ejecuta una orden que consume demasiado tiempo (tal como la resincronización de archivos con un servidor remoto), puedes retroalimentar en tiempo real al usuario final suministrando una función anónima al método :method:`Symfony\\Component\\Process\\Process::run`:
+
+.. code-block:: php
+
+    use Symfony\Component\Process\Process;
+
+    $process = new Process('ls -lsa');
+    $process->run(function ($type, $buffer) {
+        if ('err' === $type) {
+            echo 'ERR > '.$buffer;
+        } else {
+            echo 'OUT > '.$buffer;
+        }
+    });
+
+Si deseas ejecutar algún código *PHP* independiente, en su lugar usa ``PhpProcess``:
+
+.. code-block:: php
+
+    use Symfony\Component\Process\PhpProcess;
+
+    $process = new PhpProcess(<<<EOF
+        <?php echo 'Hello World'; ?>
+    EOF);
+    $process->run();
+
+.. versionadded:: 2.1
+    La clase ``ProcessBuilder`` existe desde 2.1.
+
+Para conseguir que tu código trabaje mejor en todas las plataformas, posiblemente en su lugar quieras usar la clase :class:`Symfony\\Component\\Process\\ProcessBuilder`:
+
+.. code-block:: php
+
+    use Symfony\Component\Process\ProcessBuilder;
+
+    $builder = new ProcessBuilder(array('ls', '-lsa'));
+    $builder->getProcess()->run();

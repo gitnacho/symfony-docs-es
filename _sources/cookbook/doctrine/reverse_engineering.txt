@@ -1,0 +1,142 @@
+.. index::
+   single: Doctrine; Generando entidades desde una base de datos existe
+
+Cómo generar entidades desde una base de datos existente
+========================================================
+
+Cuando empiezas a trabajar en el proyecto de una nueva marca que utiliza una base de datos, es algo natural que sean dos situaciones diferentes. En la mayoría de los casos, el modelo de base de datos se diseña y construye desde cero. A veces, sin embargo, comenzarás con un modelo de base de datos existente y probablemente inmutable. Afortunadamente, *Doctrine* viene con un montón de herramientas para ayudarte a generar las clases del modelo desde tu base de datos existente.
+
+.. note::
+
+    Como dicen las `herramientas de documentación de Doctrine`_, la ingeniería inversa es un proceso de una sola vez para empezar a trabajar en un proyecto. *Doctrine* es capaz de convertir aproximadamente el 70-80% de la información asignada basándose en los campos, índices y restricciones de clave externa. *Doctrine* no puede descubrir asociaciones inversas, tipos de herencia, entidades con claves externas como claves principales u operaciones semánticas en asociaciones tales como eventos en cascada o ciclo de vida de los eventos. Posteriormente, será necesario algún trabajo adicional sobre las entidades generadas para diseñar cada una según tus características específicas del modelo de dominio.
+
+Esta guía asume que estás usando una sencilla aplicación de *blog* con las siguientes dos tablas: ``blog_post`` y ``blog_comment``. Un registro de comentarios está vinculado a un registro de comentario gracias a una restricción de clave externa.
+
+.. code-block:: sql
+
+    CREATE TABLE `blog_post` (
+      `id` bigint(20) NOT NULL AUTO_INCREMENT,
+      `titulo` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+      `contenido` longtext COLLATE utf8_unicode_ci NOT NULL,
+      `creado_at` datetime NOT NULL,
+      PRIMARY KEY (`id`),
+    ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+    CREATE TABLE `blog_comment` (
+      `id` bigint(20) NOT NULL AUTO_INCREMENT,
+      `post_id` bigint(20) NOT NULL,
+      `autor` varchar(20) COLLATE utf8_unicode_ci NOT NULL,
+      `contenido` longtext COLLATE utf8_unicode_ci NOT NULL,
+      `creado_at` datetime NOT NULL,
+      PRIMARY KEY (`id`),
+      KEY `blog_comment_post_id_idx` (`post_id`),
+      CONSTRAINT `blog_post_id` FOREIGN KEY (`post_id`) REFERENCES `blog_post` (`id`) ON DELETE CASCADE
+    ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+Antes de zambullirte en la receta, asegúrate de que los parámetros de conexión de tu base de datos están configurados correctamente en el archivo ``app/config/parameters.yml`` (o cualquier otro lugar donde mantienes la configuración de base de datos) y que has iniciado un paquete que será la sede de tu futura clase entidad. En esta guía, vamos a suponer que existe un :dfn:`AcmeBlogBundle` y se encuentra en el directorio :file:`src/Acme/BlogBundle`.
+
+El primer paso para crear clases de entidad de una base de datos existente es pedir a *Doctrine* que introspeccione la base de datos y genere los archivos de metadatos correspondientes. Los archivos de metadatos describen la clase entidad para generar tablas basándose ​​en los campos.
+
+.. code-block:: bash
+
+    php app/console doctrine:mapping:convert xml ./src/Acme/BlogBundle/Resources/config/doctrine/metadata/orm --from-database --force
+
+Esta herramienta de línea de ordenes le pide a *Doctrine* que inspeccione la estructura de la base de datos y genere los archivos *XML* de metadatos bajo el directorio :file:`src/Acme/BlogBundle/Resources/config/doctrine/metadata/orm` de tu paquete.
+
+.. tip::
+
+    También es posible generar los metadatos de clase en formato *YAML* cambiando el primer argumento a `yml`.
+
+El archivo de metadatos generado ``BlogPost.dcm.xml`` es el siguiente:
+
+.. code-block:: xml
+
+    <?xml version="1.0" encoding="utf-8"?>
+    <doctrine-mapping>
+      <entity name="BlogPost" table="blog_post">
+        <change-tracking-policy>DEFERRED_IMPLICIT</change-tracking-policy>
+        <id name="id" type="bigint" column="id">
+          <generator strategy="IDENTITY"/>
+        </id>
+        <field name="title" type="string" column="title" length="100"/>
+        <field name="content" type="text" column="content"/>
+        <field name="isPublished" type="boolean" column="is_published"/>
+        <field name="createdAt" type="datetime" column="created_at"/>
+        <field name="updatedAt" type="datetime" column="updated_at"/>
+        <field name="slug" type="string" column="slug" length="255"/>
+        <lifecycle-callbacks/>
+      </entity>
+    </doctrine-mapping>
+
+Una vez generados los archivos de metadatos, puedes pedir a *Doctrine* que importe el esquema y construya las clases relacionadas con la entidad, ejecutando las dos siguientes ordenes.
+
+.. code-block:: bash
+
+    php app/console doctrine:mapping:import AcmeBlogBundle annotation
+    php app/console doctrine:generate:entities AcmeBlogBundle
+
+La primer orden genera las clases de entidad con una asignación de anotaciones, pero por supuesto puedes cambiar el argumento ``annotation`` a ``xml`` o ``yml``.
+La clase entidad ``BlogComment`` recién creada se ve de la siguiente manera:
+
+.. code-block:: php
+
+    <?php
+
+    // src/Acme/BlogBundle/Entity/BlogComment.php
+    namespace Acme\BlogBundle\Entity;
+
+    use Doctrine\ORM\Mapping as ORM;
+
+    /**
+     * Acme\BlogBundle\Entity\BlogComment
+     *
+     * @ORM\Table(name="blog_comment")
+     * @ORM\Entity
+     */
+    class BlogComment
+    {
+        /**
+         * @var bigint $id
+         *
+         * @ORM\Column(name="id", type="bigint", nullable=false)
+         * @ORM\Id
+         * @ORM\GeneratedValue(strategy="IDENTITY")
+         */
+        private $id;
+
+        /**
+         * @var string $author
+         *
+         * @ORM\Column(name="author", type="string", length=100, nullable=false)
+         */
+        private $author;
+
+        /**
+         * @var text $content
+         *
+         * @ORM\Column(name="content", type="text", nullable=false)
+         */
+        private $content;
+
+        /**
+         * @var datetime $createdAt
+         *
+         * @ORM\Column(name="created_at", type="datetime", nullable=false)
+         */
+        private $createdAt;
+
+        /**
+         * @var BlogPost
+         *
+         * @ORM\ManyToOne(targetEntity="BlogPost")
+         * @ORM\JoinColumn(name="post_id", referencedColumnName="id")
+         */
+        private $post;
+    }
+
+Como puedes ver, *Doctrine* convierte todos los campos de la tabla a propiedades privadas puras y anotaciones de clase. Lo más impresionante es que también descubriste la relación con la clase entidad ``BlogPost`` basándote en la restricción de la clave externa.
+Por lo tanto, puedes encontrar una propiedad privada ``$post`` asignada a una entidad ``BlogPost`` en la clase entidad ``BlogComment``.
+
+La última orden genera todos los captadores y definidores de tus dos propiedades de la clase entidad ``BlogPost`` y ``BlogComment``. Las entidades generadas ahora están listas para utilizarse. ¡Que te diviertas!
+
+.. _`herramientas de documentación de Doctrine`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/tools.html#reverse-engineering

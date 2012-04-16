@@ -1,0 +1,71 @@
+.. index::
+   single: Enrutando; Permite / en el parámetro ruta
+
+Cómo permitir un carácter "/" en un parámetro de ruta
+===============================================================
+
+A veces, es necesario componer las *URL* con parámetros que pueden contener una barra inclinada ``/``. Por ejemplo, tomemos la ruta clásica ``/hello/{name}``. Por omisión, ``/hello/Fabien`` coincidirá con esta ruta pero no ``/hello/Fabien/Kris``. Esto se debe a que *Symfony* utiliza este carácter como separador entre las partes de la ruta.
+
+Esta guía explica cómo puedes modificar una ruta para que ``/hello/Fabien/Kris`` coincida con la ruta ``/hello/{name}``, donde ``{name}`` es igual a ``Fabien/Kris``.
+
+Configurando la ruta
+--------------------
+
+De manera predeterminada, el componente de enrutado de *Symfony* requiere que los parámetros coincidan con los siguientes patrones de expresiones regulares: ``[^/]+``. Esto significa que todos los caracteres están permitidos excepto ``/``. 
+
+Debes permitir explícitamente el carácter ``/`` para que sea parte de tu parámetro especificando un patrón de expresión regular más permisivo.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        _hello:
+            pattern: /hello/{name}
+            defaults: { _controller: AcmeDemoBundle:Demo:hello }
+            requirements:
+                name: ".+"
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <route id="_hello" pattern="/hello/{name}">
+                <default key="_controller">AcmeDemoBundle:Demo:hello</default>
+                <requirement key="name">.+</requirement>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('_hello', new Route('/hello/{name}', array(
+            '_controller' => 'AcmeDemoBundle:Demo:hello',
+        ), array(
+            'name' => '.+',
+        )));
+
+        return $collection;
+
+    .. code-block:: php-annotations
+
+        use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+
+        class DemoController
+        {
+            /**
+             * @Route("/hello/{name}", name="_hello", requirements={"name" = ".+"})
+             */
+            public function helloAction($name)
+            {
+                // ...
+            }
+        }
+
+¡Eso es todo! Ahora, el parámetro ``{name}`` puede contener el carácter ``/``.
