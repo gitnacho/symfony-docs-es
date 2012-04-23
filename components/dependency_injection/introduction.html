@@ -1,0 +1,371 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>El componente de inyección de dependencias &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Inyección de dependencias" href="index.html" />
+    <link rel="next" title="Despachador de eventos" href="../event_dispatcher/index.html" />
+    <link rel="prev" title="Inyección de dependencias" href="index.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../event_dispatcher/index.html" title="Despachador de eventos"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Inyección de dependencias"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="el-componente-de-inyeccion-de-dependencias">
+<span id="index-0"></span><h1>El componente de inyección de dependencias<a class="headerlink" href="#el-componente-de-inyeccion-de-dependencias" title="Enlazar permanentemente con este título">¶</a></h1>
+<blockquote>
+<div>El componente de inyección de dependencias, te permite estandarizar y centralizar la forma en que se construyen los objetos en tu aplicación.</div></blockquote>
+<p>Para una introducción general a los contenedores de inyección de dependencias y servicios consulta el capítulo <a class="reference internal" href="../../book/service_container.html"><em>Contenedor de servicios</em></a> del libro.</p>
+<div class="section" id="instalando">
+<h2>Instalando<a class="headerlink" href="#instalando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes instalar el componente de varias maneras diferentes:</p>
+<ul class="simple">
+<li>Usando el repositorio <em>Git</em> oficial (<a class="reference external" href="https://github.com/symfony/DependencyInjection">https://github.com/symfony/DependencyInjection</a>);</li>
+<li>Instalándolo a través de <em>PEAR</em> ( <cite>pear.symfony.com/DependencyInjection</cite>);</li>
+<li>Instalándolo vía <tt class="docutils literal"><span class="pre">Composer</span></tt> (<cite>symfony/dependency-injection</cite> en Packagist).</li>
+</ul>
+</div>
+<div class="section" id="uso-basico">
+<h2>Uso básico<a class="headerlink" href="#uso-basico" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Tal vez tengas una simple clase <tt class="docutils literal"><span class="pre">Mailer</span></tt> como la siguiente, la cual quieres hacer disponible como un servicio:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Mailer</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$transport</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">transport</span> <span class="o">=</span> <span class="s1">&#39;sendmail&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>La puedes registrar en el contenedor como un servicio:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+
+<span class="nv">$sc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">,</span> <span class="s1">&#39;Mailer&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Una mejora a la clase para hacerla más flexible sería permitir que el contenedor establezca el <tt class="docutils literal"><span class="pre">transporte</span></tt> utilizado. Si cambias la clase para que este sea pasado al constructor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">Mailer</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$transport</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$transport</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">transport</span> <span class="o">=</span> <span class="nv">$transport</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Entonces, puedes configurar la opción de transporte en el contenedor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+
+<span class="nv">$sc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">,</span> <span class="s1">&#39;Mailer&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addArgument</span><span class="p">(</span><span class="s1">&#39;sendmail&#39;</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>Esta clase ahora es mucho más flexible puesto que hemos separado la elección del transporte fuera de la implementación y en el contenedor.</p>
+<p>Qué transporte de correo has elegido, puede ser algo sobre lo cual los demás servicios necesitan saber. Puedes evitar tener que cambiarlo en varios lugares volviéndolo un parámetro en el contenedor y luego refiriendo este parámetro como argumento para el constructor del servicio <tt class="docutils literal"><span class="pre">Mailer</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+
+<span class="nv">$sc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;mailer.transport&#39;</span><span class="p">,</span> <span class="s1">&#39;sendmail&#39;</span><span class="p">);</span>
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">,</span> <span class="s1">&#39;Mailer&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addArgument</span><span class="p">(</span><span class="s1">&#39;%mailer.transport%&#39;</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>Ahora que el servicio <tt class="docutils literal"><span class="pre">mailer</span></tt> está en el contenedor lo puedes inyectar como una dependencia de otras clases. Si tienes una clase <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt> como esta:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Mailer</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">NewsletterManager</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$mailer</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">Mailer</span> <span class="nv">$mailer</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">mailer</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Entonces, también la puedes registrar como un servicio y pasarla a servicio <tt class="docutils literal"><span class="pre">mailer</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="nv">$sc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;mailer.transport&#39;</span><span class="p">,</span> <span class="s1">&#39;sendmail&#39;</span><span class="p">);</span>
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">,</span> <span class="s1">&#39;Mailer&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addArgument</span><span class="p">(</span><span class="s1">&#39;%mailer.transport%&#39;</span><span class="p">));</span>
+
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="s1">&#39;NewsletterManager&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addArgument</span><span class="p">(</span><span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>Si el <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt> no requiere el <tt class="docutils literal"><span class="pre">Mailer</span></tt> y la inyección sólo era opcional, entonces, puedes utilizar el método definidor para inyectarlo en su lugar:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Mailer</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">NewsletterManager</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$mailer</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setMailer</span><span class="p">(</span><span class="nx">Mailer</span> <span class="nv">$mailer</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">mailer</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ahora puedes optar por no inyectar un <tt class="docutils literal"><span class="pre">Mailer</span></tt> en el <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt>.
+Si quieres, aunque entonces el contenedor puede llamar al método definidor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="nv">$sc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;mailer.transport&#39;</span><span class="p">,</span> <span class="s1">&#39;sendmail&#39;</span><span class="p">);</span>
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">,</span> <span class="s1">&#39;Mailer&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addArgument</span><span class="p">(</span><span class="s1">&#39;%mailer.transport%&#39;</span><span class="p">));</span>
+
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="s1">&#39;NewsletterManager&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">));</span>
+</pre></div>
+</div>
+<p>A continuación, puedes obtener tu servicio <tt class="docutils literal"><span class="pre">newsletter_manager</span></tt> desde el contenedor de esta manera:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="nv">$sc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+
+<span class="c1">//--</span>
+
+<span class="nv">$newsletterManager</span> <span class="o">=</span> <span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="evitando-que-tu-codigo-sea-dependiente-en-el-contenedor">
+<h2>Evitando que tu código sea dependiente en el contenedor<a class="headerlink" href="#evitando-que-tu-codigo-sea-dependiente-en-el-contenedor" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si bien puedes recuperar los servicios directamente desde el contenedor, lo mejor es minimizar esto. Por ejemplo, en el <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt> inyectamos el servicio <tt class="docutils literal"><span class="pre">Mailer</span></tt> en vez de solicitarlo desde el contenedor.
+Podríamos haber inyectado el contenedor y recuperar el servicio <tt class="docutils literal"><span class="pre">Mailer</span></tt> desde ahí, pero entonces, estaría vinculado a este contenedor particular, lo cual dificulta la reutilización de la clase en otro lugar.</p>
+<p>Tendrás que conseguir un servicio desde el contenedor en algún momento, pero esto debe ser tan pocas veces como sea posible en el punto de entrada a tu aplicación.</p>
+</div>
+<div class="section" id="configurando-el-contenedor-con-archivos-de-configuracion">
+<h2>Configurando el contenedor con archivos de configuración<a class="headerlink" href="#configurando-el-contenedor-con-archivos-de-configuracion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Así como la creación de los servicios utilizando <em>PHP</em> &#8212;como arriba&#8212; también puedes utilizar archivos de configuración. Para ello además necesitas instalar el componente <tt class="docutils literal"><span class="pre">Config</span></tt>:</p>
+<ul class="simple">
+<li>Usando el repositorio <em>Git</em> oficial (<a class="reference external" href="https://github.com/symfony/Config">https://github.com/symfony/Config</a>);</li>
+<li>Instalándolo a través de <em>PEAR</em> ( <cite>pear.symfony.com/Config</cite>);</li>
+<li>Instalándolo vía <tt class="docutils literal"><span class="pre">Composer</span></tt> (<cite>symfony/config</cite> en Packagist).</li>
+</ul>
+<p>Cargando un archivo de configuración <em>XML</em>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\FileLocator</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Loader\XmlFileLoader</span><span class="p">;</span>
+
+<span class="nv">$sc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+<span class="nv">$loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XmlFileLoader</span><span class="p">(</span><span class="nv">$sc</span><span class="p">,</span> <span class="k">new</span> <span class="nx">FileLocator</span><span class="p">(</span><span class="nx">__DIR__</span><span class="p">));</span>
+<span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">load</span><span class="p">(</span><span class="s1">&#39;services.xml&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Cargando un archivo de configuración <em>YAML</em>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\FileLocator</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Loader\YamlFileLoader</span><span class="p">;</span>
+
+<span class="nv">$sc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+<span class="nv">$loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">YamlFileLoader</span><span class="p">(</span><span class="nv">$sc</span><span class="p">,</span> <span class="k">new</span> <span class="nx">FileLocator</span><span class="p">(</span><span class="nx">__DIR__</span><span class="p">));</span>
+<span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">load</span><span class="p">(</span><span class="s1">&#39;services.yml&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Puedes configurar los servicios <tt class="docutils literal"><span class="pre">newsletter_manager</span></tt> y <tt class="docutils literal"><span class="pre">mailer</span></tt> usando archivos de configuración:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
+parameters:
+    # ...
+    mailer.transport: sendmail
+
+services:
+    my_mailer:
+        class:     Mailer
+        arguments: [@mailer]
+    newsletter_manager:
+        class:     NewsletterManager
+        calls:
+            - [ setMailer, [ @mailer ] ]</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;</span>
+<span class="nt">&lt;parameters&gt;</span>
+    <span class="c">&lt;!-- ... --&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;mailer.transport&quot;</span><span class="nt">&gt;</span>sendmail<span class="nt">&lt;/parameter&gt;</span>
+<span class="nt">&lt;/parameters&gt;</span>
+
+    <span class="nt">&lt;services&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;mailer&quot;</span> <span class="na">class=</span><span class="s">&quot;Mailer&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;argument&gt;</span>%mailer.transport%<span class="nt">&lt;/argument&gt;</span>
+    <span class="nt">&lt;/service&gt;</span>
+
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;newsletter_manager&quot;</span> <span class="na">class=</span><span class="s">&quot;NewsletterManager&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;call</span> <span class="na">method=</span><span class="s">&quot;setMailer&quot;</span><span class="nt">&gt;</span>
+             <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;mailer&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;/call&gt;</span>
+    <span class="nt">&lt;/service&gt;</span>
+    <span class="nt">&lt;/services&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;mailer.transport&#39;</span><span class="p">,</span> <span class="s1">&#39;sendmail&#39;</span><span class="p">);</span>
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">,</span> <span class="s1">&#39;Mailer&#39;</span><span class="p">)</span>
+   <span class="o">-&gt;</span><span class="na">addArgument</span><span class="p">(</span><span class="s1">&#39;%mailer.transport%&#39;</span><span class="p">));</span>
+
+<span class="nv">$sc</span><span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="s1">&#39;NewsletterManager&#39;</span><span class="p">)</span>
+   <span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="aprende-mas-en-el-recetario">
+<h2>Aprende más en el recetario<a class="headerlink" href="#aprende-mas-en-el-recetario" title="Enlazar permanentemente con este título">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="../../cookbook/service_container/factories.html"><em>Cómo utilizar el patrón fábrica para crear servicios</em></a></li>
+<li><a class="reference internal" href="../../cookbook/service_container/parentservices.html"><em>Cómo gestionar dependencias comunes con servicios padre</em></a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../event_dispatcher/index.html" title="Despachador de eventos"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Inyección de dependencias"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Apr 23, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

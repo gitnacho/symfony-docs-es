@@ -1,0 +1,309 @@
+.. index::
+   single: HTTP
+   single: HttpFoundation
+
+El componente ``HttpFoundation``
+================================
+
+    El componente ``HttpFoundation`` define una capa orientada a objetos para la especificación *HTTP*.
+
+En *PHP*, la petición está representada por algunas variables globales (``$_GET``, ``$_POST``, ``$_FILE``, ``$_COOKIE``, ``$_SESSION``...) y la respuesta es generada por algunas funciones (``echo``, ``header``, ``setcookie``, ...).
+
+El componente *HttpFoundation* de *Symfony2* sustituye estas variables globales y funciones de *PHP* por una capa orientada a objetos.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/HttpFoundation);
+* Instalándolo a través de *PEAR* (`pear.symfony.com/HttpFoundation`);
+* Instalándolo vía ``Composer`` (`symfony/http-foundation` en Packagist).
+
+Petición
+--------
+
+La manera más común para crear una petición es basándose en las variables globales de *PHP* con
+:method:`Symfony\\Component\\HttpFoundation\\Request::createFromGlobals`::
+
+    use Symfony\Component\HttpFoundation\Request;
+
+    $request = Request::createFromGlobals();
+
+que es casi equivalente a la más prolija, pero también más flexible, llamada a
+:method:`Symfony\\Component\\HttpFoundation\\Request::__construct`::
+
+    $request = new Request($_GET, $_POST, array(), $_COOKIE, $_FILES, $_SERVER);
+
+Accediendo a datos de la ``Petición``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Un objeto ``Petición`` contiene información sobre la petición del cliente. Puedes acceder a esta información a través de muchas propiedades públicas:
+
+* ``request``: equivalente de ``$_POST``;
+
+* ``query``: equivalente de ``$_GET`` (``$request->query->get('name')``);
+
+* ``cookies``: equivalente de ``$_COOKIE``;
+
+* ``attributes``: sin equivalente --- utilizado por tu aplicación para almacenar otros datos (ve :ref:`más adelante <component-foundation-attributes>`)
+
+* ``files``: equivalente de ``$_FILE``;
+
+* ``server``: equivalente de ``$_SERVER``;
+
+* ``headers``: en su mayoría equivalente a un subconjunto de ``$_SERVER``   (``$request->headers->get('Content-Type')``).
+
+Cada propiedad es una instancia de :class:`Symfony\\Component\\HttpFoundation\\ParameterBag` (o una subclase), que es una clase que contiene datos:
+
+* ``request``: :class:`Symfony\\Component\\HttpFoundation\\ParameterBag`;
+
+* ``query``:   :class:`Symfony\\Component\\HttpFoundation\\ParameterBag`;
+
+* ``cookies``: :class:`Symfony\\Component\\HttpFoundation\\ParameterBag`;
+
+* ``attributes``: :class:`Symfony\\Component\\HttpFoundation\\ParameterBag`;
+
+* ``files``:   :class:`Symfony\\Component\\HttpFoundation\\FileBag`;
+
+* ``server``:  :class:`Symfony\\Component\\HttpFoundation\\ServerBag`;
+
+* ``headers``: :class:`Symfony\\Component\\HttpFoundation\\HeaderBag`.
+
+Todas las instancias de la clase :class:`Symfony\\Component\\HttpFoundation\\ParameterBag` tienen métodos para recuperar y actualizar sus datos:
+
+* :method:`Symfony\\Component\\HttpFoundation\\ParameterBag::all`: Devuelve los parámetros;
+
+* :method:`Symfony\\Component\\HttpFoundation\\ParameterBag::keys`: Devuelve las claves de los parámetros;
+
+* :method:`Symfony\\Component\\HttpFoundation\\ParameterBag::replace`:
+  Sustituye los parámetros actuales por un nuevo conjunto;
+
+* :method:`Symfony\\Component\\HttpFoundation\\ParameterBag::add`: Añade parámetros;
+
+* :method:`Symfony\\Component\\HttpFoundation\\ParameterBag::get`: Devuelve un parámetro por nombre;
+
+* :method:`Symfony\\Component\\HttpFoundation\\ParameterBag::set`: Establece un parámetro por nombre;
+
+* :method:`Symfony\\Component\\HttpFoundation\\ParameterBag::has`: Devuelve ``true`` si el parámetro está definido;
+
+* :method:`Symfony\\Component\\HttpFoundation\\ParameterBag::remove`: Elimina un parámetro.
+
+La instancia de :class:`Symfony\\Component\\HttpFoundation\\ParameterBag` también tiene algunos métodos para filtrar los valores introducidos:
+
+* :method:`Symfony\\Component\\HttpFoundation\\Request::getAlpha`: Devuelve los caracteres alfanuméricos del valor del parámetro;
+
+* :method:`Symfony\\Component\\HttpFoundation\\Request::getAlnum`: Devuelve los caracteres alfanuméricos y dígitos del valor del parámetro;
+
+* :method:`Symfony\\Component\\HttpFoundation\\Request::getDigits`: Devuelve los dígitos del valor del parámetro;
+
+* :method:`Symfony\\Component\\HttpFoundation\\Request::getInt`: Devuelve el valor del parámetro convertido a entero;
+
+* :method:`Symfony\\Component\\HttpFoundation\\Request::filter`: Filtra el parámetro usando la función ``filter_var()`` de *PHP*.
+
+Todos los captadores toman hasta tres argumentos: el primero es el nombre del parámetro y el segundo es el valor predeterminado a devolver si el parámetro no existe::
+
+    // La cadena de consulta es '?foo=bar'
+
+    $request->query->get('foo');
+    // devuelve bar
+
+    $request->query->get('bar');
+    // devuelve null
+
+    $request->query->get('bar', 'bar');
+    // devuelve 'bar'
+
+
+Cuando *PHP* importa la consulta de la petición, manipula los parámetros de la petición como
+``foo[bar]=bar`` de una manera especial, ya que crea una matriz. Para que puedas obtener el parámetro ``foo`` y devolver una matriz con un elemento ``bar``. pero a veces, posiblemente quieras obtener el valor por medio del nombre "original" del parámetro:
+``foo[bar]``. Esto es posible con todos los captadores de ``ParameterBag`` como
+:method:`Symfony\\Component\\HttpFoundation\\Request::get` a través del tercer argumento::
+
+        // la cadena de consulta es '?foo[bar]=bar'
+
+        $request->query->get('foo');
+        // devuelve array('bar' => 'bar')
+
+        $request->query->get('foo[bar]');
+        // devuelve null
+
+        $request->query->get('foo[bar]', null, true);
+        // devuelve 'bar'
+
+.. _component-foundation-attributes:
+
+Por último, pero no menos importante, también puedes almacenar más datos en la petición, gracias a la propiedad pública ``attributes``, que también es una instancia de :class:`Symfony\\Component\\HttpFoundation\\ParameterBag`. Casi siempre se usa para adjuntar información que pertenece a la ``Petición`` y que necesitas acceder desde diferentes puntos de tu aplicación. Para información sobre cómo se utiliza en la plataforma *Symfony2*, consulta la :ref:`propiedad pública attributes <book-fundamentals-attributes>`.
+
+Identificando una ``Petición``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+En tu aplicación, necesitas una manera de identificar una petición; la mayor parte del tiempo, esto se hace a través de la "información de ruta" de la petición, a la que puedes acceder a través del método :method:`Symfony\\Component\\HttpFoundation\\Request::getPathInfo`::
+
+     // Para una petición a http://example.com/blog/index.php/post/hello-world
+     // la información de ruta es "/post/hello-world"
+     $request->getPathInfo();
+
+Simulando una ``Petición``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+En lugar de crear una petición basada en las variables globales de *PHP*, también puedes simular
+una ``Petición``::
+
+    $request = Request::create('/hello-world', 'GET', array('name' => 'Fabien'));
+
+El método :method:`Symfony\\Component\\HttpFoundation\\Request::create` crea una petición basándose en la información de una ruta, un método y algunos parámetros (los parámetros de consulta o los de la petición en función del método *HTTP*); y, por supuesto, también puedes sustituir todas las otras variables (de manera predeterminada, *Symfony* crea parámetros predeterminados apropiados para todas las variables globales de *PHP*).
+
+En base a dicha petición, puedes sustituir las variables globales de *PHP* a través de :method:`Symfony\\Component\\HttpFoundation\\Request::overrideGlobals`::
+
+    $request->overrideGlobals();
+
+.. tip::
+
+    También puedes duplicar una consulta existente a través del método :method:`Symfony\\Component\\HttpFoundation\\Request::duplicate` o cambiar un montón de parámetros con una sola llamada a :method:`Symfony\\Component\\HttpFoundation\\Request::initialize`.
+
+Accediendo a la ``Sesión``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Si tienes una sesión adjunta a la ``Petición``, puedes acceder a ella a través del método :method:`Symfony\\Component\\HttpFoundation\\Request::getSession`;
+el método :method:`Symfony\\Component\\HttpFoundation\\Request::hasPreviousSession` te dice si la petición contiene una sesión que se inició en una de las peticiones anteriores.
+
+Accediendo a otros datos
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+La clase ``Petición`` tiene muchos otros métodos que puedes utilizar para acceder a la información de la petición. Echa un vistazo a la *API* para más información sobre ellos.
+
+``Respuesta``
+-------------
+
+Un objeto :class:`Symfony\\Component\\HttpFoundation\\Response` contiene toda la información que debes enviar de vuelta al cliente desde una determinada ``Petición``. El constructor toma hasta tres argumentos: el contenido de la respuesta, el código de estado, y una serie de cabeceras *HTTP*::
+
+
+    use Symfony\Component\HttpFoundation\Response;
+
+    $response = new Response('Content',
+                             200,
+                             array('content-type' => 'text/html')
+                    );
+
+También puedes manipular esta información después de haber creado la ``Respuesta``::
+
+    $response->setContent('Hello World');
+
+    // el atributo público headers es un ResponseHeaderBag
+    $response->headers->set('Content-Type', 'text/plain');
+
+    $response->setStatusCode(404);
+
+Al establecer el ``Content-Type`` de la respuesta, puedes configurar el juego de caracteres, pero es mejor configurarlo a través del método :method:`Symfony\\Component\\HttpFoundation\\Response::setCharset`::
+
+    $response->setCharset('ISO-8859-1');
+
+Ten en cuenta que de manera predeterminada, *Symfony* asume que sus respuestas están codificadas en
+*UTF-8*.
+
+Enviando la ``Respuesta``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Antes de enviar la respuesta, te puedes asegurar de que es compatible con la especificación del protocolo *HTTP* llamando al método :method:`Symfony\\Component\\HttpFoundation\\Response::prepare`::
+
+    $response->prepare($request);
+
+Enviar la respuesta entonces es tan sencillo cómo invocar al método :method:`Symfony\\Component\\HttpFoundation\\Response::send`::
+
+    $response->send();
+
+Enviando ``Cookies``
+~~~~~~~~~~~~~~~~~~~~
+
+Puedes manipular las ``cookies`` de la respuesta por medio del atributo público ``headers``::
+
+    use Symfony\Component\HttpFoundation\Cookie;
+
+    $response->headers->setCookie(new Cookie('foo', 'bar'));
+
+El método :method:`Symfony\\Component\\HttpFoundation\\ResponseHeaderBag::setCookie` toma como argumento una instancia de :class:`Symfony\\Component\\HttpFoundation\\Cookie`.
+
+Puedes borrar una :dfn:`cookie` a través del método :method:`Symfony\\Component\\HttpFoundation\\Response::clearCookie`.
+
+Gestionando la caché *HTTP*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+La clase :class:`Symfony\\Component\\HttpFoundation\\Response` tiene un rico conjunto de métodos para manipular las cabeceras *HTTP* relacionadas con la memoria caché:
+
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setPublic`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setPrivate`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::expire`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setExpires`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setMaxAge`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setSharedMaxAge`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setTtl`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setClientTtl`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setLastModified`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setEtag`;
+* :method:`Symfony\\Component\\HttpFoundation\\Response::setVary`;
+
+Puedes utilizar el método :method:`Symfony\\Component\\HttpFoundation\\Response::setCache` para establecer la información de caché utilizada comúnmente en una llamada al método::
+
+    $response->setCache(array(
+        'etag'          => 'abcdef',
+        'last_modified' => new \DateTime(),
+        'max_age'       => 600,
+        's_maxage'      => 600,
+        'private'       => false,
+        'public'        => true,
+    ));
+
+Para comprobar si los validadores de la ``Respuesta`` (``ETag``, ``Last-Modified``) coinciden con un valor condicional especificado en la petición del cliente, utiliza el método :method:`Symfony\\Component\\HttpFoundation\\Response::isNotModified`::
+
+    if ($response->isNotModified($request)) {
+        $response->send();
+    }
+
+Si la respuesta no se ha modificado, se establece el código de estado a 304 y elimina el contenido real de la respuesta.
+
+Redirigiendo al usuario
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Para redirigir al cliente a otra *URL*, puedes utilizar la clase :class:`Symfony\\Component\\HttpFoundation\\RedirectResponse`::
+
+    use Symfony\Component\HttpFoundation\RedirectResponse;
+
+    $response = new RedirectResponse('http://ejemplo.com/');
+
+Transmitiendo una ``Respuesta``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.1
+    La compatibilidad a la transmisión de respuestas se añadió en *Symfony 2.1*.
+
+La clase :class:`Symfony\\Component\\HttpFoundation\\StreamedResponse` te permite transmitir la respuesta de vuelta al cliente. El contenido de la respuesta está representado por una función *PHP* ejecutable en lugar de una cadena::
+
+    use Symfony\Component\HttpFoundation\StreamedResponse;
+
+    $response = new StreamedResponse();
+    $response->setCallback(function () {
+        echo 'Hello World';
+        flush();
+        sleep(2);
+        echo 'Hello World';
+        flush();
+    });
+    $response->send();
+
+Descargando archivos
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.1
+    El método ``makeDisposition`` fue añadido en *Symfony 2.1*.
+
+Al cargar un archivo, debes agregar una cabecera ``Content-Disposition`` a tu respuesta. Es fácil crear esta cabecera básica para descargar archivos, utilizando nombres de archivo
+no *ASCII* más envolventes. El método :method:`:Symfony\\Component\\HttpFoundation\\Response:makeDisposition` abstrae el trabajo duro detrás de una sencilla *API*:
+
+.. code-block:: php
+
+    use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+
+    $d = $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'foo.pdf');
+
+    $response->headers->set('Content-Disposition', $d);

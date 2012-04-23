@@ -1,0 +1,268 @@
+.. index::
+    single: Inyección de dependencias
+
+El componente de inyección de dependencias
+==========================================
+
+    El componente de inyección de dependencias, te permite estandarizar y centralizar la forma en que se construyen los objetos en tu aplicación.
+
+Para una introducción general a los contenedores de inyección de dependencias y servicios consulta el capítulo :doc:`/book/service_container` del libro.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/DependencyInjection);
+* Instalándolo a través de *PEAR* ( `pear.symfony.com/DependencyInjection`);
+* Instalándolo vía ``Composer`` (`symfony/dependency-injection` en Packagist).
+
+Uso básico
+----------
+
+Tal vez tengas una simple clase ``Mailer`` como la siguiente, la cual quieres hacer disponible como un servicio:
+
+.. code-block:: php
+
+    class Mailer
+    {
+        private $transport;
+
+        public function __construct()
+        {
+            $this->transport = 'sendmail';
+        }
+
+        // ...
+    }
+
+La puedes registrar en el contenedor como un servicio:
+
+.. code-block:: php
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    $sc = new ContainerBuilder();
+    $sc->register('mailer', 'Mailer');
+
+Una mejora a la clase para hacerla más flexible sería permitir que el contenedor establezca el ``transporte`` utilizado. Si cambias la clase para que este sea pasado al constructor:
+
+.. code-block:: php
+
+    class Mailer
+    {
+        private $transport;
+
+        public function __construct($transport)
+        {
+            $this->transport = $transport;
+        }
+
+        // ...
+    }
+
+Entonces, puedes configurar la opción de transporte en el contenedor:
+
+.. code-block:: php
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    $sc = new ContainerBuilder();
+    $sc->register('mailer', 'Mailer')
+        ->addArgument('sendmail'));
+
+Esta clase ahora es mucho más flexible puesto que hemos separado la elección del transporte fuera de la implementación y en el contenedor.
+
+Qué transporte de correo has elegido, puede ser algo sobre lo cual los demás servicios necesitan saber. Puedes evitar tener que cambiarlo en varios lugares volviéndolo un parámetro en el contenedor y luego refiriendo este parámetro como argumento para el constructor del servicio ``Mailer``:
+
+
+.. code-block:: php
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    $sc = new ContainerBuilder();
+    $sc->setParameter('mailer.transport', 'sendmail');
+    $sc->register('mailer', 'Mailer')
+        ->addArgument('%mailer.transport%'));
+
+Ahora que el servicio ``mailer`` está en el contenedor lo puedes inyectar como una dependencia de otras clases. Si tienes una clase ``NewsletterManager`` como esta:
+
+.. code-block:: php
+
+    use Mailer;
+
+    class NewsletterManager
+    {
+        private $mailer;
+
+        public function __construct(Mailer $mailer)
+        {
+            $this->mailer = $mailer;
+        }
+
+        // ...
+    }
+
+Entonces, también la puedes registrar como un servicio y pasarla a servicio ``mailer``:
+
+.. code-block:: php
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Reference;
+
+    $sc = new ContainerBuilder();
+
+    $sc->setParameter('mailer.transport', 'sendmail');
+    $sc->register('mailer', 'Mailer')
+        ->addArgument('%mailer.transport%'));
+
+    $sc->register('newsletter_manager', 'NewsletterManager')
+        ->addArgument(new Reference('mailer'));
+
+Si el ``NewsletterManager`` no requiere el ``Mailer`` y la inyección sólo era opcional, entonces, puedes utilizar el método definidor para inyectarlo en su lugar:
+
+.. code-block:: php
+
+    use Mailer;
+
+    class NewsletterManager
+    {
+        private $mailer;
+
+        public function setMailer(Mailer $mailer)
+        {
+            $this->mailer = $mailer;
+        }
+
+        // ...
+    }
+
+Ahora puedes optar por no inyectar un ``Mailer`` en el ``NewsletterManager``.
+Si quieres, aunque entonces el contenedor puede llamar al método definidor:
+
+.. code-block:: php
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Reference;
+
+    $sc = new ContainerBuilder();
+
+    $sc->setParameter('mailer.transport', 'sendmail');
+    $sc->register('mailer', 'Mailer')
+        ->addArgument('%mailer.transport%'));
+
+    $sc->register('newsletter_manager', 'NewsletterManager')
+        ->addMethodCall('setMailer', new Reference('mailer'));
+
+A continuación, puedes obtener tu servicio ``newsletter_manager`` desde el contenedor de esta manera:
+
+.. code-block:: php
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Reference;
+
+    $sc = new ContainerBuilder();
+
+    //--
+
+    $newsletterManager = $sc->get('newsletter_manager');
+
+Evitando que tu código sea dependiente en el contenedor
+-------------------------------------------------------
+
+Si bien puedes recuperar los servicios directamente desde el contenedor, lo mejor es minimizar esto. Por ejemplo, en el ``NewsletterManager`` inyectamos el servicio ``Mailer`` en vez de solicitarlo desde el contenedor.
+Podríamos haber inyectado el contenedor y recuperar el servicio ``Mailer`` desde ahí, pero entonces, estaría vinculado a este contenedor particular, lo cual dificulta la reutilización de la clase en otro lugar.
+
+Tendrás que conseguir un servicio desde el contenedor en algún momento, pero esto debe ser tan pocas veces como sea posible en el punto de entrada a tu aplicación.
+
+Configurando el contenedor con archivos de configuración
+--------------------------------------------------------
+
+Así como la creación de los servicios utilizando *PHP* ---como arriba--- también puedes utilizar archivos de configuración. Para ello además necesitas instalar el componente ``Config``:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/Config);
+* Instalándolo a través de *PEAR* ( `pear.symfony.com/Config`);
+* Instalándolo vía ``Composer`` (`symfony/config` en Packagist).
+
+Cargando un archivo de configuración *XML*:
+
+.. code-block:: php
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\Config\FileLocator;
+    use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+
+    $sc = new ContainerBuilder();
+    $loader = new XmlFileLoader($sc, new FileLocator(__DIR__));
+    $loader->load('services.xml');
+
+Cargando un archivo de configuración *YAML*:
+
+.. code-block:: php
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\Config\FileLocator;
+    use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+
+    $sc = new ContainerBuilder();
+    $loader = new YamlFileLoader($sc, new FileLocator(__DIR__));
+    $loader->load('services.yml');
+
+Puedes configurar los servicios ``newsletter_manager`` y ``mailer`` usando archivos de configuración:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/HelloBundle/Resources/config/services.yml
+        parameters:
+            # ...
+            mailer.transport: sendmail
+
+        services:
+            my_mailer:
+                class:     Mailer
+                arguments: [@mailer]
+            newsletter_manager:
+                class:     NewsletterManager
+                calls:
+                    - [ setMailer, [ @mailer ] ]
+
+    .. code-block:: xml
+
+        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
+        <parameters>
+            <!-- ... -->
+            <parameter key="mailer.transport">sendmail</parameter>
+        </parameters>
+
+            <services>
+            <service id="mailer" class="Mailer">
+                <argument>%mailer.transport%</argument>
+            </service>
+
+            <service id="newsletter_manager" class="NewsletterManager">
+                <call method="setMailer">
+                     <argument type="service" id="mailer" />
+                </call>
+            </service>
+            </services>
+
+    .. code-block:: php
+
+        use Symfony\Component\DependencyInjection\Reference;
+
+        // ...
+        $sc->setParameter('mailer.transport', 'sendmail');
+        $sc->register('mailer', 'Mailer')
+           ->addArgument('%mailer.transport%'));
+
+        $sc->register('newsletter_manager', 'NewsletterManager')
+           ->addMethodCall('setMailer', new Reference('mailer'));
+
+
+Aprende más en el recetario
+---------------------------
+
+* :doc:`/cookbook/service_container/factories`
+* :doc:`/cookbook/service_container/parentservices`

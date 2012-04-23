@@ -1,0 +1,95 @@
+.. index::
+   single: Despachador de evento
+
+El objeto evento genérico
+=========================
+
+.. versionadded:: 2.1
+    La clase del evento ``GenericEvent`` se añadió en *Symfony 2.1*.
+
+La clase base :class:`Symfony\\Component\\EventDispatcher\\Event` proporcionada por el componente ``Despachador de eventos`` deliberadamente es escasa para permitir la creación por herencia de la *API* de objetos ``Evento`` específicos usando programación orientada a objetos. Esto permite código elegante y fácil de leer en aplicaciones complejas.
+
+La clase :class:`Symfony\\Component\\EventDispatcher\\GenericEvent` está disponible por conveniencia para aquellos que quieran utilizar un solo objeto ``Evento`` en toda su aplicación. Este es adecuado para la mayoría de los propósitos fuera de la caja, puesto que sigue el patrón ``observador estándar`` en el que el objeto ``evento`` encapsula el ``tema`` de un ``evento``, pero que adicionalmente tiene argumentos opcionales extra.
+
+La clase :class:`Symfony\\Component\\EventDispatcher\\GenericEvent` tiene una *API* sencilla, además de la clase base :class:`Symfony\\Component\\EventDispatcher\\Event`:
+
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::__construct`:
+  El constructor toma el ``tema`` y argumentos del ``evento``;
+
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::getSubject`:
+  Obtiene el ``tema``;
+
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::setArg`:
+  Define un argumento por ``clave``;
+
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::setArgs`:
+  Establece la matriz de argumentos;
+
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::getArg`:
+  Obtiene un argumento por ``clave``;
+
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::getArgs`:
+  Obtiene una matriz de argumentos;
+
+* :method:`Symfony\\Component\\EventDispatcher\\GenericEvent::hasArg`:
+  Devuelve ``true`` si existe el argumento ``clave``;
+
+El ``GenericEvent`` también implementa la :phpclass:`ArrayAccess` en los argumentos del evento, lo cual lo hace muy conveniente para pasar argumentos adicionales relacionados al ``tema`` del ``evento``.
+
+Los siguientes ejemplos muestran casos de uso para darte una idea general de su flexibilidad.
+Los ejemplos asumen que los escuchas de eventos se han añadido al despachador.
+
+Basta con pasar un ``tema`` (``$subject``)::
+
+    use Symfony\Component\EventDispatcher\GenericEvent;
+
+    $event = GenericEvent($subject);
+    $dispatcher->dispatch('foo', $event);
+
+    class FooListener
+    {
+        public function handler(GenericEvent $event)
+        {
+            if ($event->getSubject() instanceof Foo) {
+                // ...
+            }
+        }
+    }
+
+Pasando y procesando argumentos usando la *API* de :phpclass:`ArrayAccess` para acceder a los argumentos del ``evento``::
+
+    use Symfony\Component\EventDispatcher\GenericEvent;
+
+    $event = new GenericEvent($subject, array('type' => 'foo', 'counter' => 0)));
+    $dispatcher->dispatch('foo', $event);
+
+    echo $event['counter'];
+
+    class FooListener
+    {
+        public function handler(GenericEvent $event)
+        {
+            if (isset($event['type']) && $event['type'] === 'foo') {
+                // ... hace algo
+            }
+
+            $event['counter']++;
+        }
+    }
+
+Filtrando datos::
+
+    use Symfony\Component\EventDispatcher\GenericEvent;
+
+    $event = new GenericEvent($subject, array('data' => 'foo'));
+    $dispatcher->dispatch('foo', $event);
+
+    echo $event['data'];
+
+    class FooListener
+    {
+        public function filter(GenericEvent $event)
+        {
+            strtolower($event['data']);
+        }
+    }
