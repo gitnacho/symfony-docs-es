@@ -1,0 +1,481 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Bases de datos y Propel (“El modelo”) &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../index.html" />
+    <link rel="up" title="Libro" href="index.html" />
+    <link rel="next" title="Probando" href="testing.html" />
+    <link rel="prev" title="Bases de datos y Doctrine (“El modelo”)" href="doctrine.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="testing.html" title="Probando"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="doctrine.html" title="Bases de datos y Doctrine (“El modelo”)"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">en Español</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Libro</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="bases-de-datos-y-propel-el-modelo">
+<span id="index-0"></span><h1>Bases de datos y <em>Propel</em> (&#8220;El modelo&#8221;)<a class="headerlink" href="#bases-de-datos-y-propel-el-modelo" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Seamos realistas, una de las tareas más comunes y desafiantes para cualquier aplicación consiste en la persistencia y lectura de información hacia y desde una base de datos. De manera predeterminada <em>Propel</em> no viene integrado en <em>Symfony2</em>, pero integrarlo es muy fácil. Para empezar, consulta <a class="reference external" href="http://www.propelorm.org/cookbook/symfony2/working-with-symfony2.html#installation">Trabajando con Symfony2</a>.</p>
+<div class="section" id="un-sencillo-ejemplo-un-producto">
+<h2>Un sencillo ejemplo: Un producto<a class="headerlink" href="#un-sencillo-ejemplo-un-producto" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>En esta sección, configuraremos tu base de datos, crearemos un objeto <tt class="docutils literal"><span class="pre">Producto</span></tt>, lo persistiremos en la base de datos y lo recuperaremos de nuevo.</p>
+<div class="sidebar">
+<p class="first sidebar-title">El código del ejemplo</p>
+<blockquote>
+<div>Si quieres seguir el ejemplo de este capítulo, crea el paquete <tt class="docutils literal"><span class="pre">AcmeStoreBundle</span></tt> ejecutando la orden:</div></blockquote>
+<div class="last highlight-php"><div class="highlight"><pre><span class="nx">php</span> <span class="nx">app</span><span class="o">/</span><span class="nx">console</span> <span class="nx">generate</span><span class="o">:</span><span class="nx">bundle</span> <span class="o">--</span><span class="k">namespace</span><span class="o">=</span><span class="nx">Acme</span><span class="o">/</span><span class="nx">StoreBundle</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="configurando-la-base-de-datos">
+<h3>Configurando la base de datos<a class="headerlink" href="#configurando-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Antes de poder comenzar realmente, tendrás que establecer tu información para la conexión a la base de datos.  Por convención, esta información se suele configurar en el archivo
+<tt class="file docutils literal"><span class="pre">app/config/parameters.yml</span></tt>:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">;app/config/parameters.yml</span>
+<span class="l-Scalar-Plain">[parameters]</span>
+    <span class="l-Scalar-Plain">database_driver   = mysql</span>
+    <span class="l-Scalar-Plain">database_host     = localhost</span>
+    <span class="l-Scalar-Plain">database_name     = proyecto_de_prueba</span>
+    <span class="l-Scalar-Plain">database_user     = usuario_de_pruebas</span>
+    <span class="l-Scalar-Plain">database_password = clave_de_acceso</span>
+    <span class="l-Scalar-Plain">database_charset  = UTF8</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>Definir la configuración a través de <tt class="file docutils literal"><span class="pre">parameters.yml</span></tt> sólo es una convención. Los parámetros definidos en este archivo son referidos en el archivo de configuración principal al ajustar <em>Propel</em>:</p>
+<div class="last highlight-yaml"><pre>propel:
+    dbal:
+        driver:     %database_driver%
+        user:       %database_user%
+        password:   %database_password%
+        dsn:        %database_driver%:host=%database_host%;dbname=%database_name%;charset=%database_charset%</pre>
+</div>
+</div>
+<p>Ahora que <em>Propel</em> está consciente de tu base de datos, posiblemente tenga que crear la base de datos para ti:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console propel:database:create
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">En este ejemplo, tienes configurada una conexión, denominada <tt class="docutils literal"><span class="pre">default</span></tt>. Si quieres configurar más de una conexión, consulta la <a class="reference external" href="http://www.propelorm.org/cookbook/symfony2/working-with-symfony2.html#project_configuration">sección de configuración del PropelBundle</a>.</p>
+</div>
+</div>
+<div class="section" id="creando-una-clase-modelo">
+<h3>Creando una clase <tt class="docutils literal"><span class="pre">Modelo</span></tt><a class="headerlink" href="#creando-una-clase-modelo" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>En el mundo de <em>Propel</em>, las clases <tt class="docutils literal"><span class="pre">ActiveRecord</span></tt> son conocidas como <strong>modelos</strong> debido a que las clases generadas por <em>Propel</em> contienen alguna lógica del negocio.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Para la gente que usa <em>Symfony2</em> with <em>Doctrine2</em>, los <strong>modelos</strong> son equivalentes a <strong>entidades</strong>.</p>
+</div>
+<p>Supongamos que estás construyendo una aplicación donde necesitas mostrar tus productos.
+Primero, crea un archivo <tt class="file docutils literal"><span class="pre">schema.xml</span></tt> en el directorio <tt class="docutils literal"><span class="pre">Resources/config</span></tt> de tu paquete <tt class="docutils literal"><span class="pre">AcmeStoreBundle</span></tt>:</p>
+<div class="highlight-xml"><div class="highlight"><pre><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="nt">&lt;database</span> <span class="na">name=</span><span class="s">&quot;default&quot;</span> <span class="na">namespace=</span><span class="s">&quot;Acme\StoreBundle\Model&quot;</span> <span class="na">defaultIdMethod=</span><span class="s">&quot;native&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;table</span> <span class="na">name=</span><span class="s">&quot;product&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;id&quot;</span> <span class="na">type=</span><span class="s">&quot;integer&quot;</span> <span class="na">required=</span><span class="s">&quot;true&quot;</span> <span class="na">primaryKey=</span><span class="s">&quot;true&quot;</span> <span class="na">autoIncrement=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;name&quot;</span> <span class="na">type=</span><span class="s">&quot;varchar&quot;</span> <span class="na">primaryString=</span><span class="s">&quot;true&quot;</span> <span class="na">size=</span><span class="s">&quot;100&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;price&quot;</span> <span class="na">type=</span><span class="s">&quot;decimal&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;description&quot;</span> <span class="na">type=</span><span class="s">&quot;longvarchar&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/table&gt;</span>
+<span class="nt">&lt;/database&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="construyendo-el-modelo">
+<h3>Construyendo el modelo<a class="headerlink" href="#construyendo-el-modelo" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Después de crear tu archivo <tt class="docutils literal"><span class="pre">schema.xml</span></tt>, genera tu modelo ejecutando:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console propel:model:build
+</pre></div>
+</div>
+<p>Esto genera todas las clases del modelo en el directorio <tt class="docutils literal"><span class="pre">Model/</span></tt> del paquete <tt class="docutils literal"><span class="pre">AcmeStoreBundle</span></tt> para que desarrolles rápidamente tu aplicación.</p>
+</div>
+<div class="section" id="creando-tablas-esquema-de-la-base-de-datos">
+<h3>Creando tablas/esquema de la base de datos<a class="headerlink" href="#creando-tablas-esquema-de-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Ahora tienes una clase <tt class="docutils literal"><span class="pre">Producto</span></tt> utilizable con todo lo que necesitas para persistirla. Por supuesto, en tu base de datos aún no tienes la tabla <tt class="docutils literal"><span class="pre">producto</span></tt> correspondiente. Afortunadamente, <em>Propel</em> puede crear automáticamente todas las tablas de la base de datos necesarias para cada modelo conocido en tu aplicación.  Para ello, ejecuta:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console propel:sql:build
+
+php app/console propel:sql:insert --force
+</pre></div>
+</div>
+<p>Tu base de datos ahora cuenta con una tabla <tt class="docutils literal"><span class="pre">producto</span></tt> completamente funcional, con columnas que coinciden con el esquema que has especificado.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<blockquote>
+<div>Puedes combinar las tres últimas ordenes ejecutando la siguiente orden:</div></blockquote>
+<div class="last highlight-php"><div class="highlight"><pre><span class="nx">php</span> <span class="nx">app</span><span class="o">/</span><span class="nx">console</span> <span class="nx">propel</span><span class="o">:</span><span class="nx">build</span> <span class="o">--</span><span class="nx">insert</span><span class="o">-</span><span class="nx">sql</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="persistiendo-objetos-a-la-base-de-datos">
+<h3>Persistiendo objetos a la base de datos<a class="headerlink" href="#persistiendo-objetos-a-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Ahora que tienes un objeto <tt class="docutils literal"><span class="pre">Producto</span></tt> y la tabla <tt class="docutils literal"><span class="pre">producto</span></tt> correspondiente, estás listo para persistir la información a la base de datos.  Desde el interior de un controlador, esto es bastante fácil. Agrega el siguiente método al <tt class="docutils literal"><span class="pre">DefaultController</span></tt> del paquete:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/StoreBundle/Controller/DefaultController.php</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Model\Product</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Response</span><span class="p">;</span>
+<span class="c1">// ...</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">createAction</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$product</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Product</span><span class="p">();</span>
+    <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">setName</span><span class="p">(</span><span class="s1">&#39;A Foo Bar&#39;</span><span class="p">);</span>
+    <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">setPrice</span><span class="p">(</span><span class="mf">19.99</span><span class="p">);</span>
+    <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">setDescription</span><span class="p">(</span><span class="s1">&#39;Lorem ipsum dolor&#39;</span><span class="p">);</span>
+
+    <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+
+    <span class="k">return</span> <span class="k">new</span> <span class="nx">Response</span><span class="p">(</span><span class="s1">&#39;Created product id &#39;</span><span class="o">.</span><span class="nv">$product</span><span class="o">-&gt;</span><span class="na">getId</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>En esta pieza de código, creas y trabajas con una instancia del objeto <tt class="docutils literal"><span class="pre">$product</span></tt>.
+Al invocar al método <tt class="docutils literal"><span class="pre">save()</span></tt>, la persistes a la base de datos. No tienes que usar otros servicios, el objeto sabe cómo persistirse a sí mismo.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si estás siguiendo este ejemplo, necesitas crear una <a class="reference internal" href="routing.html"><em>ruta</em></a> que apunte a este método para verlo en acción.</p>
+</div>
+</div>
+<div class="section" id="recuperando-objetos-desde-la-base-de-datos">
+<h3>Recuperando objetos desde la base de datos<a class="headerlink" href="#recuperando-objetos-desde-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Recuperar un objeto desde la base de datos es aún más fácil. Por ejemplo, supongamos que has configurado una ruta para mostrar un <tt class="docutils literal"><span class="pre">Producto</span></tt> específico en función del valor de su <tt class="docutils literal"><span class="pre">id</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Acme\StoreBundle\Model\ProductQuery</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">showAction</span><span class="p">(</span><span class="nv">$id</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$product</span> <span class="o">=</span> <span class="nx">ProductQuery</span><span class="o">::</span><span class="na">create</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">findPk</span><span class="p">(</span><span class="nv">$id</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$product</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createNotFoundException</span><span class="p">(</span><span class="s1">&#39;No product found for id &#39;</span><span class="o">.</span><span class="nv">$id</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// haz algo, como pasar el objeto $product a una plantilla</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="actualizando-un-objeto">
+<h3>Actualizando un objeto<a class="headerlink" href="#actualizando-un-objeto" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Una vez que hayas recuperado un objeto de <em>Propel</em>, actualizarlo es relativamente fácil. Supongamos que tienes una ruta que asigna un identificador de producto a una acción de actualización en un controlador:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Acme\StoreBundle\Model\ProductQuery</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">updateAction</span><span class="p">(</span><span class="nv">$id</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$product</span> <span class="o">=</span> <span class="nx">ProductQuery</span><span class="o">::</span><span class="na">create</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">findPk</span><span class="p">(</span><span class="nv">$id</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$product</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createNotFoundException</span><span class="p">(</span><span class="s1">&#39;No product found for id &#39;</span><span class="o">.</span><span class="nv">$id</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">setName</span><span class="p">(</span><span class="s1">&#39;New product name!&#39;</span><span class="p">);</span>
+    <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">generateUrl</span><span class="p">(</span><span class="s1">&#39;homepage&#39;</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>La actualización de un objeto únicamente consta de tres pasos:</p>
+<ol class="arabic simple">
+<li>Recuperar el objeto desde <em>Propel</em>;</li>
+<li>Modificar el objeto;</li>
+<li>Persistirlo.</li>
+</ol>
+</div>
+<div class="section" id="eliminando-un-objeto">
+<h3>Eliminando un objeto<a class="headerlink" href="#eliminando-un-objeto" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Eliminar un objeto es muy similar, pero requiere una llamada al método <tt class="docutils literal"><span class="pre">delete()</span></tt> del objeto:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$product</span><span class="o">-&gt;</span><span class="na">delete</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="consultando-objetos">
+<h2>Consultando objetos<a class="headerlink" href="#consultando-objetos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p><em>Propel</em> provee clases <tt class="docutils literal"><span class="pre">Query</span></tt> para ejecutar ambas consultas, básicas y complejas sin mayor esfuerzo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nx">\Acme\StoreBundle\Model\ProductQuery</span><span class="o">::</span><span class="na">create</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">findPk</span><span class="p">(</span><span class="nv">$id</span><span class="p">);</span>
+
+<span class="nx">\Acme\StoreBundle\Model\ProductQuery</span><span class="o">::</span><span class="na">create</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">filterByName</span><span class="p">(</span><span class="s1">&#39;Foo&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">findOne</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Imagina que deseas consultar los productos, pero sólo quieres devolver aquellos que cuestan más de <tt class="docutils literal"><span class="pre">19.99</span></tt>, ordenados del más barato al más caro. Desde el interior de un controlador, haz lo siguiente:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$products</span> <span class="o">=</span> <span class="nx">\Acme\StoreBundle\Model\ProductQuery</span><span class="o">::</span><span class="na">create</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">filterByPrice</span><span class="p">(</span><span class="mf">19.99</span><span class="p">,</span> <span class="nx">\Criteria</span><span class="o">::</span><span class="na">GREATER_THAN</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">orderByPrice</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">find</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>En una línea, recuperas tus productos en una potente manera orientada a objetos. No necesitas gastar tu tiempo con <em>SQL</em> o ninguna otra cosa, <em>Symfony2</em> ofrece programación completamente orientada a objetos y <em>Propel</em> respeta la misma filosofía proveyendo una impresionante capa de abstracción.</p>
+<p>Si quieres reutilizar algunas consultas, puedes añadir tus propios métodos a la clase <tt class="docutils literal"><span class="pre">ProductQuery</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/StoreBundle/Model/ProductQuery.php</span>
+
+<span class="k">class</span> <span class="nc">ProductQuery</span> <span class="k">extends</span> <span class="nx">BaseProductQuery</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">filterByExpensivePrice</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span>
+            <span class="o">-&gt;</span><span class="na">filterByPrice</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="nx">\Criteria</span><span class="o">::</span><span class="na">GREATER_THAN</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Pero, ten en cuenta que <em>Propel</em> genera una serie de métodos por ti y puedes escribir un sencillo <tt class="docutils literal"><span class="pre">findAllOrderedByName()</span></tt> sin ningún esfuerzo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nx">\Acme\StoreBundle\Model\ProductQuery</span><span class="o">::</span><span class="na">create</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">orderByName</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">find</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="relaciones-asociaciones">
+<h2>Relaciones/Asociaciones<a class="headerlink" href="#relaciones-asociaciones" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Supongamos que los productos en tu aplicación pertenecen exactamente a una &#8220;categoría&#8221;. En este caso, necesitarás un objeto <tt class="docutils literal"><span class="pre">Categoría</span></tt> y una manera de relacionar un objeto <tt class="docutils literal"><span class="pre">Producto</span></tt> a un objeto <tt class="docutils literal"><span class="pre">Categoría</span></tt>.</p>
+<p>Comienza agregando la definición de <tt class="docutils literal"><span class="pre">categoría</span></tt> en tu archivo <tt class="file docutils literal"><span class="pre">schema.xml</span></tt>:</p>
+<div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;database</span> <span class="na">name=</span><span class="s">&quot;default&quot;</span> <span class="na">namespace=</span><span class="s">&quot;Acme\StoreBundle\Model&quot;</span> <span class="na">defaultIdMethod=</span><span class="s">&quot;native&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;table</span> <span class="na">name=</span><span class="s">&quot;product&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;id&quot;</span> <span class="na">type=</span><span class="s">&quot;integer&quot;</span> <span class="na">required=</span><span class="s">&quot;true&quot;</span> <span class="na">primaryKey=</span><span class="s">&quot;true&quot;</span> <span class="na">autoIncrement=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;name&quot;</span> <span class="na">type=</span><span class="s">&quot;varchar&quot;</span> <span class="na">primaryString=</span><span class="s">&quot;true&quot;</span> <span class="na">size=</span><span class="s">&quot;100&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;price&quot;</span> <span class="na">type=</span><span class="s">&quot;decimal&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;description&quot;</span> <span class="na">type=</span><span class="s">&quot;longvarchar&quot;</span> <span class="nt">/&gt;</span>
+
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;category_id&quot;</span> <span class="na">type=</span><span class="s">&quot;integer&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;foreign-key</span> <span class="na">foreignTable=</span><span class="s">&quot;category&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;reference</span> <span class="na">local=</span><span class="s">&quot;category_id&quot;</span> <span class="na">foreign=</span><span class="s">&quot;id&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;/foreign-key&gt;</span>
+    <span class="nt">&lt;/table&gt;</span>
+
+    <span class="nt">&lt;table</span> <span class="na">name=</span><span class="s">&quot;category&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;id&quot;</span> <span class="na">type=</span><span class="s">&quot;integer&quot;</span> <span class="na">required=</span><span class="s">&quot;true&quot;</span> <span class="na">primaryKey=</span><span class="s">&quot;true&quot;</span> <span class="na">autoIncrement=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;column</span> <span class="na">name=</span><span class="s">&quot;name&quot;</span> <span class="na">type=</span><span class="s">&quot;varchar&quot;</span> <span class="na">primaryString=</span><span class="s">&quot;true&quot;</span> <span class="na">size=</span><span class="s">&quot;100&quot;</span> <span class="nt">/&gt;</span>
+   <span class="nt">&lt;/table&gt;</span>
+<span class="nt">&lt;/database&gt;</span>
+</pre></div>
+</div>
+<p>Crea las clases:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console propel:model:build
+</pre></div>
+</div>
+<p>Asumiendo que tienes productos en tu base de datos, no los querrás perder. Gracias a las migraciones, <em>Propel</em> es capaz de actualizar tu base de datos sin perder la información existente.</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console propel:migration:generate-diff
+
+php app/console propel:migration:migrate
+</pre></div>
+</div>
+<p>Tu base de datos se ha actualizado, puedes continuar escribiendo tu aplicación.</p>
+<div class="section" id="guardando-objetos-relacionados">
+<h3>Guardando objetos relacionados<a class="headerlink" href="#guardando-objetos-relacionados" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Ahora, vamos a ver el código en acción. Imagina que estás dentro de un controlador:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// ...</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Model\Category</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Model\Product</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Response</span><span class="p">;</span>
+<span class="c1">// ...</span>
+
+<span class="k">class</span> <span class="nc">DefaultController</span> <span class="k">extends</span> <span class="nx">Controller</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">createProductAction</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$category</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Category</span><span class="p">();</span>
+        <span class="nv">$category</span><span class="o">-&gt;</span><span class="na">setName</span><span class="p">(</span><span class="s1">&#39;Main Products&#39;</span><span class="p">);</span>
+
+        <span class="nv">$product</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Product</span><span class="p">();</span>
+        <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">setName</span><span class="p">(</span><span class="s1">&#39;Foo&#39;</span><span class="p">);</span>
+        <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">setPrice</span><span class="p">(</span><span class="mf">19.99</span><span class="p">);</span>
+        <span class="c1">// relaciona este producto a la categoría</span>
+        <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">setCategory</span><span class="p">(</span><span class="nv">$category</span><span class="p">);</span>
+
+        <span class="c1">// guarda todo</span>
+        <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">save</span><span class="p">();</span>
+
+        <span class="k">return</span> <span class="k">new</span> <span class="nx">Response</span><span class="p">(</span>
+            <span class="s1">&#39;Created product id: &#39;</span><span class="o">.</span><span class="nv">$product</span><span class="o">-&gt;</span><span class="na">getId</span><span class="p">()</span><span class="o">.</span><span class="s1">&#39; and category id: &#39;</span><span class="o">.</span><span class="nv">$category</span><span class="o">-&gt;</span><span class="na">getId</span><span class="p">()</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ahora, se agrega una sola fila en ambas tablas <tt class="docutils literal"><span class="pre">categoría</span></tt> y <tt class="docutils literal"><span class="pre">producto</span></tt>. La columna <tt class="docutils literal"><span class="pre">product.category_id</span></tt> para el nuevo producto se ajusta al <tt class="docutils literal"><span class="pre">id</span></tt> de la nueva categoría. <em>Propel</em> maneja la persistencia de las relaciones por ti.</p>
+</div>
+<div class="section" id="recuperando-objetos-relacionados">
+<h3>Recuperando objetos relacionados<a class="headerlink" href="#recuperando-objetos-relacionados" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Cuando necesites recuperar objetos asociados, tu flujo de trabajo se ve justo como lo hacías antes.  En primer lugar, buscas un objeto <tt class="docutils literal"><span class="pre">$product</span></tt> y luego accedes a su <tt class="docutils literal"><span class="pre">Categoría</span></tt> asociada:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// ...</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Model\ProductQuery</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">showAction</span><span class="p">(</span><span class="nv">$id</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$product</span> <span class="o">=</span> <span class="nx">ProductQuery</span><span class="o">::</span><span class="na">create</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">joinWithCategory</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">findPk</span><span class="p">(</span><span class="nv">$id</span><span class="p">);</span>
+
+    <span class="nv">$categoryName</span> <span class="o">=</span> <span class="nv">$product</span><span class="o">-&gt;</span><span class="na">getCategory</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">();</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ten en cuenta que en el ejemplo anterior, únicamente hicimos una consulta.</p>
+</div>
+<div class="section" id="mas-informacion-sobre-asociaciones">
+<h3>Más información sobre asociaciones<a class="headerlink" href="#mas-informacion-sobre-asociaciones" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Encontrarás más información sobre las relaciones leyendo el capítulo dedicado a las
+<a class="reference external" href="http://www.propelorm.org/documentation/04-relationships.html">relaciones</a>.</p>
+</div>
+</div>
+<div class="section" id="ciclo-de-vida-de-las-retrollamadas">
+<h2>Ciclo de vida de las retrollamadas<a class="headerlink" href="#ciclo-de-vida-de-las-retrollamadas" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A veces, es necesario realizar una acción justo antes o después de insertar, actualizar o eliminar un objeto.  Este tipo de acciones se conoce como &#8220;ciclo de vida&#8221; de las retrollamadas o <em class="dfn">hooks</em> (en adelante &#8220;ganchos&#8221;), ya que son métodos retrollamados que necesitas ejecutar durante las diferentes etapas del ciclo de vida de un objeto (por ejemplo, cuando insertas, actualizas, eliminas, etc. un objeto)</p>
+<p>Para añadir un gancho, solo tenemos que añadir un método a la clase del objeto:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/StoreBundle/Model/Product.php</span>
+
+<span class="c1">// ...</span>
+
+<span class="k">class</span> <span class="nc">Product</span> <span class="k">extends</span> <span class="nx">BaseProduct</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">preInsert</span><span class="p">(</span><span class="nx">\PropelPDO</span> <span class="nv">$con</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// hace algo antes de insertar el objeto</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><em>Propel</em> ofrece los siguientes ganchos:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">preInsert()</span></tt> código ejecutado antes de insertar un nuevo objeto</li>
+<li><tt class="docutils literal"><span class="pre">postInsert()</span></tt> código ejecutado después de insertar un nuevo objeto</li>
+<li><tt class="docutils literal"><span class="pre">preUpdate()</span></tt> código ejecutado antes de actualizar un objeto existente</li>
+<li><tt class="docutils literal"><span class="pre">postUpdate()</span></tt> código ejecutado después de actualizar un objeto existente</li>
+<li><tt class="docutils literal"><span class="pre">preSave()</span></tt> código ejecutado antes de guardar un objeto (nuevo o existente)</li>
+<li><tt class="docutils literal"><span class="pre">postSave()</span></tt> código ejecutado después de guardar un objeto (nuevo o existente)</li>
+<li><tt class="docutils literal"><span class="pre">preDelete()</span></tt> código ejecutado antes de borrar un objeto</li>
+<li><tt class="docutils literal"><span class="pre">postDelete()</span></tt> código ejecutado después de borrar un objeto</li>
+</ul>
+</div>
+<div class="section" id="comportamientos">
+<h2>Comportamientos<a class="headerlink" href="#comportamientos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Todo los comportamientos en <em>Propel</em> trabajan con <em>Symfony2</em>. Para conseguir más información sobre cómo utiliza <em>Propel</em> los comportamientos, consulta la sección de <a class="reference external" href="http://www.propelorm.org/documentation/#behaviors_reference">referencia de comportamientos</a>.</p>
+</div>
+<div class="section" id="ordenes">
+<h2>Ordenes<a class="headerlink" href="#ordenes" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Debes leer la sección dedicada a las <a class="reference external" href="http://www.propelorm.org/cookbook/symfony2/working-with-symfony2#commands">Ordenes de Propel en Symfony2</a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="testing.html" title="Probando"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="doctrine.html" title="Bases de datos y Doctrine (“El modelo”)"
+             >anterior</a> |</li>
+        <li><a href="../index.html">en Español</a> &raquo;</li>
+          <li><a href="index.html" >Libro</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Apr 24, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>
