@@ -1,0 +1,356 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>JMSAopBundle &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.12',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Paquetes de la edición estándar de Symfony" href="../index.html" />
+    <link rel="next" title="JMSDiExtraBundle" href="../JMSDiExtraBundle/index.html" />
+    <link rel="prev" title="Generando una nueva clase de tipo Form basada en una entidad Doctrine" href="../SensioGeneratorBundle/commands/generate_doctrine_form.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../JMSDiExtraBundle/index.html" title="JMSDiExtraBundle"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="../SensioGeneratorBundle/commands/generate_doctrine_form.html" title="Generando una nueva clase de tipo Form basada en una entidad Doctrine"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Paquetes de la edición estándar de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="jmsaopbundle">
+<h1><tt class="docutils literal"><span class="pre">JMSAopBundle</span></tt><a class="headerlink" href="#jmsaopbundle" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Este paquete añade capacidades <a class="reference external" href="http://es.wikipedia.org/wiki/Programaci%C3%B3n_orientada_a_aspectos">AOP</a> (<tt class="docutils literal"><span class="pre">Aspect-oriented</span> <span class="pre">programming</span></tt> o Programación orientada a aspectos) a <em>Symfony2</em>.</p>
+<p>Si todavía no has oído hablar de <em>AOP</em>, básicamente te permite separar un asunto omnipresente (por ejemplo, la comprobación de seguridad) en una clase específica, y no tener que repetir ese código en todos los lugares donde se necesite.</p>
+<p>En otras palabras, te permite ejecutar código personalizado antes y después de invocar ciertos métodos en tu capa de servicios o controladores. También puedes optar por omitir la invocación del método original, o simplemente lanzar excepciones.</p>
+<div class="section" id="instalando">
+<h2>Instalando<a class="headerlink" href="#instalando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Consigue una copia del código:</p>
+<div class="highlight-bash"><div class="highlight"><pre>git submodule add https://github.com/schmittjoh/JMSAopBundle.git src/JMS/AopBundle
+</pre></div>
+</div>
+<p>Finalmente, registra el paquete en tu núcleo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// en AppKernel::registerBundles()</span>
+<span class="nv">$bundles</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+    <span class="c1">// ...</span>
+    <span class="k">new</span> <span class="nx">JMS\AopBundle\JMSAopBundle</span><span class="p">(),</span>
+    <span class="c1">// ...</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>Este paquete además necesita la biblioteca <tt class="docutils literal"><span class="pre">CG</span></tt> para generar código:</p>
+<div class="highlight-bash"><div class="highlight"><pre>git submodule add https://github.com/schmittjoh/cg-library.git vendor/cg-library
+</pre></div>
+</div>
+<p>Asegúrate de registrar los espacios de nombres en tu cargador automático:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/autoload.php</span>
+<span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">registerNamespaces</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+    <span class="c1">// ...</span>
+    <span class="s1">&#39;JMS&#39;</span>              <span class="o">=&gt;</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../vendor/bundles&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CG&#39;</span>               <span class="o">=&gt;</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../vendor/cg-library/src&#39;</span><span class="p">,</span>
+    <span class="c1">// ...</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="configurando">
+<h2>Configurando<a class="headerlink" href="#configurando" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="highlight-yaml"><pre>jms_aop:
+    cache_dir: %kernel.cache_dir%/jms_aop</pre>
+</div>
+</div>
+<div class="section" id="usando">
+<h2>Usando<a class="headerlink" href="#usando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A fin de ejecutar código personalizado, necesitas dos clases. En primer lugar, necesitas un así llamado <em class="dfn">punto de corte</em> (<tt class="docutils literal"><span class="pre">pointcut</span></tt>). El propósito de esta clase es tomar la decisión de si cierto interceptor debe capturar una llamada a un método. Esta decisión se tiene que hacer estáticamente sólo en base de la firma del método en sí.</p>
+<p>La segunda clase es el interceptor. Esta clase se llama en lugar del método original. Esta contiene el código personalizado que quieres ejecutar. En este punto, tienes acceso al objeto en el cual es invocado el método, y todos los argumentos suministrados a ese método.</p>
+</div>
+<div class="section" id="ejemplos">
+<h2>Ejemplos<a class="headerlink" href="#ejemplos" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="registro-cronologico">
+<h3>1. Registro cronológico<a class="headerlink" href="#registro-cronologico" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>En este ejemplo, implementaremos el registro cronológico de todos los métodos que contienen <tt class="docutils literal"><span class="pre">&quot;delete&quot;</span></tt></p>
+<div class="section" id="punto-de-corte">
+<h4>Punto de corte<a class="headerlink" href="#punto-de-corte" title="Enlazar permanentemente con este título">¶</a></h4>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="k">use</span> <span class="nx">JMS\AopBundle\Aop\PointcutInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">LoggingPointcut</span> <span class="k">implements</span> <span class="nx">PointcutInterface</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">matchesClass</span><span class="p">(</span><span class="nx">\ReflectionClass</span> <span class="nv">$class</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">matchesMethod</span><span class="p">(</span><span class="nx">\ReflectionMethod</span> <span class="nv">$method</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">false</span> <span class="o">!==</span> <span class="nb">strpos</span><span class="p">(</span><span class="nv">$method</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">,</span> <span class="s1">&#39;delete&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1"># services.yml</span>
+<span class="nx">services</span><span class="o">:</span>
+    <span class="nx">my_logging_pointcut</span><span class="o">:</span>
+        <span class="nx">class</span><span class="o">:</span> <span class="nx">LoggingPointcut</span>
+        <span class="nx">tags</span><span class="o">:</span>
+                <span class="o">-</span> <span class="p">{</span> <span class="nx">name</span><span class="o">:</span> <span class="nx">jms_aop</span><span class="o">.</span><span class="nx">pointcut</span><span class="p">,</span> <span class="nx">interceptor</span><span class="o">:</span> <span class="nx">logging_interceptor</span> <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="interceptor-de-registro">
+<h4>Interceptor de registro<a class="headerlink" href="#interceptor-de-registro" title="Enlazar permanentemente con este título">¶</a></h4>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="k">use</span> <span class="nx">CG\Proxy\MethodInterceptorInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">CG\Proxy\MethodInvocation</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Log\LoggerInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\SecurityContextInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">LoggingInterceptor</span> <span class="k">implements</span> <span class="nx">MethodInterceptorInterface</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$context</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$logger</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">SecurityContextInterface</span> <span class="nv">$context</span><span class="p">,</span>
+                                <span class="nx">LoggerInterface</span> <span class="nv">$logger</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">context</span> <span class="o">=</span> <span class="nv">$context</span><span class="p">;</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">logger</span> <span class="o">=</span> <span class="nv">$logger</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">intercept</span><span class="p">(</span><span class="nx">MethodInvocation</span> <span class="nv">$invocation</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$user</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">context</span><span class="o">-&gt;</span><span class="na">getToken</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getUsername</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">logger</span><span class="o">-&gt;</span><span class="na">info</span><span class="p">(</span><span class="nb">sprintf</span><span class="p">(</span><span class="s1">&#39;User &quot;%s&quot; invoked method &quot;%s&quot;.&#39;</span><span class="p">,</span> <span class="nv">$user</span><span class="p">,</span> <span class="nv">$invocation</span><span class="o">-&gt;</span><span class="na">reflection</span><span class="o">-&gt;</span><span class="na">name</span><span class="p">));</span>
+
+        <span class="c1">// se asegura de proceder con la invocación, de lo contrario</span>
+        <span class="c1">// el método original nunca se llamará</span>
+        <span class="k">return</span> <span class="nv">$invocation</span><span class="o">-&gt;</span><span class="na">proceed</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1"># services.yml</span>
+<span class="nx">services</span><span class="o">:</span>
+    <span class="nx">logging_interceptor</span><span class="o">:</span>
+        <span class="nx">class</span><span class="o">:</span> <span class="nx">LoggingInterceptor</span>
+        <span class="nx">arguments</span><span class="o">:</span> <span class="p">[</span><span class="o">@</span><span class="nx">security</span><span class="o">.</span><span class="nx">context</span><span class="p">,</span> <span class="o">@</span><span class="nx">logger</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="gestionando-transacciones">
+<h3>2. Gestionando transacciones<a class="headerlink" href="#gestionando-transacciones" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>En este ejemplo, añadimos una anotación <tt class="docutils literal"><span class="pre">&#64;Transactional</span></tt>, y automáticamente ajustamos todos los métodos donde se declara esta anotación en una transacción.</p>
+<div class="section" id="id1">
+<h4>Punto de corte<a class="headerlink" href="#id1" title="Enlazar permanentemente con este título">¶</a></h4>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Doctrine\Common\Annotations\Reader</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">JMS\AopBundle\Aop\PointcutInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">JMS\DiExtraBundle\Annotation</span> <span class="k">as</span> <span class="nx">DI</span><span class="p">;</span>
+
+<span class="sd">/**</span>
+<span class="sd"> * @DI\Service</span>
+<span class="sd"> * @DI\Tag(&quot;jms_aop.pointcut&quot;, attributes = {&quot;interceptor&quot; = &quot;aop.transactional_interceptor&quot;})</span>
+<span class="sd"> *</span>
+<span class="sd"> * @author Johannes M. Schmitt &lt;schmittjoh@gmail.com&gt;</span>
+<span class="sd"> */</span>
+<span class="k">class</span> <span class="nc">TransactionalPointcut</span> <span class="k">implements</span> <span class="nx">PointcutInterface</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$reader</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @DI\InjectParams({</span>
+<span class="sd">     *     &quot;reader&quot; = @DI\Inject(&quot;annotation_reader&quot;),</span>
+<span class="sd">     * })</span>
+<span class="sd">     * @param Reader $reader</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">Reader</span> <span class="nv">$reader</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">reader</span> <span class="o">=</span> <span class="nv">$reader</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">matchesClass</span><span class="p">(</span><span class="nx">\ReflectionClass</span> <span class="nv">$class</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">matchesMethod</span><span class="p">(</span><span class="nx">\ReflectionMethod</span> <span class="nv">$method</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">null</span> <span class="o">!==</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">reader</span><span class="o">-&gt;</span><span class="na">getMethodAnnotation</span><span class="p">(</span><span class="nv">$method</span><span class="p">,</span> <span class="s1">&#39;Annotation\Transactional&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="interceptor">
+<h4>Interceptor<a class="headerlink" href="#interceptor" title="Enlazar permanentemente con este título">¶</a></h4>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Log\LoggerInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Exception\NotFoundHttpException</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">CG\Proxy\MethodInvocation</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">CG\Proxy\MethodInterceptorInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\ORM\EntityManager</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">JMS\DiExtraBundle\Annotation</span> <span class="k">as</span> <span class="nx">DI</span><span class="p">;</span>
+
+<span class="sd">/**</span>
+<span class="sd"> * @DI\Service(&quot;aop.transactional_interceptor&quot;)</span>
+<span class="sd"> *</span>
+<span class="sd"> * @author Johannes M. Schmitt &lt;schmittjoh@gmail.com&gt;</span>
+<span class="sd"> */</span>
+<span class="k">class</span> <span class="nc">TransactionalInterceptor</span> <span class="k">implements</span> <span class="nx">MethodInterceptorInterface</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$em</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$logger</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @DI\InjectParams</span>
+<span class="sd">     * @param EntityManager $em</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">EntityManager</span> <span class="nv">$em</span><span class="p">,</span> <span class="nx">LoggerInterface</span> <span class="nv">$logger</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span> <span class="o">=</span> <span class="nv">$em</span><span class="p">;</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">logger</span> <span class="o">=</span> <span class="nv">$logger</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">intercept</span><span class="p">(</span><span class="nx">MethodInvocation</span> <span class="nv">$invocation</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">logger</span><span class="o">-&gt;</span><span class="na">info</span><span class="p">(</span><span class="s1">&#39;Beginning transaction for method &quot;&#39;</span><span class="o">.</span><span class="nv">$invocation</span><span class="o">.</span><span class="s1">&#39;&quot;)&#39;</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span><span class="o">-&gt;</span><span class="na">getConnection</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">beginTransaction</span><span class="p">();</span>
+        <span class="k">try</span> <span class="p">{</span>
+            <span class="nv">$rs</span> <span class="o">=</span> <span class="nv">$invocation</span><span class="o">-&gt;</span><span class="na">proceed</span><span class="p">();</span>
+
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">logger</span><span class="o">-&gt;</span><span class="na">info</span><span class="p">(</span><span class="nb">sprintf</span><span class="p">(</span><span class="s1">&#39;Comitting transaction for method &quot;%s&quot; (method invocation successful)&#39;</span><span class="p">,</span> <span class="nv">$invocation</span><span class="p">));</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span><span class="o">-&gt;</span><span class="na">getConnection</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">commit</span><span class="p">();</span>
+
+            <span class="k">return</span> <span class="nv">$rs</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">\Exception</span> <span class="nv">$ex</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nv">$ex</span> <span class="nx">instanceof</span> <span class="nx">NotFoundHttpException</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">logger</span><span class="o">-&gt;</span><span class="na">info</span><span class="p">(</span><span class="nb">sprintf</span><span class="p">(</span><span class="s1">&#39;Committing transaction for method &quot;%s&quot; (exception thrown, but no rollback)&#39;</span><span class="p">,</span> <span class="nv">$invocation</span><span class="p">));</span>
+                <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span><span class="o">-&gt;</span><span class="na">getConnection</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">commit</span><span class="p">();</span>
+            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">logger</span><span class="o">-&gt;</span><span class="na">info</span><span class="p">(</span><span class="nb">sprintf</span><span class="p">(</span><span class="s1">&#39;Rolling back transaction for method &quot;%s&quot; (exception thrown)&#39;</span><span class="p">,</span> <span class="nv">$invocation</span><span class="p">));</span>
+                <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span><span class="o">-&gt;</span><span class="na">getConnection</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">rollBack</span><span class="p">();</span>
+            <span class="p">}</span>
+
+            <span class="k">throw</span> <span class="nv">$ex</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../JMSDiExtraBundle/index.html" title="JMSDiExtraBundle"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="../SensioGeneratorBundle/commands/generate_doctrine_form.html" title="Generando una nueva clase de tipo Form basada en una entidad Doctrine"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Paquetes de la edición estándar de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Apr 28, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

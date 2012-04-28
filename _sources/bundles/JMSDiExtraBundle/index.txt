@@ -1,0 +1,291 @@
+********************
+``JMSDiExtraBundle``
+********************
+
+Este paquete te permite configurar la inyección de dependencias usando anotaciones.
+
+Instalando
+----------
+
+Añade lo siguiente a tu archivo ``deps``:
+
+.. code-block:: bash
+
+    [JMSDiExtraBundle]
+        git=https://github.com/schmittjoh/JMSDiExtraBundle.git
+        target=/bundles/JMS/DiExtraBundle
+        
+    ; Dependencies:
+    ;--------------
+    [metadata]
+        git=https://github.com/schmittjoh/metadata.git
+        version=1.1.0 ; <- asegúrate de conseguir 1.1, no 1.0
+
+Finalmente, registra el paquete en tu núcleo:
+
+.. code-block:: php
+
+    // en AppKernel::registerBundles()
+    $bundles = array(
+        // ...
+        new JMS\DiExtraBundle\JMSDiExtraBundle($this),
+        // ...
+    );
+
+Además, este paquete también requiere del ``JMSAopBundle``. Ve las instrucciones de instalación en su documentación::
+
+    https://github.com/schmittjoh/JMSAopBundle/blob/master/Resources/doc/index.rst
+
+
+Asegúrate de registrar los espacios de nombres en tu cargador automático::
+
+    // app/autoload.php
+    $loader->registerNamespaces(array(
+        // ...
+        'JMS'              => __DIR__.'/../vendor/bundles',
+        'Metadata'         => __DIR__.'/../vendor/metadata/src',
+        // ...
+    ));    
+
+
+Configurando
+------------
+
+Para obtener un rendimiento óptimo en desarrollo (en producción no hay ninguna diferencia en ambos sentidos), se recomienda configurar explícitamente los directorios que se deben analizar en busca de clases de servicios (por omisión no se escanea ningún directorio)::
+
+    jms_di_extra:
+        locations:
+            all_bundles: false
+            bundles: [FooBundle, AcmeBlogBundle, etc.]
+            directories: [%kernel.root_dir%/../src, algún/otro/dir]
+
+Usando
+------
+
+Clases sin controladores
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Se han configurado las clases sin controlador y las gestiona el *DIC* de *Symfony*  como cualquier otro servicio configurado utilizando *YML*, *XML* o *PHP*. La única diferencia es que lo puedes hacer a través de anotaciones, lo cual es mucho más conveniente.
+
+Puedes utilizar estas anotaciones en servicios (por ejemplo, ve más adelante):
+``@Service``, ``@Inject``, ``@InjectParams``, ``@Observe``, ``@Tag``
+
+Ten en cuenta que no puedes usar la anotación ``@Inject`` en propiedades privadas, o protegidas.
+Del mismo modo, la anotación ``@InjectParams`` no funciona en métodos protegidos o privados.
+
+
+Controladores
+~~~~~~~~~~~~~
+
+Los controladores son un tipo de clase especial que este paquete también trata de forma especial. La diferencia más notable es que no es necesario definir estas
+clases como servicios. Sí, no hay servicios, pero no te preocupes que todavía puedes utilizar todas las características de la ``DIC``, e incluso algunas más.
+
+- Inyectando Constructor/Definidor::
+
+    <?php
+
+    use JMS\DiExtraBundle\Annotation as DI;
+   
+    class Controller
+    {
+        private $em;
+        private $session;
+    
+        /**
+         * @DI\InjectParams({
+         *     "em" = @DI\Inject("doctrine.orm.entity_manager"),
+         *     "session" = @DI\Inject("session")
+         * })
+         */
+        public function __construct($em, $session)
+        {
+            $this->em = $em;
+            $this->session = $session;
+        }
+        // ... algunas acciones
+    }
+    
+  .. note::
+
+   No es posible la inyección del constructor cuando una definición del padre también define un constructor que está configurado para inyección.
+
+- Inyectando propiedades::
+
+    <?php
+
+    use JMS\DiExtraBundle\Annotation as DI;
+    
+    class Controller
+    {
+        /** @DI\Inject("doctrine.orm.entity_manager")
+        private $em;
+        
+        /** @DI\Inject("session")
+        private $session;
+    }
+    
+- Inyectando Método/Captador::
+
+    <?php
+    
+    use JMS\DiExtraBundle\Annotation as DI;
+    
+    class Controller
+    {
+        public function myAction()
+        {
+            // ...
+            if ($condition) {
+                $mailer = $this->getMailer();
+            }
+        }
+    
+        /** @DI\LookupMethod("mailer") */
+        protected function getMailer() { /* aquí el cuerpo está vacío */ }
+    }
+
+Puedes utilizar este tipo de inyección si tienes una dependencia que no siempre se necesita en el controlador, y que es costoso iniciarla, como el
+``mailer`` en el ejemplo anterior.
+
+
+Anotaciones
+-----------
+
+``@Inject``
+~~~~~~~~~~~
+
+Esta marca una propiedad o parámetro para inyección::
+
+    use JMS\DiExtraBundle\Annotation\Inject;
+
+    class Controller
+    {
+        /**
+         * @Inject("security.context", required = false)
+         */
+        private $securityContext;
+        
+        /**
+         * @Inject("%kernel.cache_dir%")
+         */
+        private $cacheDir;
+        
+        /**
+         * @Inject
+         */
+        private $session;
+    }
+
+Si no especificas el servicio explícitamente, intentaremos adivinarlo basándonos en el nombre de la propiedad o parámetro.
+
+``@InjectParams``
+~~~~~~~~~~~~~~~~~
+
+Esta marca los parámetros de un método para inyección::
+
+    use JMS\DiExtraBundle\Annotation\Inject;
+    use JMS\DiExtraBundle\Annotation\InjectParams;
+    use JMS\DiExtraBundle\Annotation\Service;
+
+    /**
+     * @Service
+     */
+    class Listener
+    {
+        /**
+         * @InjectParams({
+         *     "em" = @Inject("doctrine.entity_manager")
+         * })
+         */
+        public function __construct(EntityManager $em, Session $session)
+        {
+            // ...
+        }
+    }
+    
+Si no defines todos los parámetros en la asignación de parámetros, trataremos de adivinar cuáles servicios se deben inyectar basándonos en el nombre de los demás parámetros.
+
+``@Service``
+~~~~~~~~~~~~
+
+Marca una clase como un servicio::
+
+    use JMS\DiExtraBundle\Annotation\Service;
+
+    /**
+     * @Service("some.service.id", parent="another.service.id", public=false)
+     */
+    class Listener
+    {
+    }
+
+Si no defines explícitamente un identificador del servicio, entonces se generará uno predeterminado basado en el nombre completamente cualificado de la clase.
+
+``@Tag``
+~~~~~~~~
+
+Añade una etiqueta al servicio::
+
+    use JMS\DiExtraBundle\Annotation\Service;
+    use JMS\DiExtraBundle\Annotation\Tag;
+
+    /**
+     * @Service
+     * @Tag("doctrine.event_listener", attributes = {"event" = "postGenerateSchema", lazy=true})
+     */
+    class Listener
+    {
+        // ...
+    }
+
+``@Observe``
+~~~~~~~~~~~~
+
+Automáticamente registra un método como oyente de determinado evento::
+
+    use JMS\DiExtraBundle\Annotation\Observe;
+    use JMS\DiExtraBundle\Annotation\Service;
+
+    /**
+     * @Service
+     */
+    class RequestListener
+    {
+        /**
+         * @Observe("kernel.request", priority = 255)
+         */
+        public function onKernelRequest()
+        {
+            // ...
+        }
+    }
+
+``@Validator``
+~~~~~~~~~~~~~~
+
+Automáticamente registra la clase como restricción de validación para el componente ``Validador``::
+
+    use JMS\DiExtraBundle\Annotation\Validator;
+    use Symfony\Component\Validator\Constraint;
+    use Symfony\Component\Validator\ConstraintValidator;
+    
+    /**
+     * @Validator("my_alias")
+     */
+    class MyValidator extends ConstraintValidator
+    {
+        // ...
+    }
+    
+    class MyConstraint extends Constraint
+    {
+        // ...
+        public function validatedBy()
+        {
+            return 'my_alias';
+        }
+    }
+
+La anotación ``@Validator`` además implica la anotación ``@Service``, si no la especificas explícitamente.
+Los alias que se pasan a la anotación ``@Validator`` deben coincidir con la cadena devuelta desde el método ``validatedBy`` de tu restricción.
+
