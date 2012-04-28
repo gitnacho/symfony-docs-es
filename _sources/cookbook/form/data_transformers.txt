@@ -22,8 +22,14 @@ Primero, crea un tipo de formulario personalizado que tenga adjunto un Transform
 
     class IssueSelectorType extends AbstractType
     {
+        /**
+         * @var ObjectManager
+         */
         private $om;
 
+        /**
+         * @param ObjectManager $om
+         */
         public function __construct(ObjectManager $om)
         {
             $this->om = $om;
@@ -38,7 +44,7 @@ Primero, crea un tipo de formulario personalizado que tenga adjunto un Transform
         public function getDefaultOptions()
         {
             return array(
-                'invalid_message' => 'The selected issue does not exist'
+                'invalid_message' => 'The selected issue does not exist',
             );
         }
 
@@ -89,9 +95,10 @@ Luego, creamos el transformador de datos, el cual lleva a cabo la conversión re
 
     namespace Acme\TaskBundle\Form\DataTransformer;
 
-    use Symfony\Component\Form\Exception\TransformationFailedException;
     use Symfony\Component\Form\DataTransformerInterface;
+    use Symfony\Component\Form\Exception\TransformationFailedException;
     use Doctrine\Common\Persistence\ObjectManager;
+    use Acme\TaskBundle\Entity\Issue;
 
     class IssueToNumberTransformer implements DataTransformerInterface
     {
@@ -109,9 +116,9 @@ Luego, creamos el transformador de datos, el cual lleva a cabo la conversión re
         }
 
         /**
-         * Transforma un objeto ``issue`` en una ``string``.
+         * Transforma un objeto (issue) a una cadena (number).
          *
-         * @param  \Acme\TaskBundle\Entity\Issue|null $issue
+         * @param  Issue|null $issue
          * @return string
          */
         public function transform($issue)
@@ -124,12 +131,11 @@ Luego, creamos el transformador de datos, el cual lleva a cabo la conversión re
         }
 
         /**
-         * Transforma una ``string`` en un objeto ``issue``.
+         * Transforma una cadena (number) a un objeto (issue).
          *
          * @param  string $number
-         * @return \Acme\TaskBundle\Entity\Issue|null
-         *
-         * @throws TransformationFailedException si no encuentra un objeto issue.
+         * @return Issue|null
+         * @throws TransformationFailedException si no encuentra el objeto (issue).
          */
         public function reverseTransform($number)
         {
@@ -161,14 +167,14 @@ Finalmente, debido a que hemos decidido crear un tipo de formulario personalizad
 
         services:
             acme_demo.type.issue_selector:
-                class: Acme\TaskBundle\Form\IssueSelectorType
+                class: Acme\TaskBundle\Form\Type\IssueSelectorType
                 arguments: ["@doctrine.orm.entity_manager"]
                 tags:
                         - { name:     form.type, alias: issue_selector }
 
     .. code-block:: xml
 
-        <service id="acme_demo.type.issue_selector" class="Acme\TaskBundle\Form\IssueSelectorType">
+        <service id="acme_demo.type.issue_selector" class="Acme\TaskBundle\Form\Type\IssueSelectorType">
             <argument type="service" id="doctrine.orm.entity_manager"/>
             <tag name="form.type" alias="issue_selector" />
         </service>
@@ -188,9 +194,11 @@ Ahora puedes añadir el tipo a tu formulario por su alias de la siguiente manera
     {
         public function buildForm(FormBuilder $builder, array $options)
         {
-            $builder->add('task');
-            $builder->add('dueDate', null, array('widget' => 'single_text'));
-            $builder->add('issue', 'issue_selector');
+            $builder
+                ->add('task')
+                ->add('dueDate', null, array('widget' => 'single_text'));
+                ->add('issue', 'issue_selector')
+            ;
         }
 
         public function getName()

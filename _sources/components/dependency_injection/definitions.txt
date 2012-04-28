@@ -1,0 +1,119 @@
+Trabajando con contenedores de parámetros y definiciones
+========================================================
+
+Obteniendo y estableciendo contenedores de parámetros
+-----------------------------------------------------
+
+Trabajar con contenedores de parámetros es muy sencillo utilizando los métodos del contenedor de acceso para los parámetros. Puedes comprobar si se ha definido un parámetro en el contenedor con::
+
+     $container->hasParameter($name);
+
+Puedes recuperar los parámetros establecidos en el contenedor con::
+
+    $container->getParameter($name);
+
+y establecer un parámetro en el contenedor con::
+
+    $container->setParameter($name, $value);
+
+Obteniendo y estableciendo definiciones de servicios
+----------------------------------------------------
+
+También hay algunos métodos útiles para trabajar con las definiciones de servicios.
+
+Para saber si hay una definición para un ``ID`` de servicio:: 
+
+    $container->hasDefinition($serviceId);
+
+Esto es útil si sólo quieres hacer algo si existe una definición particular.
+
+Puedes recuperar una definición con::
+
+    $container->getDefinition($serviceId);
+
+o:
+
+.. code-block:: php
+
+    $container->findDefinition($serviceId);
+
+que a diferencia de ``getDefinition()`` también resuelve los alias de manera tal que si el argumento ``$serviceId`` es un alias esta recuperará la definición subyacente.
+
+Las definiciones de servicios en sí mismas son objetos, por tanto, si recuperas una definición de dichos métodos y les haces cambios se verán reflejados en el contenedor. Sin embargo, si estás creando una nueva definición, entonces lo puedes añadir al contenedor usando::
+
+    $container->setDefinition($id, $definition);
+
+Trabajando con una definición
+-----------------------------
+
+Creando una nueva definición
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Si necesitas crear una nueva definición en lugar de manipular una recuperada desde ese contenedor, entonces la clase de la definición es :class:`Symfony\\Component\\DependencyInjection\\Definition`.
+
+Clase
+~~~~~
+
+En primer lugar es la clase de una definición, ésta es la clase del objeto devuelto cuando solicitas el servicio desde el contenedor.
+
+Posiblemente quieras cambiar la clase utilizada por una definición, si por ejemplo, hay funciones que sólo se pueden utilizar si existe un servicio de otro paquete, entonces puedes tener una clase que use ese otro servicio y uno que no lo hace. El primero no podría utilizar el servicio y luego con la funcionalidad adicional intercambiada usando un pase del compilador si el otro servicio esta disponible.
+
+Para averiguar qué clase establece una definición::
+
+    $definition->getClass();
+
+y para establecer una clase diferente::
+
+    $definition->setClass($class); // nombre de clase completamente cualificado como cadena
+
+Argumentos del constructor
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Para obtener una matriz de los argumentos del constructor para una definición puedes usar::
+
+    $definition->getArguments();
+
+o para obtener un solo argumento por posición::
+
+    $definition->getArgument($index); 
+    // p.e. $definition->getArguments(0) para el primer argumento
+
+Puedes agregar un nuevo argumento al final de la matriz de argumentos usando::
+
+    $definition->addArgument($argument);
+
+El argumento puede ser una cadena, una matriz, un parámetro de servicio usando ``%paramater_name%`` o un identificador de servicio usando::
+
+    use Symfony\Component\DependencyInjection\Reference;
+  
+    //--
+
+    $definition->addArgument(new Reference('service_id'));
+
+De manera similar puedes sustituir un argumento ya establecido por índice usando::
+
+    $definition->replaceArgument($index, $argument);
+
+También puedes reemplazar todos los argumentos (o establecer alguno si no hay) con una matriz de argumentos::
+
+    $definition->replaceArguments($arguments);
+
+Llamadas a método
+~~~~~~~~~~~~~~~~~
+
+Si el servicio en que estás trabajando usa la inyección de definidores entonces puedes manipular cualquier llamada a método en las definiciones también.
+
+Puedes obtener una matriz de todas las llamadas al método con::
+
+    $definition->getMethodCalls();
+
+Añade una llamada al método con::
+
+   $definition->addMethodCall($method, $arguments);
+
+Cuando ``$method`` es el nombre del método y ``$arguments`` es una matriz de los argumentos con los cuales llamar al método. Los argumentos pueden ser cadenas, matrices, parámetros o identificadores de servicio al igual que los argumentos del constructor.
+
+También puedes sustituir algunas llamadas a método existente con una matriz de otras nuevas con::
+
+    $definition->setMethodCalls($methodCalls);
+

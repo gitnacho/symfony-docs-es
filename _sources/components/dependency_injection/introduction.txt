@@ -1,10 +1,10 @@
 .. index::
     single: Inyección de dependencias
 
-El componente de inyección de dependencias
-==========================================
+El componente ``Inyección de dependencias``
+===========================================
 
-    El componente de inyección de dependencias, te permite estandarizar y centralizar la forma en que se construyen los objetos en tu aplicación.
+    El componente ``Inyección de dependencias``, te permite estandarizar y centralizar la forma en que se construyen los objetos en tu aplicación.
 
 Para una introducción general a los contenedores de inyección de dependencias y servicios consulta el capítulo :doc:`/book/service_container` del libro.
 
@@ -42,8 +42,8 @@ La puedes registrar en el contenedor como un servicio:
 
     use Symfony\Component\DependencyInjection\ContainerBuilder;
 
-    $sc = new ContainerBuilder();
-    $sc->register('mailer', 'Mailer');
+    $container = new ContainerBuilder();
+    $container->register('mailer', 'Mailer');
 
 Una mejora a la clase para hacerla más flexible sería permitir que el contenedor establezca el ``transporte`` utilizado. Si cambias la clase para que este sea pasado al constructor:
 
@@ -67,9 +67,9 @@ Entonces, puedes configurar la opción de transporte en el contenedor:
 
     use Symfony\Component\DependencyInjection\ContainerBuilder;
 
-    $sc = new ContainerBuilder();
-    $sc->register('mailer', 'Mailer')
-        ->addArgument('sendmail'));
+    $container = new ContainerBuilder();
+    $container->register('mailer', 'Mailer')
+        ->addArgument('sendmail');
 
 Esta clase ahora es mucho más flexible puesto que hemos separado la elección del transporte fuera de la implementación y en el contenedor.
 
@@ -80,10 +80,10 @@ Qué transporte de correo has elegido, puede ser algo sobre lo cual los demás s
 
     use Symfony\Component\DependencyInjection\ContainerBuilder;
 
-    $sc = new ContainerBuilder();
-    $sc->setParameter('mailer.transport', 'sendmail');
-    $sc->register('mailer', 'Mailer')
-        ->addArgument('%mailer.transport%'));
+    $container = new ContainerBuilder();
+    $container->setParameter('mailer.transport', 'sendmail');
+    $container->register('mailer', 'Mailer')
+        ->addArgument('%mailer.transport%');
 
 Ahora que el servicio ``mailer`` está en el contenedor lo puedes inyectar como una dependencia de otras clases. Si tienes una clase ``NewsletterManager`` como esta:
 
@@ -110,14 +110,14 @@ Entonces, también la puedes registrar como un servicio y pasarla a servicio ``m
     use Symfony\Component\DependencyInjection\ContainerBuilder;
     use Symfony\Component\DependencyInjection\Reference;
 
-    $sc = new ContainerBuilder();
+    $container = new ContainerBuilder();
 
-    $sc->setParameter('mailer.transport', 'sendmail');
-    $sc->register('mailer', 'Mailer')
-        ->addArgument('%mailer.transport%'));
+    $container->setParameter('mailer.transport', 'sendmail');
+    $container->register('mailer', 'Mailer')
+        ->addArgument('%mailer.transport%');
 
-    $sc->register('newsletter_manager', 'NewsletterManager')
-        ->addArgument(new Reference('mailer'));
+    $container->register('newsletter_manager', 'NewsletterManager')
+        ->addArgument(new Reference('mailer');
 
 Si el ``NewsletterManager`` no requiere el ``Mailer`` y la inyección sólo era opcional, entonces, puedes utilizar el método definidor para inyectarlo en su lugar:
 
@@ -145,14 +145,14 @@ Si quieres, aunque entonces el contenedor puede llamar al método definidor:
     use Symfony\Component\DependencyInjection\ContainerBuilder;
     use Symfony\Component\DependencyInjection\Reference;
 
-    $sc = new ContainerBuilder();
+    $container = new ContainerBuilder();
 
-    $sc->setParameter('mailer.transport', 'sendmail');
-    $sc->register('mailer', 'Mailer')
-        ->addArgument('%mailer.transport%'));
+    $container->setParameter('mailer.transport', 'sendmail');
+    $container->register('mailer', 'Mailer')
+        ->addArgument('%mailer.transport%');
 
-    $sc->register('newsletter_manager', 'NewsletterManager')
-        ->addMethodCall('setMailer', new Reference('mailer'));
+    $container->register('newsletter_manager', 'NewsletterManager')
+        ->addMethodCall('setMailer', new Reference('mailer');
 
 A continuación, puedes obtener tu servicio ``newsletter_manager`` desde el contenedor de esta manera:
 
@@ -161,11 +161,11 @@ A continuación, puedes obtener tu servicio ``newsletter_manager`` desde el cont
     use Symfony\Component\DependencyInjection\ContainerBuilder;
     use Symfony\Component\DependencyInjection\Reference;
 
-    $sc = new ContainerBuilder();
+    $container = new ContainerBuilder();
 
     //--
 
-    $newsletterManager = $sc->get('newsletter_manager');
+    $newsletterManager = $container->get('newsletter_manager');
 
 Evitando que tu código sea dependiente en el contenedor
 -------------------------------------------------------
@@ -192,8 +192,8 @@ Cargando un archivo de configuración *XML*:
     use Symfony\Component\Config\FileLocator;
     use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 
-    $sc = new ContainerBuilder();
-    $loader = new XmlFileLoader($sc, new FileLocator(__DIR__));
+    $container = new ContainerBuilder();
+    $loader = new XmlFileLoader($container, new FileLocator(__DIR__));
     $loader->load('services.xml');
 
 Cargando un archivo de configuración *YAML*:
@@ -204,8 +204,8 @@ Cargando un archivo de configuración *YAML*:
     use Symfony\Component\Config\FileLocator;
     use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
-    $sc = new ContainerBuilder();
-    $loader = new YamlFileLoader($sc, new FileLocator(__DIR__));
+    $container = new ContainerBuilder();
+    $loader = new YamlFileLoader($container, new FileLocator(__DIR__));
     $loader->load('services.yml');
 
 Puedes configurar los servicios ``newsletter_manager`` y ``mailer`` usando archivos de configuración:
@@ -253,13 +253,79 @@ Puedes configurar los servicios ``newsletter_manager`` y ``mailer`` usando archi
         use Symfony\Component\DependencyInjection\Reference;
 
         // ...
-        $sc->setParameter('mailer.transport', 'sendmail');
-        $sc->register('mailer', 'Mailer')
-           ->addArgument('%mailer.transport%'));
+        $container->setParameter('mailer.transport', 'sendmail');
+        $container->register('mailer', 'Mailer')
+           ->addArgument('%mailer.transport%');
 
-        $sc->register('newsletter_manager', 'NewsletterManager')
-           ->addMethodCall('setMailer', new Reference('mailer'));
+        $container->register('newsletter_manager', 'NewsletterManager')
+           ->addMethodCall('setMailer', new Reference('mailer');
 
+Vertiendo la configuración para mejorar el rendimiento
+------------------------------------------------------
+
+Puede ser mucho más fácil entender el uso de los archivos de configuración para gestionar el contenedor de servicios que usar *PHP* una vez que hay una gran cantidad de servicios. Esta facilidad tiene un costo, aunque cuando se trata de rendimiento, puesto que los archivos de configuración se tienen que analizar y la configuración de *PHP* construida desde ellos. Puedes tener lo mejor de ambos mundos aunque usando archivos de configuración y, luego vertiendo y almacenando en caché la configuración resultante. El ``PhpDumper`` fácilmente vierte el contenedor compilado::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\Config\FileLocator;
+    use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+    use Symfony\Component\DependencyInjection\Dumper\PhpDumper
+
+    $container = new ContainerBuilder();
+    $loader = new XmlFileLoader($container, new FileLocator(__DIR__));
+    $loader->load('services.xml');
+
+    $file = __DIR__ .'/cache/container.php';
+
+    if (file_exists($file)) {
+        require_once $file;
+        $container = new ProjectServiceContiner();
+    } else {
+        $container = new ContainerBuilder();
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__));
+        $loader->load('services.xml');
+
+        $dumper = new PhpDumper($container);
+        file_put_contents($file, $dumper->dump());
+    }
+
+``ProjectServiceContiner`` es el nombre predefinido dado a la clase contenedora vertida, lo puedes cambiar con la opción ``class`` cuando lo viertes::
+
+    // ...
+    $file = __DIR__ .'/cache/container.php';
+
+    if (file_exists($file)) {
+        require_once $file;
+        $container = new MyCachedContainer();
+    } else {
+        $container = new ContainerBuilder();
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__));
+        $loader->load('services.xml');
+
+        $dumper = new PhpDumper($container);
+        file_put_contents($file, $dumper->dump(array('class' => 'MyCachedContainer')));
+    }
+
+Ahora obtendrás la velocidad del contenedor *PHP* configurado con ---los fáciles de usar--- archivos de configuración. En el ejemplo anterior tendrás que borrar los archivos del contenedor memorizados en caché cada vez que hagas algún cambio. Añadir una comprobación por una variable que determina si estás en modo de depuración te permite mantener la velocidad del contenedor memorizado en caché en la producción, sino consiguiendo una actualización de la configuración, mientras desarrollas tu aplicación::
+
+    // ...
+
+    // establece $isDebug basándose en algo de tu proyecto
+
+    $file = __DIR__ .'/cache/container.php';
+
+    if (!$isDebug && file_exists($file)) {
+        require_once $file;
+        $container = new MyCachedContainer();
+    } else {
+        $container = new ContainerBuilder();
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__));
+        $loader->load('services.xml');
+
+        if(!$isDebug) {
+   	     $dumper = new PhpDumper($container);
+            file_put_contents($file, $dumper->dump(array('class' => 'MyCachedContainer')));
+        }
+    }
 
 Aprende más en el recetario
 ---------------------------
