@@ -198,10 +198,10 @@ Es decir, el proveedor verificará si es válido el valor de la cabecera ``Creat
 
     La :class:`Symfony\\Component\\Security\\Core\\Authentication\\Provider\\AuthenticationProviderInterface` requiere un método ``authenticate`` en el testigo del usuario, y un método ``supports``, el cual informa al gestor de autenticación cuando o no utilizar este proveedor para el testigo dado. En el caso de múltiples proveedores, el gestor de autenticación entonces pasa al siguiente proveedor en la lista.
 
-La fábrica
-----------
+La factoría
+-----------
 
-Has creado un testigo personalizado, escucha personalizado y proveedor personalizado. Ahora necesitas mantener todo junto. ¿Cómo hacer disponible tu proveedor en la configuración de seguridad? La respuesta es usando una ``fábrica``. Una fábrica es donde enganchas el componente de seguridad, diciéndole el nombre de tu proveedor y las opciones de configuración disponibles para ello. En primer lugar, debes crear una clase que implemente :class:`Symfony\\Bundle\\SecurityBundle\\DependencyInjection\\Security\\Factory\\SecurityFactoryInterface`.
+Has creado un testigo personalizado, escucha personalizado y proveedor personalizado. Ahora necesitas mantener todo junto. ¿Cómo hacer disponible tu proveedor en la configuración de seguridad? La respuesta es usando una ``factoría``. Una factoría es donde enganchas el componente de seguridad, diciéndole el nombre de tu proveedor y las opciones de configuración disponibles para ello. En primer lugar, debes crear una clase que implemente :class:`Symfony\\Bundle\\SecurityBundle\\DependencyInjection\\Security\\Factory\\SecurityFactoryInterface`.
 
 .. code-block:: php
 
@@ -257,19 +257,19 @@ La :class:`Symfony\\Bundle\\SecurityBundle\\DependencyInjection\\Security\\Facto
 
 .. note::
 
-    Una clase no utilizada en este ejemplo, :class:`Symfony\\Bundle\\SecurityBundle\\DependencyInjection\\Security\\Factory\\AbstractFactory`, es una clase base muy útil que proporciona una funcionalidad común necesaria para proteger la fábrica. Puede ser útil en la definición de un tipo proveedor de autenticación diferente.
+    Una clase no utilizada en este ejemplo, :class:`Symfony\\Bundle\\SecurityBundle\\DependencyInjection\\Security\\Factory\\AbstractFactory`, es una clase base muy útil que proporciona una funcionalidad común necesaria para proteger la factoría. Puede ser útil en la definición de un tipo proveedor de autenticación diferente.
 
-Ahora que has creado una clase fábrica, puedes utilizar la clave ``wsse`` como un cortafuegos en tu configuración de seguridad.
+Ahora que has creado una clase factoría, puedes utilizar la clave ``wsse`` como un cortafuegos en tu configuración de seguridad.
 
 .. note::
 
-    Te estarás preguntando "¿por qué necesitamos una clase fábrica especial para añadir escuchas y proveedores en el contenedor de inyección de dependencias?". Esta es una muy buena pregunta. La razón es que puedes utilizar tu cortafuegos varias veces, para proteger varias partes de tu aplicación. Debido a esto, cada vez que utilizas tu cortafuegos, se crea un nuevo servicio en el contenedor de ID.
-    La fábrica es la que crea estos nuevos servicios.
+    Te estarás preguntando "¿por qué necesitamos una clase factoría especial para añadir escuchas y proveedores en el contenedor de inyección de dependencias?". Esta es una muy buena pregunta. La razón es que puedes utilizar tu cortafuegos varias veces, para proteger varias partes de tu aplicación. Debido a esto, cada vez que utilizas tu cortafuegos, se crea un nuevo servicio en el contenedor de ID.
+    La factoría es la que crea estos nuevos servicios.
 
 Configurando
 ------------
 
-Es hora de ver en acción tu proveedor de autenticación. Tendrás que hacer algunas cosas a fin de hacerlo funcionar. Lo primero es añadir los servicios mencionados al contenedor de ID. Tu clase fábrica anterior hace referencia a identificadores de servicio que aún no existen: ``wsse.security.authentication.provider`` y
+Es hora de ver en acción tu proveedor de autenticación. Tendrás que hacer algunas cosas a fin de hacerlo funcionar. Lo primero es añadir los servicios mencionados al contenedor de ID. Tu clase factoría anterior hace referencia a identificadores de servicio que aún no existen: ``wsse.security.authentication.provider`` y
 ``wsse.security.authentication.listener``. Es hora de definir esos servicios.
 
 .. configuration-block::
@@ -328,10 +328,10 @@ Es hora de ver en acción tu proveedor de autenticación. Tendrás que hacer alg
               new Reference('security.authentication.manager'))
         ));
 
-Ahora que están definidos tus servicios, informa de tu fábrica al contexto de seguridad en tu clase ``Bundle``.
+Ahora que están definidos tus servicios, informa de tu factoría al contexto de seguridad en tu clase ``Bundle``.
 
 .. versionadded:: 2.1
-    Antes de 2.1, se añadió la fábrica de abajo a través de :file:`security.yml` en su lugar.
+    Antes de 2.1, se añadió la factoría de abajo a través de :file:`security.yml` en su lugar.
 
 .. code-block:: php
 
@@ -394,7 +394,7 @@ En primer lugar, tendrás que editar ``WsseFactory`` y definir la nueva opción 
         }
     }
 
-Ahora, en el método ``create`` de la fábrica, el argumento ``$config`` contendrá una clave "lifetime", establecida en 5 minutos (300 segundos) a menos que se establezca en la configuración. Pasa este argumento a tu proveedor de autenticación a fin de utilizarlo.
+Ahora, en el método ``create`` de la factoría, el argumento ``$config`` contendrá una clave "lifetime", establecida en 5 minutos (300 segundos) a menos que se establezca en la configuración. Pasa este argumento a tu proveedor de autenticación a fin de utilizarlo.
 
 .. code-block:: php
 
@@ -416,7 +416,7 @@ Ahora, en el método ``create`` de la fábrica, el argumento ``$config`` contend
 
 .. note::
 
-    También tendrás que añadir un tercer argumento a la configuración del servicio ``wsse.security.authentication.provider``, el cual puede estar en blanco, pero se completará con la vida útil en la fábrica. La clase ``WsseProvider`` ahora también tiene que aceptar un tercer argumento en el constructor ---``lifetime``--- el cual se debe utilizar en lugar de los rígidos 300 segundos. Estos dos pasos no se muestran aquí.
+    También tendrás que añadir un tercer argumento a la configuración del servicio ``wsse.security.authentication.provider``, el cual puede estar en blanco, pero se completará con la vida útil en la factoría. La clase ``WsseProvider`` ahora también tiene que aceptar un tercer argumento en el constructor ---``lifetime``--- el cual se debe utilizar en lugar de los rígidos 300 segundos. Estos dos pasos no se muestran aquí.
 
 La vida útil de cada petición *WSSE* ahora es configurable y se puede ajustar a cualquier valor deseado por el cortafuegos.
 
@@ -428,7 +428,7 @@ La vida útil de cada petición *WSSE* ahora es configurable y se puede ajustar 
                 pattern:   /api/.*
                 wsse:      { lifetime: 30 }
 
-¡El resto depende de ti! Todos los elementos de configuración correspondientes se pueden definir en la fábrica y consumirse o pasarse a las otras clases en el contenedor.
+¡El resto depende de ti! Todos los elementos de configuración correspondientes se pueden definir en la factoría y consumirse o pasarse a las otras clases en el contenedor.
 
 .. _`WSSE`: http://www.xml.com/pub/a/2003/12/17/dive.html
 .. _`nonce`: http://en.wikipedia.org/wiki/Cryptographic_nonce

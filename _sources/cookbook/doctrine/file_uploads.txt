@@ -264,6 +264,19 @@ A continuación, reconstruye la clase ``Documento`` para que tome ventaja de est
 
 La clase ahora hace todo lo que necesitas: genera un nombre de archivo único antes de persistirlo, mueve el archivo después de persistirlo y elimina el archivo si la entidad es eliminada.
 
+Ahora que la entidad maneja automáticamente el movimiento del archivo, debes quitar del controlador la llamada a ``$document->upload()``:
+
+.. code-block:: php
+
+    if ($form->isValid()) {
+        $em = $this->getDoctrine()->getEntityManager();
+
+        $em->persist($document);
+        $em->flush();
+
+        $this->redirect('...');
+    }
+
 .. note::
 
     Los eventos retrollamados ``@ORM\PrePersist()`` y ``@ORM\PostPersist()`` se disparan antes y después de almacenar la entidad en la base de datos. Por otro lado, los eventos retrollamados ``@ORM\PreUpdate()`` y ``@ORM\PostUpdate()`` se llaman al actualizar la entidad.
@@ -285,6 +298,9 @@ Si deseas utilizar el ``id`` como el nombre del archivo, la implementación es u
      */
     class Document
     {
+        // una propiedad usada temporalmente al eliminar
+        private $filenameForRemove;
+
         /**
          * @ORM\PrePersist()
          * @ORM\PreUpdate()
@@ -317,10 +333,18 @@ Si deseas utilizar el ``id`` como el nombre del archivo, la implementación es u
         /**
          * @ORM\PreRemove()
          */
+        public function storeFilenameForRemove()
+        {
+            $this->filenameForRemove = $this->getAbsolutePath();
+        }
+
+        /**
+         * @ORM\PostRemove()
+         */
         public function removeUpload()
         {
-            if ($file = $this->getAbsolutePath()) {
-                unlink($file);
+            if ($this->filenameForRemove) {
+                unlink($this->filenameForRemove);
             }
         }
 
@@ -329,3 +353,5 @@ Si deseas utilizar el ``id`` como el nombre del archivo, la implementación es u
             return null === $this->path ? null : $this->getUploadRootDir().'/'.$this->id.'.'.$this->path;
         }
     }
+
+Habrás notado en este caso que necesitas trabajar un poco más para poder eliminar el archivo. Antes de eliminarlo, debes almacenar la ruta del archivo (puesto que depende del ``id``). Entonces, una vez que el objeto se ha eliminado completamente de la base de datos, puedes eliminar el archivo (en ``PostRemove``).
