@@ -1,0 +1,83 @@
+.. index::
+   single: Registrando
+
+Cómo registrar mensajes en diferentes archivos de bitácora
+==========================================================
+
+.. versionadded:: 2.1
+    La habilidad para especificar canales para un controlador ``MonologBundle`` específico se añadió en *Symfony 2.1*.
+
+La edición estándar de Symfony contiene un montón de canales para la anotación cronológica de eventos: ``doctrine``,
+``event``, ``security`` y ``request``. Cada canal corresponde a un servicio de la bitácora (``monolog.logger.XXX``) en el contenedor y se inyecta al servicio en cuestión. El propósito de los canales es poder organizar los diferentes tipos de mensajes de la bitácora.
+
+De forma predeterminada, *Symfony2* registra cada mensaje en un solo archivo (independientemente del canal).
+
+Cambiando un canal a un diferente controlador
+---------------------------------------------
+
+Ahora, supongamos que quieres registrar los eventos del canal de ``doctrine`` a un archivo diferente.
+
+Para ello, basta con crear un nuevo controlador y configurarlo así:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        monolog:
+            handlers:
+                main:
+                    type: stream
+                    path: /var/log/symfony.log
+                    channels: !doctrine
+                doctrine:
+                    type: stream
+                    path: /var/log/doctrine.log
+                    channels: doctrine
+
+    .. code-block:: xml
+
+        <monolog:config>
+            <monolog:handlers>
+                <monolog:handler name="main" type="stream" path="/var/log/symfony.log">
+                    <monolog:channels>
+                        <type>exclusive</type>
+                        <channel>doctrine</channel>
+                    </monolog:channels>
+                </monolog:handler>
+
+                <monolog:handler name="doctrine" type="stream" path="/var/log/doctrine.log" />
+                    <monolog:channels>
+                        <type>inclusive</type>
+                        <channel>doctrine</channel>
+                    </monolog:channels>
+                </monolog:handler>
+            </monolog:handlers>
+        </monolog:config>
+
+Especificación *Yaml*
+---------------------
+
+Puedes especificar la configuración de muchas formas:
+
+.. code-block:: yaml
+
+    channels: ~    # Incluye todos los canales
+
+    channels: foo  # Incluir sólo el canal "foo"
+    channels: !foo #  Incluye todos los canales, excepto "foo"
+
+    channels: [foo, bar]   # Incluye sólo los canales "foo" y "bar"
+    channels: [!foo, !bar] # Incluye todos los canales, excepto "foo" y "bar"
+
+    channels:
+        type:     inclusive # Incluir sólo los que se enumeran a continuación
+        elements: [ foo, bar ]
+    channels:
+        type:     exclusive # Incluye todos, excepto los enumerados a continuación
+        elements: [ foo, bar ]
+
+
+Aprende más en el recetario
+---------------------------
+
+* :doc:`/cookbook/logging/monolog`

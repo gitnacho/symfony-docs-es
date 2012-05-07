@@ -1,0 +1,66 @@
+.. index::
+   single: Eventos; Creando escuchas
+
+Cómo crear un escucha de evento
+===============================
+
+Symfony dispone de varios eventos y ganchos que puedes utilizar para desencadenar un comportamiento personalizado en tu aplicación. Estos eventos los desencadena el componente ``HttpKernel`` y se pueden ver en la clase :class:`Symfony\\Component\\HttpKernel\\KernelEvents`. 
+
+Para enganchar a un evento y agregar tu propia lógica personalizada, tienes que crear un servicio que actúe como un escucha de eventos en ese evento. En este artículo, vamos a crear un servicio que actúe como un *Escucha de excepción*, permitiéndonos modificar la forma en que nuestra aplicación exhibe las excepciones. El evento ``KernelEvents::EXCEPTION`` es sólo uno de los eventos principales del núcleo::
+
+    // src/Acme/DemoBundle/Listener/AcmeExceptionListener.php
+    namespace Acme\DemoBundle\Listener;
+
+    use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
+
+    class AcmeExceptionListener
+    {
+        public function onKernelException(GetResponseForExceptionEvent $event)
+        {
+            // Obtenemos el objeto excepción del evento recibido
+            $exception = $event->getException();
+            $message = 'My Error says: ' . $exception->getMessage();
+            
+            // Personaliza nuestro objeto respuesta para mostrar nuestros
+            // detalles de la excepción
+            $response->setContent($message);
+            $response->setStatusCode($exception->getStatusCode());
+            
+            // Envía al evento nuestro objeto respuesta modificado
+            $event->setResponse($response);
+        }
+    }
+
+.. tip::
+
+    Cada evento recibe un tipo de objeto ``$event`` ligeramente diferente. Para el evento ``kernel.exception``, es de la clase :class:`Symfony\\Component\\HttpKernel\\Event\\GetResponseForExceptionEvent`.
+    Para ver qué tipo de objeto recibe cada escucha de eventos, consulta la clase :class:`Symfony\\Component\\HttpKernel\\KernelEvents`.
+
+Ahora que se ha creado la clase, sólo tienes que registrarlo como un servicio y notificar a *Symfony* que es un "escucha" para el evento ``kernel.exception`` usando una "etiqueta" especial:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            kernel.listener.your_listener_name:
+                class: Acme\DemoBundle\Listener\AcmeExceptionListener
+                tags:
+                        - { name: kernel.event_listener, event: kernel.exception, method: onKernelException }
+
+    .. code-block:: xml
+
+        <service id="kernel.listener.your_listener_name" class="Acme\DemoBundle\Listener\AcmeExceptionListener">
+            <tag name="kernel.event_listener" event="kernel.exception" method="onKernelException" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('kernel.listener.your_listener_name', 'Acme\DemoBundle\Listener\AcmeExceptionListener')
+            ->addTag('kernel.event_listener', array('event' => 'kernel.exception', 'method' => 'onKernelException'))
+        ;
+        
+.. note::
+
+    Existe una opción adicional para la etiqueta ``priority``, esta no es obligatoria y por omisión es 0. Este valor puede ser desde -255 hasta 255, y los escuchas se ejecutan en ese orden de prioridad. Esto es útil cuando necesitas garantizar que un escucha se ejecuta antes que otro.

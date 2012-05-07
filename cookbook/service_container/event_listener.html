@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo crear un escucha de evento &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.13',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Contenedor de servicios" href="index.html" />
+    <link rel="next" title="Cómo utilizar el patrón factoría para crear servicios" href="factories.html" />
+    <link rel="prev" title="Contenedor de servicios" href="index.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="factories.html" title="Cómo utilizar el patrón factoría para crear servicios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Contenedor de servicios"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Contenedor de servicios</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-crear-un-escucha-de-evento">
+<span id="index-0"></span><h1>Cómo crear un escucha de evento<a class="headerlink" href="#como-crear-un-escucha-de-evento" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Symfony dispone de varios eventos y ganchos que puedes utilizar para desencadenar un comportamiento personalizado en tu aplicación. Estos eventos los desencadena el componente <tt class="docutils literal"><span class="pre">HttpKernel</span></tt> y se pueden ver en la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\KernelEvents</span></tt>.</p>
+<p>Para enganchar a un evento y agregar tu propia lógica personalizada, tienes que crear un servicio que actúe como un escucha de eventos en ese evento. En este artículo, vamos a crear un servicio que actúe como un <em>Escucha de excepción</em>, permitiéndonos modificar la forma en que nuestra aplicación exhibe las excepciones. El evento <tt class="docutils literal"><span class="pre">KernelEvents::EXCEPTION</span></tt> es sólo uno de los eventos principales del núcleo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Listener/AcmeExceptionListener.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Listener</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AcmeExceptionListener</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">onKernelException</span><span class="p">(</span><span class="nx">GetResponseForExceptionEvent</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// Obtenemos el objeto excepción del evento recibido</span>
+        <span class="nv">$exception</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getException</span><span class="p">();</span>
+        <span class="nv">$message</span> <span class="o">=</span> <span class="s1">&#39;My Error says: &#39;</span> <span class="o">.</span> <span class="nv">$exception</span><span class="o">-&gt;</span><span class="na">getMessage</span><span class="p">();</span>
+
+        <span class="c1">// Personaliza nuestro objeto respuesta para mostrar nuestros</span>
+        <span class="c1">// detalles de la excepción</span>
+        <span class="nv">$response</span><span class="o">-&gt;</span><span class="na">setContent</span><span class="p">(</span><span class="nv">$message</span><span class="p">);</span>
+        <span class="nv">$response</span><span class="o">-&gt;</span><span class="na">setStatusCode</span><span class="p">(</span><span class="nv">$exception</span><span class="o">-&gt;</span><span class="na">getStatusCode</span><span class="p">());</span>
+
+        <span class="c1">// Envía al evento nuestro objeto respuesta modificado</span>
+        <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">setResponse</span><span class="p">(</span><span class="nv">$response</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Cada evento recibe un tipo de objeto <tt class="docutils literal"><span class="pre">$event</span></tt> ligeramente diferente. Para el evento <tt class="docutils literal"><span class="pre">kernel.exception</span></tt>, es de la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent</span></tt>.
+Para ver qué tipo de objeto recibe cada escucha de eventos, consulta la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\KernelEvents</span></tt>.</p>
+</div>
+<p>Ahora que se ha creado la clase, sólo tienes que registrarlo como un servicio y notificar a <em>Symfony</em> que es un &#8220;escucha&#8221; para el evento <tt class="docutils literal"><span class="pre">kernel.exception</span></tt> usando una &#8220;etiqueta&#8221; especial:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">kernel.listener.your_listener_name</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Acme\DemoBundle\Listener\AcmeExceptionListener</span>
+        <span class="l-Scalar-Plain">tags</span><span class="p-Indicator">:</span>
+                <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">name</span><span class="p-Indicator">:</span> <span class="nv">kernel.event_listener</span><span class="p-Indicator">,</span> <span class="nv">event</span><span class="p-Indicator">:</span> <span class="nv">kernel.exception</span><span class="p-Indicator">,</span> <span class="nv">method</span><span class="p-Indicator">:</span> <span class="nv">onKernelException</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;kernel.listener.your_listener_name&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\DemoBundle\Listener\AcmeExceptionListener&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;kernel.event_listener&quot;</span> <span class="na">event=</span><span class="s">&quot;kernel.exception&quot;</span> <span class="na">method=</span><span class="s">&quot;onKernelException&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/service&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span>
+    <span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;kernel.listener.your_listener_name&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\DemoBundle\Listener\AcmeExceptionListener&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;kernel.event_listener&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;event&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;kernel.exception&#39;</span><span class="p">,</span> <span class="s1">&#39;method&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;onKernelException&#39;</span><span class="p">))</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Existe una opción adicional para la etiqueta <tt class="docutils literal"><span class="pre">priority</span></tt>, esta no es obligatoria y por omisión es 0. Este valor puede ser desde -255 hasta 255, y los escuchas se ejecutan en ese orden de prioridad. Esto es útil cuando necesitas garantizar que un escucha se ejecuta antes que otro.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="factories.html" title="Cómo utilizar el patrón factoría para crear servicios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Contenedor de servicios"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" >Contenedor de servicios</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en May 07, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

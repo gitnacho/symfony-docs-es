@@ -1,0 +1,251 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo usar la opción virtual en los campos de formulario &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.13',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Formularios" href="index.html" />
+    <link rel="next" title="Validando" href="../validation/index.html" />
+    <link rel="prev" title="Cómo crear un tipo de campo personalizado para formulario" href="create_custom_field_type.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../validation/index.html" title="Validando"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="create_custom_field_type.html" title="Cómo crear un tipo de campo personalizado para formulario"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Formularios</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-usar-la-opcion-virtual-en-los-campos-de-formulario">
+<span id="index-0"></span><h1>Cómo usar la opción <tt class="docutils literal"><span class="pre">virtual</span></tt> en los campos de formulario<a class="headerlink" href="#como-usar-la-opcion-virtual-en-los-campos-de-formulario" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>La opción <tt class="docutils literal"><span class="pre">virtual</span></tt> para los campos de formulario puede ser muy útil cuando tienes algunos campos duplicados en diferentes entidades.</p>
+<p>Por ejemplo, imagina que tienes dos entidades, una <tt class="docutils literal"><span class="pre">Compañía</span></tt> y un <tt class="docutils literal"><span class="pre">Cliente</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Entity/Company.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Entity</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Company</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$name</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$website</span><span class="p">;</span>
+
+    <span class="k">private</span> <span class="nv">$street</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$zipcode</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$city</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$country</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Entity/Company.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Entity</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Customer</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$firstName</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$lastName</span><span class="p">;</span>
+
+    <span class="k">private</span> <span class="nv">$street</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$zipcode</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$city</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$country</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Como puedes ver, cada entidad comparte algunos de los mismos campos: <tt class="docutils literal"><span class="pre">calle</span></tt>, <tt class="docutils literal"><span class="pre">código</span> <span class="pre">postal</span></tt>, <tt class="docutils literal"><span class="pre">ciudad</span></tt>, <tt class="docutils literal"><span class="pre">país</span></tt>.</p>
+<p>Ahora, quieres construir dos formularios: uno para la <tt class="docutils literal"><span class="pre">Compañía</span></tt> y el segundo para un <tt class="docutils literal"><span class="pre">Cliente</span></tt>.</p>
+<p>Comienzas creando un muy simple <tt class="docutils literal"><span class="pre">CompanyType</span></tt> y un <tt class="docutils literal"><span class="pre">CustomerType</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Form/Type/CompanyType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">CompanyType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;website&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span>
+        <span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Form/Type/CustomerType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">CustomerType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;firstName&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;lastName&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span>
+        <span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ahora, tenemos que hacer frente a los cuatro campos duplicados. Aquí hay un (sencillo) tipo de formulario <tt class="docutils literal"><span class="pre">domicilio</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Form/Type/AddressType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AddressType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;street&#39;</span><span class="p">,</span> <span class="s1">&#39;textarea&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;zipcode&#39;</span><span class="p">,</span> <span class="s1">&#39;string&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;city&#39;</span><span class="p">,</span> <span class="s1">&#39;string&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;country&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span>
+        <span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;address&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><em>En realidad</em>, <strong>no</strong> tenemos un campo <tt class="docutils literal"><span class="pre">calle</span></tt> en cada una de nuestras entidades, por lo tanto no podemos vincular nuestro <tt class="docutils literal"><span class="pre">AddressType</span></tt> directamente a nuestro <tt class="docutils literal"><span class="pre">CompanyType</span></tt> o <tt class="docutils literal"><span class="pre">CustomerType</span></tt>.
+Pero absolutamente queremos tener un tipo de formulario específico que se ocupe del domicilio (recuerda, ¡No te repitas!).</p>
+<p>La opción <tt class="docutils literal"><span class="pre">virtual</span></tt> en los campos de formulario es la solución.</p>
+<p>Podemos ajustar la opción <tt class="docutils literal"><span class="pre">'virtual'</span> <span class="pre">=&gt;</span> <span class="pre">true</span></tt> en el método <tt class="docutils literal"><span class="pre">getDefaultOptions</span></tt> de <tt class="docutils literal"><span class="pre">AddressType</span></tt> y comenzar a utilizarlo directamente en los dos tipos de formulario originales.</p>
+<p>Mira el resultado:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// CompanyType</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">AddressType</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// CustomerType</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">AddressType</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Con la opción <tt class="docutils literal"><span class="pre">virtual</span></tt> establecida a <tt class="docutils literal"><span class="pre">false</span></tt> (el comportamiento predeterminado), el componente <tt class="docutils literal"><span class="pre">formulario</span></tt> espera que cada objeto subyacente tenga una propiedad <tt class="docutils literal"><span class="pre">foo</span></tt> (o <tt class="docutils literal"><span class="pre">bar</span></tt>) que sea o bien un objeto o una matriz que contiene los cuatro campos del tipo <tt class="docutils literal"><span class="pre">domicilio</span></tt>.
+Por supuesto, ¡no tenemos este objeto/matriz en nuestras entidades y no lo queremos!</p>
+<p>Con la opción virtual, ajustada al valor <tt class="docutils literal"><span class="pre">true</span></tt>, el componente <tt class="docutils literal"><span class="pre">formulario</span></tt> omite la propiedad <tt class="docutils literal"><span class="pre">foo</span></tt> (o <tt class="docutils literal"><span class="pre">bar</span></tt>), y en su lugar ¡&#8221;capta&#8221; y &#8220;define&#8221; los 4 campos del <tt class="docutils literal"><span class="pre">domicilio</span></tt> directamente en el objeto subyacente!</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">En lugar de establecer la opción <tt class="docutils literal"><span class="pre">virtual</span></tt>, en el <tt class="docutils literal"><span class="pre">AddressType</span></tt>, también puedes (al igual que con cualquier otra opción) pasar como argumento una matriz al tercer parámetro de <tt class="docutils literal"><span class="pre">$builder-&gt;add()</span></tt>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../validation/index.html" title="Validando"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="create_custom_field_type.html" title="Cómo crear un tipo de campo personalizado para formulario"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" >Formularios</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en May 07, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>
