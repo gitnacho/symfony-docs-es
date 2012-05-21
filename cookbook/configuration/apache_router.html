@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo usar el enrutador de Apache &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.14',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Configurando" href="index.html" />
+    <link rel="next" title="Contenedor de servicios" href="../service_container/index.html" />
+    <link rel="prev" title="Cómo utilizar PdoSessionStorage para almacenar sesiones en la base de datos" href="pdo_session_storage.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../service_container/index.html" title="Contenedor de servicios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="pdo_session_storage.html" title="Cómo utilizar PdoSessionStorage para almacenar sesiones en la base de datos"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Configurando</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-usar-el-enrutador-de-apache">
+<span id="index-0"></span><h1>Cómo usar el enrutador de <em>Apache</em><a class="headerlink" href="#como-usar-el-enrutador-de-apache" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Si bien <em>Symfony2</em>, es muy rápido fuera de la caja, también proporciona varias maneras de aumentar esa velocidad con unos cuantos ajustes.
+Una de esas maneras es dejando que <em>Apache</em> maneje el enrutado directamente, en lugar de utilizar <em>Symfony2</em> para esta tarea.</p>
+<div class="section" id="cambiando-los-parametros-de-configuracion-del-enrutador">
+<h2>Cambiando los parámetros de configuración del enrutador<a class="headerlink" href="#cambiando-los-parametros-de-configuracion-del-enrutador" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para volcar las rutas de <em>Apache</em>, primero debemos modificar algunos parámetros de configuración para decirle a <em>Symfony2</em> que utilice el <tt class="docutils literal"><span class="pre">ApacheUrlMatcher</span></tt> en lugar de la opción predeterminada.</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config_prod.yml</span>
+<span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">router.options.matcher.cache_class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">~</span> <span class="c1"># desactiva la caché de enrutado</span>
+    <span class="l-Scalar-Plain">router.options.matcher_class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Symfony\Component\Routing\Matcher\ApacheUrlMatcher</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Ten en cuenta que <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Matcher\ApacheUrlMatcher</span></tt> extiende a <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Matcher\UrlMatcher</span></tt> por lo que incluso si no se regeneran las reglas <tt class="docutils literal"><span class="pre">url_rewrite</span></tt>, todo saldrá bien (porque al final <tt class="docutils literal"><span class="pre">ApacheUrlMatcher::match()</span></tt> hace una llamado a <tt class="docutils literal"><span class="pre">parent::match()</span></tt>).</p>
+</div>
+</div>
+<div class="section" id="generando-reglas-mod-rewrite">
+<h2>Generando reglas <tt class="docutils literal"><span class="pre">mod_rewrite</span></tt><a class="headerlink" href="#generando-reglas-mod-rewrite" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para comprobar que está funcionando, vamos a crear una ruta muy básica para el paquete de demostración:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/routing.yml</span>
+<span class="l-Scalar-Plain">hello</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">/hello/{name}</span>
+    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">_controller</span><span class="p-Indicator">:</span> <span class="nv">AcmeDemoBundle</span><span class="p-Indicator">:</span><span class="nv">Demo</span><span class="p-Indicator">:</span><span class="nv">hello</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+<p>Ahora generamos las reglas <strong>url_rewrite</strong>:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console router:dump-apache -e<span class="o">=</span>prod --no-debug
+</pre></div>
+</div>
+<p>Lo cual &#8212;más o menos&#8212; debe mostrar lo siguiente:</p>
+<div class="highlight-apache"><div class="highlight"><pre><span class="c"># salta peticiones &quot;reales&quot;</span>
+<span class="nb">RewriteCond</span> %{REQUEST_FILENAME} -f
+<span class="nb">RewriteRule</span> .* - [QSA,L]
+
+<span class="c"># hello</span>
+<span class="nb">RewriteCond</span> %{REQUEST_URI} ^/hello/([^/]+?)$
+<span class="nb">RewriteRule</span> .* app.php [QSA,L,E=_ROUTING__route:hello,E=_ROUTING_name:%1,E=_ROUTING__controller:AcmeDemoBundle\:Demo\:hello]
+</pre></div>
+</div>
+<p>Ahora puedes volver a escribir <tt class="docutils literal"><span class="pre">web/.htaccess</span></tt> para utilizar las nuevas reglas, así que con nuestro ejemplo debería tener este aspecto:</p>
+<div class="highlight-apache"><div class="highlight"><pre><span class="nt">&lt;IfModule</span> <span class="s">mod_rewrite.c</span><span class="nt">&gt;</span>
+    <span class="nb">RewriteEngine</span> <span class="k">On</span>
+
+    <span class="c"># salta peticiones &quot;reales&quot;</span>
+    <span class="nb">RewriteCond</span> %{REQUEST_FILENAME} -f
+    <span class="nb">RewriteRule</span> .* - [QSA,L]
+
+    <span class="c"># hello</span>
+    <span class="nb">RewriteCond</span> %{REQUEST_URI} ^/hello/([^/]+?)$
+    <span class="nb">RewriteRule</span> .* app.php [QSA,L,E=_ROUTING__route:hello,E=_ROUTING_name:%1,E=_ROUTING__controller:AcmeDemoBundle\:Demo\:hello]
+<span class="nt">&lt;/IfModule&gt;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">El procedimiento anterior se debe realizar cada vez que añadas/cambies la ruta si quieres sacar el máximo provecho de esta configuración.</p>
+</div>
+<p>¡Eso es todo!
+Ahora estás listo para usar las reglas de enrutado de <em>Apache</em>.</p>
+</div>
+<div class="section" id="ajustes-adicionales">
+<h2>Ajustes adicionales<a class="headerlink" href="#ajustes-adicionales" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para ahorrar un poco de tiempo en el procesamiento, cambia las ocurrencias de <tt class="docutils literal"><span class="pre">Request</span></tt> a <tt class="docutils literal"><span class="pre">ApacheRequest</span></tt> en <tt class="docutils literal"><span class="pre">web/app.php</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// web/app.php</span>
+
+<span class="k">require_once</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../app/bootstrap.php.cache&#39;</span><span class="p">;</span>
+<span class="k">require_once</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../app/AppKernel.php&#39;</span><span class="p">;</span>
+<span class="c1">//require_once __DIR__.&#39;/../app/AppCache.php&#39;;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\ApacheRequest</span><span class="p">;</span>
+
+<span class="nv">$kernel</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AppKernel</span><span class="p">(</span><span class="s1">&#39;prod&#39;</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+<span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">loadClassCache</span><span class="p">();</span>
+<span class="c1">//$kernel = new AppCache($kernel);</span>
+<span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">handle</span><span class="p">(</span><span class="nx">ApacheRequest</span><span class="o">::</span><span class="na">createFromGlobals</span><span class="p">())</span><span class="o">-&gt;</span><span class="na">send</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../service_container/index.html" title="Contenedor de servicios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="pdo_session_storage.html" title="Cómo utilizar PdoSessionStorage para almacenar sesiones en la base de datos"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" >Configurando</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en May 21, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

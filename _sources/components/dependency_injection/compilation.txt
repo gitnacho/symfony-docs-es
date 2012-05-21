@@ -1,0 +1,44 @@
+Compilando el contenedor
+========================
+
+El contenedor de servicios se puede compilar por varios motivos. Estas razones incluyen la comprobación de posibles problemas, tales como referencias circulares y el transporte más eficiente de contenedores usando la resolución de parámetros y la remoción de servicios no utilizados.
+
+Se compila ejecutando::
+
+    $container->compile();
+
+El método de compilación utiliza "\ ``Compiler Passes``\ " para la compilación. El componente *Inyección de dependencias* viene con varios pases que se registran automáticamente para la compilación. Por ejemplo, la clase :class:`Symfony\\Component\\DependencyInjection\\Compiler\\CheckDefinitionValidityPass` comprueba varios potenciales problemas relacionados con las definiciones que se han establecido en el contenedor. Después de este y varios otros pases que comprueban la validez del contenedor, se utilizan pases adicionales del compilador para optimizar la configuración antes de almacenarla en caché. Por ejemplo, se quitan los servicios privados y abstractos, y se resuelven los alias.
+
+Creando un pase del compilador
+------------------------------
+
+También puedes crear y registrar tu propio pase del compilador en el contenedor.
+Para crear un pase del compilador tienes que implementar la interfaz :class:`Symfony\\Component\\DependencyInjection\\Compiler\\CompilerPassInterface`. El compilador te brinda la oportunidad de manipular las definiciones de los servicios que se han compilado. Esto puede ser muy poderoso, pero no es algo necesario en el uso cotidiano.
+
+El pase del compilador debe tener el método ``process`` que se pasa al contenedor compilado::
+
+    public function process(ContainerBuilder $container)
+    {
+       //--
+    }
+
+Los parámetros del contenedor y las definiciones se pueden manipular usando los métodos descritos en :doc:`/components/dependency_injection/definitions`.
+Una cosa común por hacer en un pase del compilador es buscar todos los servicios que tienen una determinada etiqueta, a fin de procesarla de alguna manera o dinámicamente conectar cada una con algún otro servicio.
+
+Gestionando la configuración con extensiones
+--------------------------------------------
+
+Así como cargar la configuración directamente en el contenedor como se muestra en :doc:`/components/dependency_injection/introduction`, la puedes gestionar registrando extensiones en el contenedor. Las extensiones deben implementar la :class:`Symfony\\Component\\DependencyInjection\\Extension\\ExtensionInterface` y las puedes registrar en el contenedor con::
+
+    $container->registerExtension($extension);
+
+El trabajo principal de la extensión se realiza en el método ``load``. En el método ``load`` puedes cargar la configuración desde uno o más archivos de configuración, así como manipular las definiciones del contenedor utilizando los métodos indicados en :doc:`/components/dependency_injection/definitions`. 
+
+Al método ``load`` se le pasa un nuevo contenedor para configurarlo, el cual posteriormente se fusiona en el contenedor con el que se haya registrado. Esto te permite tener varias extensiones para gestionar las definiciones del contenedor de forma independiente.
+Las extensiones no agregan configuración a los contenedores cuando se añaden, pero se procesan cuando se llama al método ``compile`` del contenedor.
+
+.. note::
+ 
+    Si necesitas manipular la configuración cargada por una extensión, entonces no lo puedes hacer desde otra extensión, ya que esta utiliza un contenedor nuevo.
+    En su lugar, debes utilizar un pase del compilador que trabaje con el contenedor completo después de haber procesado las extensiones. 
+

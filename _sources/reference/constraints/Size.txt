@@ -1,16 +1,21 @@
 ``Size``
 ========
 
-Valida que un número dado está *entre* algún número mínimo y máximo.
+Valida que la longitud de una cadena dada o la cantidad de elementos en una colección está *entre* un valor mínimo y máximo.
+
+.. versionadded:: 2.1
+    La restricción ``Size`` se añadió en Symfony 2.1.
 
 +----------------+--------------------------------------------------------------------+
-| Aplica a       | :ref:`propiedad or método <validation-property-target>`            |
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`             |
 +----------------+--------------------------------------------------------------------+
 | Opciones       | - `min`_                                                           |
 |                | - `max`_                                                           |
+|                | - `type`_                                                          |
+|                | - `charset`_                                                       |
 |                | - `minMessage`_                                                    |
 |                | - `maxMessage`_                                                    |
-|                | - `invalidMessage`_                                                |
+|                | - `exactMessage`_                                                  |
 +----------------+--------------------------------------------------------------------+
 | Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\Size`          |
 +----------------+--------------------------------------------------------------------+
@@ -20,7 +25,7 @@ Valida que un número dado está *entre* algún número mínimo y máximo.
 Uso básico
 ----------
 
-Para verificar que el campo ``estatura`` de una clase está entre ``120`` y ``180``, puedes agregar lo siguiente:
+Para verificar que la longitud del campo ``firstName`` de una clase está entre ``2`` y ``50``, puedes agregar lo siguiente:
 
 .. configuration-block::
 
@@ -29,12 +34,12 @@ Para verificar que el campo ``estatura`` de una clase está entre ``120`` y ``18
         # src/Acme/EventBundle/Resources/config/validation.yml
         Acme\EventBundle\Entity\Participant:
             properties:
-                estatura:
+                firstName:
                     - Size:
-                        min: 120
-                        max: 180
-                        minMessage: Para entrar por lo menos debes tener una estatura de 120 cm
-                        maxMessage: No puedes ser más alto de 180 cm para ingresar
+                        min: 2
+                        max: 50
+                        minMessage: Tu primer nombre por lo menos debe tener 2 caracteres de largo
+                        maxMessage: Tu primer nombre no puede tener más de 50 caracteres de largo
 
     .. code-block:: php-annotations
 
@@ -45,13 +50,50 @@ Para verificar que el campo ``estatura`` de una clase está entre ``120`` y ``18
         {
             /**
              * @Assert\Size(
-             *      min = "120",
-             *      max = "180",
-             *      minMessage = "Para entrar por lo menos debes tener una estatura de 120 cm",
-             *      maxMessage="No puedes ser más alto de 180 cm para ingresar"
+             *      min = "2",
+             *      max = "50",
+             *      minMessage = "Tu primer nombre por lo menos debe tener 2 caracteres de largo",
+             *      maxMessage = "Tu primer nombre no puede tener más de 50 caracteres de largo"
              * )
              */
-             protected $estatura;
+             protected $firstName;
+        }
+
+Colecciones --- Uso básico
+--------------------------
+
+Para verificar que la matriz de campos ``emails`` contiene entre 1 y 5 elementos puedes agregar lo siguiente:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/EventBundle/Resources/config/validation.yml
+        Acme\EventBundle\Entity\Participant:
+            properties:
+                emails:
+                    - Size:
+                        min: 1
+                        max: 5
+                        minMessage: Debes especificar al menos una dirección de correo electrónico
+                        maxMessage: No puedes especificar más de 5 direcciones de correo electrónico
+
+    .. code-block:: php-annotations
+
+        // src/Acme/EventBundle/Entity/Participant.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Participant
+        {
+            /**
+             * @Assert\Size(
+             *      min = "1",
+             *      max = "5",
+             *      minMessage = "Debes especificar al menos una dirección de correo electrónico",
+             *      maxMessage = "No puedes especificar más de 5 direcciones de correo electrónico"
+             * )
+             */
+             protected $emails = array();
         }
 
 Opciones
@@ -62,34 +104,46 @@ Opciones
 
 **tipo**: ``integer`` [:ref:`default option<validation-default-option>`]
 
-Esta opción requerida es el valor ``mínimo``. La validación fallará si el valor es **menor** que este valor ``mínimo``.
+Esta opción requerida es el valor de la longitud ``mínima``. La validación fallará si la longitud del valor suministrado es **menor** que este valor ``mínimo``.
 
 ``max``
 ~~~~~~~
 
 **tipo**: ``integer`` [:ref:`default option<validation-default-option>`]
 
-Esta opción requerida es el valor ``máximo``. La validación fallará si el valor es **mayor** que este valor máximo.
+Esta opción requerida es el valor de la longitud ``máxima``. La validación fallará si la longitud del valor suministrado es **mayor** que este valor ``máximo``.
+
+``type``
+~~~~~~~~
+
+**tipo**: ``string``
+
+El tipo del valor a comprobar. Este bien puede ser ``string`` o ``collection``. Si no lo especificas, el validador intentará determinar el tipo correcto basándose en el dato validado subyacente.
+
+``charset``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predeterminado**: ``UTF-8``
+
+El juego de caracteres a usar al calcular la longitud del valor. Se utiliza la función :phpfunction:`grapheme_strlen` de *PHP* si está disponible. Si no, se utiliza la función :phpfunction:`mb_strlen` de *PHP* si está disponible. Si ninguna está disponible, se utiliza la función :phpfunction:`strlen` de *PHP*.
 
 ``minMessage``
 ~~~~~~~~~~~~~~
 
-**tipo**: ``string`` **predeterminado**: ``This value should be {{ limit }} or more`` (``Este valor debe ser {{ limit }} o más``)
+**tipo**: ``string`` **predeterminado**: ``This value is too short. It should have {{ limit }} characters or more.`` (``Este valor es muy corto. Debe tener {{ limit }} caracteres o más``) cuando valides una cadena, o ``This collection should contain {{ limit }} elements or more.`` (``Esta colección debe contener {{ limit }} elementos o más.``) cuando validas una colección.
 
-El mensaje que se mostrará si el valor subyacente es menor que la opción `min`_.
+El mensaje que se mostrará si la longitud del valor subyacente o la cantidad de elementos en la colección es menor que la opción `min`_.
 
 ``maxMessage``
 ~~~~~~~~~~~~~~
 
-**tipo**: ``string`` **predeterminado**: ``This value should be {{ limit }} or less.`` (``Este valor debe ser {{ limit }} o menor``)
+**tipo**: ``string`` **predeterminado**: ``This value is too long. It should have {{ limit }} characters or less.`` (``Este valor es muy largo. Debe tener {{ limit }} caracteres o menos``) cuando valides una cadena, o ``This collection should contain {{ limit }} elements or less.`` (``Esta colección debe contener {{ limit }} elementos o menos.``) cuando validas una colección.
 
-El mensaje que se mostrará si el valor subyacente es mayor que la opción `max`_.
+El mensaje que se mostrará si la longitud del valor subyacente o la cantidad de elementos en la colección es mayor que la opción `max`_.
 
-``invalidMessage``
-~~~~~~~~~~~~~~~~~~
+``exactMessage``
+~~~~~~~~~~~~~~~~
 
-**tipo**: ``string`` **predeterminado**: ``This value should be a valid number`` (``Este valor debe ser un número válido``)
+**tipo**: ``string`` **predeterminado**: ``This value should have exactly {{ limit }} characters.`` (``Este valor debe tener exactamente {{ limit }} caracteres.``) cuando valides una cadena, o ``This collection should contain exactly {{ limit }} elements.`` (``Esta colección debe contener exactamente {{ limit }} elementos.``) cuando validas una colección.
 
-El mensaje que se mostrará si el valor subyacente no es un número (por medio de la función `is_numeric`_ de *PHP*).
-
-.. _`is_numeric`: http://www.php.net/manual/es/function.is-numeric.php
+El mensaje que se mostrará si los valores ``min`` y ``max`` son iguales y la longitud del valor subyacente no es exactamente este valor.

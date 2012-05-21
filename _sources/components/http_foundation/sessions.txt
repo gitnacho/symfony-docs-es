@@ -1,9 +1,9 @@
 .. index::
    single: HTTP
-   single: HttpFoundation, Sessions
+   single: HttpFoundation, Sesiones
 
-``Sessions``
-============
+Gestión de la sesión
+====================
 
 El componente ``HttpFoundation`` de *Symfony2* tiene un subsistema de sesión muy potente y flexible, que está diseñado para proporcionar la gestión de sesiones a través de una sencilla interfaz orientada a objetos, utilizando una variedad de controladores para el almacenamiento de la sesión.
 
@@ -31,6 +31,15 @@ Ejemplo rápido::
         echo "<div class='flash-notice'>$message</div>";
     }
 
+.. note::
+
+    Las sesiones *Symfony* están diseñadas para sustituir a varias Funciones *PHP* nativas.
+    Las aplicaciones deben evitar el uso de ``session_start()``, ``session_regenerate_id()``, `` session_id()``, ``session_name()``, y ``session_destroy()``, y en su lugar usar la *API* en la siguiente sección.
+
+.. warning::
+
+    Las sesiones de *Symfony* son incompatibles con la directiva ``ini`` ``session.auto_start = 1`` de *PHP*. Esta directiva se debe apagar en ``php.ini``, en las directivas del servidor web o en ``.htaccess``.
+
 *API* de sesión
 ~~~~~~~~~~~~~~~
 
@@ -49,15 +58,15 @@ Flujo de trabajo en la sesión
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::invalidate`:
   Vacía los datos de la sesión y regenera el ``id`` de sesión sin usar ``session_destroy()``.
-  Este básicamente es un atajo para ``clear()`` y ``migrate()``.
+  Este es un atajo para ``clear()`` y ``migrate()``.
 
-* :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::getId`: Recupera el ``id`` de la sesión.
+* :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::getId`: Recupera el ``id`` de la sesión. Sin usar ``session_id()``.
 
-* :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::setId`: Establece el ``id`` de la sesión.
+* :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::setId`: Establece el ``id`` de la sesión. Sin usar ``session_id()``.
 
-* :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::getName`: Recupera el nombre de la sesión.
+* :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::getName`: Recupera el nombre de la sesión. Sin usar ``session_name()``.
 
-* :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::setName`: Establece el nombre de la sesión.
+* :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::setName`: Establece el nombre de la sesión. Sin usar ``session_name()``.
 
 Atributos de la sesión
 
@@ -102,72 +111,22 @@ Metadatos de sesión
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::getMetadataBag`:
   Obtiene la clase :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\MetadataBag` la cual contiene información de la sesión.
 
-Controladores de guardado
-~~~~~~~~~~~~~~~~~~~~~~~~~
 
-El flujo de trabajo en la sesión *PHP* tiene 6 posibles operaciones que pueden ocurrir.  El flujo de sesión normal sigue el proceso de ``apertura``, ``lectura``, ``escritura`` y  ``cierre``, con la posibilidad de ``destrucción`` y ``gc`` (por ``garbage collection`` o recolección de basura, la cual cerrará todas las sesiones abiertas: la `gc` se invoca aleatoriamente de acuerdo a la configuración de *PHP* y si es llamada directamente, su invocación se difiere hasta después de una operación de ``apertura``).  Puedes leer más sobre esto en `php.net/session.customhandler`_
-
-
-Controladores de guardado nativos de *PHP*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Los llamados controladores 'nativos', son los manipuladores de sesión que son o bien compilados dentro de *PHP* o proporcionados por extensiones *PHP*, como *PHP SQLite*, *PHP-Memcached*, etc.
-Los manipuladores se compilan y se pueden activar directamente en *PHP* usando ``ini_set('session.save_handler', $nombre);`` y se suelen configurar con ``ini_set('session.save_path', $ruta);`` y, a veces, una variedad de otras directivas ``ini`` de *PHP*.
-
-*Symfony2* proporciona controladores para manipuladores nativos que son fáciles de configurar, estos son:
-
-  * :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\NativeFileSessionHandler`;
-  * :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\NativeSqliteSessionHandler`;
-  * :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\NativeMemcacheSessionHandler`;
-  * :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\NativeMemcachedSessionHandler`;
-  * :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\NativeRedisSessionHandler`;
-
-Ejemplo de uso::
-
-    use Symfony\Component\HttpFoundation\Session\Session;
-    use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
-    use Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeMemcachedSessionHandler;
-
-    $storage = new NativeSessionStorage(array(), new NativeMemcachedSessionHandler());
-    $session = new Session($storage);
-
-Controladores de guardado personalizados
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Los manipuladores personalizados son aquellos que sustituyen por completo a los controladores de guardado de sesión integrados en *PHP*, proveyendo seis funciones retrollamadas que *PHP* invoca internamente en varios puntos en el flujo de trabajo de la sesión.
-
-*HttpFoundation* de *Symfony2*, por omisión, ofrece algunos de estos y fácilmente te pueden servir como
-ejemplos, si quieres escribir uno propio.
-
-  * :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\PdoSessionHandler`;
-  * :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\MemcacheSessionHandler`;
-  * :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\MemcachedSessionHandler`;
-  * :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\NullSessionHandler`;
-
-Ejemplo::
-
-    use Symfony\Component\HttpFoundation\Session\Session;
-    use Symfony\Component\HttpFoundation\Session\Storage\SessionStorage;
-    use Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler;
-
-    $storage = new NativeSessionStorage(array(), new PdoSessionHandler());
-    $session = new Session($storage);
-
-Bolsas de sesión
-----------------
+Gestionando datos de sesión
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 La gestión de sesiones *PHP* requiere el uso de la superglobal ``$_SESSION``, sin embargo, esto interfiere un poco con la comprobabilidad y encapsulación de código en un paradigma de programación orientado a objetos. Para ayudar a superar esta situación, *Symfony2* usa 'bolsas de sesión' vinculadas a la sesión para encapsular un conjunto de datos específico a los 'atributos' o 'mensajes flash'.
 
-Este enfoque también reduce la contaminación del espacio de nombres dentro de la superglobal ``$_SESSION``, porque cada bolsa almacena todos sus datos bajo un único espacio de nombres.
+Este enfoque también mitiga la contaminación del espacio de nombres dentro de la superglobal ``$_SESSION``, porque cada bolsa almacena todos sus datos bajo un único espacio de nombres.
 Esto le permite a *Symfony2* coexistir pacíficamente con otras aplicaciones o bibliotecas que puedan usar la superglobal ``$_SESSION`` y todos los datos siguen siendo totalmente compatibles con la gestión de sesiones de *Symfony2*.
 
-*Symfony2* ofrece 2 tipos de bolsas, con dos implementaciones independientes.
+*Symfony2* ofrece 2 tipos de bolsas para almacenamiento, con dos implementaciones independientes.
 Todo está escrito contra interfaces para que las puedas ampliar o crear tus propios tipos de bolsa si es necesario.
 
 :class:`Symfony\\Component\\HttpFoundation\\Session\\SessionBagInterface` tiene la siguiente *API* destinada principalmente para uso interno:
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionBagInterface::getStorageKey`:
-  Devuelve la clave, que en última instancia es la bolsa que va a almacenar su arreglo bajo ``$_SESSION``.
+  Devuelve la clave, que en última instancia es la bolsa que va a almacenar tu arreglo bajo ``$_SESSION``.
   En general, puedes dejar este valor en su predefinido y es para uso interno.
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionBagInterface::initialize`:
@@ -175,6 +134,7 @@ Todo está escrito contra interfaces para que las puedas ampliar o crear tus pro
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionBagInterface::getName`:
   Devuelve el nombre de la bolsa de sesión.
+
 
 ``Atributos``
 ~~~~~~~~~~~~~
@@ -227,6 +187,7 @@ La :class:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagI
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagInterface::clear`:
   Vacía la bolsa;
+
 
 Mensajes flash
 ~~~~~~~~~~~~~~
@@ -306,150 +267,3 @@ Método compacto para procesar la exhibición simultánea de todos los mensajes:
             echo "<div class='flash-$type'>$message</div>\n";
         }
     }
-
-Comprobabilidad
----------------
-
-*Symfony2* se diseñó desde el principio con la comprobabilidad de código en mente. Con el fin de hacer que el código que utiliza la sesión sea fácilmente comprobable, disponemos de dos mecanismos de almacenamiento independientes para simular ambas, pruebas unitarias y pruebas funcionales.
-
-Probar el código usando sesiones reales es difícil porque el estado del flujo de trabajo de *PHP* es global y no es posible tener varias sesiones simultáneas en el mismo proceso *PHP*.
-
-Los motores de almacenamiento fingido simulan el flujo de trabajo de las sesiones *PHP* sin tener que iniciar una, lo cual te permite probar tu código sin complicaciones. También es posible ejecutar varias instancias en el mismo proceso *PHP*.
-
-Los controladores de almacenamiento simulado no leen ni escriben las globales del sistema ``session_id()`` o ``session_name()``. Y proporcionan métodos para simularlas de ser necesario:
-
-* :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionStorageInterface::getId`: Recupera el ``id`` de la sesión.
-
-* :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionStorageInterface::setId`: Establece el ``id`` de la sesión.
-
-* :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionStorageInterface::getName`: Recupera el nombre de la sesión.
-
-* :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionStorageInterface::setName`: Establece el nombre de la sesión.
-
-Pruebas unitarias
-~~~~~~~~~~~~~~~~~
-
-Para las pruebas unitarias donde no es necesario persistir la sesión, simplemente debes intercambiar el motor de almacenamiento predefinido con :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\MockArraySessionStorage`::
-
-    use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
-    use Symfony\Component\HttpFoundation\Session\Session;
-
-    $session = new Session(new MockArraySessionStorage());
-
-Pruebas funcionales
-~~~~~~~~~~~~~~~~~~~
-
-Para las pruebas funcionales donde posiblemente necesites conservar los datos de sesión a través de procesos *PHP* independientes, basta con cambiar el motor de almacenamiento a la clase :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\MockFileSessionStorage`::
-
-    use Symfony\Component\HttpFoundation\Session\Session;
-    use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
-
-    $session = new Session(new MockFileSessionStorage());
-
-Compatibilidad con *PHP 5.4*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A partir de *PHP 5.4.0*, están disponibles :phpclass:`SessionHandler` y :phpclass:`SessionHandlerInterface`. *Symfony 2.1* proporciona compatibilidad para :phpclass:`SessionHandlerInterface` por lo tanto la puedes utilizar en *PHP 5.3*. Esto, gratamente mejora la interoperabilidad con otras bibliotecas.
-
-:phpclass:`SessionHandler` es una clase interna especial de *PHP* que expone los controladores de guardado nativos para el espacio de usuario de *PHP*.
-
-Con el fin de proporcionar una solución para aquellos que utilizan *PHP 5.4*, *Symfony2* tiene una clase especial llamada :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\NativeSessionHandler` que bajo *PHP 5.4*, se extiende desde `\SessionHandler` y bajo *PHP 5.3* es sólo una clase base vacía. Esto proporciona interesantes oportunidades para aprovechar la funcionalidad de *PHP 5.4* si está disponible.
-
-Controladores delegados de guardado
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Hay dos tipos de controladores delegados de clases de guardado que heredan de :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\AbstractProxy`:
-estas son :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\NativeProxy` y :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\SessionHandlerProxy`.
-
-La :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\NativeSessionStorage` automáticamente inyecta los controladores de guardado en un controlador de guardado delegado, a menos que ya lo envuelva uno.
-
-La clase :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\NativeProxy` se utiliza automáticamente en *PHP 5.3*, cuando los controladores de guardado internos de *PHP* se especifican usando las clases ``Native*SessionHandler``, mientras que la clase :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\Handler\\SessionHandlerProxy` se utiliza para envolver cualquier controlador de guardado personalizado, esta implementa la :phpclass:`SessionHandlerInterface`.
-
-En *PHP 5.4* y superior, todos los controladores de sesión implementan la :phpclass:`SessionHandlerInterface` incluyendo las clases ``Native*SessionHandler`` que heredan de :phpclass:`SessionHandler`.
-
-El mecanismo delegado te permite involucrarte profundamente en las clases controladoras del guardado de sesiones. Podrías utilizar un delegado, por ejemplo, para cifrar cualquier transacción de la sesión sin el conocimiento específico del controlador de guardado.
-
-Configurando sesiones *PHP*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-La clase :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\NativeSessionStorage` puede ajustar la mayoría de las directivas de configuración de *PHP*, las cuales están documentadas en `php.net/session.configuration`_.
-
-Para configurar estos opciones, pasa las claves (omitiendo la primera parte ``session.`` de la clave) como una matriz de clave/valor como el argumento ``$options`` del constructor.
-O ajústalas a través del método :method:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\NativeSessionStorage::setOptions`.
-
-En aras de la claridad, algunas de las opciones principales se explican en esta documentación.
-
-Duración de la ``cookie`` de sesión
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Para mayor seguridad, generalmente se recomienda enviar fragmentos de sesión como ``cookies`` de sesión.
-Puedes configurar el tiempo de vida de las ``cookies`` de sesión, especificando la duración (en segundos) usando la clave ``cookie_lifetime`` en el argumento ``$options`` del constructor en :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\NativeSessionStorage`.
-
-Establecer una ``cookie_lifetime`` a ``0`` provocará que la ``cookie`` viva sólo mientras el navegador sigue abierto. En general, ``cookie_lifetime`` se establece en un número de días, semanas o meses relativamente grande. No es raro dejar ``cookies`` durante un año o más, dependiendo de la aplicación.
-
-Dado que las ``cookies`` de sesión son sólo una muestra del lado del cliente, estas son menos importantes al controlar los detalles de la configuración de seguridad que en última instancia sólo se pueden controlar en el lado del servidor.
-
-.. note::
-
-    La opción ``cookie_lifetime`` es el número de segundos que la ``cookie`` debería vivir, esta no es una marca de tiempo Unix. La ``cookie`` de sesión resultante será sellada durante un plazo de ``time()`` + ``cookie_lifetime`` donde el tiempo se toma desde el servidor.
-
-Configurando la recolección de basura
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Cuando se abre una sesión, *PHP* llama aleatoriamente al controlador ``gc`` de acuerdo a la probabilidad establecida por ``session.gc_probability`` / ``session.gc_divisor``. Por ejemplo, si éstos se establecieron en ``5/100``, respectivamente, significaría una probabilidad del 5%. Del mismo modo, ``3/4`` significaría invocarlo en 3 de cada 4 oportunidades, es decir, un 75%.
-
-Si se invoca el controlador de la recolección de basura, *PHP* pasará el valor almacenado en la directiva ``ini`` ``session.gc_maxlifetime`` de *PHP*. El significado en este contexto es que cualquier sesión almacenada que se guardó más de ``maxlifetime`` se debería suprimir. Esto le permite a uno expirar los registros basándose en el tiempo de inactividad.
-
-Puedes configurar estas opciones pasando ``gc_probability``, ``gc_divisor`` y ``gc_maxlifetime`` en una matriz al constructor de :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\NativeSessionStorage` o al método :method:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\NativeSessionStorage::setOptions()`.
-
-Tiempo de vida de la sesión
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Cuando se crea una nueva sesión, significa que *Symfony2* emite una nueva ``cookie`` de sesión para el cliente, la ``cookie`` será sellada con un tiempo de caducidad. Este se calcula sumando el valor de configuración de ``session.cookie_lifetime`` en *PHP* con la hora actual del servidor.
-
-.. note::
-
-    *PHP* sólo emitirá una ``cookie`` una vez. Se espera que el cliente guarde esa ``cookie`` toda la vida. Sólo se otorgará una nueva ``cookie`` cuando la sesión sea destruida, se elimine la ``cookie`` en el navegador, o se vuelva a regenerar el identificador de sesión usando los métodos ``migrate()`` o ``invalidate()`` de la clase ``Session``.
-
-    La duración inicial de la ``cookie`` se puede establecer configurando ``NativeSessionStorage`` utilizando el método ``setOptions(array('cookie_lifetime' => 1234))``.
-
-.. note::
-
-    Una duración de ``0`` en la ``cookie`` significa que la ``cookie`` expira al cerrar el navegador.
-
-Tiempo de inactividad/Mantener viva la sesión
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A menudo hay circunstancias en las que posiblemente quieras proteger, o reducir al mínimo el uso no autorizado de una sesión cuando un usuario se aleja de su terminal mientras está conectado destruyendo la sesión después de cierto período de tiempo de inactividad. Por ejemplo, es común que las aplicaciones de banca cierren la sesión después de sólo 5 a 10 minutos de inactividad. Ajustar la duración de la ``cookie`` aquí no es apropiado debido a que el cliente la puede manipular, por lo que debemos hacer la expiración de lado del servidor. La forma más fácil es implementarla a través de la recolección de basura la cual se ejecuta con razonable frecuencia. El ``lifetime`` de la ``cookie`` se establece a un valor relativamente alto, y la recolección de basura ``maxlifetime`` se establecería para destruir sesiones en cualquiera que sea el período de inactividad deseado.
-
-La otra opción es comprobar específicamente si una sesión ha caducado después de haber iniciado la sesión. La sesión se puede destruir si es necesario. Este método de procesamiento puede permitir la integración de la expiración de sesiones en la experiencia del usuario, por ejemplo, visualizando un mensaje.
-
-*Symfony2* registra algunos metadatos básicos acerca de cada sesión para darte completa libertad en este ámbito.
-
-Metadatos de sesión
-~~~~~~~~~~~~~~~~~~~
-
-Las sesiones están decoradas con un poco de metadatos básicos para permitirte un control preciso sobre la configuración de seguridad. El objeto ``Sesión`` tiene un captador de metadatos, :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::getMetadataBag` que
-expone una instancia de :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\MetadataBag`::
-
-    $session->getMetadataBag()->getCreated();
-    $session->getMetadataBag()->getLastUsed();
-
-Ambos métodos devuelven una marca de tiempo Unix (relativa al servidor).
-
-Puedes utilizar estos metadatos para expirar la sesión explícitamente en el acceso, por ejemplo::
-
-    $session->start();
-    if (time() - $session->getMetadataBag()->getLastUpdate() > $maxIdleTime) {
-        $session->invalidate();
-        throw new SessionExpired(); // redirige a la página de sesión expirada
-    }
-
-También es posible decir cuál es el ``cookie_lifetime`` establecido en una ``cookie`` en particular leyendo el método ``getLifetime()``::
-
-    $session->getMetadataBag()->getLifetime();
-
-Puedes determinar el tiempo de caducidad de la ``cookie`` sumando la fecha y hora de creación y el ``lifetime``.
-
-.. _`php.net/session.customhandler`: http://www.php.net/manual/es/session.customhandler.php
-.. _`php.net/session.configuration`: http://dk2.php.net/session.configuration

@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Compilando el contenedor &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.14',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Inyección de dependencias" href="index.html" />
+    <link rel="next" title="Cómo utilizar el patrón factoría para crear servicios" href="factories.html" />
+    <link rel="prev" title="Trabajando con contenedores de parámetros y definiciones" href="definitions.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="factories.html" title="Cómo utilizar el patrón factoría para crear servicios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="definitions.html" title="Trabajando con contenedores de parámetros y definiciones"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="compilando-el-contenedor">
+<h1>Compilando el contenedor<a class="headerlink" href="#compilando-el-contenedor" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El contenedor de servicios se puede compilar por varios motivos. Estas razones incluyen la comprobación de posibles problemas, tales como referencias circulares y el transporte más eficiente de contenedores usando la resolución de parámetros y la remoción de servicios no utilizados.</p>
+<p>Se compila ejecutando:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span><span class="o">-&gt;</span><span class="na">compile</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>El método de compilación utiliza &#8220;<tt class="docutils literal"><span class="pre">Compiler</span> <span class="pre">Passes</span></tt>&#8221; para la compilación. El componente <em>Inyección de dependencias</em> viene con varios pases que se registran automáticamente para la compilación. Por ejemplo, la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Compiler\CheckDefinitionValidityPass</span></tt> comprueba varios potenciales problemas relacionados con las definiciones que se han establecido en el contenedor. Después de este y varios otros pases que comprueban la validez del contenedor, se utilizan pases adicionales del compilador para optimizar la configuración antes de almacenarla en caché. Por ejemplo, se quitan los servicios privados y abstractos, y se resuelven los alias.</p>
+<div class="section" id="creando-un-pase-del-compilador">
+<h2>Creando un pase del compilador<a class="headerlink" href="#creando-un-pase-del-compilador" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>También puedes crear y registrar tu propio pase del compilador en el contenedor.
+Para crear un pase del compilador tienes que implementar la interfaz <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface</span></tt>. El compilador te brinda la oportunidad de manipular las definiciones de los servicios que se han compilado. Esto puede ser muy poderoso, pero no es algo necesario en el uso cotidiano.</p>
+<p>El pase del compilador debe tener el método <tt class="docutils literal"><span class="pre">process</span></tt> que se pasa al contenedor compilado:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">process</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+<span class="p">{</span>
+   <span class="c1">//--</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Los parámetros del contenedor y las definiciones se pueden manipular usando los métodos descritos en <a class="reference internal" href="definitions.html"><em>Trabajando con contenedores de parámetros y definiciones</em></a>.
+Una cosa común por hacer en un pase del compilador es buscar todos los servicios que tienen una determinada etiqueta, a fin de procesarla de alguna manera o dinámicamente conectar cada una con algún otro servicio.</p>
+</div>
+<div class="section" id="gestionando-la-configuracion-con-extensiones">
+<h2>Gestionando la configuración con extensiones<a class="headerlink" href="#gestionando-la-configuracion-con-extensiones" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Así como cargar la configuración directamente en el contenedor como se muestra en <a class="reference internal" href="introduction.html"><em>El componente Inyección de dependencias</em></a>, la puedes gestionar registrando extensiones en el contenedor. Las extensiones deben implementar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Extension\ExtensionInterface</span></tt> y las puedes registrar en el contenedor con:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span><span class="o">-&gt;</span><span class="na">registerExtension</span><span class="p">(</span><span class="nv">$extension</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>El trabajo principal de la extensión se realiza en el método <tt class="docutils literal"><span class="pre">load</span></tt>. En el método <tt class="docutils literal"><span class="pre">load</span></tt> puedes cargar la configuración desde uno o más archivos de configuración, así como manipular las definiciones del contenedor utilizando los métodos indicados en <a class="reference internal" href="definitions.html"><em>Trabajando con contenedores de parámetros y definiciones</em></a>.</p>
+<p>Al método <tt class="docutils literal"><span class="pre">load</span></tt> se le pasa un nuevo contenedor para configurarlo, el cual posteriormente se fusiona en el contenedor con el que se haya registrado. Esto te permite tener varias extensiones para gestionar las definiciones del contenedor de forma independiente.
+Las extensiones no agregan configuración a los contenedores cuando se añaden, pero se procesan cuando se llama al método <tt class="docutils literal"><span class="pre">compile</span></tt> del contenedor.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si necesitas manipular la configuración cargada por una extensión, entonces no lo puedes hacer desde otra extensión, ya que esta utiliza un contenedor nuevo.
+En su lugar, debes utilizar un pase del compilador que trabaje con el contenedor completo después de haber procesado las extensiones.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="factories.html" title="Cómo utilizar el patrón factoría para crear servicios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="definitions.html" title="Trabajando con contenedores de parámetros y definiciones"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en May 21, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

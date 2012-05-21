@@ -1,0 +1,281 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Configurando sesiones y controladores de guardado &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.14',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Fundamento HTTP" href="index.html" />
+    <link rel="next" title="Probando con sesiones" href="session_testing.html" />
+    <link rel="prev" title="Gestión de la sesión" href="sessions.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="session_testing.html" title="Probando con sesiones"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="sessions.html" title="Gestión de la sesión"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Fundamento <em>HTTP</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="configurando-sesiones-y-controladores-de-guardado">
+<span id="index-0"></span><h1>Configurando sesiones y controladores de guardado<a class="headerlink" href="#configurando-sesiones-y-controladores-de-guardado" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Esta sección se ocupa de cómo configurar la gestión de sesiones y ajustarla a tus necesidades específicas. Esta documentación incluye los controladores de guardado, que almacenan y recuperan datos de la sesión y configuración del comportamiento de la sesión.</p>
+<div class="section" id="controladores-de-guardado">
+<h2>Controladores de guardado<a class="headerlink" href="#controladores-de-guardado" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El flujo de trabajo en la sesión <em>PHP</em> tiene 6 posibles operaciones que pueden ocurrir.  El flujo de sesión normal sigue el proceso de <tt class="docutils literal"><span class="pre">apertura</span></tt>, <tt class="docutils literal"><span class="pre">lectura</span></tt>, <tt class="docutils literal"><span class="pre">escritura</span></tt> y  <tt class="docutils literal"><span class="pre">cierre</span></tt>, con la posibilidad de <tt class="docutils literal"><span class="pre">destrucción</span></tt> y <tt class="docutils literal"><span class="pre">gc</span></tt> (por <tt class="docutils literal"><span class="pre">garbage</span> <span class="pre">collection</span></tt> o recolección de basura, la cual cerrará todas las sesiones abiertas: la <cite>gc</cite> se invoca aleatoriamente de acuerdo a la configuración de <em>PHP</em> y si es llamada directamente, su invocación se difiere hasta después de una operación de <tt class="docutils literal"><span class="pre">apertura</span></tt>).  Puedes leer más sobre esto en <a class="reference external" href="http://www.php.net/manual/es/session.customhandler.php">php.net/session.customhandler</a></p>
+<div class="section" id="controladores-de-guardado-nativos-de-php">
+<h3>Controladores de guardado nativos de <em>PHP</em><a class="headerlink" href="#controladores-de-guardado-nativos-de-php" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Los llamados controladores &#8216;nativos&#8217;, son controladores de guardado que son o bien compilados en <em>PHP</em> o proporcionados por extensiones <em>PHP</em>, como <em>PHP SQLite</em>, <em>PHP-Memcached</em>, etc.</p>
+<p>Todos los controladores de guardado nativos son internos a <em>PHP</em> y como tal, no tienen enfrente <em>API</em> pública.
+Ellos deben estar configurados en las directivas <tt class="docutils literal"><span class="pre">ini</span></tt> de <em>PHP</em>, por lo general <tt class="docutils literal"><span class="pre">session.save_path</span></tt> y potencialmente otros controladores específicos para la directiva. Puedes encontrar los detalles específicos en el bloque de documentación del método <tt class="docutils literal"><span class="pre">setOptions()</span></tt> de cada clase.</p>
+<p>Mientras los controladores de guardado nativos se pueden activar utilizando directamente <tt class="docutils literal"><span class="pre">ini_set('session.save_handler',</span> <span class="pre">$nombre);</span></tt>, <em>Symfony2</em> proporciona una manera conveniente de activar estos en la misma forma que los controladores personalizados.</p>
+<p><em>Symfony2</em> proporciona controladores para los siguientes controladores de guardado nativos:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeFileSessionHandler</span></tt></li>
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeSqliteSessionHandler</span></tt></li>
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeMemcacheSessionHandler</span></tt></li>
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeMemcachedSessionHandler</span></tt></li>
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeRedisSessionHandler</span></tt></li>
+</ul>
+</div></blockquote>
+<p>Ejemplo de uso:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Session\Session</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeMemcachedSessionHandler</span><span class="p">;</span>
+
+<span class="nv">$storage</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">NativeSessionStorage</span><span class="p">(</span><span class="k">array</span><span class="p">(),</span> <span class="k">new</span> <span class="nx">NativeMemcachedSessionHandler</span><span class="p">());</span>
+<span class="nv">$session</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Session</span><span class="p">(</span><span class="nv">$storage</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Salvo el controlador <tt class="docutils literal"><span class="pre">files</span></tt> que está integrado en <em>PHP</em> y siempre disponible, la disponibilidad de los otros controladores depende de las extensiones de <em>PHP</em> activas en tiempo de ejecución.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Los controladores de guardado nativos proporcionan una rápida solución de almacenamiento de sesión, sin embargo, en sistemas complejos donde se necesita más control, los controladores de guardado personalizados pueden proporcionar más libertad y flexibilidad.
+<em>Symfony2</em> proporciona varias implementaciones que se pueden personalizar aún más según sea necesario.</p>
+</div>
+</div>
+<div class="section" id="controladores-de-guardado-personalizados">
+<h3>Controladores de guardado personalizados<a class="headerlink" href="#controladores-de-guardado-personalizados" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Los controladores personalizados son aquellos que sustituyen por completo a los controladores de guardado de sesión integrados en <em>PHP</em>, proveyendo seis funciones retrollamadas que <em>PHP</em> invoca internamente en varios puntos en el flujo de trabajo de la sesión.</p>
+<p><em>HttpFoundation</em> de <em>Symfony2</em>, por omisión, ofrece algunos de estos y fácilmente te pueden servir como
+ejemplos, si quieres escribir uno propio.</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler</span></tt></li>
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\MemcacheSessionHandler</span></tt></li>
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\MemcachedSessionHandler</span></tt></li>
+<li><tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\NullSessionHandler</span></tt></li>
+</ul>
+</div></blockquote>
+<p>Ejemplo de uso:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Session\Session</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Session\Storage\SessionStorage</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler</span><span class="p">;</span>
+
+<span class="nv">$storage</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">NativeSessionStorage</span><span class="p">(</span><span class="k">array</span><span class="p">(),</span> <span class="k">new</span> <span class="nx">PdoSessionHandler</span><span class="p">());</span>
+<span class="nv">$session</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Session</span><span class="p">(</span><span class="nv">$storage</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="configurando-sesiones-php">
+<h2>Configurando sesiones <em>PHP</em><a class="headerlink" href="#configurando-sesiones-php" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage</span></tt> puede ajustar la mayoría de las directivas de configuración de <em>PHP</em>, las cuales están documentadas en <a class="reference external" href="http://dk2.php.net/session.configuration">php.net/session.configuration</a>.</p>
+<p>Para configurar estas opciones, pasa las claves (omitiendo la primera parte <tt class="docutils literal"><span class="pre">session.</span></tt> de la clave) como una matriz de clave/valor como el argumento <tt class="docutils literal"><span class="pre">$options</span></tt> del constructor.
+O ajústalas a través del método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpFoundation/Session/Storage/NativeSessionStorage.html#setOptions()" title="Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage::setOptions()"><span class="pre">setOptions()</span></a></tt>.</p>
+<p>En aras de la claridad, algunas de las opciones principales se explican en esta documentación.</p>
+</div>
+<div class="section" id="duracion-de-la-cookie-de-sesion">
+<h2>Duración de la <tt class="docutils literal"><span class="pre">cookie</span></tt> de sesión<a class="headerlink" href="#duracion-de-la-cookie-de-sesion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para mayor seguridad, generalmente se recomienda enviar fragmentos de sesión como <tt class="docutils literal"><span class="pre">cookies</span></tt> de sesión.
+Puedes configurar el tiempo de vida de las <tt class="docutils literal"><span class="pre">cookies</span></tt> de sesión, especificando la duración (en segundos) usando la clave <tt class="docutils literal"><span class="pre">cookie_lifetime</span></tt> en el argumento <tt class="docutils literal"><span class="pre">$options</span></tt> del constructor en <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage</span></tt>.</p>
+<p>Establecer una <tt class="docutils literal"><span class="pre">cookie_lifetime</span></tt> a <tt class="docutils literal"><span class="pre">0</span></tt> provocará que la <tt class="docutils literal"><span class="pre">cookie</span></tt> viva sólo mientras el navegador sigue abierto. En general, <tt class="docutils literal"><span class="pre">cookie_lifetime</span></tt> se establece en un número de días, semanas o meses relativamente grande. No es raro dejar <tt class="docutils literal"><span class="pre">cookies</span></tt> durante un año o más, dependiendo de la aplicación.</p>
+<p>Dado que las <tt class="docutils literal"><span class="pre">cookies</span></tt> de sesión son sólo una muestra del lado del cliente, estas son menos importantes al controlar los detalles de la configuración de seguridad que en última instancia sólo se pueden controlar en el lado del servidor.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">La opción <tt class="docutils literal"><span class="pre">cookie_lifetime</span></tt> es el número de segundos que la <tt class="docutils literal"><span class="pre">cookie</span></tt> debería vivir, esta no es una marca de tiempo Unix. La <tt class="docutils literal"><span class="pre">cookie</span></tt> de sesión resultante será sellada durante un plazo de <tt class="docutils literal"><span class="pre">time()</span></tt> + <tt class="docutils literal"><span class="pre">cookie_lifetime</span></tt> donde el tiempo se toma desde el servidor.</p>
+</div>
+</div>
+<div class="section" id="configurando-la-recoleccion-de-basura">
+<h2>Configurando la recolección de basura<a class="headerlink" href="#configurando-la-recoleccion-de-basura" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuando se abre una sesión, <em>PHP</em> llama aleatoriamente al controlador <tt class="docutils literal"><span class="pre">gc</span></tt> de acuerdo a la probabilidad establecida por <tt class="docutils literal"><span class="pre">session.gc_probability</span></tt> / <tt class="docutils literal"><span class="pre">session.gc_divisor</span></tt>. Por ejemplo, si éstos se establecieron en <tt class="docutils literal"><span class="pre">5/100</span></tt>, respectivamente, significaría una probabilidad del 5%. Del mismo modo, <tt class="docutils literal"><span class="pre">3/4</span></tt> significaría invocarlo en 3 de cada 4 oportunidades, es decir, un 75%.</p>
+<p>Si se invoca el controlador de la recolección de basura, <em>PHP</em> pasará el valor almacenado en la directiva <tt class="docutils literal"><span class="pre">ini</span></tt> <tt class="docutils literal"><span class="pre">session.gc_maxlifetime</span></tt> de <em>PHP</em>. El significado en este contexto es que cualquier sesión almacenada que se guardó más de <tt class="docutils literal"><span class="pre">maxlifetime</span></tt> se debería suprimir. Esto le permite a uno expirar los registros basándose en el tiempo de inactividad.</p>
+<p>Puedes configurar estas opciones pasando <tt class="docutils literal"><span class="pre">gc_probability</span></tt>, <tt class="docutils literal"><span class="pre">gc_divisor</span></tt> y <tt class="docutils literal"><span class="pre">gc_maxlifetime</span></tt> en una matriz al constructor de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage</span></tt> o al método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpFoundation/Session/Storage/NativeSessionStorage.html#setOptions()()" title="Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage::setOptions()()"><span class="pre">setOptions()()</span></a></tt>.</p>
+</div>
+<div class="section" id="tiempo-de-vida-de-la-sesion">
+<h2>Tiempo de vida de la sesión<a class="headerlink" href="#tiempo-de-vida-de-la-sesion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuando se crea una nueva sesión, significa que <em>Symfony2</em> emite una nueva <tt class="docutils literal"><span class="pre">cookie</span></tt> de sesión para el cliente, la <tt class="docutils literal"><span class="pre">cookie</span></tt> será sellada con un tiempo de caducidad. Este se calcula sumando el valor de configuración de <tt class="docutils literal"><span class="pre">session.cookie_lifetime</span></tt> en <em>PHP</em> con la hora actual del servidor.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p><em>PHP</em> sólo emitirá una <tt class="docutils literal"><span class="pre">cookie</span></tt> una vez. Se espera que el cliente guarde esa <tt class="docutils literal"><span class="pre">cookie</span></tt> toda la vida. Sólo se otorgará una nueva <tt class="docutils literal"><span class="pre">cookie</span></tt> cuando la sesión sea destruida, se elimine la <tt class="docutils literal"><span class="pre">cookie</span></tt> en el navegador, o se vuelva a regenerar el identificador de sesión usando los métodos <tt class="docutils literal"><span class="pre">migrate()</span></tt> o <tt class="docutils literal"><span class="pre">invalidate()</span></tt> de la clase <tt class="docutils literal"><span class="pre">Session</span></tt>.</p>
+<p class="last">La duración inicial de la <tt class="docutils literal"><span class="pre">cookie</span></tt> se puede establecer configurando <tt class="docutils literal"><span class="pre">NativeSessionStorage</span></tt> utilizando el método <tt class="docutils literal"><span class="pre">setOptions(array('cookie_lifetime'</span> <span class="pre">=&gt;</span> <span class="pre">1234))</span></tt>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Una duración de <tt class="docutils literal"><span class="pre">0</span></tt> en la <tt class="docutils literal"><span class="pre">cookie</span></tt> significa que la <tt class="docutils literal"><span class="pre">cookie</span></tt> expira al cerrar el navegador.</p>
+</div>
+</div>
+<div class="section" id="tiempo-de-inactividad-mantener-viva-la-sesion">
+<h2>Tiempo de inactividad/Mantener viva la sesión<a class="headerlink" href="#tiempo-de-inactividad-mantener-viva-la-sesion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A menudo hay circunstancias en las que posiblemente quieras proteger, o reducir al mínimo el uso no autorizado de una sesión cuando un usuario se aleja de su terminal mientras está conectado destruyendo la sesión después de cierto período de tiempo de inactividad. Por ejemplo, es común que las aplicaciones de banca cierren la sesión después de sólo 5 a 10 minutos de inactividad. Ajustar la duración de la <tt class="docutils literal"><span class="pre">cookie</span></tt> aquí no es apropiado debido a que el cliente la puede manipular, por lo que debemos hacer la expiración de lado del servidor. La forma más fácil es implementarla a través de la recolección de basura la cual se ejecuta con razonable frecuencia. El <tt class="docutils literal"><span class="pre">lifetime</span></tt> de la <tt class="docutils literal"><span class="pre">cookie</span></tt> se establece a un valor relativamente alto, y la recolección de basura <tt class="docutils literal"><span class="pre">maxlifetime</span></tt> se establecería para destruir sesiones en cualquiera que sea el período de inactividad deseado.</p>
+<p>La otra opción es comprobar específicamente si una sesión ha caducado después de haber iniciado la sesión. La sesión se puede destruir si es necesario. Este método de procesamiento puede permitir la integración de la expiración de sesiones en la experiencia del usuario, por ejemplo, visualizando un mensaje.</p>
+<p><em>Symfony2</em> registra algunos metadatos básicos acerca de cada sesión para darte completa libertad en este ámbito.</p>
+</div>
+<div class="section" id="metadatos-de-sesion">
+<h2>Metadatos de sesión<a class="headerlink" href="#metadatos-de-sesion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Las sesiones están decoradas con un poco de metadatos básicos para permitirte un control preciso sobre la configuración de seguridad. El objeto <tt class="docutils literal"><span class="pre">Sesión</span></tt> tiene un captador de metadatos, <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpFoundation/Session/Session.html#getMetadataBag()" title="Symfony\Component\HttpFoundation\Session\Session::getMetadataBag()"><span class="pre">getMetadataBag()</span></a></tt> que
+expone una instancia de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\MetadataBag</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$session</span><span class="o">-&gt;</span><span class="na">getMetadataBag</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getCreated</span><span class="p">();</span>
+<span class="nv">$session</span><span class="o">-&gt;</span><span class="na">getMetadataBag</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getLastUsed</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Ambos métodos devuelven una marca de tiempo Unix (relativa al servidor).</p>
+<p>Puedes utilizar estos metadatos para expirar la sesión explícitamente en el acceso, por ejemplo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$session</span><span class="o">-&gt;</span><span class="na">start</span><span class="p">();</span>
+<span class="k">if</span> <span class="p">(</span><span class="nb">time</span><span class="p">()</span> <span class="o">-</span> <span class="nv">$session</span><span class="o">-&gt;</span><span class="na">getMetadataBag</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getLastUpdate</span><span class="p">()</span> <span class="o">&gt;</span> <span class="nv">$maxIdleTime</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$session</span><span class="o">-&gt;</span><span class="na">invalidate</span><span class="p">();</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nx">SessionExpired</span><span class="p">();</span> <span class="c1">// redirige a la página de sesión expirada</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>También es posible decir cuál es el <tt class="docutils literal"><span class="pre">cookie_lifetime</span></tt> establecido en una <tt class="docutils literal"><span class="pre">cookie</span></tt> en particular leyendo el método <tt class="docutils literal"><span class="pre">getLifetime()</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$session</span><span class="o">-&gt;</span><span class="na">getMetadataBag</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getLifetime</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>Puedes determinar el tiempo de caducidad de la <tt class="docutils literal"><span class="pre">cookie</span></tt> sumando la fecha y hora de creación y el <tt class="docutils literal"><span class="pre">lifetime</span></tt>.</p>
+</div>
+<div class="section" id="compatibilidad-con-php-5-4">
+<h2>Compatibilidad con <em>PHP 5.4</em><a class="headerlink" href="#compatibilidad-con-php-5-4" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A partir de <em>PHP 5.4.0</em>, están disponibles <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/class.sessionhandler.php" title="SessionHandler"><span class="pre">SessionHandler</span></a></tt> y <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/class.sessionhandlerinterface.php" title="SessionHandlerInterface"><span class="pre">SessionHandlerInterface</span></a></tt>. <em>Symfony 2.1</em> proporciona compatibilidad para <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/class.sessionhandlerinterface.php" title="SessionHandlerInterface"><span class="pre">SessionHandlerInterface</span></a></tt> por lo tanto la puedes utilizar en <em>PHP 5.3</em>. Esto, gratamente mejora la interoperabilidad con otras bibliotecas.</p>
+<p><tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/class.sessionhandler.php" title="SessionHandler"><span class="pre">SessionHandler</span></a></tt> es una clase interna especial de <em>PHP</em> que expone los controladores de guardado nativos para el espacio de usuario de <em>PHP</em>.</p>
+<p>Con el fin de proporcionar una solución para aquellos que utilizan <em>PHP 5.4</em>, <em>Symfony2</em> tiene una clase especial llamada <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeSessionHandler</span></tt> que bajo <em>PHP 5.4</em>, se extiende desde <cite>SessionHandler</cite> y bajo <em>PHP 5.3</em> es sólo una clase base vacía. Esto proporciona interesantes oportunidades para aprovechar la funcionalidad de <em>PHP 5.4</em> si está disponible.</p>
+</div>
+<div class="section" id="controladores-delegados-de-guardado">
+<h2>Controladores delegados de guardado<a class="headerlink" href="#controladores-delegados-de-guardado" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Hay dos tipos de controladores delegados de clases de guardado que heredan de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\AbstractProxy</span></tt>:
+estas son <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeProxy</span></tt> y <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\SessionHandlerProxy</span></tt>.</p>
+<p>La <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage</span></tt> automáticamente inyecta los controladores de guardado en un controlador de guardado delegado, a menos que ya lo envuelva uno.</p>
+<p>La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeProxy</span></tt> se utiliza automáticamente en <em>PHP 5.3</em>, cuando los controladores de guardado internos de <em>PHP</em> se especifican usando las clases <tt class="docutils literal"><span class="pre">Native*SessionHandler</span></tt>, mientras que la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\Handler\SessionHandlerProxy</span></tt> se utiliza para envolver cualquier controlador de guardado personalizado, esta implementa la <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/class.sessionhandlerinterface.php" title="SessionHandlerInterface"><span class="pre">SessionHandlerInterface</span></a></tt>.</p>
+<p>En <em>PHP 5.4</em> y superior, todos los controladores de sesión implementan la <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/class.sessionhandlerinterface.php" title="SessionHandlerInterface"><span class="pre">SessionHandlerInterface</span></a></tt> incluyendo las clases <tt class="docutils literal"><span class="pre">Native*SessionHandler</span></tt> que heredan de <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/class.sessionhandler.php" title="SessionHandler"><span class="pre">SessionHandler</span></a></tt>.</p>
+<p>El mecanismo delegado te permite involucrarte profundamente en las clases controladoras del guardado de sesiones. Podrías utilizar un delegado, por ejemplo, para cifrar cualquier transacción de la sesión sin el conocimiento específico del controlador de guardado.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="session_testing.html" title="Probando con sesiones"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="sessions.html" title="Gestión de la sesión"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Fundamento <em>HTTP</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en May 21, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

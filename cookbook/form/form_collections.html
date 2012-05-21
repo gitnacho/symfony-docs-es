@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.13',
+        VERSION:     '2.0.14',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -291,6 +291,12 @@
 <p>Cuando el usuario envía el formulario, los datos presentados por los campos <tt class="docutils literal"><span class="pre">Tag</span></tt> se utilizan para construir un <tt class="docutils literal"><span class="pre">ArrayCollection</span></tt> de los objetos <tt class="docutils literal"><span class="pre">Tag</span></tt>, que luego se establecen en el campo <tt class="docutils literal"><span class="pre">tag</span></tt> de la instancia <tt class="docutils literal"><span class="pre">Tarea</span></tt>.</p>
 <p>La colección <tt class="docutils literal"><span class="pre">Tags</span></tt>, naturalmente, es accesible a través de <tt class="docutils literal"><span class="pre">$task-&gt;getTags()</span></tt> y se puede persistir en la base de datos o utilizar sin embargo donde sea necesaria.</p>
 <p>Hasta el momento, esto funciona muy bien, pero aún no te permite agregar dinámicamente nuevas etiquetas o eliminar existentes. Por lo tanto, durante la edición de etiquetas existentes funcionará bien, tu usuario en realidad no puede añadir ninguna nueva etiqueta, todavía.</p>
+<div class="admonition caution">
+<p class="first admonition-title">Prudencia</p>
+<p>En esta entrada, integramos una sola colección, pero no estás limitado a esto. También puedes integrar colecciones anidadas con tantos niveles descendientes como quieras. Pero si utilizas <em>XDebug</em> en tu configuración de desarrollo, puedes recibir un error <tt class="docutils literal"><span class="pre">La</span> <span class="pre">función</span> <span class="pre">alcanzó</span> <span class="pre">el</span> <span class="pre">máximo</span> <span class="pre">nivel</span> <span class="pre">de</span> <span class="pre">anidamiento</span> <span class="pre">de</span> <span class="pre">'100',</span> <span class="pre">¡abortando!</span></tt>.
+Esto se debe a la opción <tt class="docutils literal"><span class="pre">xdebug.max_nesting_level</span></tt> de <em>PHP</em>, que por omisión es de <tt class="docutils literal"><span class="pre">100</span></tt>.</p>
+<p class="last">Esta directiva limita la recursividad a 100 llamadas que pueden no ser suficientes para reproducir el formulario en la plantilla si pintas todo el formulario de una vez (por ejemplo, <tt class="docutils literal"><span class="pre">form_widget(form)</span></tt>). Para solucionar este problema puedes redefinir esta directiva a un valor más alto (ya sea a través de un archivo <tt class="docutils literal"><span class="pre">ini</span></tt> de <em>PHP</em> o por medio de <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/function.ini-set.php" title="ini_set"><span class="pre">ini_set</span></a></tt>, por ejemplo, en <tt class="docutils literal"><span class="pre">app/autoload.php</span></tt>) o pintar cada campo del formulario a mano usando <tt class="docutils literal"><span class="pre">form_row</span></tt>.</p>
+</div>
 <div class="section" id="permitiendo-nuevas-etiquetas-con-el-prototipo">
 <span id="cookbook-form-collections-new-prototype"></span><h2>Permitiendo &#8220;nuevas&#8221; etiquetas con el &#8220;prototipo&#8221;<a class="headerlink" href="#permitiendo-nuevas-etiquetas-con-el-prototipo" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Permitir al usuario añadir nuevas etiquetas dinámicamente significa que necesitarás usar algo de <em>JavaScript</em>. Anteriormente, añadimos dos etiquetas a nuestro formulario en el controlador.
@@ -366,8 +372,8 @@ Para simplificar las cosas, vamos a usar <em>jQuery</em> que, se supone, lo has 
         <span class="c1">// evita crear el enlace con una &quot;#&quot; en la URL</span>
         <span class="nx">e</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
 
-        <span class="c1">// Añade una nueva etiqueta al formulario (ve el siguiente bloque de código)</span>
-        <span class="nx">addTagForm</span><span class="p">();</span>
+        <span class="c1">// añade una nueva etiqueta form (ve el siguiente bloque de código)</span>
+        <span class="nx">addTagForm</span><span class="p">(</span><span class="nx">collectionHolder</span><span class="p">,</span> <span class="nx">$newLinkLi</span><span class="p">);</span>
     <span class="p">});</span>
 <span class="p">});</span>
 </pre></div>
@@ -376,7 +382,7 @@ Para simplificar las cosas, vamos a usar <em>jQuery</em> que, se supone, lo has 
 <p class="versionadded">
 <span class="versionmodified">Nuevo en la versión 2.1: </span>El marcador de posición cambió de nombre de <tt class="docutils literal"><span class="pre">$$name$$</span></tt> a <tt class="docutils literal"><span class="pre">__name__</span></tt> en <em>Symfony 2.1</em></p>
 <p>El código real necesario para hacer que todo esto trabaje puede variar un poco, pero aquí está un ejemplo:</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span class="kd">function</span> <span class="nx">addTagForm</span><span class="p">()</span> <span class="p">{</span>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="kd">function</span> <span class="nx">addTagForm</span><span class="p">(</span><span class="nx">collectionHolder</span><span class="p">,</span> <span class="nx">$newLinkLi</span><span class="p">)</span> <span class="p">{</span>
     <span class="c1">// Obtiene el data-prototype que explicamos anteriormente</span>
     <span class="kd">var</span> <span class="nx">prototype</span> <span class="o">=</span> <span class="nx">collectionHolder</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="s1">&#39;data-prototype&#39;</span><span class="p">);</span>
 
@@ -619,7 +625,7 @@ A menos que tengas una relación <tt class="docutils literal"><span class="pre">
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en May 07, 2012.
+      Actualizado por última vez en May 21, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

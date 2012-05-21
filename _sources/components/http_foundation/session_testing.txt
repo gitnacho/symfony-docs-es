@@ -1,0 +1,43 @@
+.. index::
+   single: HTTP
+   single: HttpFoundation, Sesiones
+
+Probando con sesiones
+=====================
+
+*Symfony2* se diseñó desde el principio con la comprobabilidad de código en mente. Con el fin de hacer que el código que utiliza la sesión sea fácilmente comprobable, disponemos de dos mecanismos de almacenamiento independientes para simular ambas, pruebas unitarias y pruebas funcionales.
+
+Probar el código usando sesiones reales es difícil porque el estado del flujo de trabajo de *PHP* es global y no es posible tener varias sesiones simultáneas en el mismo proceso *PHP*.
+
+Los motores de almacenamiento fingido simulan el flujo de trabajo de las sesiones *PHP* sin tener que iniciar una, lo cual te permite probar tu código sin complicaciones. También es posible ejecutar varias instancias en el mismo proceso *PHP*.
+
+Los controladores de almacenamiento simulado no leen ni escriben las globales del sistema ``session_id()`` o ``session_name()``. Y proporcionan métodos para simularlas de ser necesario:
+
+* :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionStorageInterface::getId`: Recupera el ``id`` de la sesión.
+
+* :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionStorageInterface::setId`: Establece el ``id`` de la sesión.
+
+* :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionStorageInterface::getName`: Recupera el nombre de la sesión.
+
+* :method:`Symfony\\Component\\HttpFoundation\\Session\\SessionStorageInterface::setName`: Establece el nombre de la sesión.
+
+Pruebas unitarias
+-----------------
+
+Para las pruebas unitarias donde no es necesario persistir la sesión, simplemente debes intercambiar el motor de almacenamiento predefinido con :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\MockArraySessionStorage`::
+
+    use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+    use Symfony\Component\HttpFoundation\Session\Session;
+
+    $session = new Session(new MockArraySessionStorage());
+
+Probando la funcionalidad
+-------------------------
+
+Para las pruebas funcionales donde posiblemente necesites conservar los datos de sesión a través de procesos *PHP* independientes, basta con cambiar el motor de almacenamiento a la clase :class:`Symfony\\Component\\HttpFoundation\\Session\\Storage\\MockFileSessionStorage`::
+
+    use Symfony\Component\HttpFoundation\Session\Session;
+    use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
+
+    $session = new Session(new MockFileSessionStorage());
+

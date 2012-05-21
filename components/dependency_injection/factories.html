@@ -1,0 +1,332 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo utilizar el patrón factoría para crear servicios &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.14',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Inyección de dependencias" href="index.html" />
+    <link rel="next" title="Cómo gestionar dependencias comunes con servicios padre" href="parentservices.html" />
+    <link rel="prev" title="Compilando el contenedor" href="compilation.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="parentservices.html" title="Cómo gestionar dependencias comunes con servicios padre"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="compilation.html" title="Compilando el contenedor"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-utilizar-el-patron-factoria-para-crear-servicios">
+<h1>Cómo utilizar el patrón factoría para crear servicios<a class="headerlink" href="#como-utilizar-el-patron-factoria-para-crear-servicios" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Los contenedores de servicios de <em>Symfony2</em> proporcionan una forma eficaz de controlar la creación de objetos, lo cual te permite especificar los argumentos pasados ​​al constructor, así como llamar a los métodos y establecer parámetros. A veces, sin embargo, esto no te proporcionará todo lo necesario para construir tus objetos.
+Por esta situación, puedes utilizar una factoría para crear el objeto y decirle al contenedor de servicios que llame a un método en la factoría y no crear directamente una instancia del objeto.</p>
+<p>Supongamos que tienes una factoría que configura y devuelve un nuevo objeto <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Newsletter</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">NewsletterFactory</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">get</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$newsletterManager</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">NewsletterManager</span><span class="p">();</span>
+
+        <span class="c1">// ...</span>
+
+        <span class="k">return</span> <span class="nv">$newsletterManager</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Para que el objeto <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt> esté disponible como servicio, puedes configurar el contenedor de servicios para usar la clase factoría <tt class="docutils literal"><span class="pre">NewsletterFactory</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
+parameters:
+    # ...
+    newsletter_manager.class: Acme\HelloBundle\Newsletter\NewsletterManager
+    newsletter_factory.class: Acme\HelloBundle\Newsletter\NewsletterFactory
+services:
+    newsletter_manager:
+        class:          %newsletter_manager.class%
+        factory_class:  %newsletter_factory.class%
+        factory_method: get</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;</span>
+<span class="nt">&lt;parameters&gt;</span>
+    <span class="c">&lt;!-- ... --&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;newsletter_manager.class&quot;</span><span class="nt">&gt;</span>Acme\HelloBundle\Newsletter\NewsletterManager<span class="nt">&lt;/parameter&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;newsletter_factory.class&quot;</span><span class="nt">&gt;</span>Acme\HelloBundle\Newsletter\NewsletterFactory<span class="nt">&lt;/parameter&gt;</span>
+<span class="nt">&lt;/parameters&gt;</span>
+
+    <span class="nt">&lt;services&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;newsletter_manager&quot;</span>
+             <span class="na">class=</span><span class="s">&quot;%newsletter_manager.class%&quot;</span>
+             <span class="na">factory-class=</span><span class="s">&quot;%newsletter_factory.class%&quot;</span>
+             <span class="na">factory-method=</span><span class="s">&quot;get&quot;</span>
+    <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/services&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Resources/config/services.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Newsletter\NewsletterManager&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_factory.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Newsletter\NewsletterFactory&#39;</span><span class="p">);</span>
+
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_manager.class%&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setFactoryClass</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_factory.class%&#39;</span>
+<span class="p">)</span><span class="o">-&gt;</span><span class="na">setFactoryMethod</span><span class="p">(</span>
+    <span class="s1">&#39;get&#39;</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Cuando especificas la clase que utiliza la factoría (a través de <tt class="docutils literal"><span class="pre">factory_class</span></tt>), el método será llamado estáticamente. Si la factoría debe crear una instancia y se llama al método del objeto resultante (como en este ejemplo), configura como servicio la propia factoría:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
+parameters:
+    # ...
+    newsletter_manager.class: Acme\HelloBundle\Newsletter\NewsletterManager
+    newsletter_factory.class: Acme\HelloBundle\Newsletter\NewsletterFactory
+services:
+    newsletter_factory:
+        class:            %newsletter_factory.class%
+    newsletter_manager:
+        class:            %newsletter_manager.class%
+        factory_service:  newsletter_factory
+        factory_method:   get</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;</span>
+<span class="nt">&lt;parameters&gt;</span>
+    <span class="c">&lt;!-- ... --&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;newsletter_manager.class&quot;</span><span class="nt">&gt;</span>Acme\HelloBundle\Newsletter\NewsletterManager<span class="nt">&lt;/parameter&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;newsletter_factory.class&quot;</span><span class="nt">&gt;</span>Acme\HelloBundle\Newsletter\NewsletterFactory<span class="nt">&lt;/parameter&gt;</span>
+<span class="nt">&lt;/parameters&gt;</span>
+
+    <span class="nt">&lt;services&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;newsletter_factory&quot;</span> <span class="na">class=</span><span class="s">&quot;%newsletter_factory.class%&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;newsletter_manager&quot;</span>
+             <span class="na">class=</span><span class="s">&quot;%newsletter_manager.class%&quot;</span>
+             <span class="na">factory-service=</span><span class="s">&quot;newsletter_factory&quot;</span>
+             <span class="na">factory-method=</span><span class="s">&quot;get&quot;</span>
+    <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/services&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Resources/config/services.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Newsletter\NewsletterManager&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_factory.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Newsletter\NewsletterFactory&#39;</span><span class="p">);</span>
+
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_factory&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_factory.class%&#39;</span>
+<span class="p">))</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_manager.class%&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setFactoryService</span><span class="p">(</span>
+    <span class="s1">&#39;newsletter_factory&#39;</span>
+<span class="p">)</span><span class="o">-&gt;</span><span class="na">setFactoryMethod</span><span class="p">(</span>
+    <span class="s1">&#39;get&#39;</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">El servicio factoría se especifica por su nombre de <tt class="docutils literal"><span class="pre">id</span></tt> y no una referencia al propio servicio. Por lo tanto, no es necesario utilizar la sintaxis &#64;.</p>
+</div>
+<div class="section" id="pasando-argumentos-al-metodo-factoria">
+<h2>Pasando argumentos al método factoría<a class="headerlink" href="#pasando-argumentos-al-metodo-factoria" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si tienes que pasar argumentos al método factoría, puedes utilizar la opción <tt class="docutils literal"><span class="pre">arguments</span></tt> dentro del contenedor de servicios. Por ejemplo, supongamos que el método <tt class="docutils literal"><span class="pre">get</span></tt> en el ejemplo anterior tiene el servicio de <tt class="docutils literal"><span class="pre">templating</span></tt> como argumento:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
+parameters:
+    # ...
+    newsletter_manager.class: Acme\HelloBundle\Newsletter\NewsletterManager
+    newsletter_factory.class: Acme\HelloBundle\Newsletter\NewsletterFactory
+services:
+    newsletter_factory:
+        class:            %newsletter_factory.class%
+    newsletter_manager:
+        class:            %newsletter_manager.class%
+        factory_service:  newsletter_factory
+        factory_method:   get
+        arguments:
+            -             @templating</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;</span>
+<span class="nt">&lt;parameters&gt;</span>
+    <span class="c">&lt;!-- ... --&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;newsletter_manager.class&quot;</span><span class="nt">&gt;</span>Acme\HelloBundle\Newsletter\NewsletterManager<span class="nt">&lt;/parameter&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;newsletter_factory.class&quot;</span><span class="nt">&gt;</span>Acme\HelloBundle\Newsletter\NewsletterFactory<span class="nt">&lt;/parameter&gt;</span>
+<span class="nt">&lt;/parameters&gt;</span>
+
+    <span class="nt">&lt;services&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;newsletter_factory&quot;</span> <span class="na">class=</span><span class="s">&quot;%newsletter_factory.class%&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;newsletter_manager&quot;</span>
+             <span class="na">class=</span><span class="s">&quot;%newsletter_manager.class%&quot;</span>
+             <span class="na">factory-service=</span><span class="s">&quot;newsletter_factory&quot;</span>
+             <span class="na">factory-method=</span><span class="s">&quot;get&quot;</span>
+    <span class="nt">&gt;</span>
+        <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;templating&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/service&gt;</span>
+    <span class="nt">&lt;/services&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Resources/config/services.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_manager.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Newsletter\NewsletterManager&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;newsletter_factory.class&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\HelloBundle\Newsletter\NewsletterFactory&#39;</span><span class="p">);</span>
+
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_factory&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_factory.class%&#39;</span>
+<span class="p">))</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;%newsletter_manager.class%&#39;</span><span class="p">,</span>
+    <span class="k">array</span><span class="p">(</span><span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;templating&#39;</span><span class="p">))</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setFactoryService</span><span class="p">(</span>
+    <span class="s1">&#39;newsletter_factory&#39;</span>
+<span class="p">)</span><span class="o">-&gt;</span><span class="na">setFactoryMethod</span><span class="p">(</span>
+    <span class="s1">&#39;get&#39;</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="parentservices.html" title="Cómo gestionar dependencias comunes con servicios padre"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="compilation.html" title="Compilando el contenedor"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en May 21, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

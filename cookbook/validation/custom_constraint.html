@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.13',
+        VERSION:     '2.0.14',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -107,7 +107,7 @@
 </pre></div>
 </div>
 <p>En otras palabras, si creas una <tt class="docutils literal"><span class="pre">restricción</span></tt> personalizada (por ejemplo, <tt class="docutils literal"><span class="pre">MyConstraint</span></tt>), cuando <em>Symfony2</em> realmente lleve a cabo la validación automáticamente buscará otra clase, <tt class="docutils literal"><span class="pre">MyConstraintValidator</span></tt>.</p>
-<p>La clase <tt class="docutils literal"><span class="pre">validator</span></tt> también es simple, y sólo tiene un método obligatorio: <tt class="docutils literal"><span class="pre">isValid</span></tt>.
+<p>La clase <tt class="docutils literal"><span class="pre">validator</span></tt> también es simple, y sólo tiene un método obligatorio: <tt class="docutils literal"><span class="pre">validate</span></tt>.
 Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><span class="pre">ProtocolValidator</span></tt> como ejemplo:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Symfony\Component\Validator\Constraints</span><span class="p">;</span>
 
@@ -116,23 +116,22 @@ Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><
 
 <span class="k">class</span> <span class="nc">ProtocolValidator</span> <span class="k">extends</span> <span class="nx">ConstraintValidator</span>
 <span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">isValid</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nx">Constraint</span> <span class="nv">$constraint</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">validate</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nx">Constraint</span> <span class="nv">$constraint</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nb">in_array</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">setMessage</span><span class="p">(</span><span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">message</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%protocols%&#39;</span> <span class="o">=&gt;</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">));</span>
-
-                <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">in_array</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">context</span><span class="o">-&gt;</span><span class="na">addViolation</span><span class="p">(</span><span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">message</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%protocols%&#39;</span> <span class="o">=&gt;</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">));</span>
         <span class="p">}</span>
-
-            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
-<p class="last">No olvides llamar a <tt class="docutils literal"><span class="pre">setMessage</span></tt> para construir un mensaje de error cuando el valor es incorrecto.</p>
+<p class="last">El método <tt class="docutils literal"><span class="pre">validate</span></tt> no devuelve un valor; en cambio, añade violaciones al validador de la propiedad <tt class="docutils literal"><span class="pre">context</span></tt> con una llamada al método <tt class="docutils literal"><span class="pre">addViolation</span></tt> si hay errores de validación. Por lo tanto, un valor se podría considerar como válido si no provoca que se añadan violaciones al contexto.
+El primer parámetro de la llamada a <tt class="docutils literal"><span class="pre">addViolation</span></tt> es el mensaje de error a utilizar para esa violación.</p>
 </div>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1.</span></p>
 <div class="section" id="restriccion-de-validadores-con-dependencias">
 <h2>Restricción de validadores con dependencias<a class="headerlink" href="#restriccion-de-validadores-con-dependencias" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Si la restricción del validador tiene dependencias, tal como una conexión de base de datos, se tendrá que configurar como un servicio en el contenedor de inyección de dependencias. Este servicio debe incluir la etiqueta <tt class="docutils literal"><span class="pre">validator.constraint_validator</span></tt> y un atributo <tt class="docutils literal"><span class="pre">alias</span></tt>:</p>
@@ -180,20 +179,20 @@ Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Con esto, el método validador <tt class="docutils literal"><span class="pre">isValid()</span></tt> obtiene un objeto como primer argumento:</p>
+<p>Con esto, el método validador <tt class="docutils literal"><span class="pre">validate()</span></tt> obtiene un objeto como primer argumento:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ProtocolClassValidator</span> <span class="k">extends</span> <span class="nx">ConstraintValidator</span>
 <span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">isValid</span><span class="p">(</span><span class="nv">$protocol</span><span class="p">,</span> <span class="nx">Constraint</span> <span class="nv">$constraint</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">validate</span><span class="p">(</span><span class="nv">$protocol</span><span class="p">,</span> <span class="nx">Constraint</span> <span class="nv">$constraint</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nv">$protocol</span><span class="o">-&gt;</span><span class="na">getFoo</span><span class="p">()</span> <span class="o">!=</span> <span class="nv">$protocol</span><span class="o">-&gt;</span><span class="na">getBar</span><span class="p">())</span> <span class="p">{</span>
 
             <span class="c1">// vincula el mensaje de error a la propiedad foo</span>
             <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">context</span><span class="o">-&gt;</span><span class="na">addViolationAtSubPath</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">getMessage</span><span class="p">(),</span> <span class="k">array</span><span class="p">(),</span> <span class="k">null</span><span class="p">);</span>
 
-                <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+                <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
         <span class="p">}</span>
 
-            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+            <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -236,7 +235,7 @@ Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en May 07, 2012.
+      Actualizado por última vez en May 21, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

@@ -1,0 +1,96 @@
+.. index::
+   single: Enrutador Apache
+
+Cómo usar el enrutador de *Apache*
+==================================
+
+Si bien *Symfony2*, es muy rápido fuera de la caja, también proporciona varias maneras de aumentar esa velocidad con unos cuantos ajustes.
+Una de esas maneras es dejando que *Apache* maneje el enrutado directamente, en lugar de utilizar *Symfony2* para esta tarea.
+
+Cambiando los parámetros de configuración del enrutador
+-------------------------------------------------------
+
+Para volcar las rutas de *Apache*, primero debemos modificar algunos parámetros de configuración para decirle a *Symfony2* que utilice el ``ApacheUrlMatcher`` en lugar de la opción predeterminada.
+
+.. code-block:: yaml
+    
+    # app/config/config_prod.yml
+    parameters:
+        router.options.matcher.cache_class: ~ # desactiva la caché de enrutado
+        router.options.matcher_class: Symfony\Component\Routing\Matcher\ApacheUrlMatcher
+
+.. tip::
+
+    Ten en cuenta que :class:`Symfony\\Component\\Routing\\Matcher\\ApacheUrlMatcher` extiende a :class:`Symfony\\Component\\Routing\\Matcher\\UrlMatcher` por lo que incluso si no se regeneran las reglas ``url_rewrite``, todo saldrá bien (porque al final ``ApacheUrlMatcher::match()`` hace una llamado a ``parent::match()``). 
+    
+Generando reglas ``mod_rewrite``
+--------------------------------
+
+Para comprobar que está funcionando, vamos a crear una ruta muy básica para el paquete de demostración:
+
+.. code-block:: yaml
+
+    # app/config/routing.yml
+    hello:
+        pattern:  /hello/{name}
+        defaults: { _controller: AcmeDemoBundle:Demo:hello }
+            
+    
+Ahora generamos las reglas **url_rewrite**:
+    
+.. code-block:: bash
+
+    php app/console router:dump-apache -e=prod --no-debug
+
+Lo cual ---más o menos--- debe mostrar lo siguiente:
+
+.. code-block:: apache
+
+    # salta peticiones "reales"
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule .* - [QSA,L]
+
+    # hello
+    RewriteCond %{REQUEST_URI} ^/hello/([^/]+?)$
+    RewriteRule .* app.php [QSA,L,E=_ROUTING__route:hello,E=_ROUTING_name:%1,E=_ROUTING__controller:AcmeDemoBundle\:Demo\:hello]
+
+Ahora puedes volver a escribir ``web/.htaccess`` para utilizar las nuevas reglas, así que con nuestro ejemplo debería tener este aspecto:
+
+.. code-block:: apache
+
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
+
+        # salta peticiones "reales"
+        RewriteCond %{REQUEST_FILENAME} -f
+        RewriteRule .* - [QSA,L]
+
+        # hello
+        RewriteCond %{REQUEST_URI} ^/hello/([^/]+?)$
+        RewriteRule .* app.php [QSA,L,E=_ROUTING__route:hello,E=_ROUTING_name:%1,E=_ROUTING__controller:AcmeDemoBundle\:Demo\:hello]
+    </IfModule>
+
+.. note::
+
+   El procedimiento anterior se debe realizar cada vez que añadas/cambies la ruta si quieres sacar el máximo provecho de esta configuración.
+
+¡Eso es todo!
+Ahora estás listo para usar las reglas de enrutado de *Apache*.
+    
+Ajustes adicionales
+-------------------
+
+Para ahorrar un poco de tiempo en el procesamiento, cambia las ocurrencias de ``Request`` a ``ApacheRequest`` en ``web/app.php``::
+
+    // web/app.php
+
+    require_once __DIR__.'/../app/bootstrap.php.cache';
+    require_once __DIR__.'/../app/AppKernel.php';
+    //require_once __DIR__.'/../app/AppCache.php';
+
+    use Symfony\Component\HttpFoundation\ApacheRequest;
+
+    $kernel = new AppKernel('prod', false);
+    $kernel->loadClassCache();
+    //$kernel = new AppCache($kernel);
+    $kernel->handle(ApacheRequest::createFromGlobals())->send();
