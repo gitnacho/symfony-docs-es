@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo trabajan los pases del compilador en los paquetes &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.14',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Contenedor de servicios" href="index.html" />
+    <link rel="next" title="Paquetes" href="../bundles/index.html" />
+    <link rel="prev" title="Cómo trabajar con ámbitos" href="scopes.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../bundles/index.html" title="Paquetes"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="scopes.html" title="Cómo trabajar con ámbitos"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Contenedor de servicios</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-trabajan-los-pases-del-compilador-en-los-paquetes">
+<h1>Cómo trabajan los pases del compilador en los paquetes<a class="headerlink" href="#como-trabajan-los-pases-del-compilador-en-los-paquetes" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Los pases del compilador te brindan la oportunidad de manipular otras definiciones de servicio que se han registrado en el contenedor de servicios. Puedes sobre su creación en la sección de componentes &#8220;<tt class="xref doc docutils literal"><span class="pre">/components/dependency_injection/compilación</span></tt>&#8221;.
+Para registrar un pase del compilador desde un paquete, necesitas añadirlo al método constructor de la definición de la clase de tu paquete:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\MailerBundle</span><span class="p">;</span>
+
+    <span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Bundle\Bundle</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Acme\MailerBundle\DependencyInjection\Compiler\CustomCompilerPass</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AcmeMailerBundle</span> <span class="k">extends</span> <span class="nx">Bundle</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">build</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">parent</span><span class="o">::</span><span class="na">build</span><span class="p">(</span><span class="nv">$container</span><span class="p">);</span>
+
+        <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">addCompilerPass</span><span class="p">(</span><span class="k">new</span> <span class="nx">CustomCompilerPass</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Uno de los más comunes los casos de uso de los pases del compilador es trabajar con etiquetados servicios (lee más acerca de las etiquetas en la sección de componentes &#8220;<a class="reference internal" href="../../components/dependency_injection/tags.html"><em>Cómo hacer que tus servicios utilicen etiquetas</em></a>&#8221;).
+Si estás utilizando etiquetas personalizadas en un paquete, entonces por convención, los nombres de etiqueta consisten del nombre del paquete (en minúsculas, guiones bajos como separadores), seguidos por un punto y finalmente el nombre &#8220;real&#8221;. Por ejemplo, si quieres introducir una especie de &#8220;transporte&#8221; en tu etiqueta <tt class="docutils literal"><span class="pre">AcmeMailerBundle</span></tt>, la debes nombrar <tt class="docutils literal"><span class="pre">acme_mailer.transport</span></tt>.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../bundles/index.html" title="Paquetes"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="scopes.html" title="Cómo trabajar con ámbitos"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" >Contenedor de servicios</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en May 28, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

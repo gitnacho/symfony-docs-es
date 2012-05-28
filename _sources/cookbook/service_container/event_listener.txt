@@ -64,3 +64,33 @@ Ahora que se ha creado la clase, sólo la tienes que registrar como un servicio 
 .. note::
 
     Existe una opción adicional para la etiqueta ``priority``, esta no es obligatoria y por omisión es 0. Este valor puede ser desde -255 hasta 255, y los escuchas se ejecutan en ese orden de prioridad. Esto es útil cuando necesitas garantizar que un escucha se ejecuta antes que otro.
+
+Eventos de petición, comprobación de tipo
+-----------------------------------------
+
+Una sola página puede hacer varias peticiones (una petición mástil, y luego múltiples
+subpeticiones), por lo tanto cuando se trabaja con la instancia del ``KernelEvents::REQUEST``, podría ser necesario comprobar el tipo de la petición. Esto se puede
+realizar fácilmente de la siguiente manera::
+
+    // src/Acme/DemoBundle/Listener/AcmeRequestListener.php
+    namespace Acme\DemoBundle\Listener;
+
+    use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+    use Symfony\Component\HttpKernel\HttpKernel;
+
+    class AcmeRequestListener
+    {
+        public function onKernelRequest(GetResponseEvent $event)
+        {
+            if (HttpKernel::MASTER_REQUEST != $event->getRequestType()) {
+                // no hace nada si no es una petición mástil
+                return;
+            }
+
+            // tu código
+        }
+    }
+
+.. tip::
+
+    Dos tipos de peticiones están disponibles en la interfaz :class:`Symfony\\Component\\HttpKernel\\HttpKernelInterface`: ``HttpKernelInterface::MASTER_REQUEST`` y ``HttpKernelInterface::SUB_REQUEST``.

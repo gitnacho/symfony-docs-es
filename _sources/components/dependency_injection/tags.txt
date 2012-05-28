@@ -1,0 +1,143 @@
+.. index::
+   single: Contenedor de servicios; Etiquetas
+
+Cómo hacer que tus servicios utilicen etiquetas
+===============================================
+
+Las etiquetas son una cadena genérica (junto con algunas opciones) que puedes aplicar a cualquier servicio. Por sí mismas, las etiquetas en realidad no hacen la funcionalidad de tu servicio en modo alguno. Pero si quieres, puedes pedir al constructor del contenedor que consiga una lista de todos los servicios que estén etiquetados con alguna etiqueta específica. Esto es útil en los pases del compilador donde puedes encontrar estos servicios y usarlos o
+modificarlos de alguna manera específica.
+
+Por ejemplo, si estás usando Swift Mailer te puedes imaginar que quieres implementar una "cadena de transporte", que es una colección de clases que implementan ``\Swift_Transport``. Usando la cadena, querrá que Swift Mailer pruebe varias maneras de transportar el mensaje hasta que una lo consiga.
+
+En primer lugar, define la clase ``TransportChain``::
+
+    class TransportChain
+    {
+        private $transports;
+
+        public function __construct()
+        {
+            $this->transports = array();
+        }
+
+        public function addTransport(\Swift_Transport  $transport)
+        {
+            $this->transports[] = $transport;
+        }
+    }
+
+Entonces, define la cadena como un servicio:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        parameters:
+            acme_mailer.transport_chain.class: TransportChain
+
+        services:
+            acme_mailer.transport_chain:
+                class: %acme_mailer.transport_chain.class%
+
+    .. code-block:: xml
+
+        <parameters>
+            <parameter key="acme_mailer.transport_chain.class">TransportChain</parameter>
+        </parameters>
+
+            <services>
+            <service id="acme_mailer.transport_chain" class="%acme_mailer.transport_chain.class%" />
+            </services>
+
+    .. code-block:: php
+
+        use Symfony\Component\DependencyInjection\Definition;
+
+        $container->setParameter('acme_mailer.transport_chain.class', 'TransportChain');
+
+        $container->setDefinition('acme_mailer.transport_chain', new Definition('%acme_mailer.transport_chain.class%'));
+
+Definiendo servicios con una etiqueta personalizada
+---------------------------------------------------
+
+Ahora queremos que varias de las clases ``\Swift_Transport`` para ejecutarse y añadirse a la cadena automáticamente usando el método ``addTransport()``.
+Como ejemplo podemos añadir los siguientes transportes como los servicios de:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            acme_mailer.transport.smtp:
+                class: \Swift_SmtpTransport
+                arguments:
+                    - %mailer_host%
+                tags:
+                    -  { name: acme_mailer.transport }
+            acme_mailer.transport.sendmail:
+                class: \Swift_SendmailTransport
+                tags:
+                    -  { name: acme_mailer.transport }
+
+    .. code-block:: xml
+
+        <service id="acme_mailer.transport.smtp" class="\Swift_SmtpTransport">
+            <argument>%mailer_host%</argument>
+            <tag name="acme_mailer.transport" />
+        </service>
+
+        <service id="acme_mailer.transport.sendmail" class="\Swift_SendmailTransport">
+            <tag name="acme_mailer.transport" />
+        </service>
+
+    .. code-block:: php
+
+        use Symfony\Component\DependencyInjection\Definition;
+
+        $definitionSmtp = new Definition('\Swift_SmtpTransport', array('%mailer_host%'));
+        $definitionSmtp->addTag('acme_mailer.transport');
+        $container->setDefinition('acme_mailer.transport.smtp', $definitionSmtp);
+
+        $definitionSendmail = new Definition('\Swift_SendmailTransport');
+        $definitionSendmail->addTag('acme_mailer.transport');
+        $container->setDefinition('acme_mailer.transport.sendmail', $definitionSendmail);
+
+Ten en cuenta que a cada uno se le dio una etiqueta llamada ``acme_mailer.transport``. Esta es la etiqueta personalizada que utilizarás en tu pase del compilador. El pase del compilador es lo que da algún "significado" a la etiqueta.
+
+Crear un ``CompilerPass``
+-------------------------
+
+Tu pase del compilador ahora puede pedir al contenedor cualquier servicio con la etiqueta personalizada::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+    use Symfony\Component\DependencyInjection\Reference;
+
+    class TransportCompilerPass implements CompilerPassInterface
+    {
+        public function process(ContainerBuilder $container)
+        {
+            if (false === $container->hasDefinition('acme_mailer.transport_chain')) {
+                return;
+            }
+
+            $definition = $container->getDefinition('acme_mailer.transport_chain');
+
+            foreach ($container->findTaggedServiceIds('acme_mailer.transport') as $id => $attributes) {
+                $definition->addMethodCall('addTransport', array(new Reference($id)));
+            }
+        }
+    }
+
+El método ``process()`` comprueba la existencia del servicio ``acme_mailer.transport_chain``, a continuación, busca todos los servicios etiquetados cómo ``acme_mailer.transport``. Los añade a la definición del servicio ``acme_mailer.transport_chain`` llamando a ``addTransport()`` por cada servicios ``"acme_mailer.transport"`` que haya encontrado.
+El primer argumento de cada una de estas llamadas será el servicio de transporte de correo en sí mismo.
+
+Registrando el pase en el contenedor
+------------------------------------
+
+También necesitas registrar el pase en el contenedor, entonces se ejecutará al compilar el contenedor::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    $container = new ContainerBuilder();
+    $container->addCompilerPass(new TransportCompilerPass);

@@ -22,48 +22,38 @@ Está disponible el paquete que integra el *ODM MongoDB de Doctrine* en *Symfony
 Instalando
 ----------
 
-Para utilizar el *ODM MongoDB*, necesitarás dos bibliotecas proporcionadas por *Doctrine* y un paquete que las integra en *Symfony*. Si estás usando la distribución estándar de *Symfony*, agrega lo siguiente al archivo ``deps`` en la raíz de tu proyecto:
+Para utilizar el *ODM MongoDB*, necesitarás dos bibliotecas proporcionadas por *Doctrine* y un paquete que las integra en *Symfony*.
 
-.. code-block:: text
+Instalando el paquete con ``Composer``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    [doctrine-mongodb]
-        git=http://github.com/doctrine/mongodb.git
+Para instalar ``DoctrineMongoDBBundle`` con ``Composer`` sólo tienes que añadir lo siguiente a tu archivo `` :file:`composer.json`::
 
-    [doctrine-mongodb-odm]
-        git=http://github.com/doctrine/mongodb-odm.git
+    {
+        require: {
+            "doctrine/mongodb-odm-bundle": "dev-master"
+        }
+    }
 
-    [DoctrineMongoDBBundle]
-        git=http://github.com/doctrine/DoctrineMongoDBBundle.git
-        target=/bundles/Doctrine/Bundle/MongoDBBundle
-
-Ahora, actualiza las bibliotecas de proveedores ejecutando:
+Luego, puedes instalar las nuevas dependencias ejecutando la orden ``update`` de ``Composer`` desde el directorio donde se encuentra el archivo ``composer.json``:
 
 .. code-block:: bash
 
-    $ php bin/vendors install
+    php composer.phar update
 
-A continuación, agrega los espacios de nombres ``Doctrine\ODM\MongoDB`` y ``Doctrine\MongoDB`` al archivo ``app/autoload.php`` para que estas bibliotecas se puedan cargar automáticamente.
-Asegúrate de añadirlas en cualquier lugar *por encima* del espacio de nombres *Doctrine* (cómo se muestra aquí)::
+Ahora, ``Composer`` automáticamente descargará todos los archivos necesarios y los instalará por ti.
 
-    // app/autoload.php
-    $loader->registerNamespaces(array(
-        // ...
-        'Doctrine\\Bundle'          => __DIR__.'/../vendor/bundles',
-        'Doctrine\\Common'          => __DIR__.'/../vendor/doctrine-common/lib',
-        'Doctrine\\ODM\\MongoDB'    => __DIR__.'/../vendor/doctrine-mongodb-odm/lib',
-        'Doctrine\\MongoDB'         => __DIR__.'/../vendor/doctrine-mongodb/lib',
-        'Doctrine'                  => __DIR__.'/../vendor/doctrine/lib',
-        // ...
-    ));
+Registrando las anotaciones y el paquete
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A continuación, registra la biblioteca de anotaciones añadiendo las siguientes acciones al cargador (debajo de la línea ``AnnotationRegistry::registerFile`` existente)::
 
     // app/autoload.php
     AnnotationRegistry::registerFile(
-        __DIR__.'/../vendor/doctrine-mongodb-odm/lib/Doctrine/ODM/MongoDB/Mapping/Annotations/DoctrineAnnotations.php'
+        __DIR__.'/../vendor/doctrine/mongodb-odm/lib/Doctrine/ODM/MongoDB/Mapping/Annotations/DoctrineAnnotations.php'
     );
 
-Por último, activa el nuevo paquete en el núcleo::
+Todo lo que resta por hacer es actualizar tu archivo :file:`AppKernel.php`, y registrar el nuevo paquete::
 
     // app/AppKernel.php
     public function registerBundles()
@@ -99,7 +89,7 @@ Para empezar, necesitarás una estructura básica que configure el gestor de doc
 
 .. note::
 
-    Por supuesto, también tienes que asegurarte de que se ejecute en segundo plano el servidor *MongoDB*. Para más información, consulta la `Guía de inicio rápido`_ de *MongoDB*.
+    Por supuesto, también te tienes que asegurar de que el servidor *MongoDB* se ejecute en segundo plano. Para más información, consulta la `Guía de inicio rápido`_ de *MongoDB*.
 
 Un sencillo ejemplo: Un producto
 --------------------------------
@@ -468,7 +458,7 @@ A continuación, agrega un nuevo método --- ``findAllOrderedByName()`` --- a la
 
 Puedes utilizar este nuevo método al igual que los métodos de búsqueda predeterminados del repositorio::
 
-    $product = $this->get('doctrine.odm.mongodb.document_manager')
+    $products = $this->get('doctrine.odm.mongodb.document_manager')
         ->getRepository('AcmeStoreBundle:Product')
         ->findAllOrderedByName();
 
@@ -583,7 +573,7 @@ En *Symfony*, puedes registrar un escucha o suscriptor creando un :term:`servici
             ));
             $container->setDefinition('my_doctrine_listener', $definition);
 
-*   **suscriptor de evento**: Usa la etiqueta ``doctrine.odm.mongodb.event_subscriber`` para un suscriptor. Los suscriptores son responsables de implementar al ``Doctrine\Common\EventSubscriber`` y suplir un método que devuelva los eventos que escuchará. Por esta razón, esta etiqueta no tiene el atributo ``event``;
+*   **suscriptor de evento**: Usa la etiqueta ``doctrine.odm.mongodb.event_subscriber`` para registrar un suscriptor. Los suscriptores son responsables de implementar al ``Doctrine\Common\EventSubscriber`` y suplir un método que devuelva los eventos que escuchará. Por esta razón, esta etiqueta no tiene el atributo ``event``;
     No obstante, dispone de los atributos ``connection``, ``priority`` y ``lazy``.
 
 .. note::
@@ -593,7 +583,7 @@ En *Symfony*, puedes registrar un escucha o suscriptor creando un :term:`servici
 Integrando el ``SecurityBundle``
 --------------------------------
 
-Un proveedor de usuario está disponible para los documentos ``MongoDB``, trabajando exactamente igual que el proveedor de ``entidad`` descrito en el :doc:`recetario </cookbook/security/entity_provider>`
+Hay disponible un proveedor de usuarios para tus proyectos *MongoDB*, trabaja exactamente igual que el proveedor de entidades descrito en el :doc:`recetario </cookbook/security/entity_provider>`
 
 .. configuration-block::
 
@@ -616,9 +606,9 @@ Un proveedor de usuario está disponible para los documentos ``MongoDB``, trabaj
 Resumen
 -------
 
-Con *Doctrine*, te puedes enfocar en los objetos y la forma en que son útiles en tu aplicación y en segundo lugar preocuparte por la persistencia a través de *MongoDB*. Esto se debe a que *Doctrine* te permite utilizar cualquier objeto *PHP* para almacenar los datos y confía en la información de asignación de metadatos para asignar los datos de un objeto a una colección *MongoDB*.
+Con *Doctrine*, te puedes enfocar en los objetos y la forma en que son útiles en tu aplicación y en segundo lugar preocuparte de su persistencia a través de *MongoDB*. Esto se debe a que *Doctrine* te permite utilizar cualquier objeto *PHP* para almacenar los datos y confía en la información de asignación de metadatos para asignar los datos de un objeto a una colección *MongoDB*.
 
-Y aunque *Doctrine* gira en torno a un concepto simple, es increíblemente poderoso, permitiéndote crear consultas complejas y suscribirte a los eventos que te permiten realizar diferentes acciones conforme los objetos recorren su ciclo de vida en la persistencia.
+Y aunque *Doctrine* gira en torno a un concepto simple, es increíblemente potente, permitiéndote crear consultas complejas y suscribirte a los eventos que te permiten realizar diferentes acciones conforme los objetos recorren su ciclo de vida en la persistencia.
 
 Aprende más en el recetario
 ---------------------------

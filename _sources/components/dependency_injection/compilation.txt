@@ -17,13 +17,47 @@ Para crear un pase del compilador tienes que implementar la interfaz :class:`Sym
 
 El pase del compilador debe tener el método ``process`` que se pasa al contenedor compilado::
 
-    public function process(ContainerBuilder $container)
+    class CustomCompilerPass
     {
-       //--
+        public function process(ContainerBuilder $container)
+        {
+           //--
+        }
     }
 
 Los parámetros del contenedor y las definiciones se pueden manipular usando los métodos descritos en :doc:`/components/dependency_injection/definitions`.
 Una cosa común por hacer en un pase del compilador es buscar todos los servicios que tienen una determinada etiqueta, a fin de procesarla de alguna manera o dinámicamente conectar cada una con algún otro servicio.
+
+Registrando un pase del compilador
+----------------------------------
+
+Necesitas registrar tu pase personalizado del compilador en el contenedor. El método procesará la llamada cuando el contenedor es compilado::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    $container = new ContainerBuilder();
+    $container->addCompilerPass(new CustomCompilerPass);
+
+Controlando el orden de los pases
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Los pases predeterminados del compilador se agrupan en pases de optimización y pases de remoción. Los pases de optimización se ejecutan primero e incluyen tareas como la resolución de referencias con las definiciones. Los pases de remoción realizan tareas tales como la eliminación de alias privados y servicios no utilizados. Puedes elegir en qué orden se ejecutará cualquier pase personalizado que añadas. De manera predeterminada, se ejecutará antes de los pases de optimización.
+
+Puedes utilizar las siguientes constantes como segundo argumento al registrar un pase en el contenedor para controlar en qué orden va:
+
+* ``PassConfig::TYPE_BEFORE_OPTIMIZATION``
+* ``PassConfig::TYPE_OPTIMIZE``
+* ``PassConfig::TYPE_BEFORE_REMOVING``
+* ``PassConfig::TYPE_REMOVE``
+* ``PassConfig::TYPE_AFTER_REMOVING``
+
+Por ejemplo, para correr tu pase personalizado después de quitar el pase predeterminado tienes que ejecutar::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    $container = new ContainerBuilder();
+    $container->addCompilerPass(new CustomCompilerPass, PassConfig::TYPE_AFTER_REMOVING);
+
 
 Gestionando la configuración con extensiones
 --------------------------------------------
@@ -41,4 +75,71 @@ Las extensiones no agregan configuración a los contenedores cuando se añaden, 
  
     Si necesitas manipular la configuración cargada por una extensión, entonces no lo puedes hacer desde otra extensión, ya que esta utiliza un contenedor nuevo.
     En su lugar, debes utilizar un pase del compilador que trabaje con el contenedor completo después de haber procesado las extensiones. 
+
+Vertiendo la configuración para mejorar el rendimiento
+------------------------------------------------------
+
+Puede ser mucho más fácil entender el uso de los archivos de configuración para gestionar el contenedor de servicios que usar *PHP* una vez que hay una gran cantidad de servicios. Esta facilidad tiene un costo, aunque cuando se trata de rendimiento, puesto que los archivos de configuración se tienen que analizar y la configuración de *PHP* construida desde ellos. El proceso de compilación hace más eficiente al contenedor pero toma tiempo su ejecución. Puedes tener lo mejor de ambos mundos aunque usando archivos de configuración y, luego vertiendo y almacenando en caché la configuración resultante. El ``PhpDumper`` fácilmente vierte el contenedor compilado::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\Config\FileLocator;
+    use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+    use Symfony\Component\DependencyInjection\Dumper\PhpDumper
+
+    $container = new ContainerBuilder();
+    $loader = new XmlFileLoader($container, new FileLocator(__DIR__));
+    $loader->load('services.xml');
+
+    $file = __DIR__ .'/cache/container.php';
+
+    if (file_exists($file)) {
+        require_once $file;
+        $container = new ProjectServiceContiner();
+    } else {
+        $container = new ContainerBuilder();
+        //--
+        $container->compile();
+
+        $dumper = new PhpDumper($container);
+        file_put_contents($file, $dumper->dump());
+    }
+
+``ProjectServiceContiner`` es el nombre predefinido dado a la clase contenedora vertida, lo puedes cambiar con la opción ``class`` cuando lo viertes::
+
+    // ...
+    $file = __DIR__ .'/cache/container.php';
+
+    if (file_exists($file)) {
+        require_once $file;
+        $container = new MyCachedContainer();
+    } else {
+        $container = new ContainerBuilder();
+        //--
+        $container->compile();
+
+        $dumper = new PhpDumper($container);
+        file_put_contents($file, $dumper->dump(array('class' => 'MyCachedContainer')));
+    }
+
+Ahora obtendrás la velocidad del contenedor *PHP* configurado con ---los fáciles de usar--- archivos de configuración. En el ejemplo anterior tendrás que borrar los archivos del contenedor memorizados en caché cada vez que hagas algún cambio. Añadir una comprobación por una variable que determina si estás en modo de depuración te permite mantener la velocidad del contenedor memorizado en caché en la producción, sino consiguiendo una actualización de la configuración, mientras desarrollas tu aplicación::
+
+    // ...
+
+    // establece $isDebug basándose en algo de tu proyecto
+
+    $file = __DIR__ .'/cache/container.php';
+
+    if (!$isDebug && file_exists($file)) {
+        require_once $file;
+        $container = new MyCachedContainer();
+    } else {
+        $container = new ContainerBuilder();
+        //--
+        $container->compile();
+
+        if(!$isDebug) 
+            $dumper = new PhpDumper($container);
+            file_put_contents($file, $dumper->dump(array('class' => 'MyCachedContainer')));
+        }
+    }
 

@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo hacer que tus servicios utilicen etiquetas &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.14',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Inyección de dependencias" href="index.html" />
+    <link rel="next" title="Cómo utilizar el patrón factoría para crear servicios" href="factories.html" />
+    <link rel="prev" title="Compilando el contenedor" href="compilation.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="factories.html" title="Cómo utilizar el patrón factoría para crear servicios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="compilation.html" title="Compilando el contenedor"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-hacer-que-tus-servicios-utilicen-etiquetas">
+<span id="index-0"></span><h1>Cómo hacer que tus servicios utilicen etiquetas<a class="headerlink" href="#como-hacer-que-tus-servicios-utilicen-etiquetas" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Las etiquetas son una cadena genérica (junto con algunas opciones) que puedes aplicar a cualquier servicio. Por sí mismas, las etiquetas en realidad no hacen la funcionalidad de tu servicio en modo alguno. Pero si quieres, puedes pedir al constructor del contenedor que consiga una lista de todos los servicios que estén etiquetados con alguna etiqueta específica. Esto es útil en los pases del compilador donde puedes encontrar estos servicios y usarlos o
+modificarlos de alguna manera específica.</p>
+<p>Por ejemplo, si estás usando Swift Mailer te puedes imaginar que quieres implementar una &#8220;cadena de transporte&#8221;, que es una colección de clases que implementan <tt class="docutils literal"><span class="pre">\Swift_Transport</span></tt>. Usando la cadena, querrá que Swift Mailer pruebe varias maneras de transportar el mensaje hasta que una lo consiga.</p>
+<p>En primer lugar, define la clase <tt class="docutils literal"><span class="pre">TransportChain</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">TransportChain</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$transports</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">transports</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">addTransport</span><span class="p">(</span><span class="nx">\Swift_Transport</span>  <span class="nv">$transport</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">transports</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$transport</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Entonces, define la cadena como un servicio:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre>parameters:
+    acme_mailer.transport_chain.class: TransportChain
+
+services:
+    acme_mailer.transport_chain:
+        class: %acme_mailer.transport_chain.class%</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;parameters&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;acme_mailer.transport_chain.class&quot;</span><span class="nt">&gt;</span>TransportChain<span class="nt">&lt;/parameter&gt;</span>
+<span class="nt">&lt;/parameters&gt;</span>
+
+    <span class="nt">&lt;services&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;acme_mailer.transport_chain&quot;</span> <span class="na">class=</span><span class="s">&quot;%acme_mailer.transport_chain.class%&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/services&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;acme_mailer.transport_chain.class&#39;</span><span class="p">,</span> <span class="s1">&#39;TransportChain&#39;</span><span class="p">);</span>
+
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;acme_mailer.transport_chain&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;%acme_mailer.transport_chain.class%&#39;</span><span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="definiendo-servicios-con-una-etiqueta-personalizada">
+<h2>Definiendo servicios con una etiqueta personalizada<a class="headerlink" href="#definiendo-servicios-con-una-etiqueta-personalizada" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Ahora queremos que varias de las clases <tt class="docutils literal"><span class="pre">\Swift_Transport</span></tt> para ejecutarse y añadirse a la cadena automáticamente usando el método <tt class="docutils literal"><span class="pre">addTransport()</span></tt>.
+Como ejemplo podemos añadir los siguientes transportes como los servicios de:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre>services:
+    acme_mailer.transport.smtp:
+        class: \Swift_SmtpTransport
+        arguments:
+            - %mailer_host%
+        tags:
+            -  { name: acme_mailer.transport }
+    acme_mailer.transport.sendmail:
+        class: \Swift_SendmailTransport
+        tags:
+            -  { name: acme_mailer.transport }</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;acme_mailer.transport.smtp&quot;</span> <span class="na">class=</span><span class="s">&quot;\Swift_SmtpTransport&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;argument&gt;</span>%mailer_host%<span class="nt">&lt;/argument&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;acme_mailer.transport&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/service&gt;</span>
+
+<span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;acme_mailer.transport.sendmail&quot;</span> <span class="na">class=</span><span class="s">&quot;\Swift_SendmailTransport&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;acme_mailer.transport&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/service&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+
+<span class="nv">$definitionSmtp</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;\Swift_SmtpTransport&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%mailer_host%&#39;</span><span class="p">));</span>
+<span class="nv">$definitionSmtp</span><span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;acme_mailer.transport&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;acme_mailer.transport.smtp&#39;</span><span class="p">,</span> <span class="nv">$definitionSmtp</span><span class="p">);</span>
+
+<span class="nv">$definitionSendmail</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;\Swift_SendmailTransport&#39;</span><span class="p">);</span>
+<span class="nv">$definitionSendmail</span><span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;acme_mailer.transport&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;acme_mailer.transport.sendmail&#39;</span><span class="p">,</span> <span class="nv">$definitionSendmail</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Ten en cuenta que a cada uno se le dio una etiqueta llamada <tt class="docutils literal"><span class="pre">acme_mailer.transport</span></tt>. Esta es la etiqueta personalizada que utilizarás en tu pase del compilador. El pase del compilador es lo que da algún &#8220;significado&#8221; a la etiqueta.</p>
+</div>
+<div class="section" id="crear-un-compilerpass">
+<h2>Crear un <tt class="docutils literal"><span class="pre">CompilerPass</span></tt><a class="headerlink" href="#crear-un-compilerpass" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Tu pase del compilador ahora puede pedir al contenedor cualquier servicio con la etiqueta personalizada:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">TransportCompilerPass</span> <span class="k">implements</span> <span class="nx">CompilerPassInterface</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">process</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">false</span> <span class="o">===</span> <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">hasDefinition</span><span class="p">(</span><span class="s1">&#39;acme_mailer.transport_chain&#39;</span><span class="p">))</span> <span class="p">{</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="nv">$definition</span> <span class="o">=</span> <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">getDefinition</span><span class="p">(</span><span class="s1">&#39;acme_mailer.transport_chain&#39;</span><span class="p">);</span>
+
+        <span class="k">foreach</span> <span class="p">(</span><span class="nv">$container</span><span class="o">-&gt;</span><span class="na">findTaggedServiceIds</span><span class="p">(</span><span class="s1">&#39;acme_mailer.transport&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="nv">$id</span> <span class="o">=&gt;</span> <span class="nv">$attributes</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$definition</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;addTransport&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="nv">$id</span><span class="p">)));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>El método <tt class="docutils literal"><span class="pre">process()</span></tt> comprueba la existencia del servicio <tt class="docutils literal"><span class="pre">acme_mailer.transport_chain</span></tt>, a continuación, busca todos los servicios etiquetados cómo <tt class="docutils literal"><span class="pre">acme_mailer.transport</span></tt>. Los añade a la definición del servicio <tt class="docutils literal"><span class="pre">acme_mailer.transport_chain</span></tt> llamando a <tt class="docutils literal"><span class="pre">addTransport()</span></tt> por cada servicios <tt class="docutils literal"><span class="pre">&quot;acme_mailer.transport&quot;</span></tt> que haya encontrado.
+El primer argumento de cada una de estas llamadas será el servicio de transporte de correo en sí mismo.</p>
+</div>
+<div class="section" id="registrando-el-pase-en-el-contenedor">
+<h2>Registrando el pase en el contenedor<a class="headerlink" href="#registrando-el-pase-en-el-contenedor" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>También necesitas registrar el pase en el contenedor, entonces se ejecutará al compilar el contenedor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+
+<span class="nv">$container</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">addCompilerPass</span><span class="p">(</span><span class="k">new</span> <span class="nx">TransportCompilerPass</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="factories.html" title="Cómo utilizar el patrón factoría para crear servicios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="compilation.html" title="Compilando el contenedor"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en May 28, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>
