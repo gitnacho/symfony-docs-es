@@ -8,7 +8,7 @@ En este artículo, aprenderás cómo crear un formulario que integra una colecci
 
 .. note::
 
-    En este artículo, vamos a suponer vagamente que estás utilizando *Doctrine* como almacén de base de datos. Pero si no estás usando *Doctrine* (por ejemplo, *Propel* o simplemente una conexión directa a la base de datos), es casi lo mismo. Sólo hay unas cuantas partes de este guía que realmente se preocupan de la "persistencia".
+    En este artículo, vamos a suponer vagamente que estás utilizando *Doctrine* como almacén de base de datos. Pero si no estás usando *Doctrine* (por ejemplo, *Propel* o simplemente una conexión directa a la base de datos), es casi lo mismo. Sólo hay unas cuantas partes de esta guía que realmente se preocupan de la "persistencia".
     
     Si utilizas *Doctrine*, tendrás que añadir los metadatos de *Doctrine*, incluyendo las etiquetas ``MuchosAMuchos`` en la propiedad ``etiquetas`` de la ``Tarea``.
 
@@ -44,7 +44,7 @@ Vamos a empezar por ahí: Supongamos que cada ``Tarea`` pertenece a múltiples o
 
         public function getTags()
         {
-            return $this->etiquetas;
+            return $this->tags;
         }
 
         public function setTags(ArrayCollection $tags)
@@ -69,7 +69,7 @@ Ahora, crea una clase ``Etiqueta``. Cómo vimos arriba, una ``Tarea`` puede tene
 
 .. tip::
 
-    Aquí, la propiedad ``name`` es pública, pero fácilmente puede ser solo protegida o privada (pero entonces necesitaríamos métodos ``getName`` y ``setName``).
+    Aquí, la propiedad ``name`` es pública, pero fácilmente puede ser protegida o privada (pero entonces necesitaríamos métodos ``getName`` y ``setName``).
 
 Ahora veamos los formularios. Crea una clase formulario para que el usuario pueda modificar un objeto ``Tag``::
 
@@ -220,7 +220,7 @@ La plantilla correspondiente, ahora es capaz de reproducir tanto el campo ``desc
 
 Cuando el usuario envía el formulario, los datos presentados por los campos ``Tag`` se utilizan para construir un ``ArrayCollection`` de los objetos ``Tag``, que luego se establecen en el campo ``tag`` de la instancia ``Tarea``.
 
-La colección ``Tags``, naturalmente, es accesible a través de ``$task->getTags()`` y se puede persistir en la base de datos o utilizar sin embargo donde sea necesaria.
+La colección ``Tags``, naturalmente, es accesible a través de ``$task->getTags()`` y se puede persistir en la base de datos o utilizar donde sea necesaria.
 
 Hasta el momento, esto funciona muy bien, pero aún no te permite agregar dinámicamente nuevas etiquetas o eliminar existentes. Por lo tanto, durante la edición de etiquetas existentes funcionará bien, tu usuario en realidad no puede añadir ninguna nueva etiqueta, todavía.
 
@@ -234,8 +234,8 @@ Hasta el momento, esto funciona muy bien, pero aún no te permite agregar dinám
 
 .. _cookbook-form-collections-new-prototype:
 
-Permitiendo "nuevas" etiquetas con el "prototipo"
--------------------------------------------------
+Permitiendo "nuevas" etiquetas con "prototype"
+----------------------------------------------
 
 Permitir al usuario añadir nuevas etiquetas dinámicamente significa que necesitarás usar algo de *JavaScript*. Anteriormente, añadimos dos etiquetas a nuestro formulario en el controlador.
 Ahora, tenemos que dejar que el usuario añada tantas etiquetas de formulario como necesite directamente en el navegador.
@@ -282,7 +282,7 @@ Además de decirle al campo que acepte cualquier número de objetos presentados,
 
 .. tip::
 
-    El ``form.tags.get('prototype)`` es el elemento formulario que se ve y se siente igual que los elementos ``form_widget(tag)`` individuales dentro de nuestro bucle ``for``.
+    El ``form.tags.get('prototype')`` es el elemento formulario que se ve y se siente igual que los elementos ``form_widget(tag)`` individuales dentro de nuestro bucle ``for``.
     Esto significa que allí puedes llamar a ``form_widget``, ``form_row``, o ``form_label``. Incluso puedes optar por pintar sólo uno de tus campos (por ejemplo, el campo ``nombre``):
     
     .. code-block:: html+jinja
@@ -380,7 +380,7 @@ Ahora, cada vez que un usuario hace clic en el enlace ``Agregar una etiqueta``, 
                         targetEntity: Tag
                         cascade:      [persist]
 
-    Se trata del segundo problema potencial con el `Propio lado y el lado inverso`_ de las relaciones de *Doctrine*. En este ejemplo, si el lado "propio" de la relación es la ``Tarea``, entonces la persistencia no tendrá ningún problema en las etiquetas que son agregadas correctamente a la tarea. Sin embargo, si el lado propio es la ``"Tag"``, entonces tendrás que trabajar un poco más para asegurarte de modificar el lado correcto de la relación.
+    Se trata del segundo problema potencial con el `Lado propietario y lado inverso`_ de las relaciones de *Doctrine*. En este ejemplo, si el lado "propietario" de la relación es la ``Tarea``, entonces la persistencia no tendrá ningún problema puesto que las etiquetas se añaden correctamente a la tarea. Sin embargo, si el lado propietario es ``"Tag"``, entonces tendrás que trabajar un poco más para asegurarte de modificar el lado correcto de la relación.
 
     El truco está en asegurarte de establecer una única ``"Tarea"`` en cada ``"Etiqueta"``.
     Una forma fácil de hacerlo es añadir un poco de lógica adicional a ``setTags()``, que es llamado por la plataforma de formularios desde que establece :ref:`by_reference <reference-form-types-by-reference>` en ``false``::
@@ -552,4 +552,4 @@ Cuando se quita una etiqueta del *DOM* del formulario y se envía, el objeto ``E
     A menos que tengas una relación ``MuchosAMuchos`` donde la ``Tarea`` es el lado "propietario", tendrás que hacer trabajo extra para asegurarte de que la relación se actualiza correctamente (si vas a añadir nuevas etiquetas o eliminar etiquetas existentes) en cada objeto ``Etiqueta`` en sí.
 
 
-.. _`Propio lado y el lado inverso`: http://docs.doctrine-project.org/en/latest/reference/unitofwork-associations.html
+.. _`Lado propietario y lado inverso`: http://docs.doctrine-project.org/en/latest/reference/unitofwork-associations.html

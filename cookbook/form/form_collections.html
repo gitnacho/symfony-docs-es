@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.14',
+        VERSION:     '2.0.15',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -82,7 +82,7 @@
 <p>En este artículo, aprenderás cómo crear un formulario que integra una colección de muchos otros formularios. Esto podría ser útil, por ejemplo, si tienes una clase <tt class="docutils literal"><span class="pre">Tarea</span></tt> y quieres crear/editar/eliminar muchos objetos <tt class="docutils literal"><span class="pre">Etiqueta</span></tt> relacionados con esa <tt class="docutils literal"><span class="pre">Tarea</span></tt>, justo dentro del mismo formulario.</p>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
-<p>En este artículo, vamos a suponer vagamente que estás utilizando <em>Doctrine</em> como almacén de base de datos. Pero si no estás usando <em>Doctrine</em> (por ejemplo, <em>Propel</em> o simplemente una conexión directa a la base de datos), es casi lo mismo. Sólo hay unas cuantas partes de este guía que realmente se preocupan de la &#8220;persistencia&#8221;.</p>
+<p>En este artículo, vamos a suponer vagamente que estás utilizando <em>Doctrine</em> como almacén de base de datos. Pero si no estás usando <em>Doctrine</em> (por ejemplo, <em>Propel</em> o simplemente una conexión directa a la base de datos), es casi lo mismo. Sólo hay unas cuantas partes de esta guía que realmente se preocupan de la &#8220;persistencia&#8221;.</p>
 <p class="last">Si utilizas <em>Doctrine</em>, tendrás que añadir los metadatos de <em>Doctrine</em>, incluyendo las etiquetas <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt> en la propiedad <tt class="docutils literal"><span class="pre">etiquetas</span></tt> de la <tt class="docutils literal"><span class="pre">Tarea</span></tt>.</p>
 </div>
 <p>Vamos a empezar por ahí: Supongamos que cada <tt class="docutils literal"><span class="pre">Tarea</span></tt> pertenece a múltiples objetos <tt class="docutils literal"><span class="pre">Etiquetas</span></tt>. Empecemos creando una sencilla clase <tt class="docutils literal"><span class="pre">Tarea</span></tt>:</p>
@@ -114,7 +114,7 @@
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">getTags</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">etiquetas</span><span class="p">;</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">tags</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">setTags</span><span class="p">(</span><span class="nx">ArrayCollection</span> <span class="nv">$tags</span><span class="p">)</span>
@@ -140,7 +140,7 @@
 </div>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
-<p class="last">Aquí, la propiedad <tt class="docutils literal"><span class="pre">name</span></tt> es pública, pero fácilmente puede ser solo protegida o privada (pero entonces necesitaríamos métodos <tt class="docutils literal"><span class="pre">getName</span></tt> y <tt class="docutils literal"><span class="pre">setName</span></tt>).</p>
+<p class="last">Aquí, la propiedad <tt class="docutils literal"><span class="pre">name</span></tt> es pública, pero fácilmente puede ser protegida o privada (pero entonces necesitaríamos métodos <tt class="docutils literal"><span class="pre">getName</span></tt> y <tt class="docutils literal"><span class="pre">setName</span></tt>).</p>
 </div>
 <p>Ahora veamos los formularios. Crea una clase formulario para que el usuario pueda modificar un objeto <tt class="docutils literal"><span class="pre">Tag</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/Type/TagType.php</span>
@@ -289,7 +289,7 @@
 </ul>
 </div>
 <p>Cuando el usuario envía el formulario, los datos presentados por los campos <tt class="docutils literal"><span class="pre">Tag</span></tt> se utilizan para construir un <tt class="docutils literal"><span class="pre">ArrayCollection</span></tt> de los objetos <tt class="docutils literal"><span class="pre">Tag</span></tt>, que luego se establecen en el campo <tt class="docutils literal"><span class="pre">tag</span></tt> de la instancia <tt class="docutils literal"><span class="pre">Tarea</span></tt>.</p>
-<p>La colección <tt class="docutils literal"><span class="pre">Tags</span></tt>, naturalmente, es accesible a través de <tt class="docutils literal"><span class="pre">$task-&gt;getTags()</span></tt> y se puede persistir en la base de datos o utilizar sin embargo donde sea necesaria.</p>
+<p>La colección <tt class="docutils literal"><span class="pre">Tags</span></tt>, naturalmente, es accesible a través de <tt class="docutils literal"><span class="pre">$task-&gt;getTags()</span></tt> y se puede persistir en la base de datos o utilizar donde sea necesaria.</p>
 <p>Hasta el momento, esto funciona muy bien, pero aún no te permite agregar dinámicamente nuevas etiquetas o eliminar existentes. Por lo tanto, durante la edición de etiquetas existentes funcionará bien, tu usuario en realidad no puede añadir ninguna nueva etiqueta, todavía.</p>
 <div class="admonition caution">
 <p class="first admonition-title">Prudencia</p>
@@ -297,8 +297,8 @@
 Esto se debe a la opción <tt class="docutils literal"><span class="pre">xdebug.max_nesting_level</span></tt> de <em>PHP</em>, que por omisión es de <tt class="docutils literal"><span class="pre">100</span></tt>.</p>
 <p class="last">Esta directiva limita la recursividad a 100 llamadas que pueden no ser suficientes para reproducir el formulario en la plantilla si pintas todo el formulario de una vez (por ejemplo, <tt class="docutils literal"><span class="pre">form_widget(form)</span></tt>). Para solucionar este problema puedes redefinir esta directiva a un valor más alto (ya sea a través de un archivo <tt class="docutils literal"><span class="pre">ini</span></tt> de <em>PHP</em> o por medio de <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/function.ini-set.php" title="ini_set"><span class="pre">ini_set</span></a></tt>, por ejemplo, en <tt class="docutils literal"><span class="pre">app/autoload.php</span></tt>) o pintar cada campo del formulario a mano usando <tt class="docutils literal"><span class="pre">form_row</span></tt>.</p>
 </div>
-<div class="section" id="permitiendo-nuevas-etiquetas-con-el-prototipo">
-<span id="cookbook-form-collections-new-prototype"></span><h2>Permitiendo &#8220;nuevas&#8221; etiquetas con el &#8220;prototipo&#8221;<a class="headerlink" href="#permitiendo-nuevas-etiquetas-con-el-prototipo" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="permitiendo-nuevas-etiquetas-con-prototype">
+<span id="cookbook-form-collections-new-prototype"></span><h2>Permitiendo &#8220;nuevas&#8221; etiquetas con &#8220;prototype&#8221;<a class="headerlink" href="#permitiendo-nuevas-etiquetas-con-prototype" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Permitir al usuario añadir nuevas etiquetas dinámicamente significa que necesitarás usar algo de <em>JavaScript</em>. Anteriormente, añadimos dos etiquetas a nuestro formulario en el controlador.
 Ahora, tenemos que dejar que el usuario añada tantas etiquetas de formulario como necesite directamente en el navegador.
 Esto se hará a través de un poco de <em>JavaScript</em>.</p>
@@ -343,7 +343,7 @@ Esto se hará a través de un poco de <em>JavaScript</em>.</p>
 </div>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
-<p>El <tt class="docutils literal"><span class="pre">form.tags.get('prototype)</span></tt> es el elemento formulario que se ve y se siente igual que los elementos <tt class="docutils literal"><span class="pre">form_widget(tag)</span></tt> individuales dentro de nuestro bucle <tt class="docutils literal"><span class="pre">for</span></tt>.
+<p>El <tt class="docutils literal"><span class="pre">form.tags.get('prototype')</span></tt> es el elemento formulario que se ve y se siente igual que los elementos <tt class="docutils literal"><span class="pre">form_widget(tag)</span></tt> individuales dentro de nuestro bucle <tt class="docutils literal"><span class="pre">for</span></tt>.
 Esto significa que allí puedes llamar a <tt class="docutils literal"><span class="pre">form_widget</span></tt>, <tt class="docutils literal"><span class="pre">form_row</span></tt>, o <tt class="docutils literal"><span class="pre">form_label</span></tt>. Incluso puedes optar por pintar sólo uno de tus campos (por ejemplo, el campo <tt class="docutils literal"><span class="pre">nombre</span></tt>):</p>
 <div class="last highlight-html+jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">form_widget</span><span class="o">(</span><span class="nv">form.tags.get</span><span class="o">(</span><span class="s1">&#39;prototype&#39;</span><span class="o">)</span><span class="nv">.name</span><span class="o">)</span> <span class="o">|</span> <span class="nf">e</span> <span class="cp">}}</span>
 </pre></div>
@@ -429,7 +429,7 @@ Para simplificar las cosas, vamos a usar <em>jQuery</em> que, se supone, lo has 
 </li>
 </ul>
 </div>
-<p>Se trata del segundo problema potencial con el <a class="reference external" href="http://docs.doctrine-project.org/en/latest/reference/unitofwork-associations.html">Propio lado y el lado inverso</a> de las relaciones de <em>Doctrine</em>. En este ejemplo, si el lado &#8220;propio&#8221; de la relación es la <tt class="docutils literal"><span class="pre">Tarea</span></tt>, entonces la persistencia no tendrá ningún problema en las etiquetas que son agregadas correctamente a la tarea. Sin embargo, si el lado propio es la <tt class="docutils literal"><span class="pre">&quot;Tag&quot;</span></tt>, entonces tendrás que trabajar un poco más para asegurarte de modificar el lado correcto de la relación.</p>
+<p>Se trata del segundo problema potencial con el <a class="reference external" href="http://docs.doctrine-project.org/en/latest/reference/unitofwork-associations.html">Lado propietario y lado inverso</a> de las relaciones de <em>Doctrine</em>. En este ejemplo, si el lado &#8220;propietario&#8221; de la relación es la <tt class="docutils literal"><span class="pre">Tarea</span></tt>, entonces la persistencia no tendrá ningún problema puesto que las etiquetas se añaden correctamente a la tarea. Sin embargo, si el lado propietario es <tt class="docutils literal"><span class="pre">&quot;Tag&quot;</span></tt>, entonces tendrás que trabajar un poco más para asegurarte de modificar el lado correcto de la relación.</p>
 <p>El truco está en asegurarte de establecer una única <tt class="docutils literal"><span class="pre">&quot;Tarea&quot;</span></tt> en cada <tt class="docutils literal"><span class="pre">&quot;Etiqueta&quot;</span></tt>.
 Una forma fácil de hacerlo es añadir un poco de lógica adicional a <tt class="docutils literal"><span class="pre">setTags()</span></tt>, que es llamado por la plataforma de formularios desde que establece <a class="reference internal" href="../../reference/forms/types/collection.html#reference-form-types-by-reference"><em>by_reference</em></a> en <tt class="docutils literal"><span class="pre">false</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Entity/Task.php</span>
@@ -625,7 +625,7 @@ A menos que tengas una relación <tt class="docutils literal"><span class="pre">
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en May 28, 2012.
+      Actualizado por última vez en Jun 01, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>
