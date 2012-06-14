@@ -104,11 +104,6 @@ Esta opción te permite definir direcciones *URL* base que se utilizarán para r
 Para tu comodidad, puedes establecer directamente ``assets_base_urls`` con una cadena o una matriz de cadenas, que se organizan automáticamente en colecciones de *URL* base para peticiones ``http`` y ``https``. Si una *URL* comienza con ``https://`` o
 está `relacionada al protocolo`_ (es decir empieza con ``//``) esta se debe añadir en ambas colecciones. las *URL* que empiezan con ``http://`` sólo se agregarán a la colección ``http``.
 
-.. versionadded:: 2.1
-
-    A diferencia de la mayoría de los bloques de configuración, los valores sucesivos de ``assets_base_urls`` se deben redefinir unos a otros en lugar de fusionarlos. Este comportamiento fue elegido porque los desarrolladores típicamente definen la *URL* base para cada entorno.
-    Dado que la mayoría de los proyectos tienden a heredar las configuraciones (por ejemplo, :file:`config_test.yml` importa :file:`config_dev.yml`) y/o comparten una configuración base común (es decir, :file:`config.yml`), la fusión podría generar un conjunto de *URL* base para múltiples entornos.
-
 .. _ref-framework-assets-version:
 
 ``assets_version``
@@ -195,11 +190,10 @@ Configuración predeterminada completa
 
             # configuración general
             charset:              ~
-            trust_proxy_headers:  false
             secret:               ~ # Requerido
             ide:                  ~
             test:                 ~
-            default_locale:       en
+            trust_proxy_headers:  false
 
             # configuración de formulario
             form:
@@ -216,15 +210,13 @@ Configuración predeterminada completa
             profiler:
                 only_exceptions:      false
                 only_master_requests:  false
-                dsn:                  file:%kernel.cache_dir%/profiler
+                dsn:                  sqlite:%kernel.cache_dir%/profiler.db
                 username:
                 password:
                 lifetime:             86400
                 matcher:
                     ip:                   ~
-
-                    # usa el formato urldecoded
-                    path:                 ~ # Ejemplo: ^/ruta al recurso/
+                    path:                 ~
                     service:              ~
 
             # configuración de enrutador
@@ -236,60 +228,37 @@ Configuración predeterminada completa
 
             # configuración de sesión
             session:
-                auto_start:           false
+                auto_start:           ~
+                default_locale:       en
                 storage_id:           session.storage.native
-                handler_id:           session.handler.native_file
                 name:                 ~
-                cookie_lifetime:      ~
-                cookie_path:          ~
-                cookie_domain:        ~
-                cookie_secure:        ~
-                cookie_httponly:      ~
-                gc_divisor:           ~
-                gc_probability:       ~
-                gc_maxlifetime:       ~
-                save_path:            %kernel.cache_dir%/sessions
-
-                # ¡DESACONSEJADO! Por favor usa: cookie_lifetime
-                lifetime:             ~
-
-                # ¡DESACONSEJADO! Por favor usa: cookie_path
+                lifetime:             0
                 path:                 ~
-
-                # ¡DESACONSEJADO! Por favor usa: cookie_domain
                 domain:               ~
-
-                # ¡DESACONSEJADO! Por favor usa: cookie_secure
                 secure:               ~
-
-                # ¡DESACONSEJADO! Por favor usa: cookie_httponly
                 httponly:             ~
 
             # configuración de plantillas
             templating:
                 assets_version:       ~
-                assets_version_format:  %%s?%%s
-                hinclude_default_template:  ~
-                form:
-                    resources:
-
-                        # Predefinido:
-                        - FrameworkBundle:Form
+                assets_version_format:  "%%s?%%s"
                 assets_base_urls:
                     http:                 []
                     ssl:                  []
                 cache:                ~
-                engines:              # Requerido
+                engines:              # Required
+                form:
+                    resources:        [FrameworkBundle:Form]
 
                     # Ejemplo:
                     - twig
                 loaders:              []
                 packages:
 
-                    # Una colección de nombres de paquete
-                    un_nombre_de_paquete:
+                    # Prototipo
+                    name:
                         version:              ~
-                        version_format:       %%s?%%s
+                        version_format:       ~
                         base_urls:
                             http:                 []
                     ssl:                  []
@@ -308,7 +277,7 @@ Configuración predeterminada completa
             # configuración de anotaciones
             annotations:
                 caché:                file
-                file_cache_dir:       "%kernel.cache_dir%/annotations"
+                file_cache_dir:       %kernel.cache_dir%/annotations
                 debug:                true
 
 .. _`relacionada al protocolo`: http://tools.ietf.org/html/rfc3986#section-4.2

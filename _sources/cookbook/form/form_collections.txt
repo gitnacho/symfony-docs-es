@@ -86,7 +86,7 @@ Ahora veamos los formularios. Crea una clase formulario para que el usuario pued
             $builder->add('name');
         }
 
-        public function getDefaultOptions()
+        public function getDefaultOptions(array $options)
         {
             return array(
                 'data_class' => 'Acme\TaskBundle\Entity\Tag',
@@ -118,7 +118,7 @@ Ten en cuenta que integramos una colección de formularios ``TagType`` usando el
             $builder->add('tags', 'collection', array('type' => new TagType()));
         }
 
-        public function getDefaultOptions()
+        public function getDefaultOptions(array $options)
         {
             return array(
                 'data_class' => 'Acme\TaskBundle\Entity\Task',
@@ -225,13 +225,6 @@ La colección ``Tags``, naturalmente, es accesible a través de ``$task->getTags
 Hasta el momento, esto funciona muy bien, pero aún no te permite agregar dinámicamente nuevas etiquetas o eliminar existentes. Por lo tanto, durante la edición de etiquetas existentes funcionará bien, tu usuario en realidad no puede añadir ninguna nueva etiqueta, todavía.
 
 
-.. caution::
-
-    En esta entrada, integramos una sola colección, pero no estás limitado a esto. También puedes integrar colecciones anidadas con tantos niveles descendientes como quieras. Pero si utilizas *XDebug* en tu configuración de desarrollo, puedes recibir un error ``La función alcanzó el máximo nivel de anidamiento de '100', ¡abortando!``.
-    Esto se debe a la opción ``xdebug.max_nesting_level`` de *PHP*, que por omisión es de ``100``.
-
-    Esta directiva limita la recursividad a 100 llamadas que pueden no ser suficientes para reproducir el formulario en la plantilla si pintas todo el formulario de una vez (por ejemplo, ``form_widget(form)``). Para solucionar este problema puedes redefinir esta directiva a un valor más alto (ya sea a través de un archivo ``ini`` de *PHP* o por medio de :phpfunction:`ini_set`, por ejemplo, en ``app/autoload.php``) o pintar cada campo del formulario a mano usando ``form_row``.
-
 .. _cookbook-form-collections-new-prototype:
 
 Permitiendo "nuevas" etiquetas con "prototype"
@@ -293,7 +286,7 @@ En la página producida, el resultado será muy parecido a este:
 
 .. code-block:: html
 
-    <ul class="tags" data-prototype="&lt;div&gt;&lt;label class=&quot; required&quot;&gt;__name__&lt;/label&gt;&lt;div id=&quot;task_tags___name__&quot;&gt;&lt;div&gt;&lt;label for=&quot;task_tags___name___name&quot; class=&quot; required&quot;&gt;Name&lt;/label&gt;&lt;input type=&quot;text&quot; id=&quot;task_tags___name___name&quot; name=&quot;task[tags][__name__][name]&quot; required=&quot;required&quot; maxlength=&quot;255&quot; /&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;">
+    <ul class="tags" data-prototype="&lt;div&gt;&lt;label class=&quot; required&quot;&gt;$$name$$&lt;/label&gt;&lt;div id=&quot;task_tags_$$name$$&quot;&gt;&lt;div&gt;&lt;label for=&quot;task_tags_$$name$$_name&quot; class=&quot; required&quot;&gt;Name&lt;/label&gt;&lt;input type=&quot;text&quot; id=&quot;task_tags_$$name$$_name&quot; name=&quot;task[tags][$$name$$][name]&quot; required=&quot;required&quot; maxlength=&quot;255&quot; /&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;">
 
 El objetivo de esta sección es usar *JavaScript* para leer este atributo y agregar dinámicamente nuevas etiquetas al formulario cuando el usuario haga clic en un enlace "Agregar una etiqueta".
 Para simplificar las cosas, vamos a usar *jQuery* que, se supone, lo has incluido en algún lugar de tu página.
@@ -319,29 +312,27 @@ En primer lugar, añade un enlace a la parte inferior de la lista de ``"tags"`` 
             // evita crear el enlace con una "#" en la URL
             e.preventDefault();
 
-            // añade una nueva etiqueta form (ve el siguiente bloque de código)
-            addTagForm(collectionHolder, $newLinkLi);
+            // Añade una nueva etiqueta al formulario (ve el siguiente bloque de código)
+            addTagForm();
         });
     });
 
-El trabajo de la función ``addTagForm`` será el de utilizar el atributo ``data-prototype`` para agregar dinámicamente un nuevo formulario cuando se haga clic en ese enlace. El *HTML* del ``data-prototype`` contiene el elemento ``input`` de la etiqueta ``text`` con el nombre de ``task[tags][__name__][nombre] ``y el identificador de ``task_tags___name___name``. El ``__name__`` es una especie de "comodín", que vamos a sustituir con un número único, incrementando (por ejemplo, ``task[tags][3][nombre]``).
-
-.. versionadded:: 2.1
-    El marcador de posición cambió de nombre de ``$$name$$`` a ``__name__`` en *Symfony 2.1*
+El trabajo de la función ``addTagForm`` será el de utilizar el atributo ``data-prototype`` para agregar dinámicamente un nuevo formulario cuando se haga clic en ese enlace. El *HTML* del ``data-prototype`` contiene el elemento ``input`` de la etiqueta ``text`` con el nombre de ``task[tags][$$name$$][name]`` y el identificador de ``task_tags_$$name$$_name``. El ``$$name`` es una especie de "comodín", que vamos a sustituir con un número incremental único (por ejemplo, ``task[tags][3][name]``).
 
 El código real necesario para hacer que todo esto trabaje puede variar un poco, pero aquí está un ejemplo:
 
 .. code-block:: javascript
 
-    function addTagForm(collectionHolder, $newLinkLi) {
+    function addTagForm() {
         // Obtiene el data-prototype que explicamos anteriormente
         var prototype = collectionHolder.attr('data-prototype');
 
-        // Sustituye "__name__" en el prototipo HTML para que
-        // en su lugar sea un número basado en la longitud de la colección actual.
-        var newForm = prototype.replace(/__name__/g, collectionHolder.children().length);
+        // Sustituye "$$name$$" en el HTML del prototipo
+        // en lugar de ser un número basado en la longitud de la colección actual.
+        var newForm = prototype.replace(/\$\$name\$\$/g, collectionHolder.children().length);
 
-        // Muestra el formulario en la página en un li, antes del enlace "Agregar una etiqueta"
+        // Muestra el formulario en la página en un elemento li,
+        \\ antes del enlace "Agregar una etiqueta"
         var $newFormLi = $('<li></li>').append(newForm);
         $newLinkLi.before($newFormLi);
     }
@@ -496,7 +487,7 @@ Cuando se quita una etiqueta del *DOM* del formulario y se envía, el objeto ``E
 
         public function editAction($id, Request $request)
         {
-            $em = $this->getDoctrine()->getManager();
+            $em = $this->getDoctrine()->getEntityManager();
             $task = $em->getRepository('AcmeTaskBundle:Task')->find($id);
     
             if (!$task) {

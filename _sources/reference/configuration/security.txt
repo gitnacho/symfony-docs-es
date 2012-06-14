@@ -18,89 +18,72 @@ Cada parte se explica en la siguiente sección.
 
         # app/config/security.yml
         security:
-            access_denied_url:    ~ # Ejemplo: /foo/error403
+            access_denied_url: /foo/error403
+
+            always_authenticate_before_granting: false
 
             # la estrategia puede ser: none, migrate, invalidate
-            session_fixation_strategy:  migrate
-            hide_user_not_found:  true
-            always_authenticate_before_granting:  false
-            erase_credentials:    true
-            access_decision_manager:
-                strategy:             affirmative
-                allow_if_all_abstain:  false
-                allow_if_equal_granted_denied:  true
-            acl:
+            session_fixation_strategy: migrate
 
-                # cualquier nombre configurado en la sección doctrine.dbal
-                connection:           ~
-                cache:
-                    id:                   ~
-                    prefix:               sf2_acl_
-                provider:             ~
+            access_decision_manager:
+                strategy: affirmative
+                allow_if_all_abstain: false
+                allow_if_equal_granted_denied: true
+
+            acl:
+                connection: default # any name configured in doctrine.dbal section
                 tables:
-                    class:                acl_classes
-                    entry:                acl_entries
-                    object_identity:      acl_object_identities
-                    object_identity_ancestors:  acl_object_identity_ancestors
-                    security_identity:    acl_security_identities
+                    class: acl_classes
+                    entry: acl_entries
+                    object_identity: acl_object_identities
+                    object_identity_ancestors: acl_object_identity_ancestors
+                    security_identity: acl_security_identities
+                cache:
+                    id: service_id
+                    prefix: sf2_acl_
                 voter:
-                    allow_if_object_identity_unavailable:  true
+                    allow_if_object_identity_unavailable: true
 
             encoders:
-                # Ejemplos:
-                Acme\DemoBundle\Entity\Usuario1: sha512
-                Acme\DemoBundle\Entity\Usuario2:
-                    algorithm:           sha512
-                    encode_as_base64:    true
-                    iterations:          5000
+                cualquiernombre:
+                    class: Acme\DemoBundle\Entity\User
+                Acme\DemoBundle\Entity\User: sha512
+                Acme\DemoBundle\Entity\User: plaintext
+                Acme\DemoBundle\Entity\User:
+                    algorithm: sha512
+                    encode_as_base64: true
+                    iterations: 5000
+                Acme\DemoBundle\Entity\User:
+                    id: my.custom.encoder.service.id
 
-                # Ejemplo opciones/valores por lo tanto un codificador personalizado se puede ver así
-                Acme\Tu\Nombre\De\Clase:
-                    algorithm:            ~
-                    ignore_case:          false
-                    encode_as_base64:     true
-                    iterations:           5000
-                    id:                   ~
-
-            providers:            # Requerido
-                # Ejemplos:
+            providers:
                 memory:
-                    name:                memory
+                    name: memory
                     users:
-                        foo:
-                            password:            foo
-                            roles:               ROLE_USER
-                        bar:
-                            password:            bar
-                            roles:               [ROLE_USER, ROLE_ADMIN]
+                        foo: { password: foo, roles: ROLE_USER }
+                        bar: { password: bar, roles: [ROLE_USER, ROLE_ADMIN] }
                 entity:
-                    entity:
-                        class:               SecurityBundle:User
-                        property:            username
+                    entity: { class: SecurityBundle:User, property: username }
 
-                # Ejemplo de proveedor personalizado
-                un_proveedor_personalizado:
-                    id:                   ~
-                    chain:
-                        providers:            []
+            factories:
+                MyFactory: %kernel.root_dir%/../src/Acme/DemoBundle/Resources/config/security_factories.xml
 
-            firewalls:            # Requerido
-                # Ejemplos:
+            firewalls:
                 cualquiernombre:
                     pattern: .*
                     request_matcher: un.id.de.servicio
                     access_denied_url: /foo/error403
                     access_denied_handler: un.id.de.servicio
                     entry_point: un.id.de.servicio
-                    provider: una_clave_de_arriba
+                    provider: name
                     context: name
                     stateless: false
                     x509:
-                        provider: una_clave_de_arriba
+                        provider: name
                     http_basic:
-                        provider: una_clave_de_arriba
+                        provider: name
                     http_digest:
-                        provider: una_clave_de_arriba
+                        provider: name
                     form_login:
                         check_path: /login_check
                         login_path: /login
@@ -127,7 +110,7 @@ Cada parte se explica en la siguiente sección.
                         lifetime: 3600 # en segundos
                         path: /foo
                         domain: undominio.foo
-                        secure: false
+                        secure: true
                         httponly: true
                         always_remember_me: false
                         remember_me_parameter: _remember_me
@@ -142,51 +125,19 @@ Cada parte se explica en la siguiente sección.
                         success_handler: un.id.de.servicio
                     anonymous: ~
 
-                # Valores y opciones predefinidos para algún cortafuegos
-                un_escucha_del_cortafuegos:
-                    pattern:              ~
-                    security:             true
-                    request_matcher:      ~
-                    access_denied_url:    ~
-                    access_denied_handler:  ~
-                    entry_point:          ~
-                    provider:             ~
-                    stateless:            false
-                    context:              ~
-                    logout:
-                        csrf_parameter:       _csrf_token
-                        csrf_provider:        ~
-                        intention:            logout
-                        path:                 /logout
-                        target:               /
-                        success_handler:      ~
-                        invalidate_session:   true
-                        delete_cookies:
-
-                            # Prototipo
-                            name:
-                                path:                 ~
-                                domain:               ~
-                        handlers:             []
-                    anonymous:
-                        key:                  4f954a0667e01
-                    switch_user:
-                        provider:             ~
-                        parameter:            _switch_user
-                        role:                 ROLE_ALLOWED_TO_SWITCH
-
             access_control:
-                requires_channel:     ~
+                -
+                    path: ^/foo
+                    host: mydomain.foo
+                    ip: ^/, roles: [ROLE_A, ROLE_B]
+                    requires_channel: https
 
-                # usa el formato urldecoded
-                path:                 ~ # Ejemplo: ^/ruta al recurso/
-                host:                 ~
-                ip:                   ~
-                methods:              []
-                roles:                []
             role_hierarchy:
-                ROLE_ADMIN:      [ROLE_ORGANIZER, ROLE_USER]
-                ROLE_SUPERADMIN: [ROLE_ADMIN]
+                ROLE_SUPERADMIN: ROLE_ADMIN
+                ROLE_SUPERADMIN: 'ROLE_ADMIN, ROLE_USER'
+                ROLE_SUPERADMIN: [ROLE_ADMIN, ROLE_USER]
+                anything: { id: ROLE_SUPERADMIN, value: 'ROLE_USER, ROLE_ADMIN' }
+                anything: { id: ROLE_SUPERADMIN, value: [ROLE_USER, ROLE_ADMIN] }
 
 .. _reference-security-firewall-form-login:
 
@@ -205,7 +156,7 @@ Procesando el formulario de acceso
 
 *   ``check_path`` (tipo: ``string``, predefinido: ``/login_check``)
     Esta es la *URL* en la cual se debe presentar el formulario de inicio de sesión. El cortafuegos intercepta cualquier petición (sólo las peticiones *POST*, por omisión) a esta *URL* y procesa las credenciales presentadas.
-
+    
     Asegúrate de que esta dirección está cubierta por el cortafuegos principal (es decir, no crees un servidor de seguridad independiente sólo para la *URL* ``check_path``).
 
 *   ``use_forward`` (tipo: ``Boolean``, predefinido: ``false``)

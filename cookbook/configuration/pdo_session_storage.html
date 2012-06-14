@@ -26,9 +26,9 @@
     <script type="text/javascript" src="../../_static/translations.js"></script>
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
-    <link rel="up" title="Configurando" href="index.html" />
-    <link rel="next" title="Cómo usar el enrutador de Apache" href="apache_router.html" />
-    <link rel="prev" title="Cómo configurar parámetros externos en el contenedor de servicios" href="external_parameters.html" /> 
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Estructura de un paquete y buenas prácticas" href="../bundles/best_practices.html" />
+    <link rel="prev" title="Cómo hacer que tus servicios utilicen etiquetas" href="../service_container/tags.html" /> 
   </head>
   <body>
   <div class="imalogo">
@@ -59,14 +59,13 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="apache_router.html" title="Cómo usar el enrutador de Apache"
+          <a href="../bundles/best_practices.html" title="Estructura de un paquete y buenas prácticas"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
-          <a href="external_parameters.html" title="Cómo configurar parámetros externos en el contenedor de servicios"
+          <a href="../service_container/tags.html" title="Cómo hacer que tus servicios utilicen etiquetas"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Configurando</a> &raquo;</li> 
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -80,18 +79,15 @@
   <div class="section" id="como-utilizar-pdosessionstorage-para-almacenar-sesiones-en-la-base-de-datos">
 <span id="index-0"></span><h1>Cómo utilizar <tt class="docutils literal"><span class="pre">PdoSessionStorage</span></tt> para almacenar sesiones en la base de datos<a class="headerlink" href="#como-utilizar-pdosessionstorage-para-almacenar-sesiones-en-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h1>
 <p>El almacenamiento de sesiones predeterminado de <em>Symfony2</em> escribe la información de la sesión en archivo(s). La mayoría desde medianos hasta grandes sitios web utilizan una base de datos para almacenar valores de sesión en lugar de archivos, porque las bases de datos son más fáciles de usar y escalar en un entorno web multiservidor.</p>
-<p><em>Symfony2</em> ha incorporado una solución para el almacenamiento de la sesión en la base de datos denominada <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage</span></tt>.
+<p><em>Symfony2</em> ha incorporado una solución de almacenamiento en base de datos denominada <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage</span></tt>.
 Para usarla, sólo tienes que cambiar algunos parámetros en <tt class="file docutils literal"><span class="pre">config.yml</span></tt> (o el formato de configuración de tu elección):</p>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>En <em>Symfony2.1</em> la clase y el espacio de nombres se han modificado significativamente. Ahora puede encontrar la clase <tt class="docutils literal"><span class="pre">PdoSessionStorage</span></tt> en el espacio de nombres <tt class="docutils literal"><span class="pre">Session\\Storage</span></tt>:
-<tt class="docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage\PdoSessionStorage</span></tt>. Además debes tener en cuenta que ha cambiado el orden del segundo y tercer argumentos de la clase. Abajo, notarás que <tt class="docutils literal"><span class="pre">%session.storage.options%</span></tt> y <tt class="docutils literal"><span class="pre">%pdo.db_options%</span></tt> conmutaron su lugar.</p>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><pre># app/config/config.yml
 framework:
     session:
         # ...
-        handler_id:     session.storage.pdo
+        storage_id:     session.storage.pdo
 
 parameters:
     pdo.db_options:
@@ -109,13 +105,13 @@ services:
             password: mypassword
 
     session.storage.pdo:
-        class:     Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
-        arguments: [@pdo, %pdo.db_options%, %session.storage.options%]</pre>
+        class:     Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage
+        arguments: [@pdo, %session.storage.options%, %pdo.db_options%]</pre>
 </div>
 </li>
 <li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
 <span class="nt">&lt;framework:config&gt;</span>
-    <span class="nt">&lt;framework:session</span> <span class="na">handler-id=</span><span class="s">&quot;session.storage.pdo&quot;</span> <span class="na">lifetime=</span><span class="s">&quot;3600&quot;</span> <span class="na">auto-start=</span><span class="s">&quot;true&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;framework:session</span> <span class="na">storage-id=</span><span class="s">&quot;session.storage.pdo&quot;</span> <span class="na">default-locale=</span><span class="s">&quot;en&quot;</span> <span class="na">lifetime=</span><span class="s">&quot;3600&quot;</span> <span class="na">auto-start=</span><span class="s">&quot;true&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/framework:config&gt;</span>
 
 <span class="nt">&lt;parameters&gt;</span>
@@ -134,10 +130,10 @@ services:
         <span class="nt">&lt;argument&gt;</span>mypassword<span class="nt">&lt;/argument&gt;</span>
     <span class="nt">&lt;/service&gt;</span>
 
-    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;session.storage.pdo&quot;</span> <span class="na">class=</span><span class="s">&quot;Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;session.storage.pdo&quot;</span> <span class="na">class=</span><span class="s">&quot;Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage&quot;</span><span class="nt">&gt;</span>
         <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;pdo&quot;</span> <span class="nt">/&gt;</span>
-        <span class="nt">&lt;argument&gt;</span>%pdo.db_options%<span class="nt">&lt;/argument&gt;</span>
         <span class="nt">&lt;argument&gt;</span>%session.storage.options%<span class="nt">&lt;/argument&gt;</span>
+        <span class="nt">&lt;argument&gt;</span>%pdo.db_options%<span class="nt">&lt;/argument&gt;</span>
     <span class="nt">&lt;/service&gt;</span>
     <span class="nt">&lt;/services&gt;</span>
 </pre></div>
@@ -151,7 +147,7 @@ services:
     <span class="c1">// ...</span>
     <span class="s1">&#39;session&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
         <span class="c1">// ...</span>
-        <span class="s1">&#39;handler_id&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;session.storage.pdo&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;storage_id&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;session.storage.pdo&#39;</span><span class="p">,</span>
     <span class="p">),</span>
 <span class="p">));</span>
 
@@ -169,10 +165,10 @@ services:
 <span class="p">));</span>
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;pdo&#39;</span><span class="p">,</span> <span class="nv">$pdoDefinition</span><span class="p">);</span>
 
-<span class="nv">$storageDefinition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+<span class="nv">$storageDefinition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
     <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;pdo&#39;</span><span class="p">),</span>
-    <span class="s1">&#39;%pdo.db_options%&#39;</span><span class="p">,</span>
     <span class="s1">&#39;%session.storage.options%&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;%pdo.db_options%&#39;</span><span class="p">,</span>
 <span class="p">));</span>
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;session.storage.pdo&#39;</span><span class="p">,</span> <span class="nv">$storageDefinition</span><span class="p">);</span>
 </pre></div>
@@ -208,11 +204,11 @@ services:
 </pre></div>
 </div>
 </li>
-<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$pdoDefinition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;PDO&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-    <span class="s1">&#39;mysql:dbname=%database_name%&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;%database_user%&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;%database_password%&#39;</span><span class="p">,</span>
-<span class="p">));</span>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre>$pdoDefinition = new Definition(&#39;PDO&#39;, array(
+    &#39;mysql:dbname=%database_name%&#39;,
+    &#39;%database_user%&#39;,
+    &#39;%database_password%&#39;,
+));
 </pre></div>
 </div>
 </li>
@@ -240,7 +236,7 @@ services:
     <span class="n">session_id</span> <span class="nb">character</span> <span class="nb">varying</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
     <span class="n">session_value</span> <span class="nb">text</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
     <span class="n">session_time</span> <span class="nb">integer</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
-    <span class="k">CONSTRAINT</span> <span class="n">session_pkey</span> <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
+    <span class="k">CONSTRAINT</span> <span class="n">session_pkey</span> <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="n">session_id</span><span class="p">),</span>
 <span class="p">);</span>
 </pre></div>
 </div>
@@ -265,14 +261,13 @@ services:
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="apache_router.html" title="Cómo usar el enrutador de Apache"
+          <a href="../bundles/best_practices.html" title="Estructura de un paquete y buenas prácticas"
              >siguiente</a> |</li>
         <li class="right" >
-          <a href="external_parameters.html" title="Cómo configurar parámetros externos en el contenedor de servicios"
+          <a href="../service_container/tags.html" title="Cómo hacer que tus servicios utilicen etiquetas"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" >Configurando</a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -283,7 +278,7 @@ services:
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

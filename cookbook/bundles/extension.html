@@ -26,8 +26,8 @@
     <script type="text/javascript" src="../../_static/translations.js"></script>
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
-    <link rel="up" title="Paquetes" href="index.html" />
-    <link rel="next" title="Correo electrónico" href="../email/index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo enviar correo electrónico" href="../email/email.html" />
     <link rel="prev" title="Cómo sustituir cualquier parte de un paquete" href="override.html" /> 
   </head>
   <body>
@@ -59,14 +59,13 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="../email/index.html" title="Correo electrónico"
+          <a href="../email/email.html" title="Cómo enviar correo electrónico"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
           <a href="override.html" title="Cómo sustituir cualquier parte de un paquete"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Paquetes</a> &raquo;</li> 
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -438,11 +437,14 @@ Para hacerlo agrega lo siguiente al método <tt class="docutils literal"><span c
 </pre></div>
 </div>
 <p>Se trata de un ejemplo <em>muy</em> sencillo, pero ahora puedes utilizar esta clase en el método <tt class="docutils literal"><span class="pre">load()</span></tt> para combinar tu configuración y forzar su validación. Si se pasan las demás opciones salvo <tt class="docutils literal"><span class="pre">my_type</span></tt>, el usuario recibirá una notificación con una excepción de que se ha pasado una opción no admitida:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="k">array</span> <span class="nv">$configs</span><span class="p">,</span> <span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="nv">$configuration</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Configuration</span><span class="p">();</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\Processor</span><span class="p">;</span>
+<span class="c1">// ...</span>
 
-    <span class="nv">$config</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">processConfiguration</span><span class="p">(</span><span class="nv">$configuration</span><span class="p">,</span> <span class="nv">$configs</span><span class="p">);</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="k">array</span> <span class="nv">$configs</span><span class="p">,</span> <span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$processor</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Processor</span><span class="p">();</span>
+    <span class="nv">$configuration</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Configuration</span><span class="p">();</span>
+    <span class="nv">$config</span> <span class="o">=</span> <span class="nv">$processor</span><span class="o">-&gt;</span><span class="na">processConfiguration</span><span class="p">(</span><span class="nv">$configuration</span><span class="p">,</span> <span class="nv">$configs</span><span class="p">);</span>
 
     <span class="c1">// ...</span>
 <span class="p">}</span>
@@ -450,42 +452,6 @@ Para hacerlo agrega lo siguiente al método <tt class="docutils literal"><span c
 </div>
 <p>El método <tt class="docutils literal"><span class="pre">processConfiguration()</span></tt> utiliza el árbol de configuración que has definido en la clase <tt class="docutils literal"><span class="pre">Configuración</span></tt> para validar, normalizar y fusionar todas las matrices de configuración.</p>
 <p>La clase <tt class="docutils literal"><span class="pre">Configuración</span></tt> puede ser mucho más complicada de lo que se muestra aquí, apoyando matrices de nodos, nodos &#8220;prototipo&#8221;, validación avanzada, normalización <em>XML</em> específica y fusión avanzada. La mejor manera de ver esto en acción es revisando algunas de las clases configuración del núcleo, como la <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Bundle/FrameworkBundle/DependencyInjection/Configuration.php">configuración del FrameworkBundle</a>  o la <a class="reference external" href="https://github.com/symfony/symfony/blob/master/src/Symfony/Bundle/TwigBundle/DependencyInjection/Configuration.php">configuración del TwigBundle</a>.</p>
-<div class="section" id="volcado-de-la-configuracion-predefinida">
-<h3>Volcado de la configuración predefinida<a class="headerlink" href="#volcado-de-la-configuracion-predefinida" title="Enlazar permanentemente con este título">¶</a></h3>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>La orden <tt class="docutils literal"><span class="pre">config:dump-reference</span></tt> se añadió en <em>Symfony</em> 2.1</p>
-<p>La orden <cite>config:dump-reference`</cite> permite volcar en consola la configuración predefinida en <em>YAML</em> de un paquete.</p>
-<p>Mientras que la configuración de tu paquete se encuentre en la ubicación estándar (<tt class="docutils literal"><span class="pre">TuPaquete\DependencyInjection\Configuration</span></tt>) y no tiene un <tt class="docutils literal"><span class="pre">__construct()</span></tt> funcionará automáticamente.  Si tienes algo diferente en tu clase <tt class="docutils literal"><span class="pre">Extensión</span></tt> tendrás que sobrescribir el método <tt class="docutils literal"><span class="pre">Extension::getConfiguration()</span></tt>.  Para que devuelva una instancia de tu <tt class="docutils literal"><span class="pre">Configuración</span></tt>.</p>
-<p>Puedes agregar comentarios y ejemplos a los nodos de configuración usando los métodos <tt class="docutils literal"><span class="pre">-&gt;setinfo()</span></tt> y <tt class="docutils literal"><span class="pre">-&gt;setExample()</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/DependencyExtension/Configuration.php</span>
-<span class="k">namespace</span> <span class="nx">Acme\HelloBundle\DependencyInjection</span><span class="p">;</span>
-
-<span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\Builder\TreeBuilder</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\ConfigurationInterface</span><span class="p">;</span>
-
-<span class="k">class</span> <span class="nc">Configuration</span> <span class="k">implements</span> <span class="nx">ConfigurationInterface</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">getConfigTreeBuilder</span><span class="p">()</span>
-    <span class="p">{</span>
-        <span class="nv">$treeBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">TreeBuilder</span><span class="p">();</span>
-        <span class="nv">$rootNode</span> <span class="o">=</span> <span class="nv">$treeBuilder</span><span class="o">-&gt;</span><span class="na">root</span><span class="p">(</span><span class="s1">&#39;acme_hello&#39;</span><span class="p">);</span>
-
-        <span class="nv">$rootNode</span>
-            <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
-                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;my_type&#39;</span><span class="p">)</span>
-                    <span class="o">-&gt;</span><span class="na">defaultValue</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
-                    <span class="o">-&gt;</span><span class="na">setInfo</span><span class="p">(</span><span class="s1">&#39;what my_type configures&#39;</span><span class="p">)</span>
-                    <span class="o">-&gt;</span><span class="na">setExample</span><span class="p">(</span><span class="s1">&#39;example setting&#39;</span><span class="p">)</span>
-                <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
-            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
-        <span class="p">;</span>
-
-        <span class="k">return</span> <span class="nv">$treeBuilder</span><span class="p">;</span>
-    <span class="p">}</span>
-</pre></div>
-</div>
-<p>Este texto aparece en comentarios <em>YAML</em> en el resultado de la orden <tt class="docutils literal"><span class="pre">config:dump-reference</span></tt>.</p>
-</div>
 </div>
 <div class="section" id="convenciones-de-extension">
 <span id="index-2"></span><h2>Convenciones de extensión<a class="headerlink" href="#convenciones-de-extension" title="Enlazar permanentemente con este título">¶</a></h2>
@@ -532,14 +498,13 @@ Para hacerlo agrega lo siguiente al método <tt class="docutils literal"><span c
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="../email/index.html" title="Correo electrónico"
+          <a href="../email/email.html" title="Cómo enviar correo electrónico"
              >siguiente</a> |</li>
         <li class="right" >
           <a href="override.html" title="Cómo sustituir cualquier parte de un paquete"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" >Paquetes</a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -550,7 +515,7 @@ Para hacerlo agrega lo siguiente al método <tt class="docutils literal"><span c
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

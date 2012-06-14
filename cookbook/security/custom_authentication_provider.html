@@ -26,8 +26,8 @@
     <script type="text/javascript" src="../../_static/translations.js"></script>
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
-    <link rel="up" title="Seguridad" href="index.html" />
-    <link rel="next" title="Cómo cambiar el comportamiento predeterminado de la ruta destino" href="target_path.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo utilizar Varnish para acelerar mi sitio web" href="../cache/varnish.html" />
     <link rel="prev" title="Cómo crear un proveedor de usuario personalizado" href="custom_provider.html" /> 
   </head>
   <body>
@@ -59,14 +59,13 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="target_path.html" title="Cómo cambiar el comportamiento predeterminado de la ruta destino"
+          <a href="../cache/varnish.html" title="Cómo utilizar Varnish para acelerar mi sitio web"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
           <a href="custom_provider.html" title="Cómo crear un proveedor de usuario personalizado"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Seguridad</a> &raquo;</li> 
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -110,14 +109,6 @@ Esta permitirá pasar toda la información pertinente a nuestro proveedor de aut
     <span class="k">public</span> <span class="nv">$created</span><span class="p">;</span>
     <span class="k">public</span> <span class="nv">$digest</span><span class="p">;</span>
     <span class="k">public</span> <span class="nv">$nonce</span><span class="p">;</span>
-
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="k">array</span> <span class="nv">$roles</span> <span class="o">=</span> <span class="k">array</span><span class="p">())</span>
-    <span class="p">{</span>
-        <span class="k">parent</span><span class="o">::</span><span class="na">__construct</span><span class="p">(</span><span class="nv">$roles</span><span class="p">);</span>
-
-        <span class="c1">// Si el usuario tiene roles, lo considera autenticado</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">setAuthenticated</span><span class="p">(</span><span class="nb">count</span><span class="p">(</span><span class="nv">$roles</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">);</span>
-    <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">getCredentials</span><span class="p">()</span>
     <span class="p">{</span>
@@ -393,27 +384,64 @@ services:
 </li>
 </ul>
 </div>
-<p>Ahora que están definidos tus servicios, informa de tu factoría al contexto de seguridad en tu clase <tt class="docutils literal"><span class="pre">Bundle</span></tt>.</p>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>Antes de 2.1, se añadió la factoría de abajo a través de <tt class="file docutils literal"><span class="pre">security.yml</span></tt> en su lugar.</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/AcmeDemoBundle.php</span>
-<span class="k">namespace</span> <span class="nx">Acme\DemoBundle</span><span class="p">;</span>
-
-<span class="k">use</span> <span class="nx">Acme\DemoBundle\DependencyInjection\Security\Factory\WsseFactory</span><span class="p">;</span>
-    <span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Bundle\Bundle</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
-
-<span class="k">class</span> <span class="nc">AcmeDemoBundle</span> <span class="k">extends</span> <span class="nx">Bundle</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">build</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">parent</span><span class="o">::</span><span class="na">build</span><span class="p">(</span><span class="nv">$container</span><span class="p">);</span>
-
-        <span class="nv">$extension</span> <span class="o">=</span> <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">getExtension</span><span class="p">(</span><span class="s1">&#39;security&#39;</span><span class="p">);</span>
-        <span class="nv">$extension</span><span class="o">-&gt;</span><span class="na">addSecurityListenerFactory</span><span class="p">(</span><span class="k">new</span> <span class="nx">WsseFactory</span><span class="p">());</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+<p>Ahora que tus servicios están definidos, informa de tu fábrica al contexto de seguridad. Las fábricas se deben incluir en un archivo de configuración individual, al momento de escribir este artículo. Por lo tanto, empieza creando el archivo con el servicio fábrica, etiquetado como <tt class="docutils literal"><span class="pre">security.listener.factory</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/DemoBundle/Resources/config/security_factories.yml</span>
+<span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">security.authentication.factory.wsse</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">Acme\DemoBundle\DependencyInjection\Security\Factory\WsseFactory</span>
+        <span class="l-Scalar-Plain">tags</span><span class="p-Indicator">:</span>
+                <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">name</span><span class="p-Indicator">:</span> <span class="nv">security.listener.factory</span> <span class="p-Indicator">}</span>
 </pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/DemoBundle/Resources/config/security_factories.xml --&gt;</span>
+<span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+        <span class="nt">&lt;services&gt;</span>
+        <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;security.authentication.factory.wsse&quot;</span>
+          <span class="na">class=</span><span class="s">&quot;Acme\DemoBundle\DependencyInjection\Security\Factory\WsseFactory&quot;</span> <span class="na">public=</span><span class="s">&quot;false&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;security.listener.factory&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;/service&gt;</span>
+        <span class="nt">&lt;/services&gt;</span>
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Ahora, importa la configuración de fábrica vía la clave <tt class="docutils literal"><span class="pre">factories</span></tt> a tu configuración de seguridad:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/security.yml</span>
+<span class="l-Scalar-Plain">security</span><span class="p-Indicator">:</span>
+  <span class="l-Scalar-Plain">factories</span><span class="p-Indicator">:</span>
+    <span class="p-Indicator">-</span> <span class="s">&quot;%kernel.root_dir%/../src/Acme/DemoBundle/Resources/config/security_factories.yml&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/security.xml --&gt;</span>
+<span class="nt">&lt;config&gt;</span>
+    <span class="nt">&lt;factories&gt;</span>
+      &quot;%kernel.root_dir%/../src/Acme/DemoBundle/Resources/config/security_factories.xml
+    <span class="nt">&lt;/factories&gt;</span>
+<span class="nt">&lt;/config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/security.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;factories&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+      <span class="s2">&quot;%kernel.root_dir%/../src/Acme/DemoBundle/Resources/config/security_factories.php&quot;</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
 </div>
 <p>¡Y está listo! Ahora puedes definir las partes de tu aplicación como bajo la protección del <em>WSSE</em>.</p>
 <div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">security</span><span class="p-Indicator">:</span>
@@ -427,7 +455,7 @@ services:
 </div>
 <div class="section" id="un-poco-mas-alla">
 <h2>Un poco más allá<a class="headerlink" href="#un-poco-mas-alla" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>¿Qué hay de hacer de tu proveedor de autenticación <em>WSSE</em> un poco más emocionante? Las posibilidades son infinitas. ¿Por qué no empezar agregando algún destello al brillo?</p>
+<p>¿Qué hay de hacer de tu proveedor de autenticación <em>WSSE</em> un poco más emocionante? Las posibilidades son infinitas. ¿Por qué no empezar agregando algo de brillo a la pasta?</p>
 <div class="section" id="id1">
 <h3>Configurando<a class="headerlink" href="#id1" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>Puedes añadir opciones personalizadas bajo la clave <tt class="docutils literal"><span class="pre">wsse</span></tt> en tu configuración de seguridad.
@@ -500,14 +528,13 @@ Por ejemplo, el tiempo permitido antes de expirar el elemento de encabezado Crea
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="target_path.html" title="Cómo cambiar el comportamiento predeterminado de la ruta destino"
+          <a href="../cache/varnish.html" title="Cómo utilizar Varnish para acelerar mi sitio web"
              >siguiente</a> |</li>
         <li class="right" >
           <a href="custom_provider.html" title="Cómo crear un proveedor de usuario personalizado"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" >Seguridad</a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -518,7 +545,7 @@ Por ejemplo, el tiempo permitido antes de expirar el elemento de encabezado Crea
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

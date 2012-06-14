@@ -252,7 +252,7 @@ Para mayor comodidad, también puedes hacer que *Symfony* pase el objeto ``Petic
     public function updateAction(Request $request)
     {
         $form = $this->createForm(...);
-
+        
         $form->bindRequest($request);
         // ...
     }
@@ -348,7 +348,7 @@ Además, fácilmente puedes redirigir internamente hacia a otro controlador con 
             'color' => 'green'
         ));
 
-        // adicionalmente modifica la respuesta o la devuelve directamente
+        // alguna modificación adicional a la respuesta o la devuelve directamente
 
         return $response;
     }
@@ -367,7 +367,7 @@ Y al igual que al crear un controlador para una ruta, el orden de los argumentos
 .. tip::
 
     Al igual que otros métodos del ``Controller`` base, el método ``forward`` sólo es un atajo para la funcionalidad del núcleo de *Symfony2*. Puedes redirigir directamente por medio del servicio ``http_kernel``. Un reenvío devuelve un objeto ``Respuesta``::
-
+    
         $httpKernel = $this->container->get('http_kernel');
         $response = $httpKernel->forward('AcmeHelloBundle:Hello:fancy', array(
             'name'  => $name,
@@ -400,7 +400,7 @@ El motor de plantillas de *Symfony* se explica con gran detalle en el capítulo 
 .. tip::
 
     El método ``renderView`` es un atajo para usar el servicio de ``plantillas``. También puedes usar directamente el servicio de ``plantillas``::
-
+    
         $templating = $this->get('templating');
         $content = $templating->render('AcmeHelloBundle:Hello:index.html.twig', array('name' => $name));
 
@@ -478,8 +478,8 @@ Almacenar y recuperar información de la sesión se puede conseguir fácilmente 
     // en otro controlador por otra petición
     $foo = $session->get('foo');
 
-    // usa un valor predefinido de no existir la clave
-    $filters = $session->set('filters', array());
+    // set the user locale
+    $session->setLocale('fr');
 
 Estos atributos se mantendrán en la sesión del usuario por el resto de esa sesión.
 
@@ -503,7 +503,7 @@ Por ejemplo, imagina que estás procesando el envío de un formulario::
         if ($form->isValid()) {
             // hace algún tipo de procesamiento
 
-            $this->get('session')->getFlashBag()->add('notice', 'Your changes were saved!');
+            $this->get('session')->setFlash('notice', 'Your changes were saved!');
 
             return $this->redirect($this->generateUrl(...));
         }
@@ -519,19 +519,19 @@ En la siguiente acción de la plantilla, podrías utilizar el siguiente código 
 
     .. code-block:: html+jinja
 
-        {% for flashMessage in app.session.flashbag.get('notice') %}
+        {% if app.session.hasFlash('notice') %}
             <div class="flash-notice">
-                {{ flashMessage }}
+                {{ app.session.flash('notice') }}
                 </div>
-        {% endfor %}
+        {% endif %}
 
     .. code-block:: php
-
-        <?php foreach ($view['session']->getFlashBag()->get('notice') as $message): ?>
+    
+        <?php if ($view['session']->hasFlash('notice')): ?>
             <div class="flash-notice">
-                <?php echo "<div class='flash-error'>$message</div>" ?>
+                <?php echo $view['session']->getFlash('notice') ?>
                 </div>
-        <?php endforeach; ?>
+        <?php endif; ?>
 
 Por diseño, los mensajes flash están destinados a vivir por exactamente una petición (estos "desaparecen con un destello"). Están diseñados para utilizarlos a través de redirecciones exactamente como lo hemos hecho en este ejemplo.
 
@@ -545,7 +545,7 @@ El único requisito para un controlador es que devuelva un objeto ``Respuesta``.
 
     // crea una simple respuesta con un código de estado 200 (el predeterminado)
     $response = new Response('Hello '.$name, 200);
-
+    
     // crea una respuesta JSON con código de estado 200
     $response = new Response(json_encode(array('name' => $name)));
     $response->headers->set('Content-Type', 'application/json');

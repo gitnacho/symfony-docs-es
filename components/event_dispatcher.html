@@ -25,7 +25,10 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/translations.js"></script>
     <link rel="shortcut icon" href="../_static/icotnp.ico"/>
-    <link rel="top" title="Manual de Symfony2 en Español" href="../index.html" /> 
+    <link rel="top" title="Manual de Symfony2 en Español" href="../index.html" />
+    <link rel="up" title="Componentes" href="index.html" />
+    <link rel="next" title="El componente Finder" href="finder.html" />
+    <link rel="prev" title="El componente Inyección de dependencias" href="dependency_injection.html" /> 
   </head>
   <body>
   <div class="imalogo">
@@ -55,7 +58,14 @@
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
-        <li><a href="../index.html">en Español</a> &raquo;</li> 
+        <li class="right" >
+          <a href="finder.html" title="El componente Finder"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="dependency_injection.html" title="El componente Inyección de dependencias"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">en Español</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Componentes</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -110,14 +120,14 @@
 </div>
 <div class="section" id="nombres-de-evento-y-objetos-evento">
 <span id="index-3"></span><h4>Nombres de evento y objetos evento<a class="headerlink" href="#nombres-de-evento-y-objetos-evento" title="Enlazar permanentemente con este título">¶</a></h4>
-<p>Cuando el despachador notifica a los escuchas, este pasa un objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> real a los escuchas. La clase base <tt class="docutils literal"><span class="pre">Evento</span></tt> es muy simple: contiene un método para detener la <a class="reference internal" href="event_dispatcher/introduction.html#event-dispatcher-event-propagation"><em>propagación del evento</em></a>, pero no mucho más.</p>
+<p>Cuando el despachador notifica a los escuchas, este pasa un objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> real a los escuchas. La clase base <tt class="docutils literal"><span class="pre">Evento</span></tt> es muy simple: contiene un método para detener la <a class="reference internal" href="#event-dispatcher-event-propagation"><em>propagación del evento</em></a>, pero no mucho más.</p>
 <p>Muchas veces, los datos acerca de un evento específico se tienen que pasar junto con el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> para que los escuchas tengan la información necesaria. En el caso del evento <tt class="docutils literal"><span class="pre">kernel.response</span></tt>, el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> creado y pasado a cada escucha realmente es de tipo <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\Event\FilterResponseEvent</span></tt>, una subclase del objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> base. Esta clase contiene métodos como <tt class="docutils literal"><span class="pre">getResponse</span></tt> y <tt class="docutils literal"><span class="pre">setResponse</span></tt>, que permiten a los escuchas recibir e incluso sustituir el objeto <tt class="docutils literal"><span class="pre">Respuesta</span></tt>.</p>
 <p>La moraleja de la historia es la siguiente: Cuando creas un escucha para un evento, el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> que se pasa al escucha puede ser una subclase especial que tiene métodos adicionales para recuperar información desde y para responder al evento.</p>
 </div>
 </div>
 <div class="section" id="el-despachador">
 <h3>El despachador<a class="headerlink" href="#el-despachador" title="Enlazar permanentemente con este título">¶</a></h3>
-<p>El despachador es el objeto central del sistema despachador de eventos. En general, se crea un único despachador, el cual mantiene un registro de escuchas. Cuando se difunde un evento a través del despachador, este notifica a todos los escuchas registrados a ese evento:</p>
+<p>El despachador es el objeto central del sistema despachador de eventos. En general, se crea un único despachador, el cual mantiene un registro de escuchas. Cuando se difunde un evento a través del despachador, este notifica a todos los escuchas registrados con ese evento.</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventDispatcher</span><span class="p">;</span>
 
 <span class="nv">$dispatcher</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">EventDispatcher</span><span class="p">();</span>
@@ -149,7 +159,7 @@
 </pre></div>
 </div>
 </div>
-<p>Una vez que se registra el escucha en el despachador, este espera hasta que el evento sea notificado. En el ejemplo anterior, cuando se despacha el evento <tt class="docutils literal"><span class="pre">foo.action</span></tt>, el despachador llama al método <tt class="docutils literal"><span class="pre">AcmeListener::onFooAction</span></tt> y le pasa el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> como único argumento:</p>
+<p>Una vez que se registra el escucha en el despachador, este espera hasta que el evento sea notificado. En el ejemplo anterior, cuando se despacha el evento <tt class="docutils literal"><span class="pre">foo.action</span></tt>, el despachador llama al método <tt class="docutils literal"><span class="pre">AcmeListener::onFooAction</span></tt> y pasa el objeto <tt class="docutils literal"><span class="pre">Evento</span></tt> como único argumento:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
 
 <span class="k">class</span> <span class="nc">AcmeListener</span>
@@ -257,6 +267,41 @@
 </div>
 </div>
 </div>
+<div class="section" id="pasando-el-objeto-despachador-de-evento">
+<h3>Pasando el objeto despachador de evento<a class="headerlink" href="#pasando-el-objeto-despachador-de-evento" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Si echas un vistazo a la clase <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt>, te darás cuenta de que la clase no actúa como una instancia única (no hay un método estático <tt class="docutils literal"><span class="pre">getInstance()</span></tt>).
+Esto es intencional, ya que posiblemente desees tener varios despachadores de eventos simultáneos en una sola petición <em>PHP</em>. Pero también significa que necesitas una manera de pasar el despachador a los objetos que necesitan conectar o notificar eventos.</p>
+<p>La mejor práctica consiste en inyectar el objeto despachador de eventos en tus objetos, también conocido como inyección de dependencias.</p>
+<p>Puedes usar la inyección del constructor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventDispatcherInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$dispatcher</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">EventDispatcherInterface</span> <span class="nv">$dispatcher</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dispatcher</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>O inyección en el definidor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventDispatcherInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Foo</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$dispatcher</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEventDispatcher</span><span class="p">(</span><span class="nx">EventDispatcherInterface</span> <span class="nv">$dispatcher</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dispatcher</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>La elección entre los dos realmente es cuestión de gusto. Muchos tienden a preferir el constructor de inyección porque los objetos son totalmente iniciados en tiempo de construcción. Pero cuando tienes una larga lista de dependencias, la inyección de definidores puede ser el camino a seguir, especialmente para dependencias opcionales.</p>
+</div>
 <div class="section" id="usando-suscriptores-de-evento">
 <span id="index-6"></span><h3>Usando suscriptores de evento<a class="headerlink" href="#usando-suscriptores-de-evento" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>La forma más común para escuchar a un evento es registrar un <em>escucha de evento</em> con el despachador. Este escucha puede estar atento a uno o más eventos y ser notificado cada vez que se envían los eventos.</p>
@@ -325,131 +370,6 @@
 </pre></div>
 </div>
 <p>Ahora, cualquier escucha de <tt class="docutils literal"><span class="pre">store.order</span></tt> que no haya llamado aún, <em>no</em> será invocado.</p>
-<p>Es posible detectar si un evento se ha detenido usando el método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/EventDispatcher/Event.html#method_isStoppedPropagation" title="Symfony\Component\EventDispatcher\Event::isStoppedPropagation()"><span class="pre">isStoppedPropagation()</span></a></tt> el cual devuelve un valor booleano:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;foo.event&#39;</span><span class="p">,</span> <span class="nv">$event</span><span class="p">);</span>
-<span class="k">if</span> <span class="p">(</span><span class="nv">$event</span><span class="o">-&gt;</span><span class="na">isStoppedPropagation</span><span class="p">())</span> <span class="p">{</span>
-    <span class="c1">// ...</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="el-eventdispatcher-esta-consiente-de-eventos-y-escuchas">
-<span id="event-dispatcher-dispatcher-aware-events"></span><span id="index-8"></span><h3>El <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> está consiente de eventos y escuchas<a class="headerlink" href="#el-eventdispatcher-esta-consiente-de-eventos-y-escuchas" title="Enlazar permanentemente con este título">¶</a></h3>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>El objeto <tt class="docutils literal"><span class="pre">Event</span></tt> contiene una referencia al despachador que lo invocó desde <em>Symfony 2.1</em></p>
-<p>El <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> siempre inyecta una referencia a sí mismo en el objeto evento que se le pasa.  Esto significa que todos los escuchas tienen acceso directo al objeto <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> que notifica al escucha a través del método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/EventDispatcher/Event.html#method_getDispatcher" title="Symfony\Component\EventDispatcher\Event::getDispatcher()"><span class="pre">getDispatcher()</span></a></tt> del objeto <tt class="docutils literal"><span class="pre">Event</span></tt> transmitido.</p>
-<p>Esto puede llevar a algunas aplicaciones avanzadas del <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> incluyendo dejar que los escuchas envíen otros eventos, encadenando eventos o incluso cargando escuchas de manera diferida en el objeto <tt class="docutils literal"><span class="pre">Despachador</span></tt>. Algunos ejemplos:</p>
-<p>Cargando escuchas de manera diferida:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Acme\StoreBundle\Event\StoreSubscriber</span><span class="p">;</span>
-
-<span class="k">class</span> <span class="nc">Foo</span>
-<span class="p">{</span>
-    <span class="k">private</span> <span class="nv">$started</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
-
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">myLazyListener</span><span class="p">(</span><span class="nx">Event</span> <span class="nv">$event</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="k">false</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">started</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nv">$subscriber</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">StoreSubscriber</span><span class="p">();</span>
-            <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getDispatcher</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">addSubscriber</span><span class="p">(</span><span class="nv">$subscriber</span><span class="p">);</span>
-        <span class="p">}</span>
-
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">started</span> <span class="o">=</span> <span class="k">true</span><span class="p">;</span>
-
-        <span class="c1">// ... más código</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Despachando otro event desde un escucha:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
-
-<span class="k">class</span> <span class="nc">Foo</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">myFooListener</span><span class="p">(</span><span class="nx">Event</span> <span class="nv">$event</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getDispatcher</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="nv">$event</span><span class="p">);</span>
-
-        <span class="c1">// ... más código</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Si bien lo anterior es suficiente para la mayoría de los casos, si tu aplicación utiliza múltiples
-instancias del <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt>, posiblemente tengas que inyectar específicamente una
-instancia conocida del <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> en tus escuchas.  Esto se podría hacer inyectándolo en el constructor o con un definidor de la siguiente manera:</p>
-<p>Inyección en el constructor:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventDispatcherInterface</span><span class="p">;</span>
-
-<span class="k">class</span> <span class="nc">Foo</span>
-<span class="p">{</span>
-    <span class="k">protected</span> <span class="nv">$dispatcher</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
-
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">EventDispatcherInterface</span> <span class="nv">$dispatcher</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dispatcher</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="p">;</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>O inyección en el definidor:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\EventDispatcherInterface</span><span class="p">;</span>
-
-<span class="k">class</span> <span class="nc">Foo</span>
-<span class="p">{</span>
-    <span class="k">protected</span> <span class="nv">$dispatcher</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
-
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEventDispatcher</span><span class="p">(</span><span class="nx">EventDispatcherInterface</span> <span class="nv">$dispatcher</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">dispatcher</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="p">;</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>La elección entre los dos realmente es cuestión de gusto. Muchos tienden a preferir el constructor de inyección porque los objetos son totalmente iniciados en tiempo de construcción. Pero cuando tienes una larga lista de dependencias, la inyección de definidores puede ser el camino a seguir, especialmente para dependencias opcionales.</p>
-</div>
-<div class="section" id="atajos-del-despachador">
-<span id="event-dispatcher-shortcuts"></span><span id="index-9"></span><h3>Atajos del despachador<a class="headerlink" href="#atajos-del-despachador" title="Enlazar permanentemente con este título">¶</a></h3>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>El método <tt class="docutils literal"><span class="pre">EventDispatcher::dispatch()</span></tt> devuelve el evento desde <em>Symfony 2.1</em>.</p>
-<p>El Método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/EventDispatcher/EventDispatcher.html#method_dispatch" title="Symfony\Component\EventDispatcher\EventDispatcher::dispatch()"><span class="pre">EventDispatcher::dispatch</span></a></tt> siempre devuelve un objeto <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt>. Este permite varios atajos. Por ejemplo, si uno no necesita un objeto evento personalizado, simplemente puedes confiar en un simple objeto <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt>. Ni siquiera lo tienes que pasar al despachador ya que de manera predeterminada creará uno a menos que específicamente le pases uno:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;foo.event&#39;</span><span class="p">);</span>
-</pre></div>
-</div>
-<p>Por otra parte, el <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> siempre devuelve cualquier objeto <tt class="docutils literal"><span class="pre">evento</span></tt> que le hayas enviado, es decir, ya sea el evento que le hayas pasado o la instancia que internamente haya creado el despachador. Esto da pie a bonitos accesos directos:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;foo.event&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">isStoppedPropagation</span><span class="p">())</span> <span class="p">{</span>
-    <span class="c1">// ...</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>O:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="nv">$barEvent</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">BarEvent</span><span class="p">();</span>
-<span class="nv">$bar</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;bar.event&#39;</span><span class="p">,</span> <span class="nv">$barEvent</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">getBar</span><span class="p">();</span>
-</pre></div>
-</div>
-<p>O:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="nv">$response</span> <span class="o">=</span> <span class="nv">$dispatcher</span><span class="o">-&gt;</span><span class="na">dispatch</span><span class="p">(</span><span class="s1">&#39;bar.event&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">BarEvent</span><span class="p">())</span><span class="o">-&gt;</span><span class="na">getBar</span><span class="p">();</span>
-</pre></div>
-</div>
-<p>y así sucesivamente...</p>
-</div>
-<div class="section" id="averiguando-el-nombre-del-evento">
-<span id="event-dispatcher-event-name-introspection"></span><span id="index-10"></span><h3>Averiguando el nombre del evento<a class="headerlink" href="#averiguando-el-nombre-del-evento" title="Enlazar permanentemente con este título">¶</a></h3>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>El nombre del evento se añadió al objeto <tt class="docutils literal"><span class="pre">Event</span></tt> desde <em>Symfony 2.1</em></p>
-<p>Puesto que el <tt class="docutils literal"><span class="pre">EventDispatcher</span></tt> ya sabe el nombre del evento cuando se despacha, el nombre del evento también se inyecta en los objetos <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\EventDispatcher\Event</span></tt>, haciéndolos disponibles a los escuchas de eventos a través del método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/EventDispatcher/Event.html#method_getName" title="Symfony\Component\EventDispatcher\Event::getName()"><span class="pre">getName()</span></a></tt>.</p>
-<p>El nombre del evento, (como con cualquier otro dato en un objeto evento personalizado) se puede utilizar como parte de la lógica de procesamiento del escucha:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\EventDispatcher\Event</span><span class="p">;</span>
-
-<span class="k">class</span> <span class="nc">Foo</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">myEventListener</span><span class="p">(</span><span class="nx">Event</span> <span class="nv">$event</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">echo</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getName</span><span class="p">();</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
 </div>
 </div>
 </div>
@@ -470,7 +390,14 @@ instancia conocida del <tt class="docutils literal"><span class="pre">EventDispa
         <li class="right" style="margin-right: 10px">
           <a href="../genindex.html" title="Índice General"
              >índice</a></li>
-        <li><a href="../index.html">en Español</a> &raquo;</li> 
+        <li class="right" >
+          <a href="finder.html" title="El componente Finder"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="dependency_injection.html" title="El componente Inyección de dependencias"
+             >anterior</a> |</li>
+        <li><a href="../index.html">en Español</a> &raquo;</li>
+          <li><a href="index.html" >Componentes</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -481,7 +408,7 @@ instancia conocida del <tt class="docutils literal"><span class="pre">EventDispa
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

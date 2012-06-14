@@ -75,7 +75,9 @@ La moraleja de la historia es la siguiente: Cuando creas un escucha para un even
 El despachador
 ~~~~~~~~~~~~~~
 
-El despachador es el objeto central del sistema despachador de eventos. En general, se crea un único despachador, el cual mantiene un registro de escuchas. Cuando se difunde un evento a través del despachador, este notifica a todos los escuchas registrados a ese evento::
+El despachador es el objeto central del sistema despachador de eventos. En general, se crea un único despachador, el cual mantiene un registro de escuchas. Cuando se difunde un evento a través del despachador, este notifica a todos los escuchas registrados con ese evento.
+
+.. code-block:: php
 
     use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -87,7 +89,9 @@ El despachador es el objeto central del sistema despachador de eventos. En gener
 Conectando escuchas
 ~~~~~~~~~~~~~~~~~~~
 
-Para aprovechar las ventajas de un evento existente, es necesario conectar un escucha con el despachador para que pueda ser notificado cuando se despache el evento. Una llamada al método despachador ``addListener()`` asocia cualquier objeto *PHP* ejecutable a un evento::
+Para aprovechar las ventajas de un evento existente, es necesario conectar un escucha con el despachador para que pueda ser notificado cuando se despache el evento. Una llamada al método despachador ``addListener()`` asocia cualquier objeto *PHP* ejecutable a un evento:
+
+.. code-block:: php
 
     $listener = new AcmeListener();
     $dispatcher->addListener('foo.action', array($listener, 'onFooAction'));
@@ -104,7 +108,9 @@ El método ``addListener()`` toma hasta tres argumentos:
 
     Un `PHP ejecutable`_ es una variable *PHP* que la función ``call_user_func()`` puede utilizar y devuelve ``true`` cuando pasa a la función ``is_callable()``. Esta puede ser una instancia de ``\Closure``, un objeto que implementa un método ``__invoke`` (que es lo que ---de hecho--- hacen los cierres), una cadena que representa una función, o una matriz que representa a un método de un objeto o a un método de clase.
 
-    Hasta ahora, hemos visto cómo los objetos *PHP* se pueden registrar como escuchas. También puedes registrar `Cierres`_ *PHP* como escuchas de eventos::
+    Hasta ahora, hemos visto cómo los objetos *PHP* se pueden registrar como escuchas. También puedes registrar `Cierres`_ *PHP* como escuchas de eventos:
+
+    .. code-block:: php
 
         use Symfony\Component\EventDispatcher\Event;
 
@@ -112,7 +118,9 @@ El método ``addListener()`` toma hasta tres argumentos:
             // se debe ejecutar al despachar el evento foo.action
         });
 
-Una vez que se registra el escucha en el despachador, este espera hasta que el evento sea notificado. En el ejemplo anterior, cuando se despacha el evento ``foo.action``, el despachador llama al método ``AcmeListener::onFooAction`` y le pasa el objeto ``Evento`` como único argumento::
+Una vez que se registra el escucha en el despachador, este espera hasta que el evento sea notificado. En el ejemplo anterior, cuando se despacha el evento ``foo.action``, el despachador llama al método ``AcmeListener::onFooAction`` y pasa el objeto ``Evento`` como único argumento:
+
+.. code-block:: php
 
     use Symfony\Component\EventDispatcher\Event;
 
@@ -126,7 +134,9 @@ Una vez que se registra el escucha en el despachador, este espera hasta que el e
         }
     }
 
-En muchos casos, una subclase especial ``Evento`` específica para el evento dado es pasada al escucha. Esto le da al escucha acceso a información especial sobre el evento. Consulta la documentación o la implementación de cada evento para determinar la instancia exacta de ``Symfony\Component\EventDispatcher\Event`` que se ha pasado. Por ejemplo, el evento ``kernel.event`` pasa una instancia de ``Symfony\Component\HttpKernel\Event\FilterResponseEvent``::
+En muchos casos, una subclase especial ``Evento`` específica para el evento dado es pasada al escucha. Esto le da al escucha acceso a información especial sobre el evento. Consulta la documentación o la implementación de cada evento para determinar la instancia exacta de ``Symfony\Component\EventDispatcher\Event`` que se ha pasado. Por ejemplo, el evento ``kernel.event`` pasa una instancia de ``Symfony\Component\HttpKernel\Event\FilterResponseEvent``:
+
+.. code-block:: php
 
     use Symfony\Component\HttpKernel\Event\FilterResponseEvent
 
@@ -151,7 +161,9 @@ Además de registrar escuchas con eventos existentes, puedes crear y despachar t
 La clase estática ``Events``
 ............................
 
-Supongamos que deseas crear un nuevo evento ---``store.order``--- el cual se despacha cada vez que es creada una orden dentro de tu aplicación. Para mantener las cosas organizadas, empieza por crear una clase ``StoreEvents`` dentro de tu aplicación que sirva para definir y documentar tu evento::
+Supongamos que deseas crear un nuevo evento ---``store.order``--- el cual se despacha cada vez que es creada una orden dentro de tu aplicación. Para mantener las cosas organizadas, empieza por crear una clase ``StoreEvents`` dentro de tu aplicación que sirva para definir y documentar tu evento:
+
+.. code-block:: php
 
     namespace Acme\StoreBundle;
 
@@ -176,7 +188,9 @@ Creando un objeto ``Evento``
 
 Más tarde, cuando despaches este nuevo evento, debes crear una instancia del ``Evento`` y pasarla al despachador. Entonces el despachador pasa esta misma instancia a cada uno de los escuchas del evento. Si no necesitas pasar alguna información a tus escuchas, puedes utilizar la clase predeterminada ``Symfony\Component\EventDispatcher\Event``. La mayoría de las veces, sin embargo, *necesitarás* pasar información sobre el evento a cada escucha. Para lograrlo, vamos a crear una nueva clase que extiende a ``Symfony\Component\EventDispatcher\Event``.
 
-En este ejemplo, cada escucha tendrá acceso a algún objeto ``Order``. Crea una clase ``Evento`` que lo hace posible::
+En este ejemplo, cada escucha tendrá acceso a algún objeto ``Order``. Crea una clase ``Evento`` que lo hace posible:
+
+.. code-block:: php
 
     namespace Acme\StoreBundle\Event;
 
@@ -203,7 +217,9 @@ Ahora, cada escucha tiene acceso al objeto ``Order`` a través del método ``get
 Despachando el evento
 .....................
 
-El método :method:`Symfony\\Component\\EventDispatcher\\EventDispatcher::dispatch` notifica a todos los escuchas que el evento ha ocurrido. Este toma dos argumentos: el nombre del evento a despachar, y la instancia del ``Evento`` a pasar a cada escucha de ese evento::
+El método :method:`Symfony\\Component\\EventDispatcher\\EventDispatcher::dispatch` notifica a todos los escuchas que el evento ha ocurrido. Este toma dos argumentos: el nombre del evento a despachar, y la instancia del ``Evento`` a pasar a cada escucha de ese evento:
+
+.. code-block:: php
 
     use Acme\StoreBundle\StoreEvents;
     use Acme\StoreBundle\Order;
@@ -217,7 +233,9 @@ El método :method:`Symfony\\Component\\EventDispatcher\\EventDispatcher::dispat
     $event = new FilterOrderEvent($order);
     $dispatcher->dispatch(StoreEvents::onStoreOrder, $event);
 
-Ten en cuenta que el objeto especial ``FilterOrderEvent`` se crea y pasa al método ``dispatch``. Ahora, cualquier escucha del evento ``store.order`` recibirá el ``FilterOrderEvent`` y tendrá acceso al objeto ``Order`` a través del método ``getOrder``::
+Ten en cuenta que el objeto especial ``FilterOrderEvent`` se crea y pasa al método ``dispatch``. Ahora, cualquier escucha del evento ``store.order`` recibirá el ``FilterOrderEvent`` y tendrá acceso al objeto ``Order`` a través del método ``getOrder``:
+
+.. code-block:: php
 
     // alguna clase escucha que se ha registrado para onStoreOrder
     use Acme\StoreBundle\Event\FilterOrderEvent;
@@ -228,6 +246,44 @@ Ten en cuenta que el objeto especial ``FilterOrderEvent`` se crea y pasa al mét
         // haz algo para o con la orden
     }
 
+Pasando el objeto despachador de evento
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Si echas un vistazo a la clase ``EventDispatcher``, te darás cuenta de que la clase no actúa como una instancia única (no hay un método estático ``getInstance()``).
+Esto es intencional, ya que posiblemente desees tener varios despachadores de eventos simultáneos en una sola petición *PHP*. Pero también significa que necesitas una manera de pasar el despachador a los objetos que necesitan conectar o notificar eventos.
+
+La mejor práctica consiste en inyectar el objeto despachador de eventos en tus objetos, también conocido como inyección de dependencias.
+
+Puedes usar la inyección del constructor::
+
+    use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+    class Foo
+    {
+        protected $dispatcher = null;
+
+        public function __construct(EventDispatcherInterface $dispatcher)
+        {
+            $this->dispatcher = $dispatcher;
+        }
+    }
+
+O inyección en el definidor::
+
+    use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+
+    class Foo
+    {
+        protected $dispatcher = null;
+
+        public function setEventDispatcher(EventDispatcherInterface $dispatcher)
+        {
+            $this->dispatcher = $dispatcher;
+        }
+    }
+
+La elección entre los dos realmente es cuestión de gusto. Muchos tienden a preferir el constructor de inyección porque los objetos son totalmente iniciados en tiempo de construcción. Pero cuando tienes una larga lista de dependencias, la inyección de definidores puede ser el camino a seguir, especialmente para dependencias opcionales.
+
 .. index::
    single: Despachador de evento; Suscriptores de evento
 
@@ -236,7 +292,9 @@ Usando suscriptores de evento
 
 La forma más común para escuchar a un evento es registrar un *escucha de evento* con el despachador. Este escucha puede estar atento a uno o más eventos y ser notificado cada vez que se envían los eventos.
 
-Otra forma de escuchar eventos es a través de un *suscriptor de eventos*. Un suscriptor de eventos es una clase *PHP* que es capaz de decir al despachador exactamente a cuales eventos debe estar suscrito. Este implementa la interfaz :class:`Symfony\\Component\\EventDispatcher\\EventSubscriberInterface`, que requiere un solo método estático llamado ``getSubscribedEvents``. Considera el siguiente ejemplo de un suscriptor que está inscrito a los eventos ``kernel.response`` y ``store.order``::
+Otra forma de escuchar eventos es a través de un *suscriptor de eventos*. Un suscriptor de eventos es una clase *PHP* que es capaz de decir al despachador exactamente a cuales eventos debe estar suscrito. Este implementa la interfaz :class:`Symfony\\Component\\EventDispatcher\\EventSubscriberInterface`, que requiere un solo método estático llamado ``getSubscribedEvents``. Considera el siguiente ejemplo de un suscriptor que está inscrito a los eventos ``kernel.response`` y ``store.order``:
+
+.. code-block:: php
 
     namespace Acme\StoreBundle\Event;
 
@@ -278,7 +336,9 @@ Otra forma de escuchar eventos es a través de un *suscriptor de eventos*. Un su
         }
     }
 
-Esto es muy similar a una clase escucha, salvo que la propia clase puede decir al despachador cuales eventos debe escuchar. Para registrar un suscriptor al despachador, utiliza el método :method:`Symfony\\Component\\EventDispatcher\\EventDispatcher::addSubscriber`::
+Esto es muy similar a una clase escucha, salvo que la propia clase puede decir al despachador cuales eventos debe escuchar. Para registrar un suscriptor al despachador, utiliza el método :method:`Symfony\\Component\\EventDispatcher\\EventDispatcher::addSubscriber`:
+
+.. code-block:: php
 
     use Acme\StoreBundle\Event\StoreSubscriber;
 
@@ -295,7 +355,9 @@ El despachador registrará automáticamente al suscriptor para cada evento devue
 Deteniendo el flujo/propagación del evento
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-En algunos casos, puede tener sentido que un escucha evite que se llame a otros escuchas. En otras palabras, el escucha tiene que poder decirle al despachador detenga la propagación del evento a todos los escuchas en el futuro (es decir, no notificar a más escuchas). Esto se puede lograr desde el interior de un escucha a través del método :method:`Symfony\\Component\\EventDispatcher\\Event::stopPropagation`::
+En algunos casos, puede tener sentido que un escucha evite que se llame a otros escuchas. En otras palabras, el escucha tiene que poder decirle al despachador detenga la propagación del evento a todos los escuchas en el futuro (es decir, no notificar a más escuchas). Esto se puede lograr desde el interior de un escucha a través del método :method:`Symfony\\Component\\EventDispatcher\\Event::stopPropagation`:
+
+.. code-block:: php
 
    use Acme\StoreBundle\Event\FilterOrderEvent;
 
@@ -307,156 +369,6 @@ En algunos casos, puede tener sentido que un escucha evite que se llame a otros 
    }
 
 Ahora, cualquier escucha de ``store.order`` que no haya llamado aún, *no* será invocado.
-
-Es posible detectar si un evento se ha detenido usando el método :method:`Symfony\\Component\\EventDispatcher\\Event::isStoppedPropagation` el cual devuelve un valor booleano::
-
-    $dispatcher->dispatch('foo.event', $event);
-    if ($event->isStoppedPropagation()) {
-        // ...
-    }
-
-.. index::
-   single: Despachador de evento; Despachador de eventos consiente de eventos y escuchas
-
-.. _event_dispatcher-dispatcher-aware-events:
-
-El ``EventDispatcher`` está consiente de eventos y escuchas
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 2.1
-    El objeto ``Event`` contiene una referencia al despachador que lo invocó desde *Symfony 2.1*
-
-El ``EventDispatcher`` siempre inyecta una referencia a sí mismo en el objeto evento que se le pasa.  Esto significa que todos los escuchas tienen acceso directo al objeto ``EventDispatcher`` que notifica al escucha a través del método :method:`Symfony\\Component\\EventDispatcher\\Event::getDispatcher` del objeto ``Event`` transmitido.
-
-Esto puede llevar a algunas aplicaciones avanzadas del ``EventDispatcher`` incluyendo dejar que los escuchas envíen otros eventos, encadenando eventos o incluso cargando escuchas de manera diferida en el objeto ``Despachador``. Algunos ejemplos:
-
-Cargando escuchas de manera diferida::
-
-
-    use Symfony\Component\EventDispatcher\Event;
-    use Acme\StoreBundle\Event\StoreSubscriber;
-
-    class Foo
-    {
-        private $started = false;
-
-        public function myLazyListener(Event $event)
-        {
-            if (false === $this->started) {
-                $subscriber = new StoreSubscriber();
-                $event->getDispatcher()->addSubscriber($subscriber);
-            }
-
-            $this->started = true;
-
-            // ... más código
-        }
-    }
-
-Despachando otro event desde un escucha::
-
-    use Symfony\Component\EventDispatcher\Event;
-
-    class Foo
-    {
-        public function myFooListener(Event $event)
-        {
-            $event->getDispatcher()->dispatch('log', $event);
-
-            // ... más código
-        }
-    }
-
-Si bien lo anterior es suficiente para la mayoría de los casos, si tu aplicación utiliza múltiples
-instancias del ``EventDispatcher``, posiblemente tengas que inyectar específicamente una
-instancia conocida del ``EventDispatcher`` en tus escuchas.  Esto se podría hacer inyectándolo en el constructor o con un definidor de la siguiente manera:
-
-Inyección en el constructor::
-
-    use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-
-    class Foo
-    {
-        protected $dispatcher = null;
-
-        public function __construct(EventDispatcherInterface $dispatcher)
-        {
-            $this->dispatcher = $dispatcher;
-        }
-    }
-
-O inyección en el definidor::
-
-    use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-
-    class Foo
-    {
-        protected $dispatcher = null;
-
-        public function setEventDispatcher(EventDispatcherInterface $dispatcher)
-        {
-            $this->dispatcher = $dispatcher;
-        }
-    }
-
-La elección entre los dos realmente es cuestión de gusto. Muchos tienden a preferir el constructor de inyección porque los objetos son totalmente iniciados en tiempo de construcción. Pero cuando tienes una larga lista de dependencias, la inyección de definidores puede ser el camino a seguir, especialmente para dependencias opcionales.
-
-.. index::
-   single: Despachador de evento; Atajos del despachador
-
-.. _event_dispatcher-shortcuts:
-
-Atajos del despachador
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 2.1
-    El método ``EventDispatcher::dispatch()`` devuelve el evento desde *Symfony 2.1*.
-
-El Método :method:`EventDispatcher::dispatch <Symfony\\Component\\EventDispatcher\\EventDispatcher::dispatch>` siempre devuelve un objeto :class:`Symfony\\Component\\EventDispatcher\\Event`. Este permite varios atajos. Por ejemplo, si uno no necesita un objeto evento personalizado, simplemente puedes confiar en un simple objeto :class:`Symfony\\Component\\EventDispatcher\\Event`. Ni siquiera lo tienes que pasar al despachador ya que de manera predeterminada creará uno a menos que específicamente le pases uno::
-
-    $dispatcher->dispatch('foo.event');
-
-Por otra parte, el ``EventDispatcher`` siempre devuelve cualquier objeto ``evento`` que le hayas enviado, es decir, ya sea el evento que le hayas pasado o la instancia que internamente haya creado el despachador. Esto da pie a bonitos accesos directos::
-
-    if (!$dispatcher->dispatch('foo.event')->isStoppedPropagation()) {
-        // ...
-    }
-
-O::
-
-    $barEvent = new BarEvent();
-    $bar = $dispatcher->dispatch('bar.event', $barEvent)->getBar();
-
-O::
-
-    $response = $dispatcher->dispatch('bar.event', new BarEvent())->getBar();
-
-y así sucesivamente...
-
-.. index::
-   single: Despachador de evento; Inspeccionando el nombre del evento
-
-.. _event_dispatcher-event-name-introspection:
-
-Averiguando el nombre del evento
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 2.1
-    El nombre del evento se añadió al objeto ``Event`` desde *Symfony 2.1*
-
-Puesto que el ``EventDispatcher`` ya sabe el nombre del evento cuando se despacha, el nombre del evento también se inyecta en los objetos :class:`Symfony\\Component\\EventDispatcher\\Event`, haciéndolos disponibles a los escuchas de eventos a través del método :method:`Symfony\\Component\\EventDispatcher\\Event::getName`.
-
-El nombre del evento, (como con cualquier otro dato en un objeto evento personalizado) se puede utilizar como parte de la lógica de procesamiento del escucha::
-
-    use Symfony\Component\EventDispatcher\Event;
-
-    class Foo
-    {
-        public function myEventListener(Event $event)
-        {
-            echo $event->getName();
-        }
-    }
 
 .. _`observador`: http://en.wikipedia.org/wiki/Observer_pattern
 .. _`componente HttpKernel de Symfony2`: https://github.com/symfony/HttpKernel

@@ -1,12 +1,10 @@
+.. index::
+   single: Inyección de dependencia; Servicios padre
+
 Gestionando dependencias comunes con servicios padre
 ====================================================
 
 A medida que agregas más funcionalidad a tu aplicación, puedes comenzar a tener clases relacionadas que comparten algunas de las mismas dependencias. Por ejemplo, puedes tener un gestor de ``boletines`` que utiliza inyección para definir sus dependencias::
-
-    namespace Acme\HelloBundle\Mail;
-
-    use Acme\HelloBundle\Mailer;
-    use Acme\HelloBundle\EmailFormatter;
 
     class NewsletterManager
     {
@@ -26,11 +24,6 @@ A medida que agregas más funcionalidad a tu aplicación, puedes comenzar a tene
     }
 
 y también una clase para tus ``Tarjetas de saludo`` que comparte las mismas dependencias::
-
-    namespace Acme\HelloBundle\Mail;
-
-    use Acme\HelloBundle\Mailer;
-    use Acme\HelloBundle\EmailFormatter;
 
     class GreetingCardManager
     {
@@ -55,11 +48,10 @@ La configuración del servicio de estas clases se vería algo como esto:
 
     .. code-block:: yaml
 
-        # src/Acme/HelloBundle/Resources/config/services.yml
         parameters:
             # ...
-            newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
-            greeting_card_manager.class: Acme\HelloBundle\Mail\GreetingCardManager
+            newsletter_manager.class: NewsletterManager
+            greeting_card_manager.class: GreetingCardManager
         services:
             my_mailer:
                 # ...
@@ -79,11 +71,10 @@ La configuración del servicio de estas clases se vería algo como esto:
 
     .. code-block:: xml
 
-        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
         <parameters>
             <!-- ... -->
-            <parameter key="newsletter_manager.class">Acme\HelloBundle\Mail\NewsletterManager</parameter>
-            <parameter key="greeting_card_manager.class">Acme\HelloBundle\Mail\GreetingCardManager</parameter>
+            <parameter key="newsletter_manager.class">NewsletterManager</parameter>
+            <parameter key="greeting_card_manager.class">GreetingCardManager</parameter>
         </parameters>
 
             <services>
@@ -113,13 +104,12 @@ La configuración del servicio de estas clases se vería algo como esto:
 
     .. code-block:: php
 
-        // src/Acme/HelloBundle/Resources/config/services.php
         use Symfony\Component\DependencyInjection\Definition;
         use Symfony\Component\DependencyInjection\Reference;
 
         // ...
-        $container->setParameter('newsletter_manager.class', 'Acme\HelloBundle\Mail\NewsletterManager');
-        $container->setParameter('greeting_card_manager.class', 'Acme\HelloBundle\Mail\GreetingCardManager');
+        $container->setParameter('newsletter_manager.class', 'NewsletterManager');
+        $container->setParameter('greeting_card_manager.class', 'GreetingCardManager');
 
         $container->setDefinition('my_mailer', ... );
         $container->setDefinition('my_email_formatter', ... );
@@ -139,11 +129,6 @@ La configuración del servicio de estas clases se vería algo como esto:
         ));
 
 Hay mucha repetición, tanto en las clases como en la configuración. Esto significa que si cambias, por ejemplo, las clases de correo de la aplicación ``Mailer`` de ``EmailFormatter`` para inyectarlas a través del constructor, tendrías que actualizar la configuración en dos lugares. Del mismo modo, si necesitas hacer cambios en los métodos definidores tendrías que hacerlo en ambas clases. La forma típica de hacer frente a los métodos comunes de estas clases relacionadas es extraerlas en una superclase::
-
-    namespace Acme\HelloBundle\Mail;
-
-    use Acme\HelloBundle\Mailer;
-    use Acme\HelloBundle\EmailFormatter;
 
     abstract class MailManager
     {
@@ -165,16 +150,12 @@ Hay mucha repetición, tanto en las clases como en la configuración. Esto signi
 Entonces ``NewsletterManager`` y ``GreetingCardManager`` pueden extender esta
 superclase::
 
-    namespace Acme\HelloBundle\Mail;
-
     class NewsletterManager extends MailManager
     {
         // ...
     }
 
 y::
-
-    namespace Acme\HelloBundle\Mail;
 
     class GreetingCardManager extends MailManager
     {
@@ -187,12 +168,11 @@ De manera similar, el contenedor de servicios de *Symfony2* también apoya la ex
 
     .. code-block:: yaml
 
-        # src/Acme/HelloBundle/Resources/config/services.yml
         parameters:
             # ...
-            newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
-            greeting_card_manager.class: Acme\HelloBundle\Mail\GreetingCardManager
-            mail_manager.class: Acme\HelloBundle\Mail\MailManager
+            newsletter_manager.class: NewsletterManager
+            greeting_card_manager.class: GreetingCardManager
+            mail_manager.class: MailManager
         services:
             my_mailer:
                 # ...
@@ -215,12 +195,11 @@ De manera similar, el contenedor de servicios de *Symfony2* también apoya la ex
             
     .. code-block:: xml
 
-        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
         <parameters>
             <!-- ... -->
-            <parameter key="newsletter_manager.class">Acme\HelloBundle\Mail\NewsletterManager</parameter>
-            <parameter key="greeting_card_manager.class">Acme\HelloBundle\Mail\GreetingCardManager</parameter>
-            <parameter key="mail_manager.class">Acme\HelloBundle\Mail\MailManager</parameter>
+            <parameter key="newsletter_manager.class">NewsletterManager</parameter>
+            <parameter key="greeting_card_manager.class">GreetingCardManager</parameter>
+            <parameter key="mail_manager.class">MailManager</parameter>
         </parameters>
 
             <services>
@@ -244,14 +223,13 @@ De manera similar, el contenedor de servicios de *Symfony2* también apoya la ex
 
     .. code-block:: php
 
-        // src/Acme/HelloBundle/Resources/config/services.php
         use Symfony\Component\DependencyInjection\Definition;
         use Symfony\Component\DependencyInjection\Reference;
 
         // ...
-        $container->setParameter('newsletter_manager.class', 'Acme\HelloBundle\Mail\NewsletterManager');
-        $container->setParameter('greeting_card_manager.class', 'Acme\HelloBundle\Mail\GreetingCardManager');
-        $container->setParameter('mail_manager.class', 'Acme\HelloBundle\Mail\MailManager');
+        $container->setParameter('newsletter_manager.class', 'NewsletterManager');
+        $container->setParameter('greeting_card_manager.class', 'GreetingCardManager');
+        $container->setParameter('mail_manager.class', 'MailManager');
 
         $container->setDefinition('my_mailer', ... );
         $container->setDefinition('my_email_formatter', ... );
@@ -293,12 +271,11 @@ Puede haber ocasiones en las que deses sustituir que clase se pasa a una depende
 
     .. code-block:: yaml
 
-        # src/Acme/HelloBundle/Resources/config/services.yml
         parameters:
             # ...
-            newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
-            greeting_card_manager.class: Acme\HelloBundle\Mail\GreetingCardManager
-            mail_manager.class: Acme\HelloBundle\Mail\MailManager
+            newsletter_manager.class: NewsletterManager
+            greeting_card_manager.class: GreetingCardManager
+            mail_manager.class: MailManager
         services:
             my_mailer:
                 # ...
@@ -325,12 +302,11 @@ Puede haber ocasiones en las que deses sustituir que clase se pasa a una depende
             
     .. code-block:: xml
 
-        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
         <parameters>
             <!-- ... -->
-            <parameter key="newsletter_manager.class">Acme\HelloBundle\Mail\NewsletterManager</parameter>
-            <parameter key="greeting_card_manager.class">Acme\HelloBundle\Mail\GreetingCardManager</parameter>
-            <parameter key="mail_manager.class">Acme\HelloBundle\Mail\MailManager</parameter>
+            <parameter key="newsletter_manager.class">NewsletterManager</parameter>
+            <parameter key="greeting_card_manager.class">GreetingCardManager</parameter>
+            <parameter key="mail_manager.class">MailManager</parameter>
         </parameters>
 
             <services>
@@ -361,14 +337,13 @@ Puede haber ocasiones en las que deses sustituir que clase se pasa a una depende
 
     .. code-block:: php
 
-        // src/Acme/HelloBundle/Resources/config/services.php
         use Symfony\Component\DependencyInjection\Definition;
         use Symfony\Component\DependencyInjection\Reference;
 
         // ...
-        $container->setParameter('newsletter_manager.class', 'Acme\HelloBundle\Mail\NewsletterManager');
-        $container->setParameter('greeting_card_manager.class', 'Acme\HelloBundle\Mail\GreetingCardManager');
-        $container->setParameter('mail_manager.class', 'Acme\HelloBundle\Mail\MailManager');
+        $container->setParameter('newsletter_manager.class', 'NewsletterManager');
+        $container->setParameter('greeting_card_manager.class', 'GreetingCardManager');
+        $container->setParameter('mail_manager.class', 'MailManager');
 
         $container->setDefinition('my_mailer', ... );
         $container->setDefinition('my_alternative_mailer', ... );
@@ -404,11 +379,6 @@ Cabe señalar que el método definidor sustituido en el ejemplo anterior en real
 
 En algunos casos, sin embargo, esto puede ser un problema. Por ejemplo, si la sustitución a la llamada al método consiste en añadir algo a una colección, entonces se agregarán dos objetos a la colección. A continuación mostramos tal caso, si la clase padre se parece a esto::
 
-    namespace Acme\HelloBundle\Mail;
-
-    use Acme\HelloBundle\Mailer;
-    use Acme\HelloBundle\EmailFormatter;
-
     abstract class MailManager
     {
         protected $filters;
@@ -426,11 +396,10 @@ Si tienes la siguiente configuración:
 
     .. code-block:: yaml
 
-        # src/Acme/HelloBundle/Resources/config/services.yml
         parameters:
             # ...
-            newsletter_manager.class: Acme\HelloBundle\Mail\NewsletterManager
-            mail_manager.class: Acme\HelloBundle\Mail\MailManager
+            newsletter_manager.class: NewsletterManager
+            mail_manager.class: MailManager
         services:
             my_filter:
                 # ...
@@ -450,11 +419,10 @@ Si tienes la siguiente configuración:
             
     .. code-block:: xml
 
-        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
         <parameters>
             <!-- ... -->
-            <parameter key="newsletter_manager.class">Acme\HelloBundle\Mail\NewsletterManager</parameter>
-            <parameter key="mail_manager.class">Acme\HelloBundle\Mail\MailManager</parameter>
+            <parameter key="newsletter_manager.class">NewsletterManager</parameter>
+            <parameter key="mail_manager.class">MailManager</parameter>
         </parameters>
 
             <services>
@@ -478,13 +446,12 @@ Si tienes la siguiente configuración:
 
     .. code-block:: php
 
-        // src/Acme/HelloBundle/Resources/config/services.php
         use Symfony\Component\DependencyInjection\Definition;
         use Symfony\Component\DependencyInjection\Reference;
 
         // ...
-        $container->setParameter('newsletter_manager.class', 'Acme\HelloBundle\Mail\NewsletterManager');
-        $container->setParameter('mail_manager.class', 'Acme\HelloBundle\Mail\MailManager');
+        $container->setParameter('newsletter_manager.class', 'NewsletterManager');
+        $container->setParameter('mail_manager.class', 'MailManager');
 
         $container->setDefinition('my_filter', ... );
         $container->setDefinition('another_filter', ... );

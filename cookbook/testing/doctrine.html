@@ -26,8 +26,8 @@
     <script type="text/javascript" src="../../_static/translations.js"></script>
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
-    <link rel="up" title="Probando" href="index.html" />
-    <link rel="next" title="Seguridad" href="../security/index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo agregar la funcionalidad “recuérdame” al inicio de sesión" href="../security/remember_me.html" />
     <link rel="prev" title="Cómo utilizar el generador de perfiles en una prueba funcional" href="profiling.html" /> 
   </head>
   <body>
@@ -59,14 +59,13 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="../security/index.html" title="Seguridad"
+          <a href="../security/remember_me.html" title="Cómo agregar la funcionalidad “recuérdame” al inicio de sesión"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
           <a href="profiling.html" title="Cómo utilizar el generador de perfiles en una prueba funcional"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Probando</a> &raquo;</li> 
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -79,16 +78,133 @@
             
   <div class="section" id="como-probar-repositorios-doctrine">
 <span id="index-0"></span><h1>Cómo probar repositorios <em>Doctrine</em><a class="headerlink" href="#como-probar-repositorios-doctrine" title="Enlazar permanentemente con este título">¶</a></h1>
-<p>Correr pruebas unitarias en repositorios <em>Doctrine</em> de un proyecto <em>Symfony</em> no es recomendable.
-Cuando estás tratando con un repositorio, en realidad estás tratando con algo
-que está destinado a ser probado contra una conexión de base de datos real.</p>
-<p>Afortunadamente, fácilmente puedes probar tus consultas contra una base de datos real, como se describe a continuación.</p>
+<p>Las pruebas unitarias de repositorios <em>Doctrine</em> en un proyecto <em>Symfony</em> no son una tarea sencilla. De hecho, para cargar un repositorio es necesario cargar tus entidades, un gestor de entidades, y algunas otras cosas como una conexión.</p>
+<p>Para probar tu repositorio, tienes dos diferentes opciones:</p>
+<ol class="arabic simple">
+<li><strong>Prueba funcional</strong>: Esta incluye usar una conexión de base de datos concreta con objetos de la base de datos real. Es fácil instalarla y puedes probar cualquier cosa, pero es de muy lenta ejecución. Consulta <a class="reference internal" href="#cookbook-doctrine-repo-functional-test"><em>Probando la funcionalidad</em></a>.</li>
+<li><strong>Prueba unitaria</strong>: La prueba unitaria se ejecuta más rápido y es más precisa en la forma de probar. Esta requiere una configuración un poco más pequeña, la cual cubre este documento. También puedes probar sólo los métodos que, por ejemplo, crean consultas, no los métodos que se ejecutan realmente.</li>
+</ol>
+<div class="section" id="pruebas-unitarias">
+<h2>Pruebas unitarias<a class="headerlink" href="#pruebas-unitarias" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puesto que <em>Symfony</em> y <em>Doctrine</em> comparten la misma plataforma de pruebas, es muy fácil implementar las pruebas unitarias en un proyecto <em>Symfony</em>. El <em>ORM</em> viene con su propio conjunto de herramientas para facilitar las pruebas unitarias y simular todo lo que necesites, tal como una conexión, un gestor de entidades, etc. Al usar los componentes de prueba proporcionados por <em>Doctrine</em> &#8212;junto con algunas configuraciones básicas&#8212; puedes aprovechar las herramientas de <em>Doctrine</em> para las pruebas unitarias de tus repositorios.</p>
+<p>Ten en cuenta que si deseas probar la ejecución real de tus consultas, necesitarás una prueba funcional (consulta <a class="reference internal" href="#cookbook-doctrine-repo-functional-test"><em>Probando la funcionalidad</em></a>).
+Las pruebas unitarias sólo son posibles cuando pruebas un método que construye una consulta.</p>
+<div class="section" id="configurando">
+<h3>Configurando<a class="headerlink" href="#configurando" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>En primer lugar, necesitas agregar el espacio de nombres <tt class="docutils literal"><span class="pre">Doctrine\Tests</span></tt> a tu cargador automático:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/autoload.php</span>
+<span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">registerNamespaces</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+    <span class="c1">//...</span>
+    <span class="s1">&#39;Doctrine\\Tests&#39;</span>                <span class="o">=&gt;</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../vendor/doctrine/tests&#39;</span><span class="p">,</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+<p>En seguida, tendrás que configurar un gestor de entidades en cada prueba para que <em>Doctrine</em> pueda cargar entidades y repositorios por ti.</p>
+<p>Debido a que <em>Doctrine</em> por omisión no es capaz de cargar los metadatos de anotaciones desde tus entidades, tendrás que configurar el lector de anotaciones para que pueda analizar y cargar las entidades:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/ProductBundle/Tests/Entity/ProductRepositoryTest.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\ProductBundle\Tests\Entity</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Doctrine\Tests\OrmTestCase</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\Common\Annotations\AnnotationReader</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\ORM\Mapping\Driver\DriverChain</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\ORM\Mapping\Driver\AnnotationDriver</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">ProductRepositoryTest</span> <span class="k">extends</span> <span class="nx">OrmTestCase</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$_em</span><span class="p">;</span>
+
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">setUp</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$reader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AnnotationReader</span><span class="p">();</span>
+        <span class="nv">$reader</span><span class="o">-&gt;</span><span class="na">setIgnoreNotImportedAnnotations</span><span class="p">(</span><span class="k">true</span><span class="p">);</span>
+        <span class="nv">$reader</span><span class="o">-&gt;</span><span class="na">setEnableParsePhpImports</span><span class="p">(</span><span class="k">true</span><span class="p">);</span>
+
+        <span class="nv">$metadataDriver</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AnnotationDriver</span><span class="p">(</span>
+            <span class="nv">$reader</span><span class="p">,</span>
+            <span class="c1">// proporciona el espacio de nombres de las entidades que deseas probar</span>
+            <span class="s1">&#39;Acme\\ProductBundle\\Entity&#39;</span>
+        <span class="p">);</span>
+
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_getTestEntityManager</span><span class="p">();</span>
+
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getConfiguration</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">setMetadataDriverImpl</span><span class="p">(</span><span class="nv">$controladorMetadatos</span><span class="p">);</span>
+
+        <span class="c1">// te permite utilizar la sintaxis AcmeProductBundle:Product</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getConfiguration</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">setEntityNamespaces</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;AcmeProductBundle&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\\ProductBundle\\Entity&#39;</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Si te fijas en el código, notarás que:</p>
+<ul class="simple">
+<li>Extiendes desde <tt class="docutils literal"><span class="pre">\Doctrine\Tests\OrmTestCase</span></tt>, el cual proporciona útiles métodos para las pruebas unitarias;</li>
+<li>Debes configurar el <tt class="docutils literal"><span class="pre">AnnotationReader</span></tt> para poder analizar y cargar las entidades;</li>
+<li>Creas el gestor de entidades llamando a <tt class="docutils literal"><span class="pre">_getTestEntityManager</span></tt>, el cual devuelve un gestor de entidades simulado con una conexión simulada.</li>
+</ul>
+<p>¡Eso es todo! Ya estás listo para escribir las pruebas unitarias para tus repositorios de <em>Doctrine</em>.</p>
+</div>
+<div class="section" id="escribiendo-tus-pruebas-unitarias">
+<h3>Escribiendo tus pruebas unitarias<a class="headerlink" href="#escribiendo-tus-pruebas-unitarias" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Recuerda que los métodos de repositorio de <em>Doctrine</em> sólo pueden probar si estás construyendo y devolviendo una consulta (pero no ejecutando una consulta realmente). Tomemos el siguiente ejemplo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/StoreBundle/Entity/ProductRepository</span>
+<span class="k">namespace</span> <span class="nx">Acme\StoreBundle\Entity</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Doctrine\ORM\EntityRepository</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">ProductRepository</span> <span class="k">extends</span> <span class="nx">EntityRepository</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">createSearchByNameQueryBuilder</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createQueryBuilder</span><span class="p">(</span><span class="s1">&#39;p&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">where</span><span class="p">(</span><span class="s1">&#39;p.name LIKE :name&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="nv">$name</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>En este ejemplo, el método devuelve una instancia de <tt class="docutils literal"><span class="pre">QueryBuilder</span></tt>. Puedes probar el resultado de este método en una variedad de maneras:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ProductRepositoryTest</span> <span class="k">extends</span> <span class="nx">\Doctrine\Tests\OrmTestCase</span>
+<span class="p">{</span>
+    <span class="cm">/* ... */</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">testCreateSearchByNameQueryBuilder</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$queryBuilder</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeProductBundle:Product&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">createSearchByNameQueryBuilder</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">);</span>
+
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertEquals</span><span class="p">(</span><span class="s1">&#39;p.name LIKE :name&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span> <span class="nv">$queryBuilder</span><span class="o">-&gt;</span><span class="na">getDqlPart</span><span class="p">(</span><span class="s1">&#39;where&#39;</span><span class="p">));</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertEquals</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;name&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;foo&#39;</span><span class="p">),</span> <span class="nv">$queryBuilder</span><span class="o">-&gt;</span><span class="na">getParameters</span><span class="p">());</span>
+    <span class="p">}</span>
+ <span class="p">}</span>
+</pre></div>
+</div>
+<p>En esta prueba, diseccionas el objeto <tt class="docutils literal"><span class="pre">QueryBuilder</span></tt>, buscando que cada parte sea como tú esperas. Si estuvieras agregando otras cosas al generador de consultas, podrías verificar las partes <em>DQL</em>: <tt class="docutils literal"><span class="pre">select</span></tt>, <tt class="docutils literal"><span class="pre">from</span></tt>, <tt class="docutils literal"><span class="pre">join</span></tt>, <tt class="docutils literal"><span class="pre">set</span></tt>, <tt class="docutils literal"><span class="pre">groupBy</span></tt>, <tt class="docutils literal"><span class="pre">having</span></tt> u <tt class="docutils literal"><span class="pre">orderBy</span></tt>.</p>
+<p>Si sólo tienes un objeto <tt class="docutils literal"><span class="pre">Query</span></tt> crudo o prefieres probar la consulta real, puedes probar la cadena de consulta <em>DQL</em> directamente:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">testCreateSearchByNameQueryBuilder</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$queryBuilder</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeProductBundle:Product&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">createSearchByNameQueryBuilder</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">);</span>
+
+    <span class="nv">$query</span> <span class="o">=</span> <span class="nv">$queryBuilder</span><span class="o">-&gt;</span><span class="na">getQuery</span><span class="p">();</span>
+
+    <span class="c1">// prueba DQL</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertEquals</span><span class="p">(</span>
+        <span class="s1">&#39;SELECT p FROM Acme\ProductBundle\Entity\Product p WHERE p.name LIKE :name&#39;</span><span class="p">,</span>
+        <span class="nv">$query</span><span class="o">-&gt;</span><span class="na">getDql</span><span class="p">()</span>
+    <span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
 <div class="section" id="probando-la-funcionalidad">
 <span id="cookbook-doctrine-repo-functional-test"></span><h2>Probando la funcionalidad<a class="headerlink" href="#probando-la-funcionalidad" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Si realmente necesitas ejecutar una consulta, tendrás que arrancar el <tt class="docutils literal"><span class="pre">núcleo</span></tt> para conseguir una conexión válida. En este caso, debes extender a <tt class="docutils literal"><span class="pre">WebTestCase</span></tt>, el cual hace todo esto muy fácil:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/StoreBundle/Tests/Entity/ProductRepositoryFunctionalTest.php</span>
-
-<span class="k">namespace</span> <span class="nx">Acme\StoreBundle\Tests\Entity</span><span class="p">;</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/ProductBundle/Tests/Entity/ProductRepositoryFunctionalTest.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\ProductBundle\Tests\Entity</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Bundle\FrameworkBundle\Test\WebTestCase</span><span class="p">;</span>
 
@@ -97,24 +213,23 @@ que está destinado a ser probado contra una conexión de base de datos real.</p
     <span class="sd">/**</span>
 <span class="sd">     * @var \Doctrine\ORM\EntityManager</span>
 <span class="sd">     */</span>
-    <span class="k">private</span> <span class="nv">$em</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$_em</span><span class="p">;</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">setUp</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="nv">$kernel</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="na">createKernel</span><span class="p">();</span>
-        <span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">boot</span><span class="p">();</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span> <span class="o">=</span> <span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">getContainer</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;doctrine.orm.entity_manager&#39;</span><span class="p">);</span>
+            <span class="nv">$kernel</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="na">createKernel</span><span class="p">();</span>
+            <span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">boot</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span> <span class="o">=</span> <span class="nv">$kernel</span><span class="o">-&gt;</span><span class="na">getContainer</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;doctrine.orm.entity_manager&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">testProductByCategoryName</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="nv">$results</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">em</span>
-            <span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeStoreBundle:Product&#39;</span><span class="p">)</span>
+        <span class="nv">$results</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_em</span><span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeProductBundle:Product&#39;</span><span class="p">)</span>
             <span class="o">-&gt;</span><span class="na">searchProductsByNameQuery</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
-            <span class="o">-&gt;</span><span class="na">getResult</span><span class="p">()</span>
-        <span class="p">;</span>
+            <span class="o">-&gt;</span><span class="na">getResult</span><span class="p">();</span>
 
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertCount</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nv">$results</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertEquals</span><span class="p">(</span><span class="nb">count</span><span class="p">(</span><span class="nv">$results</span><span class="p">),</span> <span class="mi">1</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -139,14 +254,13 @@ que está destinado a ser probado contra una conexión de base de datos real.</p
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="../security/index.html" title="Seguridad"
+          <a href="../security/remember_me.html" title="Cómo agregar la funcionalidad “recuérdame” al inicio de sesión"
              >siguiente</a> |</li>
         <li class="right" >
           <a href="profiling.html" title="Cómo utilizar el generador de perfiles en una prueba funcional"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" >Probando</a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -157,7 +271,7 @@ que está destinado a ser probado contra una conexión de base de datos real.</p
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

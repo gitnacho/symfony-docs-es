@@ -26,9 +26,9 @@
     <script type="text/javascript" src="../../_static/translations.js"></script>
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
-    <link rel="up" title="Validando" href="index.html" />
-    <link rel="next" title="Configurando" href="../configuration/index.html" />
-    <link rel="prev" title="Validando" href="index.html" /> 
+    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="next" title="Cómo dominar y crear nuevos entornos" href="../configuration/environments.html" />
+    <link rel="prev" title="Cómo crear un tipo de campo personalizado para formulario" href="../form/create_custom_field_type.html" /> 
   </head>
   <body>
   <div class="imalogo">
@@ -59,14 +59,13 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="../configuration/index.html" title="Configurando"
+          <a href="../configuration/environments.html" title="Cómo dominar y crear nuevos entornos"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Validando"
+          <a href="../form/create_custom_field_type.html" title="Cómo crear un tipo de campo personalizado para formulario"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Validando</a> &raquo;</li> 
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -107,7 +106,7 @@
 </pre></div>
 </div>
 <p>En otras palabras, si creas una <tt class="docutils literal"><span class="pre">restricción</span></tt> personalizada (por ejemplo, <tt class="docutils literal"><span class="pre">MyConstraint</span></tt>), cuando <em>Symfony2</em> realmente lleve a cabo la validación automáticamente buscará otra clase, <tt class="docutils literal"><span class="pre">MyConstraintValidator</span></tt>.</p>
-<p>La clase <tt class="docutils literal"><span class="pre">validator</span></tt> también es simple, y sólo tiene un método obligatorio: <tt class="docutils literal"><span class="pre">validate</span></tt>.
+<p>La clase <tt class="docutils literal"><span class="pre">validator</span></tt> también es simple, y sólo tiene un método obligatorio: <tt class="docutils literal"><span class="pre">isValid</span></tt>.
 Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><span class="pre">ProtocolValidator</span></tt> como ejemplo:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Symfony\Component\Validator\Constraints</span><span class="p">;</span>
 
@@ -116,25 +115,26 @@ Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><
 
 <span class="k">class</span> <span class="nc">ProtocolValidator</span> <span class="k">extends</span> <span class="nx">ConstraintValidator</span>
 <span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">validate</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nx">Constraint</span> <span class="nv">$constraint</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">isValid</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nx">Constraint</span> <span class="nv">$constraint</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">in_array</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">context</span><span class="o">-&gt;</span><span class="na">addViolation</span><span class="p">(</span><span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">message</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%protocols%&#39;</span> <span class="o">=&gt;</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">));</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">in_array</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">setMessage</span><span class="p">(</span><span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">message</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%protocols%&#39;</span> <span class="o">=&gt;</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">));</span>
+
+                <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
         <span class="p">}</span>
+
+            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
-<p class="last">El método <tt class="docutils literal"><span class="pre">validate</span></tt> no devuelve un valor; en cambio, añade violaciones al validador de la propiedad <tt class="docutils literal"><span class="pre">context</span></tt> con una llamada al método <tt class="docutils literal"><span class="pre">addViolation</span></tt> si hay errores de validación. Por lo tanto, un valor se podría considerar como válido si no provoca que se añadan violaciones al contexto.
-El primer parámetro de la llamada a <tt class="docutils literal"><span class="pre">addViolation</span></tt> es el mensaje de error a utilizar para esa violación.</p>
+<p class="last">No olvides llamar a <tt class="docutils literal"><span class="pre">setMessage</span></tt> para construir un mensaje de error cuando el valor es incorrecto.</p>
 </div>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1.</span></p>
-<div class="section" id="restriccion-de-validadores-con-dependencias">
-<h2>Restricción de validadores con dependencias<a class="headerlink" href="#restriccion-de-validadores-con-dependencias" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Si la restricción del validador tiene dependencias, tal como una conexión de base de datos, se tendrá que configurar como un servicio en el contenedor de inyección de dependencias. Este servicio debe incluir la etiqueta <tt class="docutils literal"><span class="pre">validator.constraint_validator</span></tt> y un atributo <tt class="docutils literal"><span class="pre">alias</span></tt>:</p>
+<div class="section" id="validadores-de-restriccion-con-dependencias">
+<h2>Validadores de restricción con dependencias<a class="headerlink" href="#validadores-de-restriccion-con-dependencias" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si el validador de la restricción tiene dependencias, tal como una conexión a base de datos, la tendrás que configurar como un servicio en el contenedor de inyección de dependencias. Este servicio debe incluir la etiqueta <tt class="docutils literal"><span class="pre">validator.constraint_validator</span></tt> y un atributo <tt class="docutils literal"><span class="pre">alias</span></tt>:</p>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
@@ -168,35 +168,7 @@ El primer parámetro de la llamada a <tt class="docutils literal"><span class="p
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Como mencionamos anteriormente, <em>Symfony2</em> buscará automáticamente una clase llamada <tt class="docutils literal"><span class="pre">after</span></tt> después de la restricción, con su <tt class="docutils literal"><span class="pre">Validador</span></tt> adjunto.  Si tu restricción de validación está definida como un servicio, es importante que redefinas el método <tt class="docutils literal"><span class="pre">validatedBy()</span></tt> para que devuelva el alias utilizado cuando definiste tu servicio, de lo contrario <em>Symfony2</em> no utilizará el servicio de la restricción de validación, y, en su lugar, creará una instancia de la clase, sin inyectar ningún tipo de dependencia.</p>
-</div>
-<div class="section" id="clase-para-la-validacion-de-restriccion">
-<h2>Clase para la validación de restricción<a class="headerlink" href="#clase-para-la-validacion-de-restriccion" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Además de validar una propiedad de clase, una restricción puede tener un ámbito de clase proporcionándole un objetivo:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">getTargets</span><span class="p">()</span>
-<span class="p">{</span>
-    <span class="k">return</span> <span class="nx">self</span><span class="o">::</span><span class="na">CLASS_CONSTRAINT</span><span class="p">;</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Con esto, el método validador <tt class="docutils literal"><span class="pre">validate()</span></tt> obtiene un objeto como primer argumento:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ProtocolClassValidator</span> <span class="k">extends</span> <span class="nx">ConstraintValidator</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">validate</span><span class="p">(</span><span class="nv">$protocol</span><span class="p">,</span> <span class="nx">Constraint</span> <span class="nv">$constraint</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nv">$protocol</span><span class="o">-&gt;</span><span class="na">getFoo</span><span class="p">()</span> <span class="o">!=</span> <span class="nv">$protocol</span><span class="o">-&gt;</span><span class="na">getBar</span><span class="p">())</span> <span class="p">{</span>
-
-            <span class="c1">// vincula el mensaje de error a la propiedad foo</span>
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">context</span><span class="o">-&gt;</span><span class="na">addViolationAtSubPath</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">getMessage</span><span class="p">(),</span> <span class="k">array</span><span class="p">(),</span> <span class="k">null</span><span class="p">);</span>
-
-                <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
-        <span class="p">}</span>
-
-            <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
+<p>Como mencionamos anteriormente, <em>Symfony2</em> automáticamente buscará una clase llamada después de la restricción, con su <tt class="docutils literal"><span class="pre">Validador</span></tt> adjunto.  Si tu restricción de validación está definida como un servicio, es importante que redefinas el método <tt class="docutils literal"><span class="pre">validatedBy()</span></tt> para que devuelva el alias utilizado cuando definiste tu servicio, de lo contrario <em>Symfony2</em> no utilizará el servicio de la restricción de validación, y, en su lugar, creará una instancia de la clase, sin inyectar ningún tipo de dependencia.</p>
 </div>
 </div>
 
@@ -217,14 +189,13 @@ El primer parámetro de la llamada a <tt class="docutils literal"><span class="p
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="../configuration/index.html" title="Configurando"
+          <a href="../configuration/environments.html" title="Cómo dominar y crear nuevos entornos"
              >siguiente</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Validando"
+          <a href="../form/create_custom_field_type.html" title="Cómo crear un tipo de campo personalizado para formulario"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" >Validando</a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -235,7 +206,7 @@ El primer parámetro de la llamada a <tt class="docutils literal"><span class="p
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

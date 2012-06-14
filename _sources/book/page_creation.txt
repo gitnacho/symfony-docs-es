@@ -206,7 +206,7 @@ El controlador es simple: este crea un nuevo objeto ``Respuesta``, cuyo primer a
         http://localhost/app.php/hello/Ryan
 
     Si se produce un error, probablemente sea porque necesitas vaciar la caché ejecutando:
-
+    
     .. code-block:: bash
 
         php app/console cache:clear --env=prod --no-debug
@@ -561,19 +561,25 @@ La aplicación consiste de una colección de paquetes que representan todas las 
 
         # app/config/config.yml
         imports:
-            - { resource: parameters.yml }
+            - { resource: parameters.ini }
             - { resource: security.yml }
-
+        
         framework:
-            secret:          "%secret%"
+            secret:          %secret%
             charset:         UTF-8
             router:          { resource: "%kernel.root_dir%/config/routing.yml" }
-            # ...
+            form:            true
+            csrf_protection: true
+            validation:      { enable_annotations: true }
+            templating:      { engines: ['twig'] } #assets_version: SomeVersionScheme
+            session:
+                default_locale: %locale%
+                auto_start:     true
 
         # Twig Configuration
         twig:
-            debug:            "%kernel.debug%"
-            strict_variables: "%kernel.debug%"
+            debug:            %kernel.debug%
+            strict_variables: %kernel.debug%
 
         # ...
 
@@ -581,13 +587,19 @@ La aplicación consiste de una colección de paquetes que representan todas las 
 
         <!-- app/config/config.xml -->
         <imports>
-            <import resource="parameters.yml" />
+            <import resource="parameters.ini" />
             <import resource="security.yml" />
         </imports>
-
+        
         <framework:config charset="UTF-8" secret="%secret%">
             <framework:router resource="%kernel.root_dir%/config/routing.xml" />
-            <!-- ... -->
+            <framework:form />
+            <framework:csrf-protection />
+            <framework:validation annotations="true" />
+            <framework:templating assets-version="SomeVersionScheme">
+                <framework:engine id="twig" />
+            </framework:templating>
+            <framework:session default-locale="%locale%" auto-start="true" />
         </framework:config>
 
         <!-- Twig Configuration -->
@@ -597,14 +609,23 @@ La aplicación consiste de una colección de paquetes que representan todas las 
 
     .. code-block:: php
 
-        $this->import('parameters.yml');
+        $this->import('parameters.ini');
         $this->import('security.yml');
 
         $container->loadFromExtension('framework', array(
             'secret'          => '%secret%',
             'charset'         => 'UTF-8',
             'router'          => array('resource' => '%kernel.root_dir%/config/routing.php'),
-            // ...
+            'form'            => array(),
+            'csrf-protection' => array(),
+            'validation'      => array('annotations' => true),
+            'templating'      => array(
+                'engines' => array('twig'),
+                #'assets_version' => "SomeVersionScheme",
+            ),
+            'session' => array(
+                'default_locale' => "%locale%",
+                'auto_start'     => true,
             ),
         ));
 
@@ -634,28 +655,6 @@ El archivo de configuración viene con parámetros predeterminados. A medida que
     * *XML*: Más poderoso que *YAML* a veces y es compatible con el autocompletado del *IDE*;
 
     * *PHP*: Muy potente, pero menos fácil de leer que los formatos de configuración estándar.
-
-Volcado de la configuración predefinida
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 2.1
-    La orden ``config:dump-reference`` se añadió en *Symfony* 2.1
-
-Puedes volcar a la consola la configuración predefinida en *YAML* de un paquete usando la orden ``config:dump-reference``.  He aquí un ejemplo de volcado de la configuración predefinida del ``FrameworkBundle``:
-
-.. code-block:: text
-
-    app/console config:dump-reference FrameworkBundle
-
-También puedes usar el alias de la extensión (la ``clave`` en el archivo de configuración):
-
-.. code-block:: text
-
-    app/console config:dump-reference framework
-
-.. note::
-
-    Revisa el artículo del recetario: :doc:`Cómo exponer la configuración semántica de un paquete </cookbook/bundles/extension>` para información sobre cómo añadir configuración a tus propios paquetes.
 
 .. index::
    single: Entornos; Introducción

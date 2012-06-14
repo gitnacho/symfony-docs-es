@@ -312,7 +312,7 @@ Si tu objeto aprovecha la :ref:`validación de grupos <book-validation-validatio
 
 Si vas a crear :ref:`clases form <book-form-creating-form-classes>` (una buena práctica), entonces tendrás que agregar lo siguiente al método ``getDefaultOptions()``::
 
-    public function getDefaultOptions()
+    public function getDefaultOptions(array $options)
     {
         return array(
             'validation_groups' => array('registration')
@@ -320,43 +320,6 @@ Si vas a crear :ref:`clases form <book-form-creating-form-classes>` (una buena p
     }
 
 En ambos casos, *sólo* se utilizará el grupo de validación ``registration`` para validar el objeto subyacente.
-
-Grupos basados en datos presentados
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 2.1
-   La posibilidad de especificar una retrollamada o Cierre en ``validation_groups`` es nueva en la versión 2.1
-
-Si necesitas alguna lógica avanzada para determinar los grupos de validación (por ejemplo, basándote en datos presentados), puedes poner la opción ``validation_groups`` a un arreglo de retrollamadas, o a un ``Cierre``:
-
-.. code-block:: php
-
-    public function getDefaultOptions()
-    {
-        return array(
-            'validation_groups' => array('Acme\\AcmeBundle\\Entity\\Client', 'determineValidationGroups'),
-        );
-    }
-
-Esto llamará al método estático ``determineValidationGroups()`` en la clase ``Cliente`` después de vincular el formulario, pero antes de llevar a cabo la validación.
-El objeto formulario se pasa como argumento al método (ve el siguiente ejemplo).
-Además puedes definir tu lógica completa en línea usando un ``Cierre``:
-
-.. code-block:: php
-
-    public function getDefaultOptions()
-    {
-        return array(
-            'validation_groups' => function(FormInterface $form) {
-                $data = $form->getData();
-                if (Entity\Client::TYPE_PERSON == $data->getType()) {
-                    return array('person')
-                } else {
-                    return array('company');
-                }
-            },
-        );
-    }
 
 .. index::
    single: Formularios; Tipos de campo integrados
@@ -650,11 +613,11 @@ Sin embargo, una mejor práctica es construir el formulario en una clase separad
     namespace Acme\TaskBundle\Form\Type;
 
     use Symfony\Component\Form\AbstractType;
-    use Symfony\Component\Form\FormBuilderInterface;
+    use Symfony\Component\Form\FormBuilder;
 
     class TaskType extends AbstractType
     {
-        public function buildForm(FormBuilderInterface $builder, array $options)
+        public function buildForm(FormBuilder $builder, array $options)
         {
             $builder->add('task');
             $builder->add('dueDate', null, array('widget' => 'single_text'));
@@ -691,7 +654,7 @@ Colocar la lógica del formulario en su propia clase significa que fácilmente p
 
     Cada formulario tiene que conocer el nombre de la clase que contiene los datos subyacentes (por ejemplo, ``Acme\TaskBundle\Entity\Task``). Por lo general, esto sólo se deduce basándose en el objeto pasado como segundo argumento de ``createForm`` (es decir, ``$task``). Más tarde, cuando comiences a incorporar formularios, esto ya no será suficiente. Así que, si bien no siempre es necesario, generalmente es buena idea especificar directamente la opción ``data_class`` añadiendo lo siguiente al tipo de tu clase formulario::
 
-        public function getDefaultOptions()
+        public function getDefaultOptions(array $options)
         {
             return array(
                 'data_class' => 'Acme\TaskBundle\Entity\Task',
@@ -721,7 +684,7 @@ Formularios y *Doctrine*
 El objetivo de un formulario es traducir los datos de un objeto (por ejemplo, ``Task``) a un formulario *HTML* y luego traducir los datos enviados por el usuario al objeto original. Como tal, el tema de la persistencia del objeto ``Task`` a la base de datos es del todo ajeno al tema de los formularios. Pero, si has configurado la clase ``Task`` para persistirla a través de *Doctrine* (es decir, que le has añadido :ref:`metadatos de asignación <book-doctrine-adding-mapping>`), entonces persistirla después de la presentación de un formulario se puede hacer cuando el formulario es válido::
 
     if ($form->isValid()) {
-        $em = $this->getDoctrine()->getManager();
+        $em = $this->getDoctrine()->getEntityManager();
         $em->persist($task);
         $em->flush();
 
@@ -803,7 +766,7 @@ Ahora que hemos actualizado tu aplicación para reflejar las nuevas necesidades,
             $builder->add('name');
         }
 
-        public function getDefaultOptions()
+        public function getDefaultOptions(array $options)
         {
             return array(
                 'data_class' => 'Acme\TaskBundle\Entity\Category',
@@ -945,18 +908,6 @@ en el tema global (definido a nivel del paquete).
 Si hay varios temas personalizados siempre se buscará en el orden listado antes de caer de nuevo al tema global.
 
 Para personalizar cualquier parte de un formulario, sólo tienes que reemplazar el fragmento apropiado. Saber exactamente qué bloque sustituir es el tema de la siguiente sección.
-
-.. versionadded:: 2.1
-   Introduce una sintaxis alterna para el ``form_theme`` de *Twig*. Esta acepta cualquier expresión *Twig* válida (la diferencia más notable es el uso de un arreglo cuando utilizas múltiples temas).
-
-   .. code-block:: html+jinja
-
-       {# src/Acme/TaskBundle/Resources/views/Default/new.html.twig #}
-
-       {% form_theme form with 'AcmeTaskBundle:Form:fields.html.twig' %}
-
-       {% form_theme form with ['AcmeTaskBundle:Form:fields.html.twig',
-                                'AcmeTaskBundle:Form:fields2.html.twig'] %}
 
 Para una explicación más extensa, consulta :doc:`/cookbook/form/form_customization`.
 
@@ -1158,7 +1109,7 @@ El elemento *CSRF* se puede personalizar formulario por formulario. Por ejemplo:
     {
         // ...
 
-        public function getDefaultOptions()
+        public function getDefaultOptions(array $options)
         {
             return array(
                 'data_class'      => 'Acme\TaskBundle\Entity\Task',
@@ -1270,7 +1221,7 @@ Ahora, cuando llames a ``$form->bindRequest($request)``, aquí se ejecuta la con
     {
         // ...
 
-        public function getDefaultOptions()
+        public function getDefaultOptions(array $options)
         {
             $collectionConstraint = new Collection(array(
                 'name' => new MinLength(5),

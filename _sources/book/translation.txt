@@ -17,7 +17,7 @@ El término "internacionalización" (frecuentemente abreviado como `i18n`_) se r
 
 .. note::
 
-    El término *locale* se refiere más o menos al lenguaje y país del usuario. Este puede ser cualquier cadena que tu aplicación utilice para manejar las traducciones y otras diferencias de formato (por ejemplo, el formato de moneda). Recomendamos el código `ISO639-1`_ para el *idioma*, un guión bajo (``_``), luego el código `ISO3166 Alpha-2`_ para el *país* (por ejemplo "\ ``es_MX``\ " para Español/México).
+    El término *locale* se refiere más o menos al lenguaje y país del usuario. Esta puede ser cualquier cadena que entonces la aplicación utilice para manejar las traducciones y otras diferencias de formato (por ejemplo, formato de moneda). Recomendamos el código *ISO639-1* para el *idioma*, un guión bajo (``_``), luego el código *ISO3166* para el *país* (por ejemplo "\ ``es_MX``\ " para Español/México).
 
 En este capítulo, aprenderemos cómo preparar una aplicación para apoyar varias configuraciones regionales y, a continuación cómo crear traducciones para múltiples regiones. En general, el proceso tiene varios pasos comunes:
 
@@ -27,7 +27,7 @@ En este capítulo, aprenderemos cómo preparar una aplicación para apoyar varia
 
 3. Crear recursos de traducción para cada configuración regional compatible, la cual traduce cada mensaje en la aplicación;
 
-4. Determinar, establecer y administrar la configuración regional del usuario para la petición y, opcionalmente, la sesión entera.
+4. Determinar, establecer y gestionar la configuración regional del usuario en la sesión.
 
 .. index::
    single: Traducciones; Configuración
@@ -65,7 +65,7 @@ La opción ``fallback`` define la configuración regional de reserva cuando la t
 
     Cuando la traducción no existe para una configuración regional, el traductor primero intenta encontrar la traducción para el idioma ("\ ``es``\ " si el local es "\ ``es_MX``\ " por ejemplo). Si esto también falla, busca una traducción utilizando la configuración regional de reserva.
 
-La región utilizada en las traducciones es la almacenada en la petición. Esta, normalmente se establece en el atributo ``_locale`` de tus rutas (ve :ref:`book-translation-locale-url`).
+La región utilizada en las traducciones es la almacenada en la sesión del usuario.
 
 .. index::
    single: Traducciones; Traducción básica
@@ -123,7 +123,7 @@ El proceso de traducción
 
 Para empezar a traducir el mensaje, *Symfony2* utiliza un proceso sencillo:
 
-* Determina la ``región`` del usuario actual, la cual está almacenada en la petición (o almacenada como ``locale`` en la sesión del usuario);
+* Determina la región del usuario actual, la cual está almacenada en la sesión (como ``locale``);
 
 * Carga un catálogo de mensajes traducidos desde los recursos de traducción definidos para la configuración de ``locale`` (por ejemplo, ``fr_FR``). Los mensajes de la configuración regional de reserva también se cargan y se agregan al catálogo si no existen ya. El resultado final es un gran "diccionario" de traducciones. Consulta `Catálogos de mensajes`_ para más detalles;
 
@@ -228,18 +228,11 @@ Es responsabilidad del desarrollador (o traductor) de una aplicación internacio
 Ubicación de traducción y convenciones de nomenclatura
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*Symfony2* busca archivos de mensajes (es decir, traducciones) en los siguientes lugares:
+*Symfony2* busca archivos de mensajes (traducciones) en dos lugares:
 
-* el directorio ``<directorio raíz del núcleo>/Resources/translations``;
+* Para los mensajes que se encuentran en un paquete, los archivos de mensajes correspondientes deben vivir en el directorio ``Resources/translations/`` del paquete;
 
-* el directorio ``<directorio raíz del núcleo>/Resources/<nombre paquete>/translations``;
-
-* el directorio ``Resources/translations/`` del paquete.
-
-Las ubicaciones están enumeradas basándose en su prioridad. Por lo tanto puedes
-redefinir la traducción de los mensajes de un paquete en cualquiera de los 2 directorios superiores.
-
-El mecanismo de sustitución trabaja a nivel de claves: sólo es necesario enumerar las claves remplazadas en un archivo de mensajes de alta prioridad. Cuando una clave no se encuentra en un archivo de mensajes, el traductor automáticamente vuelve a los archivos de mensajes de reserva de menor prioridad.
+* Para sustituir la traducción de algún paquete, debes colocar los archivos de mensajes en el directorio ``app/Resources/translations``.
 
 El nombre del archivo de las traducciones también es importante ya que *Symfony2* utiliza una convención para determinar los detalles sobre las traducciones. Cada archivo de mensajes se debe nombrar de acuerdo con el siguiente patrón: ``dominio.región.cargador``:
 
@@ -268,7 +261,7 @@ Creando traducciones
 ~~~~~~~~~~~~~~~~~~~~
 
 El acto de crear archivos de traducción es una parte importante de la "localización" (a menudo abreviado `L10n`_). Los archivos de traducción constan de una serie de pares Identificador-traducción para un determinado dominio y configuración regional.
- La fuente es el identificador para la traducción individual, y puede ser el mensaje en la región principal (por ejemplo "Symfony is great") de tu aplicación o un identificador único (por ejemplo, "symfony2.great" ---ve la barra lateral más abajo---):
+ El ``id`` es el identificador de la traducción individual, y puede ser el mensaje en la región principal (por ejemplo, "Symfony is great") de tu aplicación o un identificador único (por ejemplo, "symfony2.great" ---consulta el recuadro más adelante):
 
 .. configuration-block::
 
@@ -406,34 +399,23 @@ Al traducir las cadenas que no están en el dominio predeterminado (``messages``
 Manejando la configuración regional del usuario
 -----------------------------------------------
 
-La configuración regional del usuario actual se almacena en la petición y se puede acceder a través del objeto ``petición``:
+La configuración regional del usuario actual se almacena en la sesión y se puede acceder a través del objeto ``session``:
 
 .. code-block:: php
 
-    // accede al objeto request en un controlador estándar
-    $request = $this->getRequest();
+    $locale = $this->get('session')->getLocale();
 
-    $locale = $request->getLocale();
-
-    $request->setLocale('en_US');
+    $this->get('session')->setLocale('en_US');
 
 .. index::
    single: Traducciones; Región y reserva predeterminada
-
-También es posible almacenar la región en la sesión en lugar de en base a cada petición. Si lo haces, cada subsecuente petición tendrá esa región.
-
-.. code-block:: php
-
-    $this->get('session')->set('_locale', 'en_US');
-
-En la sección :ref:`book-translation-locale-url`, más adelante, puedes ver cómo configurar la región a través del enrutado.
 
 Configuración regional predeterminada y reserva
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Si la configuración regional no se ha establecido explícitamente en la sesión, el parámetro de configuración ``fallback_locale`` será utilizado por el ``Traductor``. El valor predeterminado del parámetro es "\ ``en``\ " (consulta la sección `Configurando`_).
 
-Alternativamente, puedes garantizar que hay un ``locale`` establecido en cada petición definiendo un ``default_locale`` para la plataforma:
+Alternativamente, puedes garantizar que hay un ``locale`` establecido en cada sesión definiendo un ``default_locale`` para el servicio ``session``:
 
 .. configuration-block::
 
@@ -441,24 +423,21 @@ Alternativamente, puedes garantizar que hay un ``locale`` establecido en cada pe
 
         # app/config/config.yml
         framework:
-            default_locale: en
+            session: { default_locale: en }
 
     .. code-block:: xml
 
         <!-- app/config/config.xml -->
         <framework:config>
-            <framework:default-locale>en</framework:default-locale>
+            <framework:session default-locale="en" />
         </framework:config>
 
     .. code-block:: php
 
         // app/config/config.php
         $container->loadFromExtension('framework', array(
-            'default_locale' => 'en',
+            'session' => array('default_locale' => 'en'),
         ));
-
-.. versionadded:: 2.1
-    El parámetro ``default_locale`` originalmente se definía bajo la clave ``session``, sin embargo, se movió en la versión 2.1. Esto se debe a que la región ahora se establece en la petición en lugar de en la sesión.
 
 .. _book-translation-locale-url:
 
@@ -656,15 +635,6 @@ Los filtros ``trans`` y ``transchoice`` se pueden utilizar para traducir *texto 
             {# pero las cadenas estáticas nunca se escapan #}
             {{ '<h3>foo</h3>'|trans }}
 
-.. versionadded:: 2.1
-    Ahora puedes establecer el dominio de la traducción de toda una plantilla *Twig* con una sola etiqueta:
-
-     .. code-block:: jinja
-
-            {% trans_default_domain "app" %}
-
-     Ten en cuenta que esto sólo influye en la plantilla actual, no en las plantillas "incluidas" (con el fin de evitar efectos secundarios).
-
 Plantillas *PHP*
 ~~~~~~~~~~~~~~~~
 
@@ -683,7 +653,7 @@ El servicio traductor es accesible en plantillas *PHP* a través del ayudante ``
 Forzando la configuración regional del traductor
 ------------------------------------------------
 
-Al traducir un mensaje, *Symfony2* utiliza la configuración regional de la petición o la configuración regional de ``reserva`` si es necesario. También puedes especificar manualmente la configuración regional utilizada para la traducción:
+Al traducir un mensaje, *Symfony2* utiliza la configuración regional de la sesión del usuario o, de ser necesario, la configuración regional de reserva (``fallback``). También puedes especificar manualmente la configuración regional utilizada para la traducción:
 
 .. code-block:: php
 
@@ -694,7 +664,7 @@ Al traducir un mensaje, *Symfony2* utiliza la configuración regional de la peti
         'fr_FR',
     );
 
-    $this->get('translator')->transChoice(
+    $this->get('translator')->trans(
         '{0} There are no apples|{1} There is one apple|]1,Inf[ There are %count% apples',
         10,
         array('%count%' => 10),
@@ -706,8 +676,6 @@ Traduciendo contenido de base de datos
 --------------------------------------
 
 La traducción del contenido de la base de datos la debe manejar *Doctrine* a través de la `Extensión Translatable`_. Para más información, consulta la documentación de la biblioteca.
-
-.. _book-translation-constraint-messages:
 
 Traduciendo mensajes de restricción
 -----------------------------------
@@ -825,12 +793,10 @@ Con el componente ``Translation`` de *Symfony2*, la creación de una aplicación
 
 * Traduce cada mensaje en varias configuraciones regionales creando archivos de mensajes traducidos. *Symfony2* descubre y procesa cada archivo porque su nombre sigue una convención específica;
 
-* Administra la configuración regional del usuario, la cual se almacena en la petición, pero también se puede fijar una sola vez en la sesión del usuario.
+* Determina la región del usuario, que está almacenada en la sesión (como ``locale``);
 
 .. _`i18n`: http://es.wikipedia.org/wiki/Internacionalizaci%C3%B3n_y_localizaci%C3%B3n
 .. _`L10n`: http://es.wikipedia.org/wiki/Internacionalizaci%C3%B3n_y_localizaci%C3%B3n
 .. _`función strtr`: http://www.php.net/manual/es/function.strtr.php
 .. _`ISO 31-11`: http://en.wikipedia.org/wiki/Interval_%28mathematics%29#The_ISO_notation
 .. _`Extensión Translatable`: https://github.com/l3pp4rd/DoctrineExtensions
-.. _`ISO3166 Alpha-2`: http://en.wikipedia.org/wiki/ISO_3166-1#Current_codes
-.. _`ISO639-1`: http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes

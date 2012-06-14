@@ -83,159 +83,62 @@
 <li><em>YAML</em><div class="highlight-yaml"><pre>doctrine:
     dbal:
         default_connection:   default
-        types:
-            # Una colección de tipos personalizados
-            # Ejemplo
-            un_tipo_personalizado:
-                class:                Acme\HelloBundle\MiTipoPersonalizado
-                commented:            true
-
         connections:
             default:
                 dbname:               database
-
-            # Una colección de diferentes nombres de conexión (p.e. default, conn2, etc.)
-            default:
-                dbname:               ~
                 host:                 localhost
-                port:                 ~
-                user:                 root
-                password:             ~
-                charset:              ~
-                path:                 ~
-                memory:               ~
-
-                # El conector usado por MySQL
-                unix_socket:          ~
-
-                # True para utilizar como conexión persistente para el controlador ibm_db2
-                persistent:           ~
-
-                # El protocolo que usará el controlador ibm_db2 (por omisión es TCPIP)
-                protocol:             ~
-
-                # True para usar dbname como un nombre de servicio en vez de SID para Oracle
-                service:              ~
-
-                # El modo de sesión que usará el controlador oci8
-                sessionMode:          ~
-
-                # True para usar un servidor agrupado con el controlador oci8
-                pooled:               ~
-
-                # Configurando MultipleActiveResultSets para el controlador pdo_sqlsrv
-                MultipleActiveResultSets:  ~
+                port:                 1234
+                user:                 user
+                password:             secret
                 driver:               pdo_mysql
-                platform_service:     ~
-                logging:              %kernel.debug%
-                profiling:            %kernel.debug%
-                driver_class:         ~
-                wrapper_class:        ~
+                driver_class:         MiEspacioDeNombres\MiImplementaciónDeControlador
                 options:
-                    # Un arreglo de opciones
-                    key:                  []
+                    foo: bar
+                path:                 %kernel.data_dir%/data.sqlite
+                memory:               true
+                unix_socket:          /tmp/mysql.sock
+                wrapper_class:        MyDoctrineDbalConnectionWrapper
+                charset:              UTF8
+                logging:              %kernel.debug%
+                platform_service:     MyOwnDatabasePlatformService
                 mapping_types:
-                    # un arreglo de tipos asignados
-                    name:                 []
-                slaves:
-
-                    # una colección de nombres de conexión esclavas (p.e. slave1, slave2)
-                    slave1:
-                        dbname:               ~
-                        host:                 localhost
-                        port:                 ~
-                        user:                 root
-                        password:             ~
-                        charset:              ~
-                        path:                 ~
-                        memory:               ~
-
-                        # El conector usado por MySQL
-                        unix_socket:          ~
-
-                        # True para usarla como conexión persistente para el controlador ibm_db2
-                        persistent:           ~
-
-                        # El protocolo que usará el controlador ibm_db2 (por omisión es TCPIP)
-                        protocol:             ~
-
-                        # True para usar dbname como un nombre de servicio en vez de SID para Oracle
-                        service:              ~
-
-                        # El modo de sesión que usará el controlador oci8
-                        sessionMode:          ~
-
-                        # True para usar un servidor agrupado con el controlador oci8
-                        pooled:               ~
-
-                        # Configurando MultipleActiveResultSets para el controlador pdo_sqlsrv
-                        MultipleActiveResultSets:  ~
-
+                    enum: string
+            conn1:
+                # ...
+        types:
+            custom: Acme\HelloBundle\MiTipoPersonalizado
     orm:
-        default_entity_manager:  ~
-        auto_generate_proxy_classes:  false
-        proxy_dir:            %kernel.cache_dir%/doctrine/orm/Proxies
-        proxy_namespace:      Proxies
+        auto_generate_proxy_classes:    false
+        proxy_namespace:                Proxies
+        proxy_dir:                      %kernel.cache_dir%/doctrine/orm/Proxies
+        default_entity_manager:         default # The first defined is used if not set
         entity_managers:
-            # Una colección de diferentes nombres de gestores de entidad (p.e. un_em, otro_em)
-            un_em:
-                query_cache_driver:
-                    type:                 array # Requerido
-                    host:                 ~
-                    port:                 ~
-                    instance_class:       ~
-                    class:                ~
-                metadata_cache_driver:
-                    type:                 array # Requerido
-                    host:                 ~
-                    port:                 ~
-                    instance_class:       ~
-                    class:                ~
+            default:
+                # The name of a DBAL connection (the one marked as default is used if not set)
+                connection:                     conn1
+                mappings: # Required
+                    AcmeHelloBundle: ~
+                class_metadata_factory_name:    Doctrine\ORM\Mapping\ClassMetadataFactory
+                # All cache drivers have to be array, apc, xcache or memcache
+                metadata_cache_driver:          array
+                query_cache_driver:             array
                 result_cache_driver:
-                    type:                 array # Requerido
-                    host:                 ~
-                    port:                 ~
-                    instance_class:       ~
-                    class:                ~
-                connection:           ~
-                class_metadata_factory_name:  Doctrine\ORM\Mapping\ClassMetadataFactory
-                default_repository_class:  Doctrine\ORM\EntityRepository
-                auto_mapping:         false
-                hydrators:
-
-                    # Un arreglo de nombres de hidratantes
-                    nombre_hidratante:                 []
-                mappings:
-                    # Un arreglo de asignaciones, que puede ser un nombre de paquete o algo más
-                    nombre_asignado:
-                        mapping:              true
-                        type:                 ~
-                        dir:                  ~
-                        alias:                ~
-                        prefix:               ~
-                        is_bundle:            ~
+                    type:           memcache
+                    host:           localhost
+                    port:           11211
+                    instance_class: Memcache
+                    class:          Doctrine\Common\Cache\MemcacheCache
                 dql:
-                    # Una colección de funciones de cadena
                     string_functions:
-                        # ejemplo
-                        # test_string: Acme\HelloBundle\DQL\StringFunction
-
-                    # Una colección de funciones numéricas
+                        test_string: Acme\HelloBundle\DQL\StringFunction
                     numeric_functions:
-                        # ejemplo
-                        # test_numeric: Acme\HelloBundle\DQL\NumericFunction
-
-                    # Una colección de funciones datetime
+                        test_numeric: Acme\HelloBundle\DQL\NumericFunction
                     datetime_functions:
-                        # ejemplo
-                        # test_datetime: Acme\HelloBundle\DQL\DatetimeFunction
-
-                # Filtros SQL registrados en el gestor de la entidad
-                filters:
-                    # Un arreglo de filtros
-                    un_filtro:
-                        class:                ~ # Requerido
-                        enabled:              false</pre>
+                        test_datetime: Acme\HelloBundle\DQL\DatetimeFunction
+                hydrators:
+                    custom: Acme\HelloBundle\Hydrators\CustomHydrator
+            em2:
+                # ...</pre>
 </div>
 </li>
 <li><em>XML</em><div class="highlight-xml"><pre>&lt;container xmlns="http://symfony.com/schema/dic/services"
@@ -284,7 +187,7 @@
                 &lt;doctrine:mapping
                     name="DoctrineExtensions"
                     type="xml"
-                    dir="%kernel.root_dir%/../vendor/gedmo/doctrine-extensions/lib/DoctrineExtensions/Entity"
+                    dir="%kernel.root_dir%/../src/vendor/DoctrineExtensions/lib/DoctrineExtensions/Entity"
                     prefix="DoctrineExtensions\Entity"
                     alias="DExt"
                 /&gt;
@@ -315,15 +218,13 @@
 <p>Hay un montón de opciones de configuración que puedes utilizar para redefinir ciertas clases, pero solamente son para casos de uso muy avanzado.</p>
 <div class="section" id="controladores-de-cache">
 <h3>Controladores de caché<a class="headerlink" href="#controladores-de-cache" title="Enlazar permanentemente con este título">¶</a></h3>
-<p>Para los controladores de caché puedes especificar los valores &#8220;array&#8221;, &#8220;apc&#8221;, &#8220;memcache&#8221;, &#8220;xcache&#8221; o &#8220;service&#8221;.</p>
+<p>Para los controladores de memoria caché puedes especificar los valores <tt class="docutils literal"><span class="pre">&quot;array&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;apc&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;memcache&quot;</span></tt> o <tt class="docutils literal"><span class="pre">&quot;xcache&quot;</span></tt>.</p>
 <p>El siguiente ejemplo muestra una descripción de los ajustes de la memoria caché:</p>
 <div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">doctrine</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">orm</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">auto_mapping</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
         <span class="l-Scalar-Plain">metadata_cache_driver</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">apc</span>
-        <span class="l-Scalar-Plain">query_cache_driver</span><span class="p-Indicator">:</span>
-            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">service</span>
-            <span class="l-Scalar-Plain">id</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">my_doctrine_common_cache_service</span>
+        <span class="l-Scalar-Plain">query_cache_driver</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">xcache</span>
         <span class="l-Scalar-Plain">result_cache_driver</span><span class="p-Indicator">:</span>
             <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">memcache</span>
             <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">localhost</span>
@@ -465,7 +366,7 @@ Esta especifica cual tipo de metadatos usa el tipo de tu asignación.</li>
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

@@ -344,7 +344,7 @@ El primer trabajo de un formulario es: tomar datos de un objeto y traducirlos a 
 </pre></div>
 </div>
 <p>Si vas a crear <a class="reference internal" href="#book-form-creating-form-classes"><em>clases form</em></a> (una buena práctica), entonces tendrás que agregar lo siguiente al método <tt class="docutils literal"><span class="pre">getDefaultOptions()</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">()</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
         <span class="s1">&#39;validation_groups&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;registration&#39;</span><span class="p">)</span>
@@ -353,38 +353,6 @@ El primer trabajo de un formulario es: tomar datos de un objeto y traducirlos a 
 </pre></div>
 </div>
 <p>En ambos casos, <em>sólo</em> se utilizará el grupo de validación <tt class="docutils literal"><span class="pre">registration</span></tt> para validar el objeto subyacente.</p>
-</div>
-<div class="section" id="grupos-basados-en-datos-presentados">
-<h3>Grupos basados en datos presentados<a class="headerlink" href="#grupos-basados-en-datos-presentados" title="Enlazar permanentemente con este título">¶</a></h3>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>La posibilidad de especificar una retrollamada o Cierre en <tt class="docutils literal"><span class="pre">validation_groups</span></tt> es nueva en la versión 2.1</p>
-<p>Si necesitas alguna lógica avanzada para determinar los grupos de validación (por ejemplo, basándote en datos presentados), puedes poner la opción <tt class="docutils literal"><span class="pre">validation_groups</span></tt> a un arreglo de retrollamadas, o a un <tt class="docutils literal"><span class="pre">Cierre</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">()</span>
-<span class="p">{</span>
-    <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
-        <span class="s1">&#39;validation_groups&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;Acme\\AcmeBundle\\Entity\\Client&#39;</span><span class="p">,</span> <span class="s1">&#39;determineValidationGroups&#39;</span><span class="p">),</span>
-    <span class="p">);</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Esto llamará al método estático <tt class="docutils literal"><span class="pre">determineValidationGroups()</span></tt> en la clase <tt class="docutils literal"><span class="pre">Cliente</span></tt> después de vincular el formulario, pero antes de llevar a cabo la validación.
-El objeto formulario se pasa como argumento al método (ve el siguiente ejemplo).
-Además puedes definir tu lógica completa en línea usando un <tt class="docutils literal"><span class="pre">Cierre</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">()</span>
-<span class="p">{</span>
-    <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
-        <span class="s1">&#39;validation_groups&#39;</span> <span class="o">=&gt;</span> <span class="k">function</span><span class="p">(</span><span class="nx">FormInterface</span> <span class="nv">$form</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nv">$data</span> <span class="o">=</span> <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">getData</span><span class="p">();</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nx">Entity\Client</span><span class="o">::</span><span class="na">TYPE_PERSON</span> <span class="o">==</span> <span class="nv">$data</span><span class="o">-&gt;</span><span class="na">getType</span><span class="p">())</span> <span class="p">{</span>
-                <span class="k">return</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;person&#39;</span><span class="p">)</span>
-            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-                <span class="k">return</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;company&#39;</span><span class="p">);</span>
-            <span class="p">}</span>
-        <span class="p">},</span>
-    <span class="p">);</span>
-<span class="p">}</span>
-</pre></div>
-</div>
 </div>
 </div>
 <div class="section" id="tipos-de-campo-integrados">
@@ -702,11 +670,11 @@ Sin embargo, una mejor práctica es construir el formulario en una clase separad
 <span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Form\Type</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
 
 <span class="k">class</span> <span class="nc">TaskType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
 <span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;task&#39;</span><span class="p">);</span>
         <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;dueDate&#39;</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;widget&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;single_text&#39;</span><span class="p">));</span>
@@ -738,7 +706,7 @@ Sin embargo, una mejor práctica es construir el formulario en una clase separad
 <div class="sidebar" id="book-forms-data-class">
 <p class="first sidebar-title">Configurando el <tt class="docutils literal"><span class="pre">data_class</span></tt></p>
 <p>Cada formulario tiene que conocer el nombre de la clase que contiene los datos subyacentes (por ejemplo, <tt class="docutils literal"><span class="pre">Acme\TaskBundle\Entity\Task</span></tt>). Por lo general, esto sólo se deduce basándose en el objeto pasado como segundo argumento de <tt class="docutils literal"><span class="pre">createForm</span></tt> (es decir, <tt class="docutils literal"><span class="pre">$task</span></tt>). Más tarde, cuando comiences a incorporar formularios, esto ya no será suficiente. Así que, si bien no siempre es necesario, generalmente es buena idea especificar directamente la opción <tt class="docutils literal"><span class="pre">data_class</span></tt> añadiendo lo siguiente al tipo de tu clase formulario:</p>
-<div class="last highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">()</span>
+<div class="last highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
         <span class="s1">&#39;data_class&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\TaskBundle\Entity\Task&#39;</span><span class="p">,</span>
@@ -765,7 +733,7 @@ Sin embargo, una mejor práctica es construir el formulario en una clase separad
 <span id="index-14"></span><h2>Formularios y <em>Doctrine</em><a class="headerlink" href="#formularios-y-doctrine" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>El objetivo de un formulario es traducir los datos de un objeto (por ejemplo, <tt class="docutils literal"><span class="pre">Task</span></tt>) a un formulario <em>HTML</em> y luego traducir los datos enviados por el usuario al objeto original. Como tal, el tema de la persistencia del objeto <tt class="docutils literal"><span class="pre">Task</span></tt> a la base de datos es del todo ajeno al tema de los formularios. Pero, si has configurado la clase <tt class="docutils literal"><span class="pre">Task</span></tt> para persistirla a través de <em>Doctrine</em> (es decir, que le has añadido <a class="reference internal" href="doctrine.html#book-doctrine-adding-mapping"><em>metadatos de asignación</em></a>), entonces persistirla después de la presentación de un formulario se puede hacer cuando el formulario es válido:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
-    <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getManager</span><span class="p">();</span>
+    <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">();</span>
     <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$task</span><span class="p">);</span>
     <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
 
@@ -840,7 +808,7 @@ Sin embargo, una mejor práctica es construir el formulario en una clase separad
         <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">()</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
             <span class="s1">&#39;data_class&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\TaskBundle\Entity\Category&#39;</span><span class="p">,</span>
@@ -966,16 +934,6 @@ Para personalizar cualquier parte de cómo se reproduce un formulario, sólo hay
 en el tema global (definido a nivel del paquete).</p>
 <p>Si hay varios temas personalizados siempre se buscará en el orden listado antes de caer de nuevo al tema global.</p>
 <p>Para personalizar cualquier parte de un formulario, sólo tienes que reemplazar el fragmento apropiado. Saber exactamente qué bloque sustituir es el tema de la siguiente sección.</p>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>Introduce una sintaxis alterna para el <tt class="docutils literal"><span class="pre">form_theme</span></tt> de <em>Twig</em>. Esta acepta cualquier expresión <em>Twig</em> válida (la diferencia más notable es el uso de un arreglo cuando utilizas múltiples temas).<div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/TaskBundle/Resources/views/Default/new.html.twig #}</span>
-
-<span class="cp">{%</span> <span class="k">form_theme</span> <span class="nv">form</span> <span class="k">with</span> <span class="s1">&#39;AcmeTaskBundle:Form:fields.html.twig&#39;</span> <span class="cp">%}</span>
-
-<span class="cp">{%</span> <span class="k">form_theme</span> <span class="nv">form</span> <span class="k">with</span> <span class="o">[</span><span class="s1">&#39;AcmeTaskBundle:Form:fields.html.twig&#39;</span><span class="o">,</span>
-                         <span class="s1">&#39;AcmeTaskBundle:Form:fields2.html.twig&#39;</span><span class="o">]</span> <span class="cp">%}</span>
-</pre></div>
-</div>
-</p>
 <p>Para una explicación más extensa, consulta <a class="reference internal" href="../cookbook/form/form_customization.html"><em>Cómo personalizar la reproducción de un formulario</em></a>.</p>
 <div class="section" id="nombrando-fragmentos-de-formulario">
 <span id="form-template-blocks"></span><span id="index-17"></span><h3>Nombrando fragmentos de formulario<a class="headerlink" href="#nombrando-fragmentos-de-formulario" title="Enlazar permanentemente con este título">¶</a></h3>
@@ -1155,7 +1113,7 @@ Por ejemplo, no hay fragmento <tt class="docutils literal"><span class="pre">tex
 <span class="p">{</span>
     <span class="c1">// ...</span>
 
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">()</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
             <span class="s1">&#39;data_class&#39;</span>      <span class="o">=&gt;</span> <span class="s1">&#39;Acme\TaskBundle\Entity\Task&#39;</span><span class="p">,</span>
@@ -1254,7 +1212,7 @@ Las personalizaciones también se pueden hacer a nivel global en tu proyecto. Pa
 <span class="p">{</span>
     <span class="c1">// ...</span>
 
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">()</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="nv">$collectionConstraint</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Collection</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
             <span class="s1">&#39;name&#39;</span> <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">MinLength</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span>
@@ -1321,7 +1279,7 @@ Las personalizaciones también se pueden hacer a nivel global en tu proyecto. Pa
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

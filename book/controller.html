@@ -384,7 +384,7 @@ Los argumentos del controlador se pueden reorganizar completamente y aún así s
         <span class="s1">&#39;color&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;green&#39;</span>
     <span class="p">));</span>
 
-    <span class="c1">// adicionalmente modifica la respuesta o la devuelve directamente</span>
+    <span class="c1">// alguna modificación adicional a la respuesta o la devuelve directamente</span>
 
     <span class="k">return</span> <span class="nv">$response</span><span class="p">;</span>
 <span class="p">}</span>
@@ -490,8 +490,8 @@ Puedes personalizar ambas páginas de error. Para más detalles, lee &#8220;<a c
 <span class="c1">// en otro controlador por otra petición</span>
 <span class="nv">$foo</span> <span class="o">=</span> <span class="nv">$session</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">);</span>
 
-<span class="c1">// usa un valor predefinido de no existir la clave</span>
-<span class="nv">$filters</span> <span class="o">=</span> <span class="nv">$session</span><span class="o">-&gt;</span><span class="na">set</span><span class="p">(</span><span class="s1">&#39;filters&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">());</span>
+<span class="c1">// set the user locale</span>
+<span class="nv">$session</span><span class="o">-&gt;</span><span class="na">setLocale</span><span class="p">(</span><span class="s1">&#39;fr&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>Estos atributos se mantendrán en la sesión del usuario por el resto de esa sesión.</p>
@@ -509,7 +509,7 @@ Este tipo de mensajes se conocen como mensajes &#8220;flash&#8221;.</p>
     <span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
         <span class="c1">// hace algún tipo de procesamiento</span>
 
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;session&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">getFlashBag</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;notice&#39;</span><span class="p">,</span> <span class="s1">&#39;Your changes were saved!&#39;</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;session&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">setFlash</span><span class="p">(</span><span class="s1">&#39;notice&#39;</span><span class="p">,</span> <span class="s1">&#39;Your changes were saved!&#39;</span><span class="p">);</span>
 
         <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">generateUrl</span><span class="p">(</span><span class="o">...</span><span class="p">));</span>
     <span class="p">}</span>
@@ -522,19 +522,19 @@ Este tipo de mensajes se conocen como mensajes &#8220;flash&#8221;.</p>
 <p>En la siguiente acción de la plantilla, podrías utilizar el siguiente código para reproducir el mensaje de <tt class="docutils literal"><span class="pre">aviso</span></tt>:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">for</span> <span class="nv">flashMessage</span> <span class="k">in</span> <span class="nv">app.session.flashbag.get</span><span class="o">(</span><span class="s1">&#39;notice&#39;</span><span class="o">)</span> <span class="cp">%}</span>
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">if</span> <span class="nv">app.session.hasFlash</span><span class="o">(</span><span class="s1">&#39;notice&#39;</span><span class="o">)</span> <span class="cp">%}</span>
     <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">&quot;flash-notice&quot;</span><span class="nt">&gt;</span>
-        <span class="cp">{{</span> <span class="nv">flashMessage</span> <span class="cp">}}</span>
+        <span class="cp">{{</span> <span class="nv">app.session.flash</span><span class="o">(</span><span class="s1">&#39;notice&#39;</span><span class="o">)</span> <span class="cp">}}</span>
         <span class="nt">&lt;/div&gt;</span>
-<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span>
 </pre></div>
 </div>
 </li>
-<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;session&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">getFlashBag</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;notice&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="nv">$message</span><span class="p">)</span><span class="o">:</span> <span class="cp">?&gt;</span><span class="x"></span>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span> <span class="k">if</span> <span class="p">(</span><span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;session&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">hasFlash</span><span class="p">(</span><span class="s1">&#39;notice&#39;</span><span class="p">))</span><span class="o">:</span> <span class="cp">?&gt;</span><span class="x"></span>
 <span class="x">    &lt;div class=&quot;flash-notice&quot;&gt;</span>
-<span class="x">        </span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="s2">&quot;&lt;div class=&#39;flash-error&#39;&gt;</span><span class="si">$message</span><span class="s2">&lt;/div&gt;&quot;</span> <span class="cp">?&gt;</span><span class="x"></span>
+<span class="x">        </span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;session&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">getFlash</span><span class="p">(</span><span class="s1">&#39;notice&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="x"></span>
 <span class="x">        &lt;/div&gt;</span>
-<span class="cp">&lt;?php</span> <span class="k">endforeach</span><span class="p">;</span> <span class="cp">?&gt;</span><span class="x"></span>
+<span class="cp">&lt;?php</span> <span class="k">endif</span><span class="p">;</span> <span class="cp">?&gt;</span><span class="x"></span>
 </pre></div>
 </div>
 </li>
@@ -624,7 +624,7 @@ Este tipo de mensajes se conocen como mensajes &#8220;flash&#8221;.</p>
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

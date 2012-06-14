@@ -1,8 +1,8 @@
 .. index::
    single: Doctrine
 
-Bases de datos y *Doctrine*
-===========================
+Bases de datos y *Doctrine* ("El modelo")
+=========================================
 
 Seamos realistas, una de las tareas más comunes y desafiantes para cualquier aplicación consiste en la persistencia y lectura de información hacia y desde una base de datos. Afortunadamente, *Symfony* viene integrado con `Doctrine`_, una biblioteca, cuyo único objetivo es dotarte de poderosas herramientas para facilitarte eso. En este capítulo, aprenderás la filosofía básica detrás de *Doctrine* y verás lo fácil que puede ser trabajar con una base de datos.
 
@@ -36,13 +36,13 @@ Antes de comenzar realmente, tendrás que configurar tu información de conexió
 
 .. code-block:: yaml
 
-    # app/config/parameters.yml
-    parameters:
-        database_driver:   pdo_mysql
-        database_host:     localhost
-        database_name:     proyecto_de_prueba
-        database_user:     nombre_de_usuario
-        database_password: contraseña
+    ;app/config/parameters.ini
+    [parameters]
+        database_driver   = pdo_mysql
+        database_host     = localhost
+        database_name     = test_project
+        database_user     = root
+        database_password = password
 
 .. note::
 
@@ -202,10 +202,7 @@ Para que *Doctrine* sea capaz de hacer esto, sólo hay que crear "metadatos", o 
 
 .. caution::
 
-    Ten cuidado de que tu nombre de clase y propiedades no estén asignados a un área protegida por palabras clave de ``SQL`` (tal como ``group`` o ``user``). Por ejemplo, si el nombre de clase de tu entidad es ``group``, entonces, de manera predeterminada, el nombre de la tabla será ``group``, lo cual provocará un error en algunos motores ``SQL``. Consulta la `Documentación de palabras clave reservadas por SQL`_ para que sepas cómo escapar correctamente estos nombres. Alternativamente, si estás en libertad de elegir el esquema
-    de tu base de datos, simplemente asigna un diferente nombre
-    de tabla o columna. Ve las `Clases persistentes`_ y la `Asignación de propiedades`_
-    en la documentación de *Doctrine*.
+    Ten cuidado de que tu nombre de clase y propiedades no estén asignados a un área protegida por palabras clave de ``SQL`` (tal como ``group`` o ``user``). Por ejemplo, si el nombre de clase de tu entidad es ``group``, entonces, de manera predeterminada, el nombre de la tabla será ``group``, lo cual provocará un error en algunos motores ``SQL``. Consulta la `Documentación de palabras clave reservadas por SQL`_ para que sepas cómo escapar correctamente estos nombres.
 
 .. note::
 
@@ -293,7 +290,7 @@ Ahora que tienes asignada una entidad ``Producto`` y la tabla ``Producto`` corre
         $product->setPrice('19.99');
         $product->setDescription('Lorem ipsum dolor');
 
-        $em = $this->getDoctrine()->getManager();
+        $em = $this->getDoctrine()->getEntityManager();
         $em->persist($product);
         $em->flush();
 
@@ -401,7 +398,7 @@ Una vez que hayas extraído un objeto de *Doctrine*, actualizarlo es relativamen
 
     public function updateAction($id)
     {
-        $em = $this->getDoctrine()->getManager();
+        $em = $this->getDoctrine()->getEntityManager();
         $product = $em->getRepository('AcmeStoreBundle:Product')->find($id);
 
         if (!$product) {
@@ -455,7 +452,7 @@ Imagina que deseas consultar los productos, pero sólo quieres devolver aquellos
 
 .. code-block:: php
 
-    $em = $this->getDoctrine()->getManager();
+    $em = $this->getDoctrine()->getEntityManager();
     $query = $em->createQuery(
         'SELECT p FROM AcmeStoreBundle:Product p WHERE p.price > :price ORDER BY p.price ASC'
     )->setParameter('price', '19.99');
@@ -588,7 +585,7 @@ A continuación, agrega un nuevo método --- ``findAllOrderedByName()`` --- a la
     {
         public function findAllOrderedByName()
         {
-            return $this->getManager()
+            return $this->getEntityManager()
                 ->createQuery('SELECT p FROM AcmeStoreBundle:Product p ORDER BY p.name ASC')
                 ->getResult();
         }
@@ -596,11 +593,11 @@ A continuación, agrega un nuevo método --- ``findAllOrderedByName()`` --- a la
 
 .. tip::
 
-    Puedes acceder al gestor de la entidad a través de ``$this->getManager()`` desde el repositorio.
+    Puedes acceder al gestor de la entidad a través de ``$this->getEntityManager()`` desde el interior del repositorio.
 
 Puedes utilizar este nuevo método al igual que los métodos de búsqueda predefinidos del repositorio::
 
-    $em = $this->getDoctrine()->getManager();
+    $em = $this->getDoctrine()->getEntityManager();
     $products = $em->getRepository('AcmeStoreBundle:Product')
                    ->findAllOrderedByName();
 
@@ -759,7 +756,7 @@ Ahora, vamos a ver el código en acción. Imagina que estás dentro de un contro
             // relaciona este producto a la categoría
             $product->setCategory($category);
             
-            $em = $this->getDoctrine()->getManager();
+            $em = $this->getDoctrine()->getEntityManager();
             $em->persist($category);
             $em->persist($product);
             $em->flush();
@@ -847,7 +844,7 @@ Por supuesto, si sabes por adelantado que necesitas tener acceso a los objetos, 
 
     public function findOneByIdJoinedToCategory($id)
     {
-        $query = $this->getManager()
+        $query = $this->getEntityManager()
             ->createQuery('
                 SELECT p, c FROM AcmeStoreBundle:Product p
                 JOIN p.category c
@@ -1106,14 +1103,12 @@ Para más información acerca de *Doctrine*, ve la sección *Doctrine* del :doc:
 
 .. _`Doctrine`: http://www.doctrine-project.org/
 .. _`MongoDB`: http://www.mongodb.org/
-.. _`Documentación de asignación básica`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html
-.. _`Generador de consultas`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/query-builder.html
-.. _`Doctrine Query Language`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/dql-doctrine-query-language.html
-.. _`Asignando asociaciones`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/association-mapping.html
+.. _`Documentación de asignación básica`: http://docs.doctrine-project.org/projects/doctrine-orm/en/2.1/reference/basic-mapping.html
+.. _`Generador de consultas`: http://docs.doctrine-project.org/projects/doctrine-orm/en/2.1/reference/query-builder.html
+.. _`Doctrine Query Language`: http://docs.doctrine-project.org/projects/doctrine-orm/en/2.1/reference/dql-doctrine-query-language.html
+.. _`Asignando asociaciones`: http://docs.doctrine-project.org/projects/doctrine-orm/en/2.1/reference/association-mapping.html
 .. _`DateTime`: http://www.php.net/manual/es/class.datetime.php
-.. _`Asignando tipos`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#doctrine-mapping-types
-.. _`Asignando propiedades`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#property-mapping
-.. _`Ciclo de vida de los eventos`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html#lifecycle-events
-.. _`Documentación de palabras clave reservadas por SQL`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#quoting-reserved-words
-.. _`Clases persistentes`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#persistent-classes
-.. _`Asignación de propiedades`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#property-mapping
+.. _`Asignando tipos`: http://docs.doctrine-project.org/projects/doctrine-orm/en/2.1/reference/basic-mapping.html#doctrine-mapping-types
+.. _`Asignando propiedades`: http://docs.doctrine-project.org/projects/doctrine-orm/en/2.1/reference/basic-mapping.html#property-mapping
+.. _`Ciclo de vida de los eventos`: http://docs.doctrine-project.org/projects/doctrine-orm/en/2.1/reference/events.html#lifecycle-events
+.. _`Documentación de palabras clave reservadas por SQL`: http://docs.doctrine-project.org/projects/doctrine-orm/en/2.1/reference/basic-mapping.html#quoting-reserved-words

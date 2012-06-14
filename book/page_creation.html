@@ -573,35 +573,46 @@ También puedes optar por acortar el nombre del paquete simplemente a <tt class=
 <p>La aplicación consiste de una colección de paquetes que representan todas las características y capacidades de tu aplicación. Cada paquete se puede personalizar a través de archivos de configuración escritos en <em>YAML</em>, <em>XML</em> o <em>PHP</em>. De forma predeterminada, el archivo de configuración principal vive en el directorio <tt class="file docutils literal"><span class="pre">app/config/</span></tt> y se llama <tt class="file docutils literal"><span class="pre">config.yml</span></tt>, <tt class="file docutils literal"><span class="pre">config.xml</span></tt> o <tt class="file docutils literal"><span class="pre">config.php</span></tt> en función del formato que prefieras:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
-<span class="l-Scalar-Plain">imports</span><span class="p-Indicator">:</span>
-    <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">resource</span><span class="p-Indicator">:</span> <span class="nv">parameters.yml</span> <span class="p-Indicator">}</span>
-    <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">resource</span><span class="p-Indicator">:</span> <span class="nv">security.yml</span> <span class="p-Indicator">}</span>
+<li><em>YAML</em><div class="highlight-yaml"><pre># app/config/config.yml
+imports:
+    - { resource: parameters.ini }
+    - { resource: security.yml }
 
-<span class="l-Scalar-Plain">framework</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">secret</span><span class="p-Indicator">:</span>          <span class="s">&quot;%secret%&quot;</span>
-    <span class="l-Scalar-Plain">charset</span><span class="p-Indicator">:</span>         <span class="l-Scalar-Plain">UTF-8</span>
-    <span class="l-Scalar-Plain">router</span><span class="p-Indicator">:</span>          <span class="p-Indicator">{</span> <span class="nv">resource</span><span class="p-Indicator">:</span> <span class="s">&quot;%kernel.root_dir%/config/routing.yml&quot;</span> <span class="p-Indicator">}</span>
-    <span class="c1"># ...</span>
+framework:
+    secret:          %secret%
+    charset:         UTF-8
+    router:          { resource: "%kernel.root_dir%/config/routing.yml" }
+    form:            true
+    csrf_protection: true
+    validation:      { enable_annotations: true }
+    templating:      { engines: ['twig'] } #assets_version: SomeVersionScheme
+    session:
+        default_locale: %locale%
+        auto_start:     true
 
-<span class="c1"># Twig Configuration</span>
-<span class="l-Scalar-Plain">twig</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">debug</span><span class="p-Indicator">:</span>            <span class="s">&quot;%kernel.debug%&quot;</span>
-    <span class="l-Scalar-Plain">strict_variables</span><span class="p-Indicator">:</span> <span class="s">&quot;%kernel.debug%&quot;</span>
+# Twig Configuration
+twig:
+    debug:            %kernel.debug%
+    strict_variables: %kernel.debug%
 
-<span class="c1"># ...</span>
-</pre></div>
+# ...</pre>
 </div>
 </li>
 <li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
 <span class="nt">&lt;imports&gt;</span>
-    <span class="nt">&lt;import</span> <span class="na">resource=</span><span class="s">&quot;parameters.yml&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;import</span> <span class="na">resource=</span><span class="s">&quot;parameters.ini&quot;</span> <span class="nt">/&gt;</span>
     <span class="nt">&lt;import</span> <span class="na">resource=</span><span class="s">&quot;security.yml&quot;</span> <span class="nt">/&gt;</span>
 <span class="nt">&lt;/imports&gt;</span>
 
 <span class="nt">&lt;framework:config</span> <span class="na">charset=</span><span class="s">&quot;UTF-8&quot;</span> <span class="na">secret=</span><span class="s">&quot;%secret%&quot;</span><span class="nt">&gt;</span>
     <span class="nt">&lt;framework:router</span> <span class="na">resource=</span><span class="s">&quot;%kernel.root_dir%/config/routing.xml&quot;</span> <span class="nt">/&gt;</span>
-    <span class="c">&lt;!-- ... --&gt;</span>
+    <span class="nt">&lt;framework:form</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;framework:csrf-protection</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;framework:validation</span> <span class="na">annotations=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;framework:templating</span> <span class="na">assets-version=</span><span class="s">&quot;SomeVersionScheme&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;framework:engine</span> <span class="na">id=</span><span class="s">&quot;twig&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/framework:templating&gt;</span>
+    <span class="nt">&lt;framework:session</span> <span class="na">default-locale=</span><span class="s">&quot;%locale%&quot;</span> <span class="na">auto-start=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
 <span class="nt">&lt;/framework:config&gt;</span>
 
 <span class="c">&lt;!-- Twig Configuration --&gt;</span>
@@ -611,14 +622,23 @@ También puedes optar por acortar el nombre del paquete simplemente a <tt class=
 </pre></div>
 </div>
 </li>
-<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">import</span><span class="p">(</span><span class="s1">&#39;parameters.yml&#39;</span><span class="p">);</span>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">import</span><span class="p">(</span><span class="s1">&#39;parameters.ini&#39;</span><span class="p">);</span>
 <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">import</span><span class="p">(</span><span class="s1">&#39;security.yml&#39;</span><span class="p">);</span>
 
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
     <span class="s1">&#39;secret&#39;</span>          <span class="o">=&gt;</span> <span class="s1">&#39;%secret%&#39;</span><span class="p">,</span>
     <span class="s1">&#39;charset&#39;</span>         <span class="o">=&gt;</span> <span class="s1">&#39;UTF-8&#39;</span><span class="p">,</span>
     <span class="s1">&#39;router&#39;</span>          <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;resource&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;%kernel.root_dir%/config/routing.php&#39;</span><span class="p">),</span>
-    <span class="c1">// ...</span>
+    <span class="s1">&#39;form&#39;</span>            <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(),</span>
+    <span class="s1">&#39;csrf-protection&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(),</span>
+    <span class="s1">&#39;validation&#39;</span>      <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;annotations&#39;</span> <span class="o">=&gt;</span> <span class="k">true</span><span class="p">),</span>
+    <span class="s1">&#39;templating&#39;</span>      <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;engines&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;twig&#39;</span><span class="p">),</span>
+        <span class="c1">#&#39;assets_version&#39; =&gt; &quot;SomeVersionScheme&quot;,</span>
+    <span class="p">),</span>
+    <span class="s1">&#39;session&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;default_locale&#39;</span> <span class="o">=&gt;</span> <span class="s2">&quot;%locale%&quot;</span><span class="p">,</span>
+        <span class="s1">&#39;auto_start&#39;</span>     <span class="o">=&gt;</span> <span class="k">true</span><span class="p">,</span>
     <span class="p">),</span>
 <span class="p">));</span>
 
@@ -649,23 +669,6 @@ El archivo de configuración viene con parámetros predeterminados. A medida que
 <li><em>XML</em>: Más poderoso que <em>YAML</em> a veces y es compatible con el autocompletado del <em>IDE</em>;</li>
 <li><em>PHP</em>: Muy potente, pero menos fácil de leer que los formatos de configuración estándar.</li>
 </ul>
-</div>
-<div class="section" id="volcado-de-la-configuracion-predefinida">
-<h3>Volcado de la configuración predefinida<a class="headerlink" href="#volcado-de-la-configuracion-predefinida" title="Enlazar permanentemente con este título">¶</a></h3>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>La orden <tt class="docutils literal"><span class="pre">config:dump-reference</span></tt> se añadió en <em>Symfony</em> 2.1</p>
-<p>Puedes volcar a la consola la configuración predefinida en <em>YAML</em> de un paquete usando la orden <tt class="docutils literal"><span class="pre">config:dump-reference</span></tt>.  He aquí un ejemplo de volcado de la configuración predefinida del <tt class="docutils literal"><span class="pre">FrameworkBundle</span></tt>:</p>
-<div class="highlight-text"><div class="highlight"><pre>app/console config:dump-reference FrameworkBundle
-</pre></div>
-</div>
-<p>También puedes usar el alias de la extensión (la <tt class="docutils literal"><span class="pre">clave</span></tt> en el archivo de configuración):</p>
-<div class="highlight-text"><div class="highlight"><pre>app/console config:dump-reference framework
-</pre></div>
-</div>
-<div class="admonition note">
-<p class="first admonition-title">Nota</p>
-<p class="last">Revisa el artículo del recetario: <a class="reference internal" href="../cookbook/bundles/extension.html"><em>Cómo exponer la configuración semántica de un paquete</em></a> para información sobre cómo añadir configuración a tus propios paquetes.</p>
-</div>
 </div>
 </div>
 <div class="section" id="entornos">
@@ -802,7 +805,7 @@ Además, observa que cada entorno carga su propio archivo de configuración. Con
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

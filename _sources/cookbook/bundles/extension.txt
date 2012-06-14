@@ -12,19 +12,19 @@ Por ejemplo, el siguiente fragmento le dice al ``FrameworkBundle`` que habilite 
 .. configuration-block::
 
     .. code-block:: yaml
-
+    
         framework:
             # ...
             form:            true
 
     .. code-block:: xml
-
+    
         <framework:config>
             <framework:form />
         </framework:config>
 
     .. code-block:: php
-
+    
         $container->loadFromExtension('framework', array(
             // ...
             'form'            => true,
@@ -241,7 +241,7 @@ Por ejemplo, supongamos que sólo deseas cargar un conjunto de servicios si una 
         // prepara tu variable $config
 
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-
+        
         if (isset($config['enabled']) && $config['enabled']) {
             $loader->load('services.xml');
         }
@@ -381,58 +381,21 @@ Para aprovechar las ventajas de este sistema, debes crear una clase ``Configurac
 
 Se trata de un ejemplo *muy* sencillo, pero ahora puedes utilizar esta clase en el método ``load()`` para combinar tu configuración y forzar su validación. Si se pasan las demás opciones salvo ``my_type``, el usuario recibirá una notificación con una excepción de que se ha pasado una opción no admitida::
 
+    use Symfony\Component\Config\Definition\Processor;
+    // ...
+
     public function load(array $configs, ContainerBuilder $container)
     {
+        $processor = new Processor();
         $configuration = new Configuration();
-
-        $config = $this->processConfiguration($configuration, $configs);
-
+        $config = $processor->processConfiguration($configuration, $configs);
+    
         // ...
     }
 
 El método ``processConfiguration()`` utiliza el árbol de configuración que has definido en la clase ``Configuración`` para validar, normalizar y fusionar todas las matrices de configuración.
 
 La clase ``Configuración`` puede ser mucho más complicada de lo que se muestra aquí, apoyando matrices de nodos, nodos "prototipo", validación avanzada, normalización *XML* específica y fusión avanzada. La mejor manera de ver esto en acción es revisando algunas de las clases configuración del núcleo, como la `configuración del FrameworkBundle`_  o la `configuración del TwigBundle`_.
-
-Volcado de la configuración predefinida
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 2.1
-    La orden ``config:dump-reference`` se añadió en *Symfony* 2.1
-
-La orden `config:dump-reference`` permite volcar en consola la configuración predefinida en *YAML* de un paquete.
-
-Mientras que la configuración de tu paquete se encuentre en la ubicación estándar (``TuPaquete\DependencyInjection\Configuration``) y no tiene un ``__construct()`` funcionará automáticamente.  Si tienes algo diferente en tu clase ``Extensión`` tendrás que sobrescribir el método ``Extension::getConfiguration()``.  Para que devuelva una instancia de tu ``Configuración``.
-
-Puedes agregar comentarios y ejemplos a los nodos de configuración usando los métodos ``->setinfo()`` y ``->setExample()``::
-
-    // src/Acme/HelloBundle/DependencyExtension/Configuration.php
-    namespace Acme\HelloBundle\DependencyInjection;
-
-    use Symfony\Component\Config\Definition\Builder\TreeBuilder;
-    use Symfony\Component\Config\Definition\ConfigurationInterface;
-
-    class Configuration implements ConfigurationInterface
-    {
-        public function getConfigTreeBuilder()
-        {
-            $treeBuilder = new TreeBuilder();
-            $rootNode = $treeBuilder->root('acme_hello');
-
-            $rootNode
-                ->children()
-                    ->scalarNode('my_type')
-                        ->defaultValue('bar')
-                        ->setInfo('what my_type configures')
-                        ->setExample('example setting')
-                    ->end()
-                ->end()
-            ;
-
-            return $treeBuilder;
-        }
-
-Este texto aparece en comentarios *YAML* en el resultado de la orden ``config:dump-reference``.
 
 .. index::
    pair: Convención; Configuración

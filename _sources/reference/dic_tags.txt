@@ -1,251 +1,201 @@
 Etiquetas de inyección de dependencias
 ======================================
 
-Las etiquetas para la inyección de dependencia son pequeñas cadenas que se pueden aplicar a la "bandera" de un servicio para poder usarla de alguna manera especial. Por ejemplo, si tienes un servicio que quieres registrar como escucha de uno de los principales eventos de *Symfony*, lo puedes marcar con la etiqueta ``kernel.event_listener``.
+Etiquetas:
 
-A continuación mostramos información sobre todas las etiquetas disponibles en *Symfony2*:
+* ``data_collector``
+* ``form.type``
+* ``form.type_extension``
+* ``form.type_guesser``
+* ``kernel.cache_warmer``
+* ``kernel.event_listener``
+* ``monolog.logger``
+* ``monolog.processor``
+* ``templating.helper``
+* ``routing.loader``
+* ``translation.loader``
+* ``twig.extension``
+* ``validator.initializer``
 
-+-----------------------------------+---------------------------------------------------------------------------+
-| Nombre etiqueta                   | Uso                                                                       |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `data_collector`_                 | Crear una clase que recopila datos personalizados para el generador de    |
-|                                   | perfiles                                                                  |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `form.type`_                      | Crear un campo de tipo ``Form`` personalizado                             |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `form.type_extension`_            | Crear una "extensión de ``Form``" personalizada                           |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `form.type_guesser`_              | Añade tu propia lógica para "deducir el tipo del formulario"              |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `kernel.cache_warmer`_            | Registra tu servicio para llamarlo durante el proceso de precalentamiento |
-|                                   | del almacenaje en caché                                                   |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `kernel.event_listener`_          | Escuchar diferentes eventos o ganchos en *Symfony*                        |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `kernel.event_subscriber`_        | Para suscribirse a un conjunto de diferentes eventos o ganchos en         |
-|                                   | *Symfony*                                                                 |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `monolog.logger`_                 | Registro cronológico de eventos con un canal de registro personalizado    |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `monolog.processor`_              | Añadir un procesador personalizado para el registro cronológico           |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `routing.loader`_                 | Registrar un servicio personalizado que carga las rutas                   |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `security.voter`_                 | Añadir un votante personalizado a la lógica de autorización de *Symfony*  |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `security.remember_me_aware`_     | Permitir la autenticación por medio de recordatorio (``Recuérdame``)      |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `security.listener.factory`_      | Necesario cuando se crea un sistema de autenticación personalizado        |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `swiftmailer.plugin`_             | Registrar un complemento personalizado para *SwiftMailer*                 |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `templating.helper`_              | Hacer que tu servicio esté disponible en las plantillas de *PHP*          |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `translation.loader`_             | Registrar un servicio personalizado que carga traducciones                |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `twig.extension`_                 | Registrar una extensión de *Twig* personalizada                           |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `validator.constraint_validator`_ | Crear tu propia restricción de validación personalizada                   |
-+-----------------------------------+---------------------------------------------------------------------------+
-| `validator.initializer`_          | Registrar un servicio que inicia los objetos antes de validarlos          |
-+-----------------------------------+---------------------------------------------------------------------------+
+Habilitando ayudantes de plantilla *PHP* personalizados
+-------------------------------------------------------
 
-``data_collector``
-------------------
-
-**Propósito**: Crear una clase que recopile datos personalizados para el generador de perfiles
-
-Para información detallada sobre cómo crear tu propio recolector de datos personalizado, lee el artículo en el recetario: :doc:`/cookbook/profiler/data_collector`.
-
-``form.type``
--------------
-
-**Propósito**: Crear un tipo de campo de formulario personalizado
-
-Para obtener más información sobre cómo crear tu propio tipo de formulario personalizado, lee el artículo en el recetario:
-:doc:`/cookbook/form/create_custom_field_type`.
-
-``form.type_extension``
------------------------
-
-**Propósito**: Crear una "extensión de ``Form``" personalizada
-
-Las extensiones de tipo ``Form`` son una manera para "enganchar" la creación de cualquier campo en tu formulario. Por ejemplo, la adición del fragmento ``CSRF`` se hace a través de una extensión del tipo ``Form`` (la clase :class:`Symfony\\Component\\Form\\Extension\\Csrf\\Type\\FormTypeCsrfExtension`).
-
-Una extensión del tipo ``Form`` puede modificar cualquier parte de cualquier campo en tu formulario. Para crear una extensión del tipo ``Form``, primero debes crear una clase que implemente la interfaz :class:`Symfony\\Component\\Form\\FormTypeExtensionInterface`.
-Por simplicidad, a menudo extenderás una clase
-:class:`Symfony\\Component\\Form\\AbstractTypeExtension` en lugar de la interfaz directamente::
-
-    // src/Acme/MainBundle/Form/Type/MyFormTypeExtension.php
-    namespace Acme\MainBundle\Form\Type\MyFormTypeExtension;
-
-    use Symfony\Component\Form\AbstractTypeExtension;
-
-    class MyFormTypeExtension extends AbstractTypeExtension
-    {
-        // ... rellena cualquier método que quieras redefinir
-        // como buildForm(), buildView(), buildViewBottomUp(),
-        // getDefaultOptions() o getAllowedOptionValues()
-    }
-
-Para dar a conocer tu extensión del tipo ``Form`` a *Symfony* y su uso, ponle la etiqueta `form.type_extension`:
+Para habilitar un ayudante de plantilla personalizado, añádelo como un servicio regular en tu configuración, etiquétalo con ``templating.helper`` y define un atributo ``alias`` (el ayudante será accesible a través de este alias en las plantillas):
 
 .. configuration-block::
 
     .. code-block:: yaml
 
         services:
-            main.form.type.my_form_type_extension:
-                class: Acme\MainBundle\Form\Type\MyFormTypeExtension
+            templating.helper.your_helper_name:
+                class: Nombre\De\Clase\Ayudante\Completamente\Cualificado
                 tags:
-                        - { name: form.type_extension, alias: field }
+                        - { name: templating.helper, alias: alias_name }
 
     .. code-block:: xml
 
-        <service id="main.form.type.my_form_type_extension" class="Acme\MainBundle\Form\Type\MyFormTypeExtension">
-            <tag name="form.type_extension" alias="field" />
+        <service id="templating.helper.your_helper_name" class="Nombre\De\Clase\Ayudante\Completamente\Cualificado">
+            <tag name="templating.helper" alias="alias_name" />
         </service>
 
     .. code-block:: php
 
         $container
-            ->register('main.form.type.my_form_type_extension', 'Acme\MainBundle\Form\Type\MyFormTypeExtension')
-            ->addTag('form.type_extension', array('alias' => 'field'))
+            ->register('templating.helper.your_helper_name', 'Nombre\De\Clase\Ayudante\Completamente\Cualificado')
+            ->addTag('templating.helper', array('alias' => 'alias_name'))
         ;
 
-La clave ``alias`` de la etiqueta es el tipo de campo al que esta extensión se debe aplicar. Por ejemplo, para aplicar la extensión a cualquier ``"field"``, utiliza el valor ``"field"``.
+.. _reference-dic-tags-twig-extension:
 
-``form.type_guesser``
----------------------
+Habilitando extensiones *Twig* personalizadas
+---------------------------------------------
 
-**Propósito**: Añade tu propia lógica para "deducir el tipo del formulario"
-
-Esta etiqueta te permite agregar tu propia lógica al proceso de :ref:`Deducción del tipo del formulario <book-forms-field-guessing>`. De manera predeterminada, la deducción del tipo del formulario se hace por medio de "inferencias" basadas en los metadatos de validación y de *Doctrine* (si estás usando *Doctrine*).
-
-Para añadir tu propio adivino del tipo de formulario, crea una clase que implemente la interfaz :class:`Symfony\\Component\\Form\\FormTypeGuesserInterface`. A continuación, marca la definición de este servicio con ``form.type_guesser`` (esta no tiene opciones).
-
-Para ver un ejemplo de cómo podría ser esta clase, consulta la clase ``ValidatorTypeGuesser`` en el componente ``Form``.
-
-``kernel.cache_warmer``
------------------------
-
-**Propósito**: Registra tu servicio para que sea llamado durante el proceso de precalentamiento para el almacenamiento en caché.
-
-El precalentamiento de la caché se produce cuando ejecutas la tarea ``cache:warmup`` o ``cache:clear`` (a menos que pases ``-no-warmp`` a ``cache:clear``). El propósito es iniciar cualquier caché que necesitará la aplicación y evitar que el primer usuario de algún importante "uso de caché" donde se genera dinámicamente la memoria caché.
-
-Para registrar tu propio precalentamiento de caché, en primer lugar crea un servicio que implemente la interfaz :class:`Symfony\\Component\\HttpKernel\\CacheWarmer\\CacheWarmerInterface`::
-
-    // src/Acme/MainBundle/Cache/MyCustomWarmer.php
-    namespace Acme\MainBundle\Cache;
-
-    use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
-
-    class MyCustomWarmer implements CacheWarmerInterface
-    {
-        public function warmUp($cacheDir)
-        {
-            // hacer algún tipo de operaciones para "calentar" tu memoria caché
-        }
-
-        public function isOptional()
-        {
-                return true;
-        }
-    }
-
-El método ``isOptional`` debe devolver ``true`` si es posible utilizar la aplicación sin necesidad de llamar al precalentamiento de caché. En *Symfony 2.0*, los precalentadores opcionales de cualquier modo siempre se ejecutan, por lo tanto esta función no tiene ningún efecto real.
-
-Para registrar tu precalentador en *Symfony*, ponle la etiqueta ``kernel.cache_warmer``:
+Para habilitar una extensión *Twig*, añádela como un servicio regular en tu configuración, y etiquétala con ``twig.extension``:
 
 .. configuration-block::
 
     .. code-block:: yaml
 
         services:
-            main.warmer.my_custom_warmer:
-                class: Acme\MainBundle\Cache\MyCustomWarmer
+            twig.extension.your_extension_name:
+                class: Nombre\De\Clase\De\La\Extensión\Completamente\Cualificado
                 tags:
-                        - { name: kernel.cache_warmer, priority: 0 }
+                        - { name: twig.extension }
 
     .. code-block:: xml
 
-        <service id="main.warmer.my_custom_warmer" class="Acme\MainBundle\Cache\MyCustomWarmer">
-            <tag name="kernel.cache_warmer" priority="0" />
+        <service id="twig.extension.your_extension_name" class="Nombre\De\Clase\De\La\Extensión\Completamente\Cualificado">
+            <tag name="twig.extension" />
         </service>
 
     .. code-block:: php
 
         $container
-            ->register('main.warmer.my_custom_warmer', 'Acme\MainBundle\Cache\MyCustomWarmer')
-            ->addTag('kernel.cache_warmer', array('priority' => 0))
+            ->register('twig.extension.your_extension_name', 'Nombre\De\Clase\De\La\Extensión\Completamente\Cualificado')
+            ->addTag('twig.extension')
         ;
 
-El valor ``priority`` es opcional y por omisión es 0. Este valor puede estar en el rango de -255 a 255, y los precalentadores se ejecutan en ese orden de prioridad.
+Para información sobre cómo crear la clase extensión de *Twig* real, consulta el tema en la `documentación de extensiones`_.
+
+Antes de escribir tus propias extensiones, echa un vistazo al `Repositorio oficial de extensiones Twig`_ el cual ya cuenta con varias útiles extensiones. Por ejemplo ``Intl`` y su filtro ``localizeddate`` que formatea una fecha según la configuración regional del usuario. Estas extensiones oficiales de *Twig* también se tienen que añadir como servicios normales:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            twig.extension.intl:
+                class: Twig_Extensions_Extension_Intl
+                tags:
+                        - { name: twig.extension }
+
+    .. code-block:: xml
+
+        <service id="twig.extension.intl" class="Twig_Extensions_Extension_Intl">
+            <tag name="twig.extension" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('twig.extension.intl', 'Twig_Extensions_Extension_Intl')
+            ->addTag('twig.extension')
+        ;
 
 .. _dic-tags-kernel-event-listener:
 
-``kernel.event_listener``
--------------------------
+Habilitando escuchas personalizados
+-----------------------------------
 
-**Propósito**: Para escuchar los diferentes eventos o ganchos en *Symfony*
-
-Esta etiqueta te permite conectar tus propias clases en diferentes puntos del proceso de *Symfony*.
-
-Para ver un ejemplo completo de este escucha, ve el artículo :doc:`/cookbook/service_container/event_listener` del recetario.
-
-Para otro ejemplo práctico de un escucha del núcleo consulta en el recetario el
-artículo: :doc:`/cookbook/request/mime_type`.
-
-.. _dic-tags-kernel-event-subscriber:
-
-``kernel.event_subscriber``
----------------------------
-
-**Propósito**: Para suscribirse a un conjunto de diferentes eventos o ganchos en *Symfony*.
-
-.. versionadded:: 2.1
-
-   La habilidad para añadir suscriptores a eventos del núcleo se agregó en la versión 2.1.
-
-Para habilitar un suscriptor personalizado, agrégalo como un servicio regular en una de tus configuraciones, y etiquétalo con ``kernel.event_subscriber``:
+Para habilitar un escucha personalizado, añádelo como un servicio regular en uno de tus archivos de configuración, y etiquétalo con ``kernel.event_listener``. Debes proporcionar el nombre del evento a tu servicio escucha, así como el método que deberá invocar:
 
 .. configuration-block::
 
     .. code-block:: yaml
 
         services:
-            kernel.subscriber.your_subscriber_name:
-                class: Nombre\De\Clase\Del\Suscriptor\Completamente\Cualificado
+            kernel.listener.your_listener_name:
+                class: Nombre\De\Clase\Escucha\Completamente\Cualificado
                 tags:
-                        - { name: kernel.event_subscriber }
+                        - { name: kernel.event_listener, event: xxx, method: onXxx }
 
     .. code-block:: xml
 
-        <service id="kernel.subscriber.your_subscriber_name" class="Nombre\De\Clase\Del\Suscriptor\Completamente\Cualificado">
-            <tag name="kernel.event_subscriber" />
+        <service id="kernel.listener.your_listener_name" class="Nombre\De\Clase\Escucha\Completamente\Cualificado">
+            <tag name="kernel.event_listener" event="xxx" method="onXxx" />
         </service>
 
     .. code-block:: php
 
         $container
-            ->register('kernel.subscriber.your_subscriber_name', 'Nombre\De\Clase\Del\Suscriptor\Completamente\Cualificado')
-            ->addTag('kernel.event_subscriber')
+            ->register('kernel.listener.your_listener_name', 'Fully\Qualified\Listener\Class\Name')
+            ->addTag('kernel.event_listener', array('event' => 'xxx', 'method' => 'onXxx'))
         ;
 
 .. note::
 
-    Tu servicio debe implementar la interfaz :class:`Symfony\Component\EventDispatcher\EventSubscriberInterface`.
+    También puedes especificar la prioridad como un atributo de la etiqueta ``kernel.event_listener`` (al igual que el método o los atributos de eventos), ya sea con un número entero positivo o negativo. Esto te permite asegurarte de que tu escucha siempre se llama antes o después de otro escucha del mismo evento.
 
-.. note::
+Habilitando motores de plantilla personalizados
+-----------------------------------------------
 
-    Si tu servicio es creado por una factoría, **DEBES** establecer correctamente el parámetro ``class`` para que esta etiqueta trabaje correctamente.
+Para activar un motor de plantillas personalizado, añádelo como un servicio regular en una de tus configuraciones, etiquétalo con ``templating.engine``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            templating.engine.your_engine_name:
+                class: Fully\Qualified\Engine\Class\Name
+                tags:
+                        - { name: templating.engine }
+
+    .. code-block:: xml
+
+        <service id="templating.engine.your_engine_name" class="Fully\Qualified\Engine\Class\Name">
+            <tag name="templating.engine" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('templating.engine.your_engine_name', 'Fully\Qualified\Engine\Class\Name')
+            ->addTag('templating.engine')
+        ;
+
+Habilitando cargadores de enrutado personalizados
+-------------------------------------------------
+
+Para habilitar un cargador de enrutado personalizado, añádelo como un servicio regular en tu configuración, y etiquétalo con ``routing.loader``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            routing.loader.your_loader_name:
+                class: Nombre\De\Clase\Completamente\Cualificado
+                tags:
+                        - { name: routing.loader }
+
+    .. code-block:: xml
+
+        <service id="routing.loader.your_loader_name" class="Nombre\De\Clase\Completamente\Cualificado">
+            <tag name="routing.loader" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('routing.loader.your_loader_name', 'Nombre\De\Clase\Del\Cargador\Completamente\Cualificado')
+            ->addTag('routing.loader')
+        ;
 
 .. _dic_tags-monolog:
 
-``monolog.logger``
-------------------
-
-**Propósito**: Para utilizar un canal personalizado para el registro cronológico de eventos con Monolog.
+Usando un canal de registro personalizado con ``Monolog``
+---------------------------------------------------------
 
 ``Monolog`` te permite compartir sus controladores entre varios canales del registro cronológico de eventos.
 El servicio de registro cronológico utiliza el canal ``app`` pero puedes cambiar el canal cuando inyectes el registro cronológico en un servicio.
@@ -280,10 +230,8 @@ El servicio de registro cronológico utiliza el canal ``app`` pero puedes cambia
 
 .. _dic_tags-monolog-processor:
 
-``monolog.processor``
----------------------
-
-**Propósito**: Añadir un procesador personalizado al registro cronológico.
+Agregando un procesador para ``Monolog``
+----------------------------------------
 
 ``Monolog`` te permite agregar procesadores al registro cronológico o a los controladores para añadir datos adicionales en los registros. Un procesador recibe el registro como argumento y lo tiene que devolver después de añadir alguna información adicional en el atributo ``extra`` del registro.
 
@@ -369,244 +317,5 @@ También puedes agregar un procesador para un canal del registro cronológico es
 
     No puedes utilizar ambos atributos ``handler`` y ``channel`` para la misma etiqueta debido a que los controladores se comparten entre todos los canales.
 
-``routing.loader``
-------------------
-
-**Propósito**: Registrar un servicio personalizado que carga rutas.
-
-Para habilitar un cargador de enrutado personalizado, añádelo como un servicio regular en tu configuración, y etiquétalo con ``routing.loader``:
-
-.. configuration-block::
-
-    .. code-block:: yaml
-
-        services:
-            routing.loader.your_loader_name:
-                class: Nombre\De\Clase\Completamente\Cualificado
-                tags:
-                        - { name: routing.loader }
-
-    .. code-block:: xml
-
-        <service id="routing.loader.your_loader_name" class="Nombre\De\Clase\Completamente\Cualificado">
-            <tag name="routing.loader" />
-        </service>
-
-    .. code-block:: php
-
-        $container
-            ->register('routing.loader.your_loader_name', 'Nombre\De\Clase\Del\Cargador\Completamente\Cualificado')
-            ->addTag('routing.loader')
-        ;
-
-``security.listener.factory``
------------------------------
-
-**Propósito**: Necesaria cuando creas un sistema de autenticación personalizado.
-
-Esta etiqueta se utiliza al crear tu propio sistema de autenticación personalizado. Para más información, consulta :doc:`/cookbook/security/custom_authentication_provider`.
-
-``security.remember_me_aware``
-------------------------------
-
-**Propósito**: Para permitir la autenticación "Recuérdame".
-
-Esta etiqueta se utiliza internamente para permitir que trabaje la autenticación por recordatorio. Si tienes un método de autenticación personalizado en que el usuario se pueda autenticar por medio de recordatorio, entonces posiblemente tengas que utilizar esta etiqueta.
-
-Si tu factoría de autenticación personalizada extiende la clase :class:`Symfony\\Bundle\\SecurityBundle\\DependencyInjection\\Security\\Factory\\AbstractFactory` y tu escucha de autenticación personalizado extiende la clase :class:`Symfony\\Component\\Security\\Http\\Firewall\\AbstractAuthenticationListener`, entonces el escucha de autenticación personalizado ya está etiquetado y funcionará automáticamente.
-
-``security.voter``
-------------------
-
-**Propósito**: Agregar un votante personalizado a la lógica de autorización de *Symfony*.
-
-Cuando llamas a  ``isGranted`` en el contexto de seguridad de *Symfony*, detrás del escenario se usa un sistema de "votantes" para determinar si el usuario debe tener acceso. La etiqueta ``security.voter`` te permite agregar tu propio votante personalizado al sistema.
-
-Para obtener más información, lee el artículo del recetario: :doc:`/cookbook/security/voters`.
-
-``swiftmailer.plugin``
-----------------------
-
-**Propósito**: Registrar un complemento personalizado a ``SwiftMailer``.
-
-Si estás usando un complemento personalizado para ``SwiftMailer`` (o deseas crear uno), lo puedes registrar en ``SwiftMailer`` creando un servicio para tu complemento y etiquétalo como ``swiftmailer.plugin`` (que no tiene opciones).
-
-Un complemento de ``SwiftMailer`` debe implementar la interfaz ``Swift_Events_EventListener``.
-Para más información sobre los complementos, consulta la sección `Complemento para SwiftMailer`_ de su documentación.
-
-Varios complementos de ``SwiftMailer`` son fundamentales para *Symfony* y los puedes activar a través de diversa configuración. Para obtener más información, consulta :doc:`/reference/configuration/swiftmailer`.
-
-``templating.helper``
----------------------
-
-**Propósito**: Poner tu servicio a disposición de las plantillas *PHP*
-
-Para habilitar un ayudante de plantilla personalizado, añádelo como un servicio regular en tu configuración, etiquétalo con ``templating.helper`` y define un atributo ``alias`` (el ayudante será accesible a través de este alias en las plantillas):
-
-.. configuration-block::
-
-    .. code-block:: yaml
-
-        services:
-            templating.helper.your_helper_name:
-                class: Nombre\De\Clase\Ayudante\Completamente\Cualificado
-                tags:
-                        - { name: templating.helper, alias: alias_name }
-
-    .. code-block:: xml
-
-        <service id="templating.helper.your_helper_name" class="Nombre\De\Clase\Ayudante\Completamente\Cualificado">
-            <tag name="templating.helper" alias="alias_name" />
-        </service>
-
-    .. code-block:: php
-
-        $container
-            ->register('templating.helper.your_helper_name', 'Nombre\De\Clase\Ayudante\Completamente\Cualificado')
-            ->addTag('templating.helper', array('alias' => 'alias_name'))
-        ;
-
-``translation.loader``
-----------------------
-
-**Propósito**: Registrar un servicio personalizado que carga traducciones.
-
-De forma predeterminada, las traducciones se cargan desde el sistema de archivos en una variedad de diferentes formatos (*YAML*, *XLIFF*, *PHP*, etc.). Si necesitas cargar traducciones de alguna otra fuente, en primer lugar crea una clase que implemente la interfaz :class:`Symfony\\Component\\Translation\\Loader\\LoaderInterface`::
-
-    // src/Acme/MainBundle/Translation/MyCustomLoader.php
-    namespace Acme\MainBundle\Translation;
-
-    use Symfony\Component\Translation\Loader\LoaderInterface
-    use Symfony\Component\Translation\MessageCatalogue;
-
-    class MyCustomLoader implements LoaderInterface
-    {
-        public function load($resource, $locale, $domain = 'messages')
-        {
-            $catalogue = new MessageCatalogue($locale);
-
-            // de alguna forma carga algunas traducciones desde el
-            // directorio "resource" y luego las coloca en el catálogo
-            $catalogue->set('hello.world', 'Hello World!', $domain);
-
-            return $catalogue;
-        }
-    }
-
-El método ``load`` de tu cargador personalizado es responsable de devolver una clase :class:`Symfony\\Component\\Translation\\MessageCatalogue`.
-
-Ahora, registra tu cargador como un servicio y etiquétalo como ``translation.loader``:
-
-.. code-block:: yaml
-
-    services:
-        main.translation.my_custom_loader:
-            class: Acme\MainBundle\Translation\MyCustomLoader
-            tags:
-                    - { name: translation.loader, alias: bin }
-
-.. code-block:: xml
-
-    <service id="main.translation.my_custom_loader" class="Acme\MainBundle\Translation\MyCustomLoader">
-        <tag name="translation.loader" alias="bin" />
-    </service>
-
-.. code-block:: php
-
-    $container
-        ->register('main.translation.my_custom_loader', 'Acme\MainBundle\Translation\MyCustomLoader')
-        ->addTag('translation.loader', array('alias' => 'bin'))
-    ;
-
-La opción ``alias`` es necesaria y muy importante: Esta define la "extensión" del archivo que se utilizará para los archivos de recursos que usa este cargador. Por ejemplo, supongamos que tienes un formato ``bin`` personalizado que necesitas cargar.
-Si tienes un archivo ``bin`` que contiene traducciones al Francés del dominio ``menssages``, entonces podrías tener un archivo ``app/Resources/translations/messages.fr.bin``.
-
-Cuando Symfony intenta cargar el archivo ``bin``, pasa la ruta de acceso a tu cargador personalizado como el argumento ``$resource`` a cargar. Entonces, puedes llevar a cabo cualquier lógica que necesites en ese archivo para cargar tus traducciones.
-
-Si vas a cargar las traducciones desde una base de datos, todavía necesitas un archivo de recursos, pero bien podría estar en blanco o contener un poco de información sobre la carga de los recursos desde la base de datos. El archivo es la clave para activar el método ``load`` en tu cargador personalizado.
-
-.. _reference-dic-tags-twig-extension:
-
-``twig.extension``
-------------------
-
-**Propósito**: Registrar una extensión de *Twig* personalizada.
-
-Para habilitar una extensión *Twig*, añádela como un servicio regular en tu configuración, y etiquétala con ``twig.extension``:
-
-.. configuration-block::
-
-    .. code-block:: yaml
-
-        services:
-            twig.extension.your_extension_name:
-                class: Nombre\De\Clase\De\La\Extensión\Completamente\Cualificado
-                tags:
-                        - { name: twig.extension }
-
-    .. code-block:: xml
-
-        <service id="twig.extension.your_extension_name" class="Nombre\De\Clase\De\La\Extensión\Completamente\Cualificado">
-            <tag name="twig.extension" />
-        </service>
-
-    .. code-block:: php
-
-        $container
-            ->register('twig.extension.your_extension_name', 'Nombre\De\Clase\De\La\Extensión\Completamente\Cualificado')
-            ->addTag('twig.extension')
-        ;
-
-Para más información sobre cómo crear la clase real para la extensión de *Twig*, consulta el tema en la `documentación de extensiones`_ o lee el artículo del recetario:
-:doc:`/cookbook/templating/twig_extension`
-
-Antes de escribir tus propias extensiones, echa un vistazo al `Repositorio oficial de extensiones Twig`_ el cual ya cuenta con varias útiles extensiones. Por ejemplo ``Intl`` y su filtro ``localizeddate`` que formatea una fecha según la configuración regional del usuario. Estas extensiones oficiales de *Twig* también se tienen que añadir como servicios normales:
-
-.. configuration-block::
-
-    .. code-block:: yaml
-
-        services:
-            twig.extension.intl:
-                class: Twig_Extensions_Extension_Intl
-                tags:
-                        - { name: twig.extension }
-
-    .. code-block:: xml
-
-        <service id="twig.extension.intl" class="Twig_Extensions_Extension_Intl">
-            <tag name="twig.extension" />
-        </service>
-
-    .. code-block:: php
-
-        $container
-            ->register('twig.extension.intl', 'Twig_Extensions_Extension_Intl')
-            ->addTag('twig.extension')
-        ;
-
-``validator.constraint_validator``
-----------------------------------
-
-**Propósito**: Crear tu propia restricción de validación personalizada.
-
-Esta etiqueta te permite crear y registrar tu propia restricción de validación personalizada.
-Para obtener más información, lee el artículo del recetario: :doc:`/cookbook/validation/custom_constraint`.
-
-``validator.initializer``
--------------------------
-
-**Propósito**: Registrar un servicio que inicia los objetos antes de validarlos.
-
-Esta etiqueta proporciona una pieza de funcionalidad muy poco común que te permite realizar algún tipo de acción sobre un objeto justo antes de validarlo.
-Por ejemplo, *Doctrine* lo utiliza para consultar todos los datos cargados de manera diferida en un objeto antes de validarlos. Sin esto, algunos datos sobre una entidad de *Doctrine* parecería que hubieran "desaparecido" cuando se validan, a pesar de que este no sea realmente el caso.
-
-Si necesitas usar esta etiqueta, solo crea una nueva clase que implemente la interfaz :class:`Symfony\\Component\\Validator\\ObjectInitializerInterface`.
-Luego, etiquétala como ``validator.initializer`` (que no tiene opciones).
-
-Para un ejemplo, consulta la clase ``EntityInitializer`` en el puente de *Doctrine*.
-
-.. _`documentación de extensiones`: http://gitnacho.github.com/Twig/advanced.html#creando-una-extension
-.. _`Repositorio oficial de extensiones Twig`: http://github.com/fabpot/Twig-extensions
-.. _`KernelEvents`: https://github.com/symfony/symfony/blob/2.0/src/Symfony/Component/HttpKernel/KernelEvents.php
-.. _`Complemento para SwiftMailer`: http://swiftmailer.org/docs/plugins.html
+..  _`documentación de extensiones`: http://gitnacho.github.com/Twig/extensions.html
+..  _`Repositorio oficial de extensiones Twig`: http://github.com/fabpot/Twig-extensions

@@ -99,11 +99,11 @@ A lo largo de este capítulo, mostraremos las plantillas de ejemplo en ambos for
 .. sidebar:: ¿Porqué *Twig*?
 
     Las plantillas *Twig* están destinadas a ser simples y no procesar etiquetas *PHP*. Esto es por diseño: el sistema de plantillas *Twig* está destinado a expresar la presentación, no la lógica del programa. Cuanto más utilices *Twig*, más apreciarás y te beneficiarás de esta distinción. Y, por supuesto, todos los diseñadores web las amarán.
-
+    
     *Twig* también puede hacer cosas que *PHP* no puede, como heredar verdaderas plantillas (las plantillas *Twig* se compilan hasta clases *PHP* que se heredan unas a otras), controlar los espacios en blanco, restringir un ambiente para prácticas, e incluir funciones y filtros personalizados que sólo afectan a las plantillas. *Twig* contiene características que facilitan la escritura de plantillas y estas son más concisas. Tomemos el siguiente ejemplo, el cual combina un bucle con una declaración ``if`` lógica:
-
+    
     .. code-block:: html+jinja
-
+    
         <ul>
             {% for user in users %}
                 <li>{{ user.username }}</li>
@@ -172,7 +172,7 @@ En primer lugar, crea un archivo con tu diseño base:
                 </head>
                 <body>
                 <div id="sidebar">
-                    <?php if ($view['slots']->has('sidebar')): ?>
+                    <?php if ($view['slots']->has('sidebar'): ?>
                         <?php $view['slots']->output('sidebar') ?>
                     <?php else: ?>
                         <ul>
@@ -431,7 +431,9 @@ Integrando controladores
 En algunos casos, es necesario hacer algo más que incluir una simple plantilla. Supongamos que en tu diseño tienes una barra lateral, la cual contiene los tres artículos más recientes.
 Recuperar los tres artículos puede incluir consultar la base de datos o realizar otra pesada lógica ​​que no se puede hacer desde dentro de una plantilla.
 
-La solución es simplemente insertar el resultado de un controlador en tu plantilla entera. En primer lugar, crea un controlador que reproduzca una cierta cantidad de artículos recientes::
+La solución es simplemente insertar el resultado de un controlador en tu plantilla entera. En primer lugar, crea un controlador que reproduzca un cierto número de artículos recientes:
+
+.. code-block:: php
 
     // src/Acme/ArticleBundle/Controller/ArticleController.php
 
@@ -497,58 +499,6 @@ Para incluir el controlador, tendrás que referirte a él utilizando la sintaxis
 
 Cada vez que te encuentres necesitando una variable o una pieza de información a la que una plantilla no tiene acceso, considera reproducir un controlador.
 Los controladores se ejecutan rápidamente y promueven la buena organización y reutilización de código.
-
-Contenido asíncrono con ``hinclude.js``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 2.1
-    La compatibilidad con :file:`hinclude.js` se añadió en *Symfony 2.1*
-
-Los controladores se pueden incorporar de manera asíncrona con la biblioteca *JavaScript* `hinclude.js`_.
-Debido a que el contenido integrado proviene de otra página (o controlador para el caso), *Symfony2* utiliza el ayudante ``render`` estándar para configurar las etiquetas ``hinclude``:
-
-.. configuration-block::
-
-    .. code-block:: jinja
-
-        {% render '...:news' with {}, {'standalone': 'js'} %}
-
-    .. code-block:: php
-
-        <?php echo $view['actions']->render('...:news', array(), array('standalone' => 'js')) ?>
-
-.. note::
-
-   Para que trabaje, debes incluir `hinclude.js`_ en tu página.
-
-Puedes especificar globalmente el contenido predeterminado (al cargar o si *JavaScript* está desactivado) en la configuración de tu aplicación:
-
-.. configuration-block::
-
-    .. code-block:: yaml
-
-        # app/config/config.yml
-        framework:
-            # ...
-            templating:
-                hinclude_default_template: AcmeDemoBundle::hinclude.html.twig
-
-    .. code-block:: xml
-
-        <!-- app/config/config.xml -->
-        <framework:config>
-            <framework:templating hinclude-default-template="AcmeDemoBundle::hinclude.html.twig" />
-        </framework:config>
-
-    .. code-block:: php
-
-        // app/config/config.php
-        $container->loadFromExtension('framework', array(
-            // ...
-            'templating'      => array(
-                'hinclude_default_template' => array('AcmeDemoBundle::hinclude.html.twig'),
-            ),
-        ));
 
 .. index::
    single: Plantillas; Enlazando páginas
@@ -662,7 +612,7 @@ En este caso, es necesario especificar el nombre de la ruta (``article_show``) y
 Enlazando activos
 ~~~~~~~~~~~~~~~~~
 
-Las plantillas también se refieren comúnmente a imágenes, *JavaScript*, hojas de estilo y otros activos. Por supuesto, puedes codificar la ruta de estos activos (por ejemplo ``/images/logo.png``), pero *Symfony2* ofrece una opción más dinámica a través de la función ``asset`` de *Twig*:
+Las plantillas también se refieren comúnmente a imágenes, *JavaScript*, hojas de estilo y otros activos. Por supuesto, puedes codificar la ruta de estos activos (por ejemplo ``/images/logo.png``), pero *Symfony2* ofrece una opción más dinámica a través de la función ``assets`` de *Twig*:
 
 .. configuration-block::
 
@@ -731,10 +681,10 @@ uno llamado ``stylesheet`` dentro de la etiqueta ``head`` y otro llamado ``javas
 
     {% block stylesheets %}
         {{ parent() }}
-
+        
         <link href="{{ asset('/css/contact.css') }}" type="text/css" rel="stylesheet" />
     {% endblock %}
-
+    
     {# ... #}
 
 En la plantilla hija, sólo tienes que reemplazar el bloque ``stylesheets`` y poner tu nueva etiqueta de hoja de estilo dentro de ese bloque. Por supuesto, debido a que la quieres añadir al contenido del bloque padre (y no *cambiarla* en realidad), debes usar la función ``parent()`` de *Twig* para incluir todo, desde el bloque ``stylesheets`` de la plantilla base.
@@ -789,11 +739,15 @@ Configurando y usando el servicio ``plantilla``
 -----------------------------------------------
 
 El corazón del sistema de plantillas en *Symfony2* es el ``motor`` de plantillas.
-Este objeto especial es el encargado de reproducir las plantillas y devolver su contenido. Cuando reproduces una plantilla en un controlador, por ejemplo, en realidad estás usando el motor del servicio de plantillas. Por ejemplo::
+Este objeto especial es el encargado de reproducir las plantillas y devolver su contenido. Cuando reproduces una plantilla en un controlador, por ejemplo, en realidad estás usando el motor del servicio de plantillas. Por ejemplo:
+
+.. code-block:: php
 
     return $this->render('AcmeArticleBundle:Article:index.html.twig');
 
 es equivalente a:
+
+.. code-block:: php
 
     $engine = $this->container->get('templating');
     $content = $engine->render('AcmeArticleBundle:Article:index.html.twig');
@@ -871,10 +825,6 @@ Esta lógica también aplica a las plantillas base del paquete. Supongamos tambi
 Una vez más, para sustituir la plantilla, sólo tienes que copiarla desde el paquete a ``app/Resources/AcmeBlogBundle/views/base.html.twig``. Ahora estás en libertad de personalizar esta copia como mejor te parezca.
 
 Si retrocedes un paso, verás que *Symfony2* siempre empieza a buscar una plantilla en el directorio ``app/Resources/{NOMBRE_PAQUETE}/views/``. Si la plantilla no existe allí, continúa buscando dentro del directorio ``Resources/views`` del propio paquete. Esto significa que todas las plantillas del paquete se pueden sustituir colocándolas en el subdirectorio ``app/Resources`` correcto.
-
-.. note::
-
-    También puedes reemplazar las plantillas de un paquete usando la herencia de paquetes. Para más información, consulta :doc:`/cookbook/bundles/inheritance`.
 
 .. _templating-overriding-core-templates:
 
@@ -1062,12 +1012,14 @@ Para reproducir una página índice de artículos en formato *XML*, basta con in
 
 Ciertamente, esto no es más que una convención de nomenclatura y la plantilla realmente no se reproduce de manera diferente en función de ese formato.
 
-En muchos casos, posiblemente quieras permitir que un solo controlador reproduzca múltiples formatos basándose en el "formato de la petición". Por esa razón, un patrón común es hacer lo siguiente::
+En muchos casos, posiblemente quieras permitir que un solo controlador reproduzca múltiples formatos basándose en el "formato de la petición". Por esa razón, un patrón común es hacer lo siguiente:
+
+.. code-block:: php
 
     public function indexAction()
     {
         $format = $this->getRequest()->getRequestFormat();
-
+    
         return $this->render('AcmeBlogBundle:Blog:index.'.$format.'.twig');
     }
 
@@ -1094,7 +1046,9 @@ Consideraciones finales
 -----------------------
 
 El motor de plantillas de *Symfony* es una poderosa herramienta que puedes utilizar cada vez que necesites generar contenido de presentación en *HTML*, *XML* o cualquier otro formato.
-Y aunque las plantillas son una manera común de generar contenido en un controlador, su uso no es obligatorio. El objeto ``Respuesta`` devuelto por un controlador se puede crear usando o sin usar una plantilla::
+Y aunque las plantillas son una manera común de generar contenido en un controlador, su uso no es obligatorio. El objeto ``Respuesta`` devuelto por un controlador se puede crear usando o sin usar una plantilla:
+
+.. code-block:: php
 
     // crea un objeto Respuesta donde el contenido reproduce la plantilla
     $response = $this->render('AcmeArticleBundle:Article:index.html.twig');
@@ -1119,5 +1073,4 @@ Aprende más en el recetario
 .. _`Mecanismo de escape`: http://gitnacho.github.com/Twig/api.html#extension-escaper
 .. _`etiquetas`: http://gitnacho.github.com/Twig/tags/index.html
 .. _`filtros`: http://gitnacho.github.com/Twig/filters/index.html
-.. _`agregar tus propias extensiones`: http://gitnacho.github.com/Twig/advanced.html#creando-una-extension
-.. _`hinclude.js`: http://mnot.github.com/hinclude/
+.. _`agregar tus propias extensiones`: http://gitnacho.github.com/Twig/extensions.html

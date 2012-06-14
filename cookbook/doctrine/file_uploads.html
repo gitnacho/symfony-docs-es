@@ -26,9 +26,9 @@
     <script type="text/javascript" src="../../_static/translations.js"></script>
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
-    <link rel="up" title="Doctrine" href="index.html" />
+    <link rel="up" title="Recetario" href="../index.html" />
     <link rel="next" title="Extensiones Doctrine: Timestampable, Sluggable, Translatable, etc." href="common_extensions.html" />
-    <link rel="prev" title="Doctrine" href="index.html" /> 
+    <link rel="prev" title="Cómo aplicar un filtro Assetic a una extensión de archivo especifica" href="../assetic/apply_to_option.html" /> 
   </head>
   <body>
   <div class="imalogo">
@@ -62,11 +62,10 @@
           <a href="common_extensions.html" title="Extensiones Doctrine: Timestampable, Sluggable, Translatable, etc."
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Doctrine"
+          <a href="../assetic/apply_to_option.html" title="Cómo aplicar un filtro Assetic a una extensión de archivo especifica"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U"><em>Doctrine</em></a> &raquo;</li> 
+          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -203,7 +202,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
     <span class="k">if</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getMethod</span><span class="p">()</span> <span class="o">===</span> <span class="s1">&#39;POST&#39;</span><span class="p">)</span> <span class="p">{</span>
         <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">bindRequest</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">());</span>
         <span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
-            <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getManager</span><span class="p">();</span>
+            <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">();</span>
 
             <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
             <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
@@ -231,7 +230,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <p>El controlador anterior automáticamente persistirá la entidad <tt class="docutils literal"><span class="pre">Documento</span></tt> con el nombre presentado, pero no hará nada sobre el archivo y la propiedad <tt class="docutils literal"><span class="pre">path</span></tt> quedará en blanco.</p>
 <p>Una manera fácil de manejar la carga de archivos es que lo muevas justo antes de que se persista la entidad y a continuación, establece la propiedad <tt class="docutils literal"><span class="pre">path</span></tt> en consecuencia. Comienza por invocar a un nuevo método <tt class="docutils literal"><span class="pre">upload()</span></tt> en la clase <tt class="docutils literal"><span class="pre">Documento</span></tt>, el cual deberás crear en un momento para manejar la carga del archivo:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
-    <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getManager</span><span class="p">();</span>
+    <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">();</span>
 
     <span class="nv">$document</span><span class="o">-&gt;</span><span class="na">upload</span><span class="p">();</span>
 
@@ -331,17 +330,6 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 </pre></div>
 </div>
 <p>La clase ahora hace todo lo que necesitas: genera un nombre de archivo único antes de persistirlo, mueve el archivo después de persistirlo y elimina el archivo si la entidad es eliminada.</p>
-<p>Ahora que la entidad maneja automáticamente el movimiento del archivo, debes quitar del controlador la llamada a <tt class="docutils literal"><span class="pre">$document-&gt;upload()</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
-    <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">();</span>
-
-    <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
-    <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
-
-    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="s1">&#39;...&#39;</span><span class="p">);</span>
-<span class="p">}</span>
-</pre></div>
-</div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
 <p class="last">Los eventos retrollamados <tt class="docutils literal"><span class="pre">&#64;ORM\PrePersist()</span></tt> y <tt class="docutils literal"><span class="pre">&#64;ORM\PostPersist()</span></tt> se disparan antes y después de almacenar la entidad en la base de datos. Por otro lado, los eventos retrollamados <tt class="docutils literal"><span class="pre">&#64;ORM\PreUpdate()</span></tt> y <tt class="docutils literal"><span class="pre">&#64;ORM\PostUpdate()</span></tt> se llaman al actualizar la entidad.</p>
@@ -362,9 +350,6 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="sd"> */</span>
 <span class="k">class</span> <span class="nc">Document</span>
 <span class="p">{</span>
-    <span class="c1">// una propiedad usada temporalmente al eliminar</span>
-    <span class="k">private</span> <span class="nv">$filenameForRemove</span><span class="p">;</span>
-
     <span class="sd">/**</span>
 <span class="sd">     * @ORM\PrePersist()</span>
 <span class="sd">     * @ORM\PreUpdate()</span>
@@ -397,18 +382,10 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
     <span class="sd">/**</span>
 <span class="sd">     * @ORM\PreRemove()</span>
 <span class="sd">     */</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">storeFilenameForRemove</span><span class="p">()</span>
-    <span class="p">{</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">filenameForRemove</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getAbsolutePath</span><span class="p">();</span>
-    <span class="p">}</span>
-
-    <span class="sd">/**</span>
-<span class="sd">     * @ORM\PostRemove()</span>
-<span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">removeUpload</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">filenameForRemove</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nb">unlink</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">filenameForRemove</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$file</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getAbsolutePath</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nb">unlink</span><span class="p">(</span><span class="nv">$file</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -419,7 +396,6 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Habrás notado en este caso que necesitas trabajar un poco más para poder eliminar el archivo. Antes de eliminarlo, debes almacenar la ruta del archivo (puesto que depende del <tt class="docutils literal"><span class="pre">id</span></tt>). Entonces, una vez que el objeto se ha eliminado completamente de la base de datos, puedes eliminar el archivo (en <tt class="docutils literal"><span class="pre">PostRemove</span></tt>).</p>
 </div>
 </div>
 
@@ -443,11 +419,10 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
           <a href="common_extensions.html" title="Extensiones Doctrine: Timestampable, Sluggable, Translatable, etc."
              >siguiente</a> |</li>
         <li class="right" >
-          <a href="index.html" title="Doctrine"
+          <a href="../assetic/apply_to_option.html" title="Cómo aplicar un filtro Assetic a una extensión de archivo especifica"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li>
-          <li><a href="index.html" ><em>Doctrine</em></a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -458,7 +433,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

@@ -6,12 +6,8 @@ Cómo utilizar ``PdoSessionStorage`` para almacenar sesiones en la base de datos
 
 El almacenamiento de sesiones predeterminado de *Symfony2* escribe la información de la sesión en archivo(s). La mayoría desde medianos hasta grandes sitios web utilizan una base de datos para almacenar valores de sesión en lugar de archivos, porque las bases de datos son más fáciles de usar y escalar en un entorno web multiservidor.
 
-*Symfony2* ha incorporado una solución para el almacenamiento de la sesión en la base de datos denominada :class:`Symfony\\\Component\\HttpFoundation\\SessionStorage\\PdoSessionStorage`.
+*Symfony2* ha incorporado una solución de almacenamiento en base de datos denominada :class:`Symfony\\\Component\\HttpFoundation\\SessionStorage\\PdoSessionStorage`.
 Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` (o el formato de configuración de tu elección):
-
-.. versionadded:: 2.1
-    En *Symfony2.1* la clase y el espacio de nombres se han modificado significativamente. Ahora puede encontrar la clase ``PdoSessionStorage`` en el espacio de nombres ``Session\\Storage``:
-    ``Symfony\Component\HttpFoundation\Session\Storage\PdoSessionStorage``. Además debes tener en cuenta que ha cambiado el orden del segundo y tercer argumentos de la clase. Abajo, notarás que ``%session.storage.options%`` y ``%pdo.db_options%`` conmutaron su lugar.
 
 .. configuration-block::
 
@@ -21,7 +17,7 @@ Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` 
         framework:
             session:
                 # ...
-                handler_id:     session.storage.pdo
+                storage_id:     session.storage.pdo
 
         parameters:
             pdo.db_options:
@@ -39,14 +35,14 @@ Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` 
                     password: mypassword
 
             session.storage.pdo:
-                class:     Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
-                arguments: [@pdo, %pdo.db_options%, %session.storage.options%]
+                class:     Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage
+                arguments: [@pdo, %session.storage.options%, %pdo.db_options%]
 
     .. code-block:: xml
 
         <!-- app/config/config.xml -->
         <framework:config>
-            <framework:session handler-id="session.storage.pdo" lifetime="3600" auto-start="true"/>
+            <framework:session storage-id="session.storage.pdo" default-locale="en" lifetime="3600" auto-start="true"/>
         </framework:config>
 
         <parameters>
@@ -65,10 +61,10 @@ Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` 
                 <argument>mypassword</argument>
             </service>
 
-            <service id="session.storage.pdo" class="Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler">
+            <service id="session.storage.pdo" class="Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage">
                 <argument type="service" id="pdo" />
-                <argument>%pdo.db_options%</argument>
                 <argument>%session.storage.options%</argument>
+                <argument>%pdo.db_options%</argument>
             </service>
             </services>
 
@@ -82,7 +78,7 @@ Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` 
             // ...
             'session' => array(
                 // ...
-                'handler_id' => 'session.storage.pdo',
+                'storage_id' => 'session.storage.pdo',
             ),
         ));
 
@@ -100,10 +96,10 @@ Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` 
         ));
         $container->setDefinition('pdo', $pdoDefinition);
 
-        $storageDefinition = new Definition('Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler', array(
+        $storageDefinition = new Definition('Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage', array(
             new Reference('pdo'),
-            '%pdo.db_options%',
             '%session.storage.options%',
+            '%pdo.db_options%',
         ));
         $container->setDefinition('session.storage.pdo', $storageDefinition);
 
@@ -138,7 +134,7 @@ Pero si deseas almacenar los datos de sesión en la misma base que el resto de l
             <argument>%database_password%</argument>
         </service>
 
-    .. code-block:: php
+    .. code-block:: xml
 
         $pdoDefinition = new Definition('PDO', array(
             'mysql:dbname=%database_name%',
@@ -174,5 +170,5 @@ Para *PostgreSQL*, la declaración debe tener este aspecto:
         session_id character varying(255) NOT NULL,
         session_value text NOT NULL,
         session_time integer NOT NULL,
-        CONSTRAINT session_pkey PRIMARY KEY (session_id)
+        CONSTRAINT session_pkey PRIMARY KEY (session_id),
     );

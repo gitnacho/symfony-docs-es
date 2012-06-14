@@ -89,14 +89,14 @@
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
-<p class="last">El término <em>locale</em> se refiere más o menos al lenguaje y país del usuario. Este puede ser cualquier cadena que tu aplicación utilice para manejar las traducciones y otras diferencias de formato (por ejemplo, el formato de moneda). Recomendamos el código <a class="reference external" href="http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes">ISO639-1</a> para el <em>idioma</em>, un guión bajo (<tt class="docutils literal"><span class="pre">_</span></tt>), luego el código <a class="reference external" href="http://en.wikipedia.org/wiki/ISO_3166-1#Current_codes">ISO3166 Alpha-2</a> para el <em>país</em> (por ejemplo &#8220;<tt class="docutils literal"><span class="pre">es_MX</span></tt>&#8221; para Español/México).</p>
+<p class="last">El término <em>locale</em> se refiere más o menos al lenguaje y país del usuario. Esta puede ser cualquier cadena que entonces la aplicación utilice para manejar las traducciones y otras diferencias de formato (por ejemplo, formato de moneda). Recomendamos el código <em>ISO639-1</em> para el <em>idioma</em>, un guión bajo (<tt class="docutils literal"><span class="pre">_</span></tt>), luego el código <em>ISO3166</em> para el <em>país</em> (por ejemplo &#8220;<tt class="docutils literal"><span class="pre">es_MX</span></tt>&#8221; para Español/México).</p>
 </div>
 <p>En este capítulo, aprenderemos cómo preparar una aplicación para apoyar varias configuraciones regionales y, a continuación cómo crear traducciones para múltiples regiones. En general, el proceso tiene varios pasos comunes:</p>
 <ol class="arabic simple">
 <li>Habilitar y configurar el componente <tt class="docutils literal"><span class="pre">Translation</span></tt> de <em>Symfony</em>;</li>
 <li>Abstraer cadenas (es decir, &#8220;mensajes&#8221;) envolviéndolas en llamadas al <tt class="docutils literal"><span class="pre">Traductor</span></tt>;</li>
 <li>Crear recursos de traducción para cada configuración regional compatible, la cual traduce cada mensaje en la aplicación;</li>
-<li>Determinar, establecer y administrar la configuración regional del usuario para la petición y, opcionalmente, la sesión entera.</li>
+<li>Determinar, establecer y gestionar la configuración regional del usuario en la sesión.</li>
 </ol>
 <div class="section" id="configurando">
 <span id="index-1"></span><h2>Configurando<a class="headerlink" href="#configurando" title="Enlazar permanentemente con este título">¶</a></h2>
@@ -130,7 +130,7 @@
 <p class="first admonition-title">Truco</p>
 <p class="last">Cuando la traducción no existe para una configuración regional, el traductor primero intenta encontrar la traducción para el idioma (&#8220;<tt class="docutils literal"><span class="pre">es</span></tt>&#8221; si el local es &#8220;<tt class="docutils literal"><span class="pre">es_MX</span></tt>&#8221; por ejemplo). Si esto también falla, busca una traducción utilizando la configuración regional de reserva.</p>
 </div>
-<p>La región utilizada en las traducciones es la almacenada en la petición. Esta, normalmente se establece en el atributo <tt class="docutils literal"><span class="pre">_locale</span></tt> de tus rutas (ve <a class="reference internal" href="#book-translation-locale-url"><em>Locale y la URL</em></a>).</p>
+<p>La región utilizada en las traducciones es la almacenada en la sesión del usuario.</p>
 </div>
 <div class="section" id="traduccion-basica">
 <span id="index-2"></span><h2>Traducción básica<a class="headerlink" href="#traduccion-basica" title="Enlazar permanentemente con este título">¶</a></h2>
@@ -181,7 +181,7 @@ Este &#8220;diccionario&#8221; de traducciones se puede crear en varios formatos
 <h3>El proceso de traducción<a class="headerlink" href="#el-proceso-de-traduccion" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>Para empezar a traducir el mensaje, <em>Symfony2</em> utiliza un proceso sencillo:</p>
 <ul class="simple">
-<li>Determina la <tt class="docutils literal"><span class="pre">región</span></tt> del usuario actual, la cual está almacenada en la petición (o almacenada como <tt class="docutils literal"><span class="pre">locale</span></tt> en la sesión del usuario);</li>
+<li>Determina la región del usuario actual, la cual está almacenada en la sesión (como <tt class="docutils literal"><span class="pre">locale</span></tt>);</li>
 <li>Carga un catálogo de mensajes traducidos desde los recursos de traducción definidos para la configuración de <tt class="docutils literal"><span class="pre">locale</span></tt> (por ejemplo, <tt class="docutils literal"><span class="pre">fr_FR</span></tt>). Los mensajes de la configuración regional de reserva también se cargan y se agregan al catálogo si no existen ya. El resultado final es un gran &#8220;diccionario&#8221; de traducciones. Consulta <a class="reference internal" href="#catalogos-de-mensajes">Catálogos de mensajes</a> para más detalles;</li>
 <li>Si se encuentra el mensaje en el catálogo, devuelve la traducción. En caso contrario, el traductor devuelve el mensaje original.</li>
 </ul>
@@ -267,15 +267,11 @@ Este &#8220;diccionario&#8221; de traducciones se puede crear en varios formatos
 </div>
 <div class="section" id="ubicacion-de-traduccion-y-convenciones-de-nomenclatura">
 <span id="index-5"></span><h3>Ubicación de traducción y convenciones de nomenclatura<a class="headerlink" href="#ubicacion-de-traduccion-y-convenciones-de-nomenclatura" title="Enlazar permanentemente con este título">¶</a></h3>
-<p><em>Symfony2</em> busca archivos de mensajes (es decir, traducciones) en los siguientes lugares:</p>
+<p><em>Symfony2</em> busca archivos de mensajes (traducciones) en dos lugares:</p>
 <ul class="simple">
-<li>el directorio <tt class="docutils literal"><span class="pre">&lt;directorio</span> <span class="pre">raíz</span> <span class="pre">del</span> <span class="pre">núcleo&gt;/Resources/translations</span></tt>;</li>
-<li>el directorio <tt class="docutils literal"><span class="pre">&lt;directorio</span> <span class="pre">raíz</span> <span class="pre">del</span> <span class="pre">núcleo&gt;/Resources/&lt;nombre</span> <span class="pre">paquete&gt;/translations</span></tt>;</li>
-<li>el directorio <tt class="docutils literal"><span class="pre">Resources/translations/</span></tt> del paquete.</li>
+<li>Para los mensajes que se encuentran en un paquete, los archivos de mensajes correspondientes deben vivir en el directorio <tt class="docutils literal"><span class="pre">Resources/translations/</span></tt> del paquete;</li>
+<li>Para sustituir la traducción de algún paquete, debes colocar los archivos de mensajes en el directorio <tt class="docutils literal"><span class="pre">app/Resources/translations</span></tt>.</li>
 </ul>
-<p>Las ubicaciones están enumeradas basándose en su prioridad. Por lo tanto puedes
-redefinir la traducción de los mensajes de un paquete en cualquiera de los 2 directorios superiores.</p>
-<p>El mecanismo de sustitución trabaja a nivel de claves: sólo es necesario enumerar las claves remplazadas en un archivo de mensajes de alta prioridad. Cuando una clave no se encuentra en un archivo de mensajes, el traductor automáticamente vuelve a los archivos de mensajes de reserva de menor prioridad.</p>
 <p>El nombre del archivo de las traducciones también es importante ya que <em>Symfony2</em> utiliza una convención para determinar los detalles sobre las traducciones. Cada archivo de mensajes se debe nombrar de acuerdo con el siguiente patrón: <tt class="docutils literal"><span class="pre">dominio.región.cargador</span></tt>:</p>
 <ul class="simple">
 <li><strong>dominio</strong>: Una forma opcional para organizar los mensajes en grupos (por ejemplo, <tt class="docutils literal"><span class="pre">admin</span></tt>, <tt class="docutils literal"><span class="pre">navigation</span></tt> o el valor predeterminado <tt class="docutils literal"><span class="pre">messages</span></tt>) &#8212; consulta <a class="reference internal" href="#usando-el-dominio-de-los-mensajes">Usando el dominio de los mensajes</a>;</li>
@@ -298,7 +294,7 @@ redefinir la traducción de los mensajes de un paquete en cualquiera de los 2 di
 <span id="index-6"></span><h3>Creando traducciones<a class="headerlink" href="#creando-traducciones" title="Enlazar permanentemente con este título">¶</a></h3>
 <dl class="docutils">
 <dt>El acto de crear archivos de traducción es una parte importante de la &#8220;localización&#8221; (a menudo abreviado <a class="reference external" href="http://es.wikipedia.org/wiki/Internacionalizaci%C3%B3n_y_localizaci%C3%B3n">L10n</a>). Los archivos de traducción constan de una serie de pares Identificador-traducción para un determinado dominio y configuración regional.</dt>
-<dd>La fuente es el identificador para la traducción individual, y puede ser el mensaje en la región principal (por ejemplo &#8220;Symfony is great&#8221;) de tu aplicación o un identificador único (por ejemplo, &#8220;symfony2.great&#8221; &#8212;ve la barra lateral más abajo&#8212;):</dd>
+<dd>El <tt class="docutils literal"><span class="pre">id</span></tt> es el identificador de la traducción individual, y puede ser el mensaje en la región principal (por ejemplo, &#8220;Symfony is great&#8221;) de tu aplicación o un identificador único (por ejemplo, &#8220;symfony2.great&#8221; &#8212;consulta el recuadro más adelante):</dd>
 </dl>
 <div class="configuration-block">
 <ul class="simple">
@@ -426,50 +422,40 @@ y <tt class="docutils literal"><span class="pre">navigation</span></tt>. La trad
 </div>
 <div class="section" id="manejando-la-configuracion-regional-del-usuario">
 <span id="index-8"></span><h2>Manejando la configuración regional del usuario<a class="headerlink" href="#manejando-la-configuracion-regional-del-usuario" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>La configuración regional del usuario actual se almacena en la petición y se puede acceder a través del objeto <tt class="docutils literal"><span class="pre">petición</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// accede al objeto request en un controlador estándar</span>
-<span class="nv">$request</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">();</span>
+<p>La configuración regional del usuario actual se almacena en la sesión y se puede acceder a través del objeto <tt class="docutils literal"><span class="pre">session</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$locale</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;session&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">getLocale</span><span class="p">();</span>
 
-<span class="nv">$locale</span> <span class="o">=</span> <span class="nv">$request</span><span class="o">-&gt;</span><span class="na">getLocale</span><span class="p">();</span>
-
-<span class="nv">$request</span><span class="o">-&gt;</span><span class="na">setLocale</span><span class="p">(</span><span class="s1">&#39;en_US&#39;</span><span class="p">);</span>
+<span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;session&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">setLocale</span><span class="p">(</span><span class="s1">&#39;en_US&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
-<p id="index-9">También es posible almacenar la región en la sesión en lugar de en base a cada petición. Si lo haces, cada subsecuente petición tendrá esa región.</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;session&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">set</span><span class="p">(</span><span class="s1">&#39;_locale&#39;</span><span class="p">,</span> <span class="s1">&#39;en_US&#39;</span><span class="p">);</span>
-</pre></div>
-</div>
-<p>En la sección <a class="reference internal" href="#book-translation-locale-url"><em>Locale y la URL</em></a>, más adelante, puedes ver cómo configurar la región a través del enrutado.</p>
 <div class="section" id="configuracion-regional-predeterminada-y-reserva">
-<h3>Configuración regional predeterminada y reserva<a class="headerlink" href="#configuracion-regional-predeterminada-y-reserva" title="Enlazar permanentemente con este título">¶</a></h3>
+<span id="index-9"></span><h3>Configuración regional predeterminada y reserva<a class="headerlink" href="#configuracion-regional-predeterminada-y-reserva" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>Si la configuración regional no se ha establecido explícitamente en la sesión, el parámetro de configuración <tt class="docutils literal"><span class="pre">fallback_locale</span></tt> será utilizado por el <tt class="docutils literal"><span class="pre">Traductor</span></tt>. El valor predeterminado del parámetro es &#8220;<tt class="docutils literal"><span class="pre">en</span></tt>&#8221; (consulta la sección <a class="reference internal" href="#configurando">Configurando</a>).</p>
-<p>Alternativamente, puedes garantizar que hay un <tt class="docutils literal"><span class="pre">locale</span></tt> establecido en cada petición definiendo un <tt class="docutils literal"><span class="pre">default_locale</span></tt> para la plataforma:</p>
+<p>Alternativamente, puedes garantizar que hay un <tt class="docutils literal"><span class="pre">locale</span></tt> establecido en cada sesión definiendo un <tt class="docutils literal"><span class="pre">default_locale</span></tt> para el servicio <tt class="docutils literal"><span class="pre">session</span></tt>:</p>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
 <span class="l-Scalar-Plain">framework</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">default_locale</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">en</span>
+    <span class="l-Scalar-Plain">session</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">default_locale</span><span class="p-Indicator">:</span> <span class="nv">en</span> <span class="p-Indicator">}</span>
 </pre></div>
 </div>
 </li>
 <li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
 <span class="nt">&lt;framework:config&gt;</span>
-    <span class="nt">&lt;framework:default-locale&gt;</span>en<span class="nt">&lt;/framework:default-locale&gt;</span>
+    <span class="nt">&lt;framework:session</span> <span class="na">default-locale=</span><span class="s">&quot;en&quot;</span> <span class="nt">/&gt;</span>
 <span class="nt">&lt;/framework:config&gt;</span>
 </pre></div>
 </div>
 </li>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-    <span class="s1">&#39;default_locale&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;en&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;session&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;default_locale&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;en&#39;</span><span class="p">),</span>
 <span class="p">));</span>
 </pre></div>
 </div>
 </li>
 </ul>
 </div>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>El parámetro <tt class="docutils literal"><span class="pre">default_locale</span></tt> originalmente se definía bajo la clave <tt class="docutils literal"><span class="pre">session</span></tt>, sin embargo, se movió en la versión 2.1. Esto se debe a que la región ahora se establece en la petición en lugar de en la sesión.</p>
 </div>
 <div class="section" id="locale-y-la-url">
 <span id="book-translation-locale-url"></span><h3><tt class="docutils literal"><span class="pre">Locale</span></tt> y la <em>URL</em><a class="headerlink" href="#locale-y-la-url" title="Enlazar permanentemente con este título">¶</a></h3>
@@ -633,14 +619,6 @@ Las reglas son bastante simples para Inglés y Francés, pero para el Ruso, pued
 </pre></div>
 </div>
 </div>
-<p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>Ahora puedes establecer el dominio de la traducción de toda una plantilla <em>Twig</em> con una sola etiqueta:<blockquote>
-<div><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">trans_default_domain</span> <span class="s2">&quot;app&quot;</span> <span class="cp">%}</span><span class="x"></span>
-</pre></div>
-</div>
-<p>Ten en cuenta que esto sólo influye en la plantilla actual, no en las plantillas &#8220;incluidas&#8221; (con el fin de evitar efectos secundarios).</p>
-</div></blockquote>
-</p>
 </div>
 <div class="section" id="plantillas-php">
 <h3>Plantillas <em>PHP</em><a class="headerlink" href="#plantillas-php" title="Enlazar permanentemente con este título">¶</a></h3>
@@ -658,7 +636,7 @@ Las reglas son bastante simples para Inglés y Francés, pero para el Ruso, pued
 </div>
 <div class="section" id="forzando-la-configuracion-regional-del-traductor">
 <h2>Forzando la configuración regional del traductor<a class="headerlink" href="#forzando-la-configuracion-regional-del-traductor" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Al traducir un mensaje, <em>Symfony2</em> utiliza la configuración regional de la petición o la configuración regional de <tt class="docutils literal"><span class="pre">reserva</span></tt> si es necesario. También puedes especificar manualmente la configuración regional utilizada para la traducción:</p>
+<p>Al traducir un mensaje, <em>Symfony2</em> utiliza la configuración regional de la sesión del usuario o, de ser necesario, la configuración regional de reserva (<tt class="docutils literal"><span class="pre">fallback</span></tt>). También puedes especificar manualmente la configuración regional utilizada para la traducción:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span>
     <span class="s1">&#39;Symfony2 is great&#39;</span><span class="p">,</span>
     <span class="k">array</span><span class="p">(),</span>
@@ -666,7 +644,7 @@ Las reglas son bastante simples para Inglés y Francés, pero para el Ruso, pued
     <span class="s1">&#39;fr_FR&#39;</span><span class="p">,</span>
 <span class="p">);</span>
 
-<span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">transChoice</span><span class="p">(</span>
+<span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;translator&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">trans</span><span class="p">(</span>
     <span class="s1">&#39;{0} There are no apples|{1} There is one apple|]1,Inf[ There are %count% apples&#39;</span><span class="p">,</span>
     <span class="mi">10</span><span class="p">,</span>
     <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%count%&#39;</span> <span class="o">=&gt;</span> <span class="mi">10</span><span class="p">),</span>
@@ -681,7 +659,7 @@ Las reglas son bastante simples para Inglés y Francés, pero para el Ruso, pued
 <p>La traducción del contenido de la base de datos la debe manejar <em>Doctrine</em> a través de la <a class="reference external" href="https://github.com/l3pp4rd/DoctrineExtensions">Extensión Translatable</a>. Para más información, consulta la documentación de la biblioteca.</p>
 </div>
 <div class="section" id="traduciendo-mensajes-de-restriccion">
-<span id="book-translation-constraint-messages"></span><h2>Traduciendo mensajes de restricción<a class="headerlink" href="#traduciendo-mensajes-de-restriccion" title="Enlazar permanentemente con este título">¶</a></h2>
+<h2>Traduciendo mensajes de restricción<a class="headerlink" href="#traduciendo-mensajes-de-restriccion" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>La mejor manera de entender la traducción de las restricciones es verla en acción. Para empezar, supongamos que hemos creado un sencillo objeto <em>PHP</em> el cual en algún lugar tiene que utilizar tu aplicación:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/BlogBundle/Entity/Author.php</span>
 <span class="k">namespace</span> <span class="nx">Acme\BlogBundle\Entity</span><span class="p">;</span>
@@ -793,7 +771,7 @@ Las reglas son bastante simples para Inglés y Francés, pero para el Ruso, pued
 <ul class="simple">
 <li>Abstrae los mensajes en tu aplicación envolviendo cada uno en el método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Translation/Translator.html#method_trans" title="Symfony\Component\Translation\Translator::trans()"><span class="pre">trans()</span></a></tt> o <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Translation/Translator.html#method_transChoice" title="Symfony\Component\Translation\Translator::transChoice()"><span class="pre">transChoice()</span></a></tt>;</li>
 <li>Traduce cada mensaje en varias configuraciones regionales creando archivos de mensajes traducidos. <em>Symfony2</em> descubre y procesa cada archivo porque su nombre sigue una convención específica;</li>
-<li>Administra la configuración regional del usuario, la cual se almacena en la petición, pero también se puede fijar una sola vez en la sesión del usuario.</li>
+<li>Determina la región del usuario, que está almacenada en la sesión (como <tt class="docutils literal"><span class="pre">locale</span></tt>);</li>
 </ul>
 </div>
 </div>
@@ -832,7 +810,7 @@ Las reglas son bastante simples para Inglés y Francés, pero para el Ruso, pued
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
+      Actualizado por última vez en Jun 14, 2012.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
    </div>

@@ -115,37 +115,28 @@ Para hacerlo más corto, los métodos ``get`` y ``set`` para cada uno se han rem
         public function eraseCredentials()
         {
         }
+
+        /**
+         * @inheritDoc
+         */
+        public function equals(UserInterface $user)
+        {
+            return $this->username === $user->getUsername();
+        }
     }
 
-Para utilizar una instancia de la clase ``AcmeUserBundle:User`` en la capa de seguridad de *Symfony*, la clase entidad debe implementar la :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.  Esta interfaz obliga a la clase a implementar los siguientes cinco métodos:
+Para utilizar una instancia de la clase ``AcmeUserBundle:User`` en la capa de seguridad de *Symfony*, la clase entidad debe implementar la :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.  Esta interfaz obliga a la clase a implementar los siguientes seis métodos:
 
-* ``getRoles()``,
-* ``getPassword()``,
-* ``getSalt()``,
-* ``getUsername()``,
+* ``getUsername()``
+* ``getSalt()``
+* ``getPassword()``
+* ``getRoles()``
 * ``eraseCredentials()``
+* ``equals()``
 
 Para más detalles sobre cada uno de ellos, consulta la :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.
 
-.. versionadded:: 2.1
-
-    En *Symfony* 2.1, se removió el método ``equals`` de la ``UserInterface``.
-    Si necesitas sustituir la implementación predeterminada de la lógica de comparación, implementa la nueva interfaz :class:`Symfony\\Component\\Security\\Core\\User\\EquatableInterface` e implementa el método ``isEqualTo``.
-
-.. code-block:: php
-
-    // src/Acme/UserBundle/Entity/User.php
-
-        namespace Acme\UsuarioBundle\Entity;
-
-    use Symfony\Component\Security\Core\User\EquatableInterface;
-
-    // ...
-
-    public function isEqualTo(UserInterface $user)
-    {
-        return $this->username === $user->getUsername();
-    }
+Para hacerlo simple, el método ``equals()`` simplemente compara el campo ``username`` pero también es posible hacer más comprobaciones en función de la complejidad de tu modelo de datos. Por otro lado, el método ``eraseCredentials()`` permanece vacío ya que no nos interesa en esta guía.
 
 A continuación se muestra una exportación de mi tabla ``User`` de *MySQL*. Para obtener más información sobre cómo crear registros de usuario y codificar su contraseña, consulta :ref:`book-security-encoding-user-password`.
 
@@ -202,7 +193,7 @@ A continuación se muestra un ejemplo de configuración donde el usuario podrá 
             access_control:
                 - { path: ^/admin, roles: ROLE_ADMIN }
 
-La sección ``encoders`` asocia el codificador de contraseña ``sha1`` a la clase entidad. Esto significa que *Symfony* espera que la contraseña en la base de datos esté cifrada usando este algoritmo. Para más información sobre cómo crear un nuevo objeto ``usuario`` con una contraseña cifrada correctamente, consulta la sección :ref:`book-security-encoding-user-password` del capítulo de seguridad.
+La sección ``encoders`` asocia el codificador de contraseña ``sha1`` a la clase entidad. Esto significa que *Symfony* espera que la contraseña que esté codificada en la base de datos utilizando este algoritmo. Para más información sobre cómo crear un nuevo objeto ``usuario`` con una contraseña cifrada correctamente, consulta la sección :ref:`book-security-encoding-user-password` del capítulo de seguridad.
 
 La sección  ``proveedores`` define un proveedor de usuario ``administradores``. A proveedor de usuario es una "fuente" de donde se cargan los usuarios durante la autenticación.
 En este caso, la palabra clave ``entidad`` significa que *Symfony* utilizará la entidad proveedor de usuarios de *Doctrine* para cargar los objetos entidad de usuario desde la base de datos usando el campo único ``username``. En otras palabras, esto le dice a *Symfony* cómo buscar al usuario en la base de datos antes de comprobar la validez de la contraseña.
