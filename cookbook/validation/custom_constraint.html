@@ -26,9 +26,9 @@
     <script type="text/javascript" src="../../_static/translations.js"></script>
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
-    <link rel="up" title="Recetario" href="../index.html" />
-    <link rel="next" title="Cómo dominar y crear nuevos entornos" href="../configuration/environments.html" />
-    <link rel="prev" title="Cómo crear un tipo de campo personalizado para formulario" href="../form/create_custom_field_type.html" /> 
+    <link rel="up" title="Validando" href="index.html" />
+    <link rel="next" title="Configurando" href="../configuration/index.html" />
+    <link rel="prev" title="Validando" href="index.html" /> 
   </head>
   <body>
   <div class="imalogo">
@@ -59,13 +59,14 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="../configuration/environments.html" title="Cómo dominar y crear nuevos entornos"
+          <a href="../configuration/index.html" title="Configurando"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
-          <a href="../form/create_custom_field_type.html" title="Cómo crear un tipo de campo personalizado para formulario"
+          <a href="index.html" title="Validando"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Validando</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -78,26 +79,31 @@
             
   <div class="section" id="como-crear-una-restriccion-de-validacion-personalizada">
 <span id="index-0"></span><h1>Cómo crear una restricción de validación personalizada<a class="headerlink" href="#como-crear-una-restriccion-de-validacion-personalizada" title="Enlazar permanentemente con este título">¶</a></h1>
-<p>Puedes crear una restricción personalizada extendiendo la clase base &#8220;constraint&#8221;, <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Validator\Constraint</span></tt>. Las opciones para tu restricción se representan como propiedades públicas de la clase <tt class="docutils literal"><span class="pre">constraint</span></tt>. Por ejemplo, la restricción <a class="reference internal" href="../../reference/constraints/Url.html"><em>URL</em></a> incluye las propiedades <tt class="docutils literal"><span class="pre">message</span></tt> y <tt class="docutils literal"><span class="pre">protocols</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Symfony\Component\Validator\Constraints</span><span class="p">;</span>
+<p>Puedes crear una restricción personalizada extendiendo la clase base &#8220;constraint&#8221;, <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Validator\Constraint</span></tt>.
+A modo de ejemplo vamos a crear un sencillo validador que comprueba si una cadena únicamente contiene caracteres alfanuméricos.</p>
+<div class="section" id="creando-la-clase-de-la-restriccion">
+<h2>Creando la clase de la restricción<a class="headerlink" href="#creando-la-clase-de-la-restriccion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>En primer lugar necesitas crear una clase para la restricción que extienda de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Validator\Constraint</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Validator\Constraints</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraint</span><span class="p">;</span>
 
 <span class="sd">/**</span>
 <span class="sd"> * @Annotation</span>
 <span class="sd"> */</span>
-<span class="k">class</span> <span class="nc">Protocol</span> <span class="k">extends</span> <span class="nx">Constraint</span>
+<span class="k">class</span> <span class="nc">ContainsAlphanumeric</span> <span class="k">extends</span> <span class="nx">Constraint</span>
 <span class="p">{</span>
-    <span class="k">public</span> <span class="nv">$message</span> <span class="o">=</span> <span class="s1">&#39;This value is not a valid protocol&#39;</span><span class="p">;</span>
-    <span class="k">public</span> <span class="nv">$protocols</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">,</span> <span class="s1">&#39;https&#39;</span><span class="p">,</span> <span class="s1">&#39;ftp&#39;</span><span class="p">,</span> <span class="s1">&#39;ftps&#39;</span><span class="p">);</span>
+    <span class="k">public</span> <span class="nv">$message</span> <span class="o">=</span> <span class="s1">&#39;The string &quot;%string%&quot; contains an illegal character: it can only contain letters or numbers.&#39;</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
-<p class="last">La anotación <tt class="docutils literal"><span class="pre">&#64;Annotation</span></tt> es necesaria para esta nueva restricción con el fin de hacerla disponible para su uso en clases vía anotaciones.</p>
+<p class="last">La anotación <tt class="docutils literal"><span class="pre">&#64;Annotation</span></tt> es necesaria para esta nueva restricción con el fin de hacerla disponible para su uso en clases vía anotaciones.
+Las opciones para tu restricción se representan como propiedades públicas en la clase <tt class="docutils literal"><span class="pre">constraint</span></tt>.</p>
 </div>
-<p>Como puedes ver, una clase de restricción es bastante mínima. La validación real la lleva a cabo otra clase &#8220;validadora de restricción&#8221;. La clase validadora de restricción se especifica con el método <tt class="docutils literal"><span class="pre">validatedBy()</span></tt> de la restricción, el cual por omisión incluye alguna lógica simple:</p>
+<p>Creando el propio Validador &#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;</p>
+<p>Como puedes ver, una clase de restricción claramente es mínima. La validación real la lleva a cabo otra clase &#8220;validadora de restricción&#8221;. La clase validadora de restricción se configura con el método <tt class="docutils literal"><span class="pre">validatedBy()</span></tt> de la restricción, el cual por omisión incluye alguna sencilla lógica:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// en la clase base Symfony\Component\Validator\Constraint</span>
 <span class="k">public</span> <span class="k">function</span> <span class="nf">validatedBy</span><span class="p">()</span>
 <span class="p">{</span>
@@ -106,24 +112,23 @@
 </pre></div>
 </div>
 <p>En otras palabras, si creas una <tt class="docutils literal"><span class="pre">restricción</span></tt> personalizada (por ejemplo, <tt class="docutils literal"><span class="pre">MyConstraint</span></tt>), cuando <em>Symfony2</em> realmente lleve a cabo la validación automáticamente buscará otra clase, <tt class="docutils literal"><span class="pre">MyConstraintValidator</span></tt>.</p>
-<p>La clase <tt class="docutils literal"><span class="pre">validator</span></tt> también es simple, y sólo tiene un método obligatorio: <tt class="docutils literal"><span class="pre">isValid</span></tt>.
-Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><span class="pre">ProtocolValidator</span></tt> como ejemplo:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Symfony\Component\Validator\Constraints</span><span class="p">;</span>
+<p>La clase <tt class="docutils literal"><span class="pre">validator</span></tt> también es simple, y sólo tiene un método obligatorio: <tt class="docutils literal"><span class="pre">isValid</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Validator\Constraints</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraint</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\Validator\ConstraintValidator</span><span class="p">;</span>
 
-<span class="k">class</span> <span class="nc">ProtocolValidator</span> <span class="k">extends</span> <span class="nx">ConstraintValidator</span>
+<span class="k">class</span> <span class="nc">ContainsAlphanumericValidator</span> <span class="k">extends</span> <span class="nx">ConstraintValidator</span>
 <span class="p">{</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">isValid</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nx">Constraint</span> <span class="nv">$constraint</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nb">in_array</span><span class="p">(</span><span class="nv">$value</span><span class="p">,</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">setMessage</span><span class="p">(</span><span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">message</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%protocols%&#39;</span> <span class="o">=&gt;</span> <span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">protocols</span><span class="p">));</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/^[a-zA-Za0-9]+$/&#39;</span><span class="p">,</span> <span class="nv">$value</span><span class="p">,</span> <span class="nv">$matches</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">setMessage</span><span class="p">(</span><span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">message</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%string%&#39;</span> <span class="o">=&gt;</span> <span class="nv">$value</span><span class="p">));</span>
 
-                <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+                <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
         <span class="p">}</span>
 
-            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+            <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -132,8 +137,81 @@ Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><
 <p class="first admonition-title">Nota</p>
 <p class="last">No olvides llamar a <tt class="docutils literal"><span class="pre">setMessage</span></tt> para construir un mensaje de error cuando el valor es incorrecto.</p>
 </div>
+</div>
+<div class="section" id="usando-el-nuevo-validador">
+<h2>Usando el nuevo Validador<a class="headerlink" href="#usando-el-nuevo-validador" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Usar validadores personalizados es muy fácil, así como los proporcionados por el mismo <em>Symfony2</em>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/BlogBundle/Resources/config/validation.yml</span>
+<span class="l-Scalar-Plain">Acme\DemoBundle\Entity\AcmeEntity</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">properties</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">NotBlank</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">~</span>
+            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">Acme\DemoBundle\Validator\Constraints\ContainsAlphanumeric</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">~</span>
+</pre></div>
+</div>
+</li>
+<li><em>Annotations</em><div class="highlight-php-annotations"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Entity/AcmeEntity.php</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\DemoBundle\Validator\Constraints</span> <span class="k">as</span> <span class="nx">AcmeAssert</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AcmeEntity</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @Assert\NotBlank</span>
+<span class="sd">     * @AcmeAssert\ContainsAlphanumeric</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$name</span><span class="p">;</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/DemoBundle/Resources/config/validation.xml --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;</span>
+<span class="nt">&lt;constraint-mapping</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/constraint-mapping&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/dic/constraint-mapping http://symfony.com/schema/dic/constraint-mapping/constraint-mapping-1.0.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;class</span> <span class="na">name=</span><span class="s">&quot;Acme\DemoBundle\Entity\AcmeEntity&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">&quot;name&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;constraint</span> <span class="na">name=</span><span class="s">&quot;NotBlank&quot;</span> <span class="nt">/&gt;</span>
+            <span class="nt">&lt;constraint</span> <span class="na">name=</span><span class="s">&quot;Acme\DemoBundle\Validator\Constraints\ContainsAlphanumeric&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;/property&gt;</span>
+    <span class="nt">&lt;/class&gt;</span>
+<span class="nt">&lt;/constraint-mapping&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Entity/AcmeEntity.php</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Mapping\ClassMetadata</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints\NotBlank</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\DemoBundle\Validator\Constraints\ContainsAlphanumeric</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AcmeEntity</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="nv">$name</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">loadValidatorMetadata</span><span class="p">(</span><span class="nx">ClassMetadata</span> <span class="nv">$metadata</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$metadata</span><span class="o">-&gt;</span><span class="na">addPropertyConstraint</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">NotBlank</span><span class="p">());</span>
+        <span class="nv">$metadata</span><span class="o">-&gt;</span><span class="na">addPropertyConstraint</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">ContainsAlphanumeric</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Si tu restricción contiene opciones, entonces deberían ser propiedades públicas en la clase de la restricción personalizada que creaste anteriormente. Estas opciones se pueden configurar como opciones en las restricciones del núcleo de <em>Symfony</em>.</p>
 <div class="section" id="validadores-de-restriccion-con-dependencias">
-<h2>Validadores de restricción con dependencias<a class="headerlink" href="#validadores-de-restriccion-con-dependencias" title="Enlazar permanentemente con este título">¶</a></h2>
+<h3>Validadores de restricción con dependencias<a class="headerlink" href="#validadores-de-restriccion-con-dependencias" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>Si el validador de la restricción tiene dependencias, tal como una conexión a base de datos, la tendrás que configurar como un servicio en el contenedor de inyección de dependencias. Este servicio debe incluir la etiqueta <tt class="docutils literal"><span class="pre">validator.constraint_validator</span></tt> y un atributo <tt class="docutils literal"><span class="pre">alias</span></tt>:</p>
 <div class="configuration-block">
 <ul class="simple">
@@ -170,6 +248,36 @@ Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><
 </div>
 <p>Como mencionamos anteriormente, <em>Symfony2</em> automáticamente buscará una clase llamada después de la restricción, con su <tt class="docutils literal"><span class="pre">Validador</span></tt> adjunto.  Si tu restricción de validación está definida como un servicio, es importante que redefinas el método <tt class="docutils literal"><span class="pre">validatedBy()</span></tt> para que devuelva el alias utilizado cuando definiste tu servicio, de lo contrario <em>Symfony2</em> no utilizará el servicio de la restricción de validación, y, en su lugar, creará una instancia de la clase, sin inyectar ningún tipo de dependencia.</p>
 </div>
+<div class="section" id="clase-para-la-validacion-de-restriccion">
+<h3>Clase para la validación de restricción<a class="headerlink" href="#clase-para-la-validacion-de-restriccion" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Además de validar una propiedad de clase, una restricción puede tener un ámbito de clase proporcionándole un objetivo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">getTargets</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="nx">self</span><span class="o">::</span><span class="na">CLASS_CONSTRAINT</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Con esto, el método validador <tt class="docutils literal"><span class="pre">isValid()</span></tt> obtiene un objeto como primer argumento:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ProtocolClassValidator</span> <span class="k">extends</span> <span class="nx">ConstraintValidator</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">isValid</span><span class="p">(</span><span class="nv">$protocol</span><span class="p">,</span> <span class="nx">Constraint</span> <span class="nv">$constraint</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$protocol</span><span class="o">-&gt;</span><span class="na">getFoo</span><span class="p">()</span> <span class="o">!=</span> <span class="nv">$protocol</span><span class="o">-&gt;</span><span class="na">getBar</span><span class="p">())</span> <span class="p">{</span>
+
+            <span class="nv">$propertyPath</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">context</span><span class="o">-&gt;</span><span class="na">getPropertyPath</span><span class="p">()</span> <span class="o">.</span> <span class="s1">&#39;foo&#39;</span><span class="p">;</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">context</span><span class="o">-&gt;</span><span class="na">setPropertyPath</span><span class="p">(</span><span class="nv">$propertyPath</span><span class="p">);</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">context</span><span class="o">-&gt;</span><span class="na">addViolation</span><span class="p">(</span><span class="nv">$constraint</span><span class="o">-&gt;</span><span class="na">getMessage</span><span class="p">(),</span> <span class="k">array</span><span class="p">(),</span> <span class="k">null</span><span class="p">);</span>
+
+                <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+        <span class="p">}</span>
+
+            <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
 </div>
 
 
@@ -189,13 +297,14 @@ Además de nuestro ejemplo, échale un vistazo al <tt class="docutils literal"><
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="../configuration/environments.html" title="Cómo dominar y crear nuevos entornos"
+          <a href="../configuration/index.html" title="Configurando"
              >siguiente</a> |</li>
         <li class="right" >
-          <a href="../form/create_custom_field_type.html" title="Cómo crear un tipo de campo personalizado para formulario"
+          <a href="index.html" title="Validando"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" >Validando</a> &raquo;</li> 
       </ul>
     </div>
   </div>

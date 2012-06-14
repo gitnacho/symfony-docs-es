@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../../_static/translations.js"></script>
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
-    <link rel="up" title="Recetario" href="../index.html" />
+    <link rel="up" title="Formularios" href="index.html" />
     <link rel="next" title="Cómo generar formularios dinámicamente usando eventos del formulario" href="dynamic_form_generation.html" />
     <link rel="prev" title="Cómo personalizar la reproducción de un formulario" href="form_customization.html" /> 
   </head>
@@ -65,7 +65,8 @@
           <a href="form_customization.html" title="Cómo personalizar la reproducción de un formulario"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" accesskey="U">Recetario</a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Formularios</a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -83,7 +84,7 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
 <p>Digamos que tienes una relación uno a uno entre una <tt class="docutils literal"><span class="pre">Tarea</span></tt> y una <tt class="docutils literal"><span class="pre">Incidencia</span></tt>, por ejemplo, una <tt class="docutils literal"><span class="pre">Tarea</span></tt> opcionalmente está vinculada a una <tt class="docutils literal"><span class="pre">Incidencia</span></tt>. Añadir un cuadro de lista con todas las posibles <tt class="docutils literal"><span class="pre">Incidencias</span></tt> finalmente te puede conducir a una lista realmente larga en la cual es imposible encontrar algo. En su lugar mejor querrás añadir un cuadro de texto, en el cual el usuario sencillamente puede introducir el número de la incidencia. En el controlador puedes convertir este número de incidencia en una tarea real, y finalmente añadir errores al formulario si no se encuentra, pero por supuesto que esto naturalmente no es limpio.</p>
 <p>Sería mejor si esta incidencia se buscara y convirtiera automáticamente a un objeto <tt class="docutils literal"><span class="pre">Incidencia</span></tt>, para usarla en tu acción. Aquí es donde entran en juego los Transformadores de datos.</p>
 <p>Primero, crea un tipo de formulario personalizado que tenga adjunto un Transformador de datos, el cual regresa la <tt class="docutils literal"><span class="pre">Incidencia</span></tt> por número: El tipo selector de incidencia. Finalmente este sencillamente será un campo de texto, cuando configuremos el padre para que sea un campo de <tt class="docutils literal"><span class="pre">texto</span></tt>, en el cual se introducirá el número de incidencia. El campo mostrará un error si no existe el número introducido:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/IssueSelectorType.php</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/Type/IssueSelectorType.php</span>
 <span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Form\Type</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
@@ -93,8 +94,14 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
 
 <span class="k">class</span> <span class="nc">IssueSelectorType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
 <span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @var ObjectManager</span>
+<span class="sd">     */</span>
     <span class="k">private</span> <span class="nv">$om</span><span class="p">;</span>
 
+    <span class="sd">/**</span>
+<span class="sd">     * @param ObjectManager $om</span>
+<span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">ObjectManager</span> <span class="nv">$om</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">om</span> <span class="o">=</span> <span class="nv">$om</span><span class="p">;</span>
@@ -109,7 +116,7 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
     <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
-            <span class="s1">&#39;invalid_message&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;The selected issue does not exist&#39;</span>
+            <span class="s1">&#39;invalid_message&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;The selected issue does not exist&#39;</span><span class="p">,</span>
         <span class="p">);</span>
     <span class="p">}</span>
 
@@ -157,9 +164,10 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
 
 <span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Form\DataTransformer</span><span class="p">;</span>
 
-<span class="k">use</span> <span class="nx">Symfony\Component\Form\Exception\TransformationFailedException</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\Form\DataTransformerInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\Exception\TransformationFailedException</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Doctrine\Common\Persistence\ObjectManager</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\TaskBundle\Entity\Issue</span><span class="p">;</span>
 
 <span class="k">class</span> <span class="nc">IssueToNumberTransformer</span> <span class="k">implements</span> <span class="nx">DataTransformerInterface</span>
 <span class="p">{</span>
@@ -177,9 +185,9 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
     <span class="p">}</span>
 
     <span class="sd">/**</span>
-<span class="sd">     * Transforma un objeto ``issue`` en una ``string``.</span>
+<span class="sd">     * Transforma un objeto (issue) a una cadena (number).</span>
 <span class="sd">     *</span>
-<span class="sd">     * @param  \Acme\TaskBundle\Entity\Issue|null $issue</span>
+<span class="sd">     * @param  Issue|null $issue</span>
 <span class="sd">     * @return string</span>
 <span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">transform</span><span class="p">(</span><span class="nv">$issue</span><span class="p">)</span>
@@ -192,12 +200,11 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
     <span class="p">}</span>
 
     <span class="sd">/**</span>
-<span class="sd">     * Transforma una ``string`` en un objeto ``issue``.</span>
+<span class="sd">     * Transforma una cadena (number) a un objeto (issue).</span>
 <span class="sd">     *</span>
 <span class="sd">     * @param  string $number</span>
-<span class="sd">     * @return \Acme\TaskBundle\Entity\Issue|null</span>
-<span class="sd">     *</span>
-<span class="sd">     * @throws TransformationFailedException si no encuentra un objeto issue.</span>
+<span class="sd">     * @return Issue|null</span>
+<span class="sd">     * @throws TransformationFailedException si no encuentra el objeto (issue).</span>
 <span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">reverseTransform</span><span class="p">(</span><span class="nv">$number</span><span class="p">)</span>
     <span class="p">{</span>
@@ -227,14 +234,14 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">acme_demo.type.issue_selector</span><span class="p-Indicator">:</span>
-        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Acme\TaskBundle\Form\IssueSelectorType</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Acme\TaskBundle\Form\Type\IssueSelectorType</span>
         <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&quot;@doctrine.orm.entity_manager&quot;</span><span class="p-Indicator">]</span>
         <span class="l-Scalar-Plain">tags</span><span class="p-Indicator">:</span>
                 <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">name</span><span class="p-Indicator">:</span>     <span class="nv">form.type</span><span class="p-Indicator">,</span> <span class="nv">alias</span><span class="p-Indicator">:</span> <span class="nv">issue_selector</span> <span class="p-Indicator">}</span>
 </pre></div>
 </div>
 </li>
-<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;acme_demo.type.issue_selector&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\TaskBundle\Form\IssueSelectorType&quot;</span><span class="nt">&gt;</span>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;acme_demo.type.issue_selector&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\TaskBundle\Form\Type\IssueSelectorType&quot;</span><span class="nt">&gt;</span>
     <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;doctrine.orm.entity_manager&quot;</span><span class="nt">/&gt;</span>
     <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;form.type&quot;</span> <span class="na">alias=</span><span class="s">&quot;issue_selector&quot;</span> <span class="nt">/&gt;</span>
 <span class="nt">&lt;/service&gt;</span>
@@ -255,9 +262,11 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
 <span class="p">{</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;task&#39;</span><span class="p">);</span>
-        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;dueDate&#39;</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;widget&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;single_text&#39;</span><span class="p">));</span>
-        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;issue&#39;</span><span class="p">,</span> <span class="s1">&#39;issue_selector&#39;</span><span class="p">);</span>
+        <span class="nv">$builder</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;task&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;dueDate&#39;</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;widget&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;single_text&#39;</span><span class="p">));</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;issue&#39;</span><span class="p">,</span> <span class="s1">&#39;issue_selector&#39;</span><span class="p">)</span>
+        <span class="p">;</span>
     <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
@@ -294,7 +303,8 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
           <a href="form_customization.html" title="Cómo personalizar la reproducción de un formulario"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Recetario</a> &raquo;</li> 
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" >Formularios</a> &raquo;</li> 
       </ul>
     </div>
   </div>

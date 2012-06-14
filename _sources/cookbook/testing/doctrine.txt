@@ -4,138 +4,11 @@
 Cómo probar repositorios *Doctrine*
 ===================================
 
-Las pruebas unitarias de repositorios *Doctrine* en un proyecto *Symfony* no son una tarea sencilla. De hecho, para cargar un repositorio es necesario cargar tus entidades, un gestor de entidades, y algunas otras cosas como una conexión.
+Correr pruebas unitarias en repositorios *Doctrine* de un proyecto *Symfony* no es recomendable.
+Cuando estás tratando con un repositorio, en realidad estás tratando con algo
+que está destinado a ser probado contra una conexión de base de datos real.
 
-Para probar tu repositorio, tienes dos diferentes opciones:
-
-1) **Prueba funcional**: Esta incluye usar una conexión de base de datos concreta con objetos de la base de datos real. Es fácil instalarla y puedes probar cualquier cosa, pero es de muy lenta ejecución. Consulta :ref:`cookbook-doctrine-repo-functional-test`.
-
-2) **Prueba unitaria**: La prueba unitaria se ejecuta más rápido y es más precisa en la forma de probar. Esta requiere una configuración un poco más pequeña, la cual cubre este documento. También puedes probar sólo los métodos que, por ejemplo, crean consultas, no los métodos que se ejecutan realmente.
-
-Pruebas unitarias
------------------
-
-Puesto que *Symfony* y *Doctrine* comparten la misma plataforma de pruebas, es muy fácil implementar las pruebas unitarias en un proyecto *Symfony*. El *ORM* viene con su propio conjunto de herramientas para facilitar las pruebas unitarias y simular todo lo que necesites, tal como una conexión, un gestor de entidades, etc. Al usar los componentes de prueba proporcionados por *Doctrine* ---junto con algunas configuraciones básicas--- puedes aprovechar las herramientas de *Doctrine* para las pruebas unitarias de tus repositorios.
-
-Ten en cuenta que si deseas probar la ejecución real de tus consultas, necesitarás una prueba funcional (consulta :ref:`cookbook-doctrine-repo-functional-test`).
-Las pruebas unitarias sólo son posibles cuando pruebas un método que construye una consulta.
-
-Configurando
-~~~~~~~~~~~~
-
-En primer lugar, necesitas agregar el espacio de nombres ``Doctrine\Tests`` a tu cargador automático:
-
-.. code-block:: php
-
-    // app/autoload.php
-    $loader->registerNamespaces(array(
-        //...
-        'Doctrine\\Tests'                => __DIR__.'/../vendor/doctrine/tests',
-    ));
-
-En seguida, tendrás que configurar un gestor de entidades en cada prueba para que *Doctrine* pueda cargar entidades y repositorios por ti.
-
-Debido a que *Doctrine* por omisión no es capaz de cargar los metadatos de anotaciones desde tus entidades, tendrás que configurar el lector de anotaciones para que pueda analizar y cargar las entidades::
-
-    // src/Acme/ProductBundle/Tests/Entity/ProductRepositoryTest.php
-    namespace Acme\ProductBundle\Tests\Entity;
-
-    use Doctrine\Tests\OrmTestCase;
-    use Doctrine\Common\Annotations\AnnotationReader;
-    use Doctrine\ORM\Mapping\Driver\DriverChain;
-    use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
-
-    class ProductRepositoryTest extends OrmTestCase
-    {
-        private $_em;
-
-        protected function setUp()
-        {
-            $reader = new AnnotationReader();
-            $reader->setIgnoreNotImportedAnnotations(true);
-            $reader->setEnableParsePhpImports(true);
-
-            $metadataDriver = new AnnotationDriver(
-                $reader, 
-                // proporciona el espacio de nombres de las entidades que deseas probar
-                'Acme\\ProductBundle\\Entity'
-            );
-
-            $this->_em = $this->_getTestEntityManager();
-
-            $this->_em->getConfiguration()
-            	->setMetadataDriverImpl($controladorMetadatos);
-
-            // te permite utilizar la sintaxis AcmeProductBundle:Product
-            $this->_em->getConfiguration()->setEntityNamespaces(array(
-                'AcmeProductBundle' => 'Acme\\ProductBundle\\Entity'
-            ));
-        }
-    }
-
-Si te fijas en el código, notarás que:
-
-* Extiendes desde ``\Doctrine\Tests\OrmTestCase``, el cual proporciona útiles métodos para las pruebas unitarias;
-
-* Debes configurar el ``AnnotationReader`` para poder analizar y cargar las entidades;
-
-* Creas el gestor de entidades llamando a ``_getTestEntityManager``, el cual devuelve un gestor de entidades simulado con una conexión simulada.
-
-¡Eso es todo! Ya estás listo para escribir las pruebas unitarias para tus repositorios de *Doctrine*.
-
-Escribiendo tus pruebas unitarias
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Recuerda que los métodos de repositorio de *Doctrine* sólo pueden probar si estás construyendo y devolviendo una consulta (pero no ejecutando una consulta realmente). Tomemos el siguiente ejemplo::
-
-    // src/Acme/StoreBundle/Entity/ProductRepository
-    namespace Acme\StoreBundle\Entity;
-
-    use Doctrine\ORM\EntityRepository;
-
-    class ProductRepository extends EntityRepository
-    {
-        public function createSearchByNameQueryBuilder($name)
-        {
-            return $this->createQueryBuilder('p')
-                ->where('p.name LIKE :name')
-                ->setParameter('name', $name);
-        }
-    }
-
-En este ejemplo, el método devuelve una instancia de ``QueryBuilder``. Puedes probar el resultado de este método en una variedad de maneras::
-
-    class ProductRepositoryTest extends \Doctrine\Tests\OrmTestCase
-    {
-        /* ... */
-
-        public function testCreateSearchByNameQueryBuilder()
-        {
-            $queryBuilder = $this->_em->getRepository('AcmeProductBundle:Product')
-                ->createSearchByNameQueryBuilder('foo');
-
-            $this->assertEquals('p.name LIKE :name', (string) $queryBuilder->getDqlPart('where'));
-            $this->assertEquals(array('name' => 'foo'), $queryBuilder->getParameters());
-        }
-     }
-
-En esta prueba, diseccionas el objeto ``QueryBuilder``, buscando que cada parte sea como tú esperas. Si estuvieras agregando otras cosas al generador de consultas, podrías verificar las partes *DQL*: ``select``, ``from``, ``join``, ``set``, ``groupBy``, ``having`` u ``orderBy``.
-
-Si sólo tienes un objeto ``Query`` crudo o prefieres probar la consulta real, puedes probar la cadena de consulta *DQL* directamente::
-
-    public function testCreateSearchByNameQueryBuilder()
-    {
-        $queryBuilder = $this->_em->getRepository('AcmeProductBundle:Product')
-            ->createSearchByNameQueryBuilder('foo');
-
-        $query = $queryBuilder->getQuery();
-
-        // prueba DQL
-        $this->assertEquals(
-            'SELECT p FROM Acme\ProductBundle\Entity\Product p WHERE p.name LIKE :name',
-            $query->getDql()
-        );
-    }
+Afortunadamente, fácilmente puedes probar tus consultas contra una base de datos real, como se describe a continuación.
 
 .. _cookbook-doctrine-repo-functional-test:
 
@@ -144,8 +17,9 @@ Probando la funcionalidad
 
 Si realmente necesitas ejecutar una consulta, tendrás que arrancar el ``núcleo`` para conseguir una conexión válida. En este caso, debes extender a ``WebTestCase``, el cual hace todo esto muy fácil::
 
-    // src/Acme/ProductBundle/Tests/Entity/ProductRepositoryFunctionalTest.php
-    namespace Acme\ProductBundle\Tests\Entity;
+    // src/Acme/StoreBundle/Tests/Entity/ProductRepositoryFunctionalTest.php
+
+    namespace Acme\StoreBundle\Tests\Entity;
 
     use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -154,22 +28,23 @@ Si realmente necesitas ejecutar una consulta, tendrás que arrancar el ``núcleo
         /**
          * @var \Doctrine\ORM\EntityManager
          */
-        private $_em;
+        private $em;
 
         public function setUp()
         {
-        	$kernel = static::createKernel();
-        	$kernel->boot();
-            $this->_em = $kernel->getContainer()
-                ->get('doctrine.orm.entity_manager');
+            $kernel = static::createKernel();
+            $kernel->boot();
+            $this->em = $kernel->getContainer()->get('doctrine.orm.entity_manager');
         }
 
         public function testProductByCategoryName()
         {
-            $results = $this->_em->getRepository('AcmeProductBundle:Product')
+            $results = $this->em
+                ->getRepository('AcmeStoreBundle:Product')
                 ->searchProductsByNameQuery('foo')
-                ->getResult();
+                ->getResult()
+            ;
 
-            $this->assertEquals(count($results), 1);
+            $this->assertCount(1, $results);
         }
     }
