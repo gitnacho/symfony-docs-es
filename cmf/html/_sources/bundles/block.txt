@@ -1,0 +1,93 @@
+``BlockBundle``
+===============
+
+El `BlockBundle <https://github.com/symfony-cmf/BlockBundle#readme>`_ proporciona integración con ``SonataBlockBundle``.
+Este te asiste gestionando fragmentos de contenido, conocidos como bloques. Lo que hace ``BlockBundle`` es similar a lo que hace *Twig*, pero para bloques almacenados en una *BD*. De esta manera, un editor puede modificar los bloques.
+Además, el ``BlockBundle`` proporciona la lógica para determinar qué bloque se tendría que dibujar en cuáles páginas.
+
+El ``BlockBundle`` por sí mismo no proporciona una funcionalidad de edición para bloques. No obstante, puedes encontrar ejemplos de cómo hacer editables los bloques en el `recinto de seguridad del CMF de Symfony <https://github.com/symfony-cmf/cmf-sandbox>`_.
+
+.. index:: BlockBundle
+
+Dependencias
+------------
+
+Este paquete está basado en el `SonataBlockBundle <https://github.com/sonata-project/SonataBlockBundle>`_
+
+
+Configurando
+------------
+
+La clave de configuración para este paquete es ``symfony_cmf_block``
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_block:
+            document_manager_name:  default
+
+Dibujando el bloque
+-------------------
+
+Antes de que puedas dibujar un bloque, necesitas crear un objeto que represente los datos de tu bloque en el repositorio.
+Lo puedes conseguir con el siguiente fragmento de código (ten en cuenta que ``$parentPage`` necesita ser una instancia de una página definida por el `ContentBundle <https://github.com/symfony-cmf/ContentBundle>`_):
+
+.. code-block:: php
+
+    $myBlock = new SimpleBlock();
+    $myBlock->setParentDocument($parentPage);
+    $myBlock->setName('sidebarBlock');
+    $myBlock->setTitle('My first block');
+    $myBlock->setContent('Hello block world!');
+
+    $documentManager->persist($myBlock);
+
+Ten en cuenta que el ``sidebarBlock`` es el identificador que escogimos para el bloque. Junto con el documento padre del bloque, esto hace único al bloque. Las otras propiedades son específicas a ``Simpleblock``.
+Ahora para realmente dibujar este bloque, justo añade el siguiente código a tu plantilla de *Twig*:
+
+.. code-block:: jinja
+
+    {{ sonata_block_render({'name': 'sidebarBlock'}) }}
+
+Esto hará que se dibuje el ``BlockBundle`` según el bloque en cada página que tenga un bloque llamado ``'sidebarBlock'``. Naturalmente, es necesario que la página real sea reproducida por la plantilla que contiene el fragmento anterior.
+
+Tipos de bloque
+---------------
+
+El ``BlockBundle`` viene con cuatro bloques de propósito general:
+ * SimpleBlock: Un bloque sencillo con nada más que un título y un campo de hipertexto. Este normalmente sería el que un editor modificaría directamente, por ejemplo, la información de contacto
+ * ``ContainerBlock``: Un bloque que contiene de ``0`` a ``n`` bloques descendientes
+ * ``ReferenceBlock``: Un bloque que hace referencia a un bloque almacenado en algún otro lugar en el árbol de contenido. Por ejemplo, podrías querer referir partes de la información de contacto desde la página inicial
+ * ``ActionBlock``: Un bloque que invoca acciones de *Symfony2*. «¿Por qué utilizar esto en vez de llamar a la acción directamente desde mi plantilla?», te podrías preguntar. Bien, imagina el siguiente caso: Provees un bloque que dibuja reflexiones de tus últimas noticias. Sin embargo, no hay ninguna regla de en dónde tendría que aparecer. En cambio, tu cliente quiere decidir en qué páginas sería mostrado este bloque. Proporcionando un ``ActionBlock`` acorde, tu cliente te permite hacerlo sin llamarle (¡una y otra vez!) para cambiar algunas plantillas.
+
+Crea tus propios bloques
+------------------------
+
+Digamos que estás trabajando en un proyecto donde tienes que integrar los datos recibidos de varios alimentadores ``RSS``.
+Por supuesto podrías crear un ``ActionBlock`` para cada uno de estos alimentadores, ¿pero no es tonto esto? De hecho todas estas acciones se verían similares: Recibes los datos desde un alimentador, los saneas y pasas los datos a una plantilla. De este modo decides crear tu propio bloque, el ``RSSBlock``.
+
+Lo primero que necesitas es una entidad que contenga los datos. Es recomendable extender el contenido desde el ``BaseBlock`` de este paquete (aun así no es forzoso hacerlo, siempre y cuando implementes la ``Sonata\BlockBundle\Model\BlockInterface``). En tu entidad, añades dos propiedades, ``'feedURL'`` y ``'templateName'``, así como captadores y definidores para ellas. Además, necesitas definir el método ``getType`` que sólo regresa el ``'my_bundle.block.rss'``.
+
+La segunda cosa necesaria es un servicio que ``RSSBlocks`` sabe cómo manejar. En el caso del ``RSSBlock`` sería esto: Recuperar los datos desde dónde estén almacenados en ``'feedURL'``, sanearlos, y pasarlos a la plantilla almacenada en ``'templateName'``. De nuevo, puedes extender el ``Sonata\BlockBundle\Block\BaseBlockService``.
+Es importante, denominar la propiedad ``'name'`` del servicio ``'my_bundle.block.rss'`` (Esto garantiza que se pueda encontrar la relación entre la entidad y el servicio).
+
+La última cosa que necesitas para definir el servicio es un archivo :file:`config`. Es importante etiquetar tu ``BlockService`` con  ``'sonata.block'``, de lo contrario no lo reconocerá el paquete.
+
+Ejemplos
+--------
+
+Puedes encontrar ejemplos de uso de este paquete en el `Recinto de seguridad del CMF de Symfony <https://github.com/symfony-cmf/cmf-sandbox>`_.
+Dale un vistazo en el ``BlockBundle`` del recinto de seguridad. También te muestra cómo hacer editables los bloques usando el `CreateBundle <https://github.com/symfony-cmf/CreateBundle>`_.
+
+Relación al paquete ``Block``
+-----------------------------
+
+El ``BlockBundle`` está basado en el `SonataBlockBundle <https://github.com/sonata-project/SonataBlockBundle>`_.
+Este reemplaza componentes del paquete dónde sea necesario que sea compatible con *PHPCR*.
+
+La siguiente imagen muestra dónde utilizamos nuestros propios componentes (azules):
+
+.. image:: ../images/bundles/classdiagram.jpg
+   :align: center

@@ -33,13 +33,13 @@ Esta guía asume que estás usando una sencilla aplicación de *blog* con las si
       CONSTRAINT `blog_post_id` FOREIGN KEY (`post_id`) REFERENCES `blog_post` (`id`) ON DELETE CASCADE
     ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
-Antes de zambullirte en la receta, asegúrate de que los parámetros de conexión a tu base de datos están configurados correctamente en el archivo ``app/config/parameters.ini`` (o cualquier otro lugar donde mantengas la configuración de tu base de datos) y que has iniciado un paquete que será la sede de tu futura clase entidad. En esta guía, vamos a suponer que existe un :dfn:`AcmeBlogBundle` y se encuentra en el directorio :file:`src/Acme/BlogBundle`.
+Antes de zambullirte en la receta, asegúrate de que los parámetros de conexión de tu base de datos están configurados correctamente en el archivo ``app/config/parameters.yml`` (o cualquier otro lugar donde mantienes la configuración de base de datos) y que has iniciado un paquete que será la sede de tu futura clase entidad. Esta guía supone que existe un ``AcmeBlogBundle`` y está localizado bajo el directorio ``src/Acme/BlogBundle``.
 
-El primer paso para crear clases de la entidad en una base de datos existente es pedir a *Doctrine* que introspeccione la base de datos y genere los archivos de metadatos correspondientes. Los archivos de metadatos describen la clase entidad para generar tablas basándose en los campos.
+El primer paso para crear las clases de la entidad en una base de datos existente es pedir a *Doctrine* que introspeccione la base de datos y genere los archivos de metadatos correspondientes. Los archivos de metadatos describen la clase de la entidad para generar tablas basándose en los campos.
 
 .. code-block:: bash
 
-    php app/console doctrine:mapping:convert xml ./src/Acme/BlogBundle/Resources/config/doctrine/metadata/orm --from-database --force
+    $ php app/console doctrine:mapping:convert xml ./src/Acme/BlogBundle/Resources/config/doctrine/metadata/orm --from-database --force
 
 Esta herramienta de línea de ordenes le pide a *Doctrine* que inspeccione la estructura de la base de datos y genere los archivos *XML* de metadatos bajo el directorio :file:`src/Acme/BlogBundle/Resources/config/doctrine/metadata/orm` de tu paquete.
 
@@ -68,12 +68,16 @@ El archivo de metadatos generado ``BlogPost.dcm.xml`` es el siguiente:
       </entity>
     </doctrine-mapping>
 
+.. note::
+
+    Si tienes relaciones ``UnoAMuchos`` entre tus entidades, necesitarás editar los archivos ``xml`` o ``yml`` generados para añadir una sección en las entidades específicas ``UnoAMuchos`` definiendo las piezas ``inversedBy`` y ``mappedBy``.
+
 Una vez generados los archivos de metadatos, puedes pedir a *Doctrine* que importe el esquema y construya las clases relacionadas con la entidad, ejecutando las dos siguientes ordenes.
 
 .. code-block:: bash
 
-    php app/console doctrine:mapping:import AcmeBlogBundle annotation
-    php app/console doctrine:generate:entities AcmeBlogBundle
+    $ php app/console doctrine:mapping:import AcmeBlogBundle annotation
+    $ php app/console doctrine:generate:entities AcmeBlogBundle
 
 La primer orden genera las clases de entidad con una asignación de anotaciones, pero por supuesto puedes cambiar el argumento ``annotation`` a ``xml`` o ``yml``.
 La clase entidad ``BlogComment`` recién creada se ve de la siguiente manera:
@@ -139,4 +143,4 @@ Por lo tanto, puedes encontrar una propiedad privada ``$post`` asignada a una en
 
 La última orden genera todos los captadores y definidores de tus dos propiedades de la clase entidad ``BlogPost`` y ``BlogComment``. Las entidades generadas ahora están listas para utilizarse. ¡Que te diviertas!
 
-.. _`herramientas de documentación de Doctrine`: http://docs.doctrine-project.org/projects/doctrine-orm/en/2.1/reference/tools.html#reverse-engineering
+.. _`herramientas de documentación de Doctrine`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/tools.html#reverse-engineering

@@ -1,0 +1,189 @@
+.. index::
+   single: Seguridad, autorización
+
+Autorización
+============
+
+Cuando alguno de los proveedores de autenticación (ve :ref:`authentication_providers`) ha verificado la ficha no autenticada aún, devolverá una ficha autenticada. El escucha debe configurar la autenticación de esta ficha directamente en la :class:`Symfony\\Component\\Security\\Core\\SecurityContextInterface` utilizando su método :method:`Symfony\\Component\\Security\\Core\\SecurityContextInterface::setToken`.
+
+A partir de ahí, el usuario está autenticado, es decir, identificado. Ahora, otras partes de la aplicación pueden utilizar la ficha para decidir si o no el usuario puede solicitar una determinada *URI*, o modificar un determinado objeto. Esta decisión la tomará una instancia de la :class:`Symfony\\Component\\Security\\Core\\Authorization\\AccessDecisionManagerInterface`.
+
+Una decisión de autorización siempre se basará en un par de cosas:
+
+* La ficha actual
+    Por ejemplo, puedes utilizar el método :method:`Symfony\\Component\\Security\\Core\\Authentication\\Token\\TokenInterface::getRoles` de la ficha para recuperar las funciones del usuario actual (por ejemplo, ``ROLE_SUPER_ADMIN``), o una decisión puede estar basada en la clase de la ficha.
+* Un conjunto de atributos
+    Cada atributo representa un determinado derecho que el usuario debe tener, por ejemplo, ``ROLE_ADMIN`` para asegurarse de que el usuario es un administrador.
+* Un objeto (opcional)
+    Cualquier objeto con el cual controlar el acceso necesario, como un artículo o un objeto ``Comentario``.
+
+Gestor de la decisión de acceso
+-------------------------------
+
+Debido que decidir si un usuario está autorizado a realizar una cierta acción puede ser un proceso complicado, la clase :class:`Symfony\\Component\\Security\\Core\\Authorization\\AccessDecisionManager` estándar en sí misma depende de varios votantes, y hace un veredicto final basándose en todos los votos (positivos, negativos o neutros) que ha recibido. Este reconoce varias estrategias:
+
+* ``affirmative`` (predeterminada)
+    concede acceso tan pronto como cualquier votante devuelve una respuesta afirmativa;
+
+* ``consensus``
+    concede acceso si son más los votantes que garantizan el acceso de los que lo niegan;
+
+* ``unanimous``
+    permiten el acceso sólo si ninguno de los votantes niega el acceso;
+
+.. code-block:: php
+
+    use Symfony\Component\Security\Core\Authorization\AccessDecisionManager;
+
+    // instancias de
+    // Symfony\Component\Security\Core\Authorization\Voter\VoterInterface
+    $voters = array(...);
+
+    // uno de "affirmative", "consensus", "unanimous"
+    $strategy = ...;
+
+    // si o no conceder acceso cuando todos los votantes se abstienen
+    $allowIfAllAbstainDecisions = ...;
+
+    // Si o no conceder el acceso cuándo no hay mayoría
+    // (aplica sólo a la estrategia de consenso)
+    $allowIfEqualGrantedDeniedDecisions = ...;
+
+    $accessDecisionManager = new AccessDecisionManager(
+        $voters,
+        $strategy,
+        $allowIfAllAbstainDecisions,
+        $allowIfEqualGrantedDeniedDecisions
+    );
+
+Votantes
+--------
+
+Los votantes son instancias
+de :class:`Symfony\\Component\\Security\\Core\\Authorization\\Voter\\VoterInterface`, lo cual significa que tienen que implementar algunos métodos que permiten los utilice el gestor de decisión:
+
+* ``supportsAttribute($attribute)``
+    se utiliza para comprobar si el votante sabe cómo manejar el atributo dado;
+
+* ``supportsClass($class)``
+    se utiliza para comprobar si el votante es capaz de conceder o denegar el acceso a un objeto de la clase dada;
+
+* ``vote(TokenInterface $token, $object, array $attributes)``
+    Este método hará la votación propiamente dicha y devuelve un valor igual a una de las constantes de la clase :class:`Symfony\\Component\\Security\\Core\\Authorization\\Voter\\VoterInterface`, es decir, ``VoterInterface::ACCESS_GRANTED``, ``VoterInterface::ACCESS_DENIED`` o ``VoterInterface::ACCESS_ABSTAIN``;
+
+El componente de seguridad contiene algunos votantes estándar que cubren muchos casos de uso:
+
+``AuthenticatedVoter``
+~~~~~~~~~~~~~~~~~~~~~~
+
+La clase votante :class:`Symfony\\Component\\Security\\Core\\Authorization\\Voter\\AuthenticatedVoter` admite los atributos ``IS_AUTHENTICATED_FULLY``, ``IS_AUTHENTICATED_REMEMBERED``, e ``IS_AUTHENTICATED_ANONYMOUSLY`` y garantiza el acceso basado en el nivel de autenticación actual, es decir, ¿el usuario está autenticado completamente, o sólo en base a una ``galleta`` «recuérdame», o incluso autenticado anónimamente?
+
+.. code-block:: php
+
+    use Symfony\Component\Security\Core\Authentication\AuthenticationTrustResolver;
+
+    $anonymousClass = 'Symfony\Component\Security\Core\Authentication\Token\AnonymousToken';
+    $rememberMeClass = 'Symfony\Component\Security\Core\Authentication\Token\RememberMeToken';
+
+    $trustResolver = new AuthenticationTrustResolver($anonymousClass, $rememberMeClass);
+
+    $authenticatedVoter = new AuthenticatedVoter($trustResolver);
+
+    // instancia de Symfony\Component\Security\Core\Authentication\Token\TokenInterface
+    $token = ...;
+
+    // algún objeto
+    $object = ...;
+
+    $vote = $authenticatedVoter->vote($token, $object, array('IS_AUTHENTICATED_FULLY');
+
+``RoleVoter``
+~~~~~~~~~~~~~
+
+La clase :class:`Symfony\\Component\\Security\\Core\\Authorization\\Voter\\RoleVoter` es compatible con atributos que empiezan con ``ROLE_`` y conceden acceso al usuario cuándo todos los atributos ``ROLE_*`` requeridos se pueden encontrar en el arreglo de roles devuelto por el método :method:`Symfony\\Component\\Security\\Core\\Authentication\\Token\\TokenInterface::getRoles`::
+
+    use Symfony\Component\Security\Core\Authorization\Voter\RoleVoter;
+
+    $roleVoter = new RoleVoter('ROLE_');
+
+    $roleVoter->vote($token, $object, 'ROLE_ADMIN');
+
+``RoleHierarchyVoter``
+~~~~~~~~~~~~~~~~~~~~~~
+
+La clase :class:`Symfony\\Component\\Security\\Core\\Authorization\\Voter\\RoleHierarchyVoter` extiende a :class:`Symfony\\Component\\Security\\Core\\Authorization\\Voter\\RoleVoter` y proporciona alguna funcionalidad adicional: Esta sabe cómo manejar una jerarquía de roles. Por ejemplo, un rol ``ROLE_SUPER_ADMIN`` puede tener los subroles ``ROLE_ADMIN`` y ``ROLE_USER``, de modo que cuando un determinado objeto requiere que el usuario tenga el rol ``ROLE_ADMIN``, concede acceso a usuarios que de hecho tienen el rol ``ROLE_ADMIN``, pero también a usuarios que tienen el rol ``ROLE_SUPER_ADMIN``::
+
+    use Symfony\Component\Security\Core\Authorization\Voter\RoleHierarchyVoter;
+    use Symfony\Component\Security\Core\Role\RoleHierarchy;
+
+    $hierarchy = array(
+        'ROLE_SUPER_ADMIN' => array('ROLE_ADMIN', 'ROLE_USER'),
+    );
+
+    $roleHierarchy = new RoleHierarchy($hierarchy);
+
+    $roleHierarchyVoter = new RoleHierarchyVoter($roleHierarchy);
+
+.. note::
+
+    Cuándo  haces tu propio votante, naturalmente puedes utilizar su constructor para inyectar cualquier dependencia necesaria para tomar una decisión.
+
+Roles
+-----
+
+Los roles son objetos que expresan un determinado derecho que tiene el usuario.
+El único requisito es que implementen la :class:`Symfony\\Component\\Security\\Core\\Role\\RoleInterface`, lo cual significa también que deberían tener un método :method:`Symfony\\Component\\Security\\Core\\Role\\Role\\RoleInterface::getRole` que regrese una cadena representando su rol. La clase :class:`Symfony\\Component\\Security\\Core\\Role\\Role` simplemente devuelve el primer argumento del constructor::
+
+    use Symfony\Component\Security\Core\Role\Role;
+
+    $role = new Role('ROLE_ADMIN');
+
+    // hará eco de 'ROLE_ADMIN'
+    echo $role->getRole();
+
+.. note::
+
+    La mayoría de las fichas de autenticación extienden la clase :class:`Symfony\\Component\\Security\\Core\\Authentication\\Token\\AbstractToken`, lo cual significa que los roles dados a su constructor serán convertidos automáticamente de cadenas a estos sencillos objetos ``Role``.
+
+Usando el gestor de decisión
+----------------------------
+
+El escucha de acceso
+~~~~~~~~~~~~~~~~~~~~
+
+El gestor de decisión de acceso se puede utilizar en cualquier punto en una petición para decidir si o no el usuario actual tiene derecho para acceder a un determinado recurso. Un opcional ---pero útil--- método para restringir el acceso basándose en un patrón de *URL* es el :class:`Symfony\\Component\\Security\\Http\\Firewall\\AccessListener`, el cual es uno de los escuchas del cortafuegos (ve :ref:`firewall_listeners`) que es lanzado en cada petición que coincide con el cortafuegos asociado (ve :ref:`firewall`).
+
+Este utiliza un mapa de acceso (el cuál debería ser una instancia de la :class:`Symfony\\Component\\Security\\Http\\AccessMapInterface`) que contiene la petición y el conjunto de atributos correspondiente necesarios para que el usuario actual consiga acceso a la aplicación::
+
+    use Symfony\Component\Security\Http\AccessMap;
+    use Symfony\Component\HttpFoundation\RequestMatcher;
+    use Symfony\Component\Security\Http\Firewall\AccessListener;
+
+    $accessMap = new AccessMap();
+    $requestMatcher = new RequestMatcher('^/admin');
+    $accessMap->add($requestMatcher, array('ROLE_ADMIN'));
+
+    $accessListener = new AccessListener(
+        $securityContext,
+        $accessDecisionManager,
+        $accessMap,
+        $authenticationManager
+    );
+
+Contexto de seguridad
+~~~~~~~~~~~~~~~~~~~~~
+
+El gestor de decisión de acceso también está disponible en otras partes de la aplicación vía el método :method:`Symfony\\Component\\Security\\Core\\SecurityContext::isGranted` de la clase :class:`Symfony\\Component\\Security\\Core\\SecurityContext`.
+Una llamada a este método delegará la cuestión directamente al gestor de decisión de acceso::
+
+    use Symfony\Component\Security\SecurityContext;
+    use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+
+    $securityContext = new SecurityContext(
+        $authenticationManager,
+        $accessDecisionManager
+    );
+
+    if (!$securityContext->isGranted('ROLE_ADMIN')) {
+        throw new AccessDeniedException();
+    }

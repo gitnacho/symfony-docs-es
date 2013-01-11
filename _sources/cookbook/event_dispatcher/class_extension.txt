@@ -16,7 +16,7 @@ Para permitir que varias clases agreguen métodos a otra, puedes definir el mét
         {
             // crea un evento llamado 'foo.method_is_not_found'
             $event = new HandleUndefinedMethodEvent($this, $method, $arguments);
-            $this->dispatcher->dispatch($this, 'foo.method_is_not_found', $event);
+            $this->dispatcher->dispatch('foo.method_is_not_found', $event);
 
             // ¿ningún escucha es capaz de procesar el evento? El método no existe
             if (!$event->isProcessed()) {
@@ -93,7 +93,7 @@ A continuación, crea una clase que debe escuchar el evento ``foo.method_is_not_
     {
         public function onFooMethodIsNotFound(HandleUndefinedMethodEvent $event)
         {
-            // únicamente deseamos responder a las llamadas al método 'bar'
+            // únicamente responde a las llamadas al método 'bar'
             if ('bar' != $event->getMethod()) {
                 // permite que otro escucha se preocupe del método desconocido
                 return;
@@ -105,8 +105,7 @@ A continuación, crea una clase que debe escuchar el evento ``foo.method_is_not_
             // los argumentos del método bar
             $arguments = $event->getArguments();
 
-            // Hacer alguna cosa
-            // ...
+            // ... hace algo
 
             // fija el valor de retorno
             $event->setReturnValue($someValue);
@@ -118,4 +117,4 @@ Por último, agrega el nuevo método ``bar`` a la clase ``Foo`` registrando una 
 .. code-block:: php
 
     $bar = new Bar();
-    $dispatcher->addListener('foo.method_is_not_found', $bar);
+    $dispatcher->addListener('foo.method_is_not_found', array($bar, 'onFooMethodIsNotFound'));

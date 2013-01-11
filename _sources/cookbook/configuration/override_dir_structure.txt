@@ -1,0 +1,98 @@
+.. index::
+   single: Sustituyendo Symfony
+
+Cómo sustituir la estructura de directorios predeterminada de *Symfony*
+=======================================================================
+
+Automáticamente *Symfony* viene con una estructura de directorios predefinida. Fácilmente puedes sustituir esta estructura de directorios para crear la tuya propia. La estructura de directorios predefinida es:
+
+.. code-block:: text
+
+    app/
+        cache/
+        config/
+        logs/
+        ...
+    src/
+        ...
+    vendor/
+        ...
+    web/
+        app.php
+        ...
+
+Sustituyendo el directorio ``cache``
+------------------------------------
+
+Puedes sustituir el directorio ``cache`` redefiniendo el método ``getCacheDir`` en la clase ``AppKernel`` de tu aplicación::
+
+    // app/AppKernel.php
+
+    // ...
+    class AppKernel extends Kernel
+    {
+        // ...
+
+        public function getCacheDir()
+        {
+            return $this->rootDir.'/'.$this->environment.'/cache';
+        }
+    }
+
+``$this->rootDir`` es la ruta absoluta al directorio ``app`` y ``$this->environment``
+es el entorno actual (es decir, ``dev``). En este caso cambiaste la ubicación del directorio ``cache`` a ``app/{environment}/cache``.
+
+.. caution::
+
+    Tendrías que mantener un diferente directorio ``cache`` para cada entorno, de lo contrario puede ocurrir algún comportamiento inesperado. Cada entorno genera sus propios archivos de configuración almacenados en caché, y por lo tanto cada cual necesita su propio directorio para almacenar esos archivos en caché.
+
+Sustituyendo el directorio ``logs``
+-----------------------------------
+
+Sustituir el directorio ``logs`` es igual que sustituir el directorio ``cache``, la única diferencia es que necesitas reemplazar el método ``getLogDir``::
+
+    // app/AppKernel.php
+
+    // ...
+    class AppKernel extends Kernel
+    {
+        // ...
+
+        public function getLogDir()
+        {
+            return $this->rootDir.'/'.$this->environment.'/logs';
+        }
+    }
+
+Aquí cambiaste la ubicación del directorio a ``app/{environment}/logs``.
+
+Sustituyendo el directorio ``web``
+----------------------------------
+
+Si necesitas rebautizar o mover tu directorio ``web``, lo único que necesitas es garantizar que la ruta al directorio ``app`` todavía es la correcta en tus controladores frontales :file:`app.php` y :file:`app_dev.php`. Si sencillamente rebautizas el directorio, está bien. Pero si lo mueves de alguna manera, necesitarás modificar las rutas dentro de esos archivos::
+
+    require_once __DIR__.'/../Symfony/app/bootstrap.php.cache';
+    require_once __DIR__.'/../Symfony/app/AppKernel.php';
+
+.. tip::
+
+    Algunos servidores compartidos tienen un directorio *web* raíz :file:`public_html`. Al renombrar tu directorio *web* de :file:`web` a :file:`public_html` es una manera para hacer que tu proyecto *Symfony* trabaje en tu servidor compartido. Otra manera es desplegar tu aplicación en un directorio fuera de tu :file:`web` raíz, eliminar tu directorio :file:`public_html`, y luego reemplazarlo con un enlace simbólico al :file:`web` en tu proyecto.
+
+.. note::
+
+    Si utilizas el ``AsseticBundle`` necesitas configurar esto, para que este pueda utilizar el directorio :file:`web` correcto:
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+
+        # ...
+        assetic:
+            # ...
+            read_from: "%kernel.root_dir%/../../public_html"
+
+    Ahora solo necesitas volcar tus activos de nuevo y tu aplicación debería trabajar:
+
+    .. code-block:: bash
+
+        $ php app/console assetic:dump --env=prod --no-debug

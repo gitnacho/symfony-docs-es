@@ -33,10 +33,14 @@ Ejemplo rápido::
 
 .. note::
 
-    Las sesiones *Symfony* están diseñadas para sustituir a varias Funciones *PHP* nativas.
+    Las sesiones *Symfony* están diseñadas para sustituir varias funciones nativas de *PHP*.
     Las aplicaciones deben evitar el uso de ``session_start()``, ``session_regenerate_id()``, `` session_id()``, ``session_name()``, y ``session_destroy()``, y en su lugar usar la *API* en la siguiente sección.
 
-.. warning::
+.. note::
+
+    Si bien se recomienda empezar una sesión explícitamente, unas sesiones de hecho empezarán bajo demanda, es decir, si se hace alguna petición de sesión para leer/escribir dato de sesión.
+
+.. caution::
 
     Las sesiones de *Symfony* son incompatibles con la directiva ``ini`` ``session.auto_start = 1`` de *PHP*. Esta directiva se debe apagar en ``php.ini``, en las directivas del servidor web o en ``.htaccess``.
 
@@ -53,12 +57,11 @@ Flujo de trabajo en la sesión
   Inicia la sesión --- no usa ``session_start()``.
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::migrate`:
-  Regenera el ``id`` de la sesión --- no usa ``session_regenerate_id()``.
-  Este método opcionalmente puede cambiar el tiempo de vida de la nueva ``cookie`` que se emite al llamar a este método.
+  Regenera el ``id`` de la sesión --- no usa ``session_regenerate_id()``---.
+  Opcionalmente, este método puede cambiar el tiempo de vida de la nueva ``cookie`` que será emitida al llamar a este método.
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::invalidate`:
-  Vacía los datos de la sesión y regenera el ``id`` de sesión sin usar ``session_destroy()``.
-  Este es un atajo para ``clear()`` y ``migrate()``.
+  Limpia todos los datos de la sesión y regenera el ``id`` de la sesión. No usa ``session_destroy()``.
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::getId`: Recupera el ``id`` de la sesión. Sin usar ``session_id()``.
 
@@ -77,7 +80,7 @@ Atributos de la sesión
   Recupera un atributo por su clave;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::all`:
-  Recupera todos los atributos como una matriz de ``clave => valor``;
+  Recupera todos los atributos como un arreglo de ``clave => valor``;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::has`:
   Devuelve ``true`` si el atributo existe;
@@ -86,7 +89,7 @@ Atributos de la sesión
   Devuelve un arreglo de claves de atributo guardadas;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::replace`:
-  Establece múltiples atributos simultáneamente: toma una matriz indexada y configura cada pareja ``clave => valor``.
+  Establece múltiples atributos simultáneamente: toma un arreglo indexado y configura cada pareja ``clave => valor``.
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::remove`:
   Elimina un atributo por clave;
@@ -94,13 +97,13 @@ Atributos de la sesión
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::clear`:
   Limpia todos los atributos;
 
-Internamente los atributos se almacenan en una ``"Bag"`` ('Bolsa', en adelante), un objeto *PHP* que actúa como un arreglo. Unos cuantos métodos existentes para gestionar una ``"Bolsa"``:
+Internamente los atributos se almacenan en una ``«Bag»`` ('Bolsa', en adelante), un objeto *PHP* que actúa como un arreglo. Unos cuantos métodos existentes para gestionar una ``«Bolsa»``:
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::registerBag`:
   Registra una :class:`Symfony\\Component\\HttpFoundation\\Session\\SessionBagInterface`
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::getBag`:
-  Consigue una :class:`Symfony\\Component\\HttpFoundation\\Session\\SessionBagInterface` por medio del nombre de la "Bolsa".
+  Consigue una :class:`Symfony\\Component\\HttpFoundation\\Session\\SessionBagInterface` por medio del nombre de la «Bolsa».
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Session::getFlashBag`:
   Recupera la :class:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface`.
@@ -139,28 +142,28 @@ Todo está escrito contra interfaces para que las puedas ampliar o crear tus pro
 ``Atributos``
 ~~~~~~~~~~~~~
 
-El propósito de la implementación de la :class:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagInterface` de bolsas, es manejar el almacenamiento de los atributos de la sesión. Esto puede incluir cosas como el ``id`` de usuario, y la funcionalidad "recuérdame" en la configuración del inicio de sesión u otra información basada en el estado del usuario.
+El propósito de la implementación de la :class:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagInterface` de bolsas, es manejar el almacenamiento de los atributos de la sesión. Esto puede incluir cosas como el ``id`` de usuario, y la funcionalidad «recuérdame» en la configuración del inicio de sesión u otra información basada en el estado del usuario.
 
 * :class:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBag` Esta es la implementación estándar predeterminada.
 
 * :class:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\NamespacedAttributeBag` Esta implementación permite que los atributos sean almacenados en un espacio de nombres estructurado.
 
-Cualquier sistema de almacenamiento sencillo ``clave => valor`` está limitado en la medida en que se puedan almacenar datos complejos, ya que cada clave debe ser única. Lo puedes lograr introduciendo una convención a la nomenclatura de los espacios de nombres para que las claves sean partes diferentes de tu aplicación lo cual podría funcionar sin colisiones. Por ejemplo, ``modulo1.foo`` y ``modulo2.foo``. Sin embargo, a veces esto no es muy práctico cuando los datos de los atributos están en una matriz, por ejemplo, un conjunto de iniciales. En este caso, la gestión de la matriz se convierte en una carga porque hay que recuperar la matriz, luego, procesarla y almacenarla de nuevo::
+Cualquier sistema de almacenamiento sencillo ``clave => valor`` está limitado en la medida en que se puedan almacenar datos complejos, ya que cada clave debe ser única. Lo puedes lograr introduciendo una convención a la nomenclatura de los espacios de nombres para que las claves sean partes diferentes de tu aplicación lo cual podría funcionar sin colisiones. Por ejemplo, ``modulo1.foo`` y ``modulo2.foo``. Sin embargo, a veces esto no es muy práctico cuando los datos de los atributos están en un arreglo, por ejemplo, un conjunto de iniciales. En este caso, la gestión del arreglo se convierte en una carga porque hay que recuperar el arreglo, luego, procesarlo y almacenarlo de nuevo::
 
     $tokens = array('tokens' => array('a' => 'a6c1e0b6',
                                       'b' => 'f4a7b1f3'));
 
-Así que cualquier procesamiento de este tipo rápidamente se puede poner feo, aunque sólo añadas un elemento a la matriz::
+Así que cualquier procesamiento de este tipo rápidamente se puede poner feo, aunque sólo añadas un elemento al arreglo::
 
     $tokens = $session->get('tokens');
     $tokens['c'] = $value;
     $session->set('tokens', $tokens);
 
-Con el espacio de nombre estructurado, la clave se puede traducir a la estructura de la matriz tal cual usando un carácter del espacio de nombres (por omisión es ``/``)::
+Con el espacio de nombre estructurado, la clave se puede trasladar a la estructura del arreglo tal cual usando un carácter del espacio de nombres (por omisión es ``/``)::
 
     $session->set('tokens/c', $value);
 
-De esta manera puedes acceder a una clave dentro de la matriz almacenada directa y fácilmente.
+De esta manera puedes acceder a una clave dentro del arreglo almacenado directa y fácilmente.
 
 La :class:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagInterface` cuenta con una *API* sencilla
 
@@ -171,7 +174,7 @@ La :class:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagI
   Recupera un atributo por su clave;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagInterface::all`:
-  Recupera todos los atributos como una matriz de ``clave => valor``;
+  Recupera todos los atributos como un arreglo de ``clave => valor``;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagInterface::has`:
   Devuelve ``true`` si el atributo existe;
@@ -180,7 +183,7 @@ La :class:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagI
   Devuelve un arreglo de claves de atributo guardadas;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagInterface::replace`:
-  Establece múltiples atributos simultáneamente: toma una matriz indexada y configura cada pareja ``clave => valor``.
+  Establece múltiples atributos simultáneamente: toma un arreglo indexado y configura cada pareja ``clave => valor``.
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Attribute\\AttributeBagInterface::remove`:
   Elimina un atributo por clave;
@@ -193,7 +196,7 @@ Mensajes flash
 ~~~~~~~~~~~~~~
 
 El propósito de la :class:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface` es proporcionar una forma de configurar y recuperar mensajes basándose en la sesión.
-El flujo de trabajo habitual de los mensajes flash se encuentra en una ``Petición``, y se muestran después de redirigir a una página. Por ejemplo, un usuario envía un formulario que llegará a un controlador de actualización, y después de procesar el controlador redirige al usuario o bien a la página actualizada o a una página de error. Los mensajes flash establecidos en la ``petición`` de página anterior se muestran inmediatamente al cargar la siguiente página en esa sesión.
+El flujo de trabajo habitual de los mensajes flash se encuentra en una ``Petición``, y se muestran después de redirigir a una página. Por ejemplo, un usuario envía un formulario que llegará a un controlador de actualización, y después de procesar el controlador redirige al usuario o bien a la página actualizada o a una página de error. Los mensajes flash establecidos en la ``Petición`` de página anterior se muestran inmediatamente al cargar la siguiente página en esa sesión.
 Esta, sin embargo, sólo es una aplicación para los mensajes flash.
 
 * :class:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\AutoExpireFlashBag` Esta implementación de mensajes se ajusta al cargar la página para que esté disponible para visualizarlo al cargar la siguiente página. Estos mensajes expirarán automáticamente independientemente de si se recuperan o no.
@@ -206,22 +209,22 @@ La :class:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface
   Añade un mensaje flash a la pila del tipo especificado;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface::set`:
-  Configura mensajes flash por tipo;  Este método toma ambos, mensajes como una ``cadena`` o varios mensajes en una ``matriz``.
+  Configura mensajes flash por tipo;  Este método toma ambos, mensajes como una ``cadena`` o varios mensajes en un ``arreglo``.
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface::get`:
   Recupera mensajes por tipo y los quita de la bolsa;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface::setAll`:
-  Establece todos los flashes, acepta una matriz de matrices indexada ``tipo => array(mensajes)``;
+  Establece todos los flashes, acepta un arreglo de arreglos indexado ``tipo => array(mensajes)``;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface::all`:
-  Recupera todos los mensajes flash (en forma de matriz de matrices indexadas) y quita los mensajes de la bolsa;
+  Recupera todos los mensajes flash (en forma de arreglo de arreglos indexado) y quita los mensajes de la bolsa;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface::peek`:
   Recupera mensajes flash por tipo (sólo lectura);
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface::peekAll`:
-  Recupera todos los mensajes flash (sólo lectura) como matriz de matrices indexadas;
+  Recupera todos los mensajes flash (sólo lectura) como arreglo de arreglos indexado;
 
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface::has`:
   Devuelve ``true`` si el tipo existe, ``false`` en caso contrario;
@@ -232,7 +235,7 @@ La :class:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface
 * :method:`Symfony\\Component\\HttpFoundation\\Session\\Flash\\FlashBagInterface::clear`:
   Limpia la bolsa;
 
-Para aplicaciones simples por lo general es suficiente tener un mensaje flash por tipo, por ejemplo, un aviso de confirmación después de enviar un formulario. Sin embargo, los mensajes Flash se almacenan en una matriz indexada por el ``$tipo`` del flash, lo cual significa que tu aplicación puede emitir varios mensajes de un determinado tipo. Esto te permite utilizar la *API* para mensajes más complejos en tu aplicación.
+Para aplicaciones simples por lo general es suficiente tener un mensaje flash por tipo, por ejemplo, un aviso de confirmación después de enviar un formulario. Sin embargo, los mensajes Flash se almacenan en un arreglo indexado por el ``$tipo`` del flash, lo cual significa que tu aplicación puede emitir varios mensajes de un determinado tipo. Esto te permite utilizar la *API* para mensajes más complejos en tu aplicación.
 
 Ejemplos de configuración de múltiples mensajes flash::
 
@@ -242,7 +245,10 @@ Ejemplos de configuración de múltiples mensajes flash::
     $session->start();
 
     // añade mensajes flash
-    $session->getFlashBag()->add('warning', 'Your config file is writable, it should be set read-only');
+    $session->getFlashBag()->add(
+        'warning',
+        'Your config file is writable, it should be set read-only'
+    );
     $session->getFlashBag()->add('error', 'Failed to update name');
     $session->getFlashBag()->add('error', 'Another error');
 

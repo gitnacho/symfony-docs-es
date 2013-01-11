@@ -1,0 +1,88 @@
+Usando un repositorio de rutas personalizado con un enrutador dinámico
+======================================================================
+
+El enrutador dinámico te permite personalizar la ruta al repositorio (es decir, la clase responsable de recuperar rutas desde la base de datos), y por extensión, los objetos ``Ruta``.
+
+Creando el repositorio de rutas
+-------------------------------
+
+El repositorio de rutas tiene que implementar la `RouteRepositoryInterface`. La siguiente clase proporciona una solución sencilla que utiliza un repositorio *ODM*.
+
+.. code-block:: php
+
+    <?php
+
+    namespace MyVendor\Bundle\MyBundle\Repository;
+    use Doctrine\ODM\PHPCR\DocumentRepository;
+    use Symfony\Cmf\Component\Routing\RouteRepositoryInterface;
+    use Symfony\Component\Routing\RouteCollection;
+    use Symfony\Component\Routing\Route as SymfonyRoute;
+
+    class RouteRepository extends DocumentRepository implements RouteRepositoryInterface
+
+    {
+        // Este método se usa para encontrar las rutas que coinciden con la URL dada
+        public function findManyByUrl($url)
+        {
+            // por simplicidad recuperamos una ruta
+            $myDocument = $this->findOneBy(array(
+                'url' => $url,
+            ));
+
+            $pattern = $myDocument->getUrl(); // p. ej. "/esta/es/una/url"
+
+            $collection = new RouteCollection();
+
+            // crea una nueva ruta y pone nuestro documento como
+            // predefinido (a modo de que lo podamos recuperar desde la petición)
+            $route = new SymfonyRoute($ep->getPath(), array(
+                'document' => $document,
+            ));
+
+            // Añade la ruta al RouteCollection usando
+            // como clave un ID único.
+            $collection->add('my_route_'.uniqid(), $route);
+
+            return $collection;
+        }
+
+        // este método se usa para generar URL, p. ej. {{ path('foobar') }}
+        public function getRouteByName($name, $params = array())
+        {
+            $document = $this->findOneBy(array(
+                'name' => $name,
+            ));
+
+            if ($route) {
+                $route = new SymfonyRoute($route->getPattern(), array(
+                    'document' => $document,
+                ));
+            }
+
+            return $route;
+        }
+    }
+
+.. tip::
+
+    Como posiblemente hayas notado regresamos un objeto `RouteCollection` --- ¿porqué no regresamos una sola ``Ruta``? El enrutador dinámico nos permite regresar muchas rutas *candidatas*, en otras palabras, rutas que *podrían* emparejar con la *URL* entrante. Esto es importante para habilitar la posibilidad de emparejar rutas *dinámicas*, `/page/{page_id}/edit` por ejemplo.
+    En nuestro ejemplo emparejamos las *URL* dadas exactamente y siempre regresar únicamente una sola ``Ruta``.
+
+Reemplazando el repositorio predefinido del *CMF*
+-------------------------------------------------
+
+Para reemplazar el `RouteRepository` predefinido es necesario modificar tu configuración
+de la siguiente manera:
+
+.. configuration-block::
+
+   .. code-block:: yaml
+
+       # app/config/config.yml
+       symfony_cmf_routing_extra:
+           dynamic:
+               enabled: true
+               route_repository_service_id: my_bundle.repository.endpoint
+
+Donde `my_bundle.repository.endpoint` es el ID del servicio de tu repositorio. 
+Ve `Creando y configurando servicios en el contenedor <http://symfony.com/doc/current/book/service_container.html#creating-configuring-services-in-the-container/>`_ para información sobre la creación de servicios personalizados.

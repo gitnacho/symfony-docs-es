@@ -1,0 +1,71 @@
+Configurando
+============
+
+Introducción
+------------
+
+De manera predeterminada, sólo puedes utilizar las :doc:`anotaciones <annotations>` proporcionadas en tus controladores que no son servicios; Ningún otro directorio es escaneado.
+
+Sin embargo, si también quisieras utilizar anotaciones para configurar tus servicios normales, puedes configurar más ubicaciones como se muestra más adelante.
+
+Configurando ubicaciones
+------------------------
+
+Si quisieras configurar los servicios en un paquete propio vía anotaciones, o tienes algunos servicios externos a cualquier estructura de paquete tal como en tu directorio :file:`src/`, lo puedes hacer usando las siguientes opciones de configuración, de modo que el paquete las elegirá, y añadirá a tu contenedor de inyección de la dependencias:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        jms_di_extra:
+            locations:
+                all_bundles: false
+                bundles: [FooBundle, AcmeBlogBundle]
+                directories: ["%kernel.root_dir%/../src"]
+
+    .. code-block:: xml
+
+        <jms-di-extra>
+            <locations all-bundles="false">
+                <bundle>FooBundle</bundle>
+                <bundle>AcmeBlogBundle</bundle>
+                
+                <directory>%kernel.root_dir%/../src</directory>
+            </locations>
+        </jms-di-extra>
+
+.. tip ::
+
+    Para optimo rendimiento de desarrollo (en producción no hay ninguna diferencia de cualquier manera), es recomendable configurar explícitamente los directorios que se tendrían que escanear buscando clases de servicio, y no confiar en la opción de configuración ``all_bundles``.
+
+Inyectando el controlador automáticamente
+-----------------------------------------
+
+Este paquete te permite configurar la inyección de ciertas propiedades y métodos
+de controladores automáticamente. Esto es más útil para servicios necesarios comúnmente, los cuales a partir de entonces no se necesita anotarlos explícitamente.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        jms_di_extra:
+            automatic_controller_injections:
+                properties:
+                    request: "@request"
+                    router: "@router"
+
+                method_calls:
+                    setRouter: ["@router"]
+
+    .. code-block:: xml
+
+        <jms-di-extra>
+            <automatic-controller-injections>
+                <property name="request">@request</property>
+                <property name="router">@router</property>
+                
+                <method-call name="setRouter">@router</method-call>
+            </automatic-controller-injections>
+        </jms-di-extra>                 
+
+Si tu controlador tiene alguna de las propiedades o métodos anteriores, entonces nunca más tendrás que añadir una ``@Inject`, sino que automáticamente se inyectará el servicio configurado por ti. Sin embargo, si declaras una anotación ``@Inject`` automáticamente sustituye cualquier cosa que hayas configurado en la sección anterior.

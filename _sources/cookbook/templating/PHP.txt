@@ -23,9 +23,9 @@ Si deseas utilizar el motor de plantillas *PHP*, primero, asegúrate de activarl
     .. code-block:: xml
 
         <!-- app/config/config.xml -->
-        <framework:config ... >
+        <framework:config ...>
             <!-- ... -->
-            <framework:templating ... >
+            <framework:templating ...>
                 <framework:engine id="twig" />
                 <framework:engine id="php" />
             </framework:templating>
@@ -34,19 +34,38 @@ Si deseas utilizar el motor de plantillas *PHP*, primero, asegúrate de activarl
     .. code-block:: php
 
         $container->loadFromExtension('framework', array(
-            // ...
+            ...,
             'templating'      => array(
                 'engines' => array('twig', 'php'),
             ),
-        )); 
+        ));
 
 Ahora puedes reproducir una plantilla *PHP* en lugar de una *Twig* simplemente usando la extensión :file:`.php` en el nombre de la plantilla en lugar de :file:`.twig`. El controlador a continuación reproduce la plantilla ``index.html.php``::
 
     // src/Acme/HelloBundle/Controller/HelloController.php
 
+    // ...
+
     public function indexAction($name)
     {
         return $this->render('AcmeHelloBundle:Hello:index.html.php', array('name' => $name));
+    }
+
+También puedes utilizar el método abreviado :doc:`/bundles/SensioFrameworkExtraBundle/annotations/view`
+para dibujar la plantilla predeterminada ``AcmeHelloBundle:Hello:index.html.php``::
+
+    // src/Acme/HelloBundle/Controller/HelloController.php
+
+    use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+
+    // ...
+
+    /**
+     * @Template(engine="php")
+     */
+    public function indexAction($name)
+    {
+        return array('name' => $name);
     }
 
 .. index::
@@ -58,22 +77,22 @@ Decorando plantillas
 
 Muy a menudo, las plantillas en un proyecto comparten elementos comunes, como los bien conocidos encabezados y pies de página. En *Symfony2*, nos gusta pensar en este problema de forma diferente: una plantilla se puede decorar con otra.
 
-La plantilla ``index.html.php`` está decorada por ``base.html.php``, gracias a la llamada a ``extend()``:
+La plantilla ``index.html.php`` está decorada por ``layout.html.php``, gracias a la llamada a ``extend()``:
 
 .. code-block:: html+php
 
     <!-- src/Acme/HelloBundle/Resources/views/Hello/index.html.php -->
-    <?php $view->extend('AcmeHelloBundle::base.html.php') ?>
+    <?php $view->extend('AcmeHelloBundle::layout.html.php') ?>
 
     Hello <?php echo $name ?>!
 
 La notación ``AcmeHelloBundle::layout.html.php`` ¿te suena familiar, no? Es la misma notación utilizada para referir una plantilla. La parte ``::`` simplemente significa que el elemento controlador está vacío, por lo tanto el archivo correspondiente se almacena directamente bajo ``views/``.
 
-Ahora, echemos un vistazo al archivo ``base.html.php``:
+Ahora, echemos un vistazo al archivo ``layout.html.php``:
 
 .. code-block:: html+php
 
-    <!-- src/Acme/HelloBundle/Resources/views/base.html.php -->
+    <!-- src/Acme/HelloBundle/Resources/views/layout.html.php -->
     <?php $view->extend('::base.html.php') ?>
 
     <h1>Hello Application</h1>
@@ -93,10 +112,10 @@ El diseño en sí mismo está decorado por otra (``::base.html.php``). *Symfony2
             </head>
             <body>
             <?php $view['slots']->output('_content') ?>
-            </body>
-        </html>
+        </body>
+    </html>
 
-Para ambos diseños, la expresión ``$view['slots']->output('_content')`` se sustituye por el contenido de la plantilla hija, ``index.html.php`` y ``base.html.php``, respectivamente (más de ranuras en la siguiente sección).
+Para ambos diseños, la expresión ``$view['slots']->output('_content')`` se sustituye por el contenido de la plantilla hija, ``index.html.php`` y ``layout.html.php``, respectivamente (más de ranuras en la siguiente sección).
 
 Como puedes ver, *Symfony2* proporciona métodos en un misterioso objeto ``$view``. En una plantilla, la variable ``$view`` siempre está disponible y se refiere a un objeto especial que proporciona una serie de métodos que hacen funcionar el motor de plantillas.
 
@@ -112,7 +131,7 @@ Una ranura es un fragmento de código, definido en una plantilla, y reutilizable
 .. code-block:: html+php
 
     <!-- src/Acme/HelloBundle/Resources/views/Hello/index.html.php -->
-    <?php $view->extend('AcmeHelloBundle::base.html.php') ?>
+    <?php $view->extend('AcmeHelloBundle::layout.html.php') ?>
 
     <?php $view['slots']->set('title', 'Hello World Application') ?>
 
@@ -158,7 +177,7 @@ Y cambia la plantilla ``index.html.php`` para incluirla:
 .. code-block:: html+php
 
     <!-- src/Acme/HelloBundle/Resources/views/Hello/index.html.php -->
-    <?php $view->extend('AcmeHelloBundle::base.html.php') ?>
+    <?php $view->extend('AcmeHelloBundle::layout.html.php') ?>
 
     <?php echo $view->render('AcmeHelloBundle:Hello:hello.html.php', array('name' => $name)) ?>
 
@@ -211,7 +230,7 @@ El sistema de plantillas de *Symfony2* se puede extender fácilmente por medio d
 Creando enlaces entre páginas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Hablando de aplicaciones web, forzosamente tienes que crear enlaces entre páginas. En lugar de codificar las *URL* en las plantillas, el ayudante ``router`` sabe cómo generar *URL* basándose en la configuración de enrutado. De esta manera, todas tus *URL* se pueden actualizar fácilmente cambiando la configuración:
+Hablando de aplicaciones *web*, forzosamente tienes que crear enlaces entre páginas. En lugar de codificar las *URL* en las plantillas, el ayudante ``router`` sabe cómo generar *URL* basándose en la configuración de enrutado. De esta manera, todas tus *URL* se pueden actualizar fácilmente cambiando la configuración:
 
 .. code-block:: html+php
 

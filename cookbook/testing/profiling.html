@@ -1,8 +1,6 @@
 
-<!DOCTYPE html>
-
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html> 
+<html lang="es">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
@@ -35,7 +33,7 @@
     
   <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
   
-    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
     <div class="social">
       <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
@@ -51,7 +49,6 @@
     </div>
     
 
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -80,24 +77,34 @@
   <div class="section" id="como-utilizar-el-generador-de-perfiles-en-una-prueba-funcional">
 <span id="index-0"></span><h1>Cómo utilizar el generador de perfiles en una prueba funcional<a class="headerlink" href="#como-utilizar-el-generador-de-perfiles-en-una-prueba-funcional" title="Enlazar permanentemente con este título">¶</a></h1>
 <p>Es altamente recomendable que una prueba funcional sólo pruebe la respuesta. Pero si escribes pruebas funcionales que controlan los servidores en producción, posiblemente desees escribir pruebas en los datos del generador de perfiles, ya que te da una gran manera de ver diferentes cosas y hacer cumplir algunas métricas.</p>
-<p>El <a class="reference internal" href="../../book/internals.html#internals-profiler"><em>Generador de perfiles</em></a> de <em>Symfony2</em> reúne una gran cantidad de datos por cada petición. Utiliza estos datos para comprobar el número de llamadas a la base de datos, el tiempo invertido en la plataforma, ... Pero antes de escribir aserciones, siempre verifica que el generador de perfiles realmente está disponible (está activado por omisión en el entorno de prueba —&#8211;<tt class="docutils literal"><span class="pre">test</span></tt>):</p>
+<p>El <a class="reference internal" href="../../book/internals.html#internals-profiler"><em>Generador de perfiles</em></a> de <em>Symfony2</em> reúne una gran cantidad de datos por cada petición. Utiliza estos datos para comprobar el número de llamadas a la base de datos, el tiempo invertido en la plataforma, ... Pero antes de escribir aserciones, habilita el perfilador y verifica que esté habilitado (de manera predeterminada está activado en el entorno <tt class="docutils literal"><span class="pre">test</span></tt>):</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">HelloControllerTest</span> <span class="k">extends</span> <span class="nx">WebTestCase</span>
 <span class="p">{</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">testIndex</span><span class="p">()</span>
     <span class="p">{</span>
         <span class="nv">$client</span> <span class="o">=</span> <span class="k">static</span><span class="o">::</span><span class="na">createClient</span><span class="p">();</span>
+
+        <span class="c1">// Habilita el perfilador para la próxima petición</span>
+        <span class="c1">// (no hace nada si el perfilador no está disponible)</span>
+        <span class="nv">$cliente</span><span class="o">-&gt;</span><span class="na">enableProfiler</span><span class="p">();</span>
+
         <span class="nv">$crawler</span> <span class="o">=</span> <span class="nv">$client</span><span class="o">-&gt;</span><span class="na">request</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;/hello/Fabien&#39;</span><span class="p">);</span>
 
-        <span class="c1">// Escribe algunas afirmaciones sobre Response</span>
-        <span class="c1">// ...</span>
+        <span class="c1">// ... Escribe algunas afirmaciones sobre Response</span>
 
         <span class="c1">// verifica que el generador de perfiles esté habilitado</span>
         <span class="k">if</span> <span class="p">(</span><span class="nv">$profile</span> <span class="o">=</span> <span class="nv">$client</span><span class="o">-&gt;</span><span class="na">getProfile</span><span class="p">())</span> <span class="p">{</span>
             <span class="c1">// verifica la cantidad de peticiones</span>
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertLessThan</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="nv">$profile</span><span class="o">-&gt;</span><span class="na">getCollector</span><span class="p">(</span><span class="s1">&#39;db&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">getQueryCount</span><span class="p">());</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertLessThan</span><span class="p">(</span>
+                <span class="mi">10</span><span class="p">,</span>
+                <span class="nv">$profile</span><span class="o">-&gt;</span><span class="na">getCollector</span><span class="p">(</span><span class="s1">&#39;db&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">getQueryCount</span><span class="p">()</span>
+            <span class="p">);</span>
 
-            <span class="c1">// comprueba el tiempo gastado en la plataforma</span>
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertLessThan</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="nv">$profile</span><span class="o">-&gt;</span><span class="na">getCollector</span><span class="p">(</span><span class="s1">&#39;timer&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">getTime</span><span class="p">());</span>
+            <span class="c1">// comprueba el tiempo consumido en la plataforma</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">assertLessThan</span><span class="p">(</span>
+                <span class="mi">500</span><span class="p">,</span>
+                <span class="nv">$profile</span><span class="o">-&gt;</span><span class="na">getCollector</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">getTotalTime</span><span class="p">()</span>
+            <span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}</span>
@@ -134,7 +141,6 @@
   <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
   
   <div style="width:740px;margin:10px auto;">
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -160,8 +166,8 @@
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 14, 2012.
-      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
    <script type="text/javascript">

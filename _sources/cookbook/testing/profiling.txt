@@ -6,27 +6,35 @@ Cómo utilizar el generador de perfiles en una prueba funcional
 
 Es altamente recomendable que una prueba funcional sólo pruebe la respuesta. Pero si escribes pruebas funcionales que controlan los servidores en producción, posiblemente desees escribir pruebas en los datos del generador de perfiles, ya que te da una gran manera de ver diferentes cosas y hacer cumplir algunas métricas.
 
-El :ref:`Generador de perfiles <internals-profiler>` de *Symfony2* reúne una gran cantidad de datos por cada petición. Utiliza estos datos para comprobar el número de llamadas a la base de datos, el tiempo invertido en la plataforma, ... Pero antes de escribir aserciones, siempre verifica que el generador de perfiles realmente está disponible (está activado por omisión en el entorno de prueba —--``test``):
-
-.. code-block:: php
+El :ref:`Generador de perfiles <internals-profiler>` de *Symfony2* reúne una gran cantidad de datos por cada petición. Utiliza estos datos para comprobar el número de llamadas a la base de datos, el tiempo invertido en la plataforma, ... Pero antes de escribir aserciones, habilita el perfilador y verifica que esté habilitado (de manera predeterminada está activado en el entorno ``test``)::
 
     class HelloControllerTest extends WebTestCase
     {
         public function testIndex()
         {
             $client = static::createClient();
+
+            // Habilita el perfilador para la próxima petición
+            // (no hace nada si el perfilador no está disponible)
+            $cliente->enableProfiler();
+
             $crawler = $client->request('GET', '/hello/Fabien');
 
-            // Escribe algunas afirmaciones sobre Response
-            // ...
+            // ... Escribe algunas afirmaciones sobre Response
 
             // verifica que el generador de perfiles esté habilitado
             if ($profile = $client->getProfile()) {
                 // verifica la cantidad de peticiones
-                $this->assertLessThan(10, $profile->getCollector('db')->getQueryCount());
+                $this->assertLessThan(
+                    10,
+                    $profile->getCollector('db')->getQueryCount()
+                );
 
-                // comprueba el tiempo gastado en la plataforma
-                $this->assertLessThan(0.5, $profile->getCollector('timer')->getTime());
+                // comprueba el tiempo consumido en la plataforma
+                $this->assertLessThan(
+                    500,
+                    $profile->getCollector('time')->getTotalTime()
+                );
             }
         }
     }

@@ -1,0 +1,118 @@
+``Length``
+==========
+
+Valida que la longitud de una cadena dada está *entre* algún valor mínimo y máximo.
+
+.. versionadded:: 2.1
+    La restricción ``Length`` se añadió en *Symfony 2.1*.
+
++----------------+----------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`               |
++----------------+----------------------------------------------------------------------+
+| Opciones       | - `min`_                                                             |
+|                | - `max`_                                                             |
+|                | - `charset`_                                                         |
+|                | - `minMessage`_                                                      |
+|                | - `maxMessage`_                                                      |
+|                | - `exactMessage`_                                                    |
++----------------+----------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\Length`          |
++----------------+----------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\LengthValidator` |
++----------------+----------------------------------------------------------------------+
+
+Uso básico
+----------
+
+Para verificar que la longitud del campo ``firstName`` de una clase está entre ``2`` y ``50``, puedes agregar lo siguiente:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/EventBundle/Resources/config/validation.yml
+        Acme\EventBundle\Entity\Participant:
+            properties:
+                firstName:
+                    - Length:
+                        min: 2
+                        max: 50
+                        minMessage: "Tu primer nombre por lo menos debe tener {{ limit }} caracteres de largo"
+                        maxMessage: "Tu primer nombre no puede tener más de {{ limit }} caracteres de largo"
+
+    .. code-block:: php-annotations
+
+        // src/Acme/EventBundle/Entity/Participant.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Participant
+        {
+            /**
+             * @Assert\Length(
+             *      min = "2",
+             *      max = "50",
+             *      minMessage = "Tu primer nombre por lo menos debe tener {{ limit }} caracteres de largo",
+             *      maxMessage = "Tu primer nombre no puede tener más de {{ limit }} caracteres de largo"
+             * )
+             */
+             protected $firstName;
+        }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/EventBundle/Resources/config/validation.xml -->
+        <class name="Acme\EventBundle\Entity\Participant">
+            <property name="firstName">
+                <constraint name="Length">
+                    <option name="min">2</option>
+                    <option name="max">50</option>
+                    <option name="minMessage">Tu primer nombre por lo menos debe tener {{ limit }} caracteres de largo</option>
+                    <option name="maxMessage">Tu primer nombre no puede tener más de {{ limit }} caracteres de largo</option>
+                </constraint>
+            </property>
+        </class>
+
+Opciones
+--------
+
+``min``
+~~~~~~~
+
+**tipo**: ``integer`` [:ref:`default option<validation-default-option>`]
+
+Esta opción requerida es el valor de la longitud ``mínima``. La validación fallará si la longitud del valor suministrado es **menor** que este valor ``mínimo``.
+
+``max``
+~~~~~~~
+
+**tipo**: ``integer`` [:ref:`default option<validation-default-option>`]
+
+Esta opción requerida es el valor de la longitud ``máxima``. La validación fallará si la longitud del valor suministrado es **mayor** que este valor ``máximo``.
+
+``charset``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``UTF-8``
+
+El juego de caracteres a usar al calcular la longitud del valor. Se utiliza la función :phpfunction:`grapheme_strlen` de *PHP* si está disponible. Si no, se utiliza la función :phpfunction:`mb_strlen` de *PHP* si está disponible. Si ninguna está disponible, se utiliza la función :phpfunction:`strlen` de *PHP*.
+
+``minMessage``
+~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``This value is too short. It should have {{ limit }} characters or more`` (``Este debe tener {{ limit }} caracteres o más``)
+
+El mensaje que se mostrará si la longitud del valor subyacente es menor que la opción `min`_.
+
+``maxMessage``
+~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``This value is too long. It should have {{ limit }} characters or less`` (``Este debe tener {{ limit }} caracteres o menos``)
+
+El mensaje que se mostrará si la longitud del valor subyacente es mayor que la opción `max`_.
+
+``exactMessage``
+~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``This value should have exactly {{ limit }} characters.`` (``Este valor debe tener exactamente {{ limit }} caracteres.``)
+
+El mensaje que se mostrará si los valores ``min`` y ``max`` son iguales y la longitud del valor subyacente no es de exactamente este valor.

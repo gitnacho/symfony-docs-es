@@ -1,0 +1,89 @@
+``Luhn``
+========
+
+.. versionadded:: 2.2
+    La validación ``Luhn`` es nueva en *Symfony 2.2*.
+
+Esta restricción se usa para garantizar que un número de tarjeta de crédito pasa el `algoritmo Luhn`_.
+Es útil como primer paso para validar una tarjeta de crédito: Antes de comunicarte con una pasarela de pago.
+
++----------------+-----------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`                |
++----------------+-----------------------------------------------------------------------+
+| Opciones       | - `message`_                                                          |
++----------------+-----------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\Luhn`             |
++----------------+-----------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\LuhnValidator`    |
++----------------+-----------------------------------------------------------------------+
+
+Uso básico
+----------
+
+Para usar el validador ``Luhn``, sencillamente aplicalo a una propiedad en un objeto que
+contendrá un número de tarjeta de crédito.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/SubscriptionBundle/Resources/config/validation.yml
+        Acme\SubscriptionBundle\Entity\Transaction:
+            properties:
+                cardNumber:
+                    - Luhn:
+                        mensaje: Por favor, verifica el número de tu tarjeta de crédito.
+
+    .. code-block:: xml
+
+        <!-- src/Acme/SubscriptionBundle/Resources/config/validation.xml -->
+        <class name="Acme\SubscriptionBundle\Entity\Transaction">
+            <property name="cardNumber">
+                <constraint name="Luhn">
+                    <option name="message">Please check your credit card number.</option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php-annotations
+
+        // src/Acme/SubscriptionBundle/Entity/Transaction.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Transaction
+        {
+            /**
+             * @Assert\Luhn(message = "Please check your credit card number.")
+             */
+            protected $cardNumber;
+        }
+
+    .. code-block:: php
+
+        // src/Acme/SubscriptionBundle/Entity/Transaction.php
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints\Luhn;
+
+        class Transaction
+        {
+            protected $cardNumber;
+
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('luhn', new Luhn(array(
+                    'message' => 'Por favor, verifica el número de tu tarjeta de crédito',
+                )));
+            }
+        }
+
+Opciones disponibles
+--------------------
+
+``message``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``Invalid card number`` (``Número de tarjeta no válido``)
+
+El mensaje predefinido suministrado cuándo el valor no pasa la validación ``Luhn``.
+
+.. _`algoritmo Luhn`: http://en.wikipedia.org/wiki/Luhn_algorithm

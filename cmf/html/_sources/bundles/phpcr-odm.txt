@@ -1,0 +1,385 @@
+``DoctrinePHPCRBundle``
+=======================
+
+El `DoctrinePHPCRBundle <https://github.com/doctrine/DoctrinePHPCRBundle>`_ proporciona integración con el repositorio de contenido *PHP* y opcionalmente con el *PHPCR-ODM* de *Doctrine*
+para proporcionar el gestor de documentos *ODM* en *Symfony*.
+
+.. index:: DoctrinePHPCRBundle, PHPCR, ODM
+
+.. tip::
+
+    Esta referencia sólo explica la integración de *Symfony2* con *PHPCR* y *PHPCR-ODM*.  Para aprender cómo utilizar *PHPCR* ve al `sitio web de PHPCR <http://phpcr.github.com/>`_ y para la documentación del `PHPCR-ODM <http://docs.doctrine-project.org/projects/doctrine-phpcr-odm/en/latest/>`_ de *Doctrine* .
+
+
+Configurando
+------------
+
+Ve :doc:`../tutorials/installing-configuring-doctrine-phpcr-odm`
+
+
+Configurando
+------------
+
+.. tip::
+
+    Si sólo quieres utilizar el *PHPCR* sencillo sin el *PHPCR-ODM*, sencillamente no configures la sección ``odm`` para evitar que cargue los servicios. Ten en cuenta que muchos paquetes del ``CMF`` de manera predefinida usan documentos *PHPCR-ODM*.
+
+
+
+Configurando la sesión *PHPCR*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+La sesión necesita que especifiques una implementación *PHPCR* en la sección ``backend`` para el campo ``type``, junto con opciones de configuración al arranque de la implementación. Actualmente apoyamos *jackrabbit*, *doctrinedbal* y *midgard2*.
+Independientemente de la interfaz de administración, cada sesión *PHPCR* necesita un espacio de trabajo, nombre de usuario y contraseña.
+
+.. tip::
+
+    Cada implementación de *PHPCR* tendría que proporcionar el espacio de trabajo predefinido, pero puedes escoger uno diferente. Existe la orden ``doctrine:phpcr:workspace:create`` para iniciar un nuevo espacio de trabajo. Ve también las :ref:`reference-phpcr-commands`.
+
+Este nombre de usuario y contraseña es el que se está usando en la capa *PHPCR* en
+el ``PHPCR\SimpleCredentials``. Normalmente serán diferentes del nombre de usuario y contraseña utilizados por ``midgard`` o el *DBAL* de *Doctrine* para conectarse al *RDBMS* subyacente donde de hecho se almacenó el dato.
+
+Si estás utilizando una de las interfaces de administración de ``Jackalope``, también puedes especificar ``opciones``.
+Estas serán puestas en la sesión de ``Jackalope``. Actualmente esto se puede ajustar a nodos prerecuperados poniendo ``jackalope.fetch_depth`` a algo más grande que 0.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine_phpcr:
+            session:
+                backend:
+                    # ve abajo cómo configurar la interfaz de administración que elejiste
+                workspace: default
+                username: admin
+                password: admin
+                # opciones:
+                #    key: valor
+
+
+Sesión *PHPCR* con ``Jackalope Jackrabbit``
+"""""""""""""""""""""""""""""""""""""""""""
+
+Es la única configuración requerida para instalar el ``Jackrabbit`` de apache (ve :ref:`instalando Jackrabbit <tutorials-installing-phpcr-jackrabbit>`).
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine_phpcr:
+            session:
+                backend:
+                    type: jackrabbit
+                    url: http://localhost:8080/server/
+
+.. _reference-phpcr-doctrinedbal:
+
+Sesión *PHPCR* con el ``Jackalope`` y *DBAL* de *Doctrine*
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Este tipo usa ``Jackalope`` con una abstracción en la capa de  transporte de base de datos de *Doctrine* para proporcionar *PHPCR* sin ningún requisito de instalación más allá de cualquiera de los *RDBMS* apoyados por *Doctrine*.
+
+Necesitas configurar una conexión de *Doctrine* según el *DBAL* elejido en
+la `documentación de Doctrine en Symfony2 <http://gitnacho.github.com/symfony-docs-es/book/doctrine.html>`_.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine_phpcr:
+            session:
+                backend:
+                    type: doctrinedbal
+                    connection: doctrine.dbal.default_connection
+
+Una vez configurada la conexión, puedes crear la base de datos y *debes* iniciar la base de datos con la orden ``doctrine:phpcr:init:dbal``.
+
+.. code-block:: bash
+
+    app/console doctrine:database:create
+    app/console doctrine:phpcr:init:dbal
+
+.. tip::
+
+    Naturalmente, también puedes utilizar una diferente conexión en vez de la predefinida.
+    Es recomendable utilizar una conexión independiente para una base de datos separada si también *Doctrine* usa el acceso a datos del *ORM* o *DBAL* directamente, en lugar de mezclar este dato con las tablas generadas por ``jackalope-doctrine-dbal``.
+    Si tienes una conexión separada, necesitas pasar el nombre de la conexión alterna a la orden ``doctrine:database:create`` con la opción ``--connection``. Para las ordenes *PHPCR* de *Doctrine*, este parámetro no es necesario al configurar la conexión a utilizar.
+
+
+Sesión *PHPCR* con ``Midgard2``
+"""""""""""""""""""""""""""""""
+
+``Midgard2`` es una aplicación que proporciona una extensión *PHP* compilada. Esta implementa la *API* de *PHPCR* en lo alto de un *RDBMS* estándar.
+
+Para instalación, significado exacto y valores soportados en las opciones
+de configuración, ve la `documentación oficial de Midgard con PHPCR <http://midgard-project.org/phpcr/>`_
+
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine_phpcr:
+            session:
+                backend:
+                    type: midgard2
+                    db_type: MySQL
+                    db_name: midgard2_test
+                    db_host: "0.0.0.0"
+                    db_port: 3306
+                    db_username: ""
+                    db_password: ""
+                    db_init: true
+                    blobdir: /tmp/cmf-blobs
+
+
+Configurando el *PHPCR-ODM* de *Doctrine*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Esta sección de configuración gestiona el sistema *PHPCR-ODM* de *Doctrine*. Si no configuras ninguna cosa aquí, los servicios *ODM* no serán cargados.
+
+Si habilitas el ``auto_mapping``, puedes colocar tus asociaciones en ``<Paquete>/Resources/config/doctrine/<Documento>.phpcr.xml`` ``resp. .yml`` para configurar las asociaciones a documentos proporcionadas en el directorio ``<Paquete>/Document``. De lo contrario necesitas configurar manualmente la sección de asignaciones.
+
+Si ``auto_generate_proxy_classes`` es ``false``, necesitas ejecutar la orden ``cache:warmup``
+para tener las clases delegadas generadas después de que modificaste un documento. También puedes ajustar cómo y dónde generar las clases delegadas con las opciones ``proxy_dir`` y ``proxy_namespace``. Normalmente las predefinidas están bien aquí.
+
+También puedes habilitar el `almacenamiento de metadatos en caché <http://gitnacho.github.com/symfony-docs-es/reference/configuration/doctrine.html>`_.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine_phpcr:
+            odm:
+                configuration_id:     ~
+                auto_mapping: true
+                mappings:
+                    <name>:
+                        mapping:              true
+                        type:                 ~
+                        dir:                  ~
+                        alias:                ~
+                        prefix:               ~
+                        is_bundle:            ~
+                auto_generate_proxy_classes: %kernel.debug%
+                proxy_dir:            %kernel.cache_dir%/doctrine/PHPCRProxies
+                proxy_namespace:      PHPCRProxies
+
+                metadata_cache_driver:
+                    type:                 array
+                    host:                 ~
+                    port:                 ~
+                    instance_class:       ~
+                    class:                ~
+                    id:                   ~
+
+
+
+Configuración de traducción
+"""""""""""""""""""""""""""
+
+.. index:: I18N, Multilanguage
+
+Si estás utilizando documentos multilingües, necesitas configurar los idiomas disponibles. Para más información en documentos multilingües, ve la `documentación PHPCR-ODM en multilenguaje <http://docs.doctrine-project.org/projects/doctrine-phpcr-odm/en/latest/reference/multilang.html>`_.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine_phpcr:
+            odm:
+                locales:
+                    en: [de, fr]
+                    de: [en, fr]
+                    fr: [en, de]
+
+Este bloque define el orden de regiones alternativas para ver si un documento no está traducido al idioma requerido.
+
+
+Ajustes generales
+~~~~~~~~~~~~~~~~~
+
+Si ajustas la ruta a ``jackrabbit_jar``,  puedes utilizar la orden de consola ``doctrine:phpcr:jackrabbit``  para arrancar y parar el ``jackrabbit``.
+
+Puedes poner a punto la producción de la orden ``doctrine:phpcr:dump`` con ``dump_max_line_length``.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine_phpcr:
+            jackrabbit_jar:       /ruta/a/jackrabbit.jar
+            dump_max_line_length:  120
+
+.. _multiple-phpcr-sessions:
+
+Configurando múltiples sesiones
+-------------------------------
+
+Si necesitas más de una interfaz de administración *PHPCR*, puedes definir ``sessions`` como hijo de la información de ``session``. Cada sesión tiene un nombre y configuración que puedes utilizar directamente en ``session``. también puedes sobrescribir qué sesión utilizar como ``default_session``.
+
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine_phpcr:
+            session:
+                default_session:      ~
+                sessions:
+                    <name>:
+                        workspace:            ~ # Requerido
+                        username:             ~
+                        password:             ~
+                        backend:
+                            # como arriba
+                        options:
+                            # como arriba
+
+Si estás utilizando el *ODM*, también querrás configurar múltiples gestores de documento.
+
+Dentro de la sección *odm*, puedes añadir entradas nombradas en ``document_managers``.
+Para utilizar la sesión no predefinida, especifica el atributo ``session``.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        odm:
+            default_document_manager:  ~
+            document_managers:
+                <name>:
+                    # mismas opciones que directamente en odm, ve arriba.
+                    session: <sessionname>
+
+
+Un ejemplo completo se ve como sigue:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        doctrine_phpcr:
+            # configura las sesiones PHPCR
+            session:
+                sessions:
+
+                    default:
+                        backend: %phpcr_backend%
+                        workspace: %phpcr_workspace%
+                        username: %phpcr_user%
+                        password: %phpcr_pass%
+
+                    website:
+                        backend:
+                            type: jackrabbit
+                            url: %magnolia_url%
+                        workspace: website
+                        username: %magnolia_user%
+                        password: %magnolia_pass%
+
+                    dms:
+                        backend:
+                            type: jackrabbit
+                            url: %magnolia_url%
+                        workspace: dms
+                        username: %magnolia_user%
+                        password: %magnolia_pass%
+            # activa la capa ODM
+            odm:
+                document_managers:
+                    default:
+                        session: default
+                        mappings:
+                            SandboxMainBundle: ~
+                            SymfonyCmfContentBundle: ~
+                            SymfonyCmfMenuBundle: ~
+                            SymfonyCmfRoutingExtraBundle: ~
+
+                    website:
+                        session: website
+                        configuration_id: sandbox_magnolia.odm_configuration
+                        mappings:
+                            SandboxMagnoliaBundle: ~
+
+                    dms:
+                        session: dms
+                        configuration_id: sandbox_magnolia.odm_configuration
+                        mappings:
+                            SandboxMagnoliaBundle: ~
+
+                auto_generate_proxy_classes: %kernel.debug%
+
+.. tip::
+
+    Este ejemplo también utiliza diferentes configuraciones par repositorio (ve el atributo ``repository_id``). Este caso se explica en :doc:`../cookbook/phpcr-odm-custom-documentclass-mapper`.
+
+.. _reference-phpcr-commands:
+
+Órdenes del *PHPCR* de *Doctrine*
+---------------------------------
+
+Todas las órdenes sobre el *PHPCR* van prefijadas con ``doctrine:phpcr`` y puedes utilizar el argumento ``--session`` para utilizar una sesión distinta a la predefinida si configuraste varias sesiones *PHPCR*.
+
+Algunas de estas órdenes son específicas a una interfaz de administración o al *ODM*. Esas órdenes
+sólo estarán disponibles si tal interfaz de administración está configurada.
+
+Usa ``app/console help <orden>`` para ver todas las opciones que tiene cada orden.
+
+- ``doctrine:phpcr:workspace:create``  Crea un espacio de trabajo en el repositorio configurado
+- ``doctrine:phpcr:workspace:list``  Enumera todos los espacios de trabajo configurados en el repositorio
+- ``doctrine:phpcr:purge``  Elimina todo el contenido del repositorio
+- ``doctrine:phpcr:register-system-node-types``  Registra el sistema del tipo de nodo en el repositorio *PHPCR*
+- ``doctrine:phpcr:register-node-types``  Registra el tipo de nodos en el repositorio *PHPCR*
+- ``doctrine:phpcr:fixtures:load``  Carga accesorios a tu base de datos *PHPCR*.
+- ``doctrine:phpcr:import``  Importa datos *xml* al repositorio, ya sea en el sistema de visualización *JCR* o *XML* arbitrario
+- ``doctrine:phpcr:export``  Exporta nodos desde el repositorio, bien al sistema de visualización *JCR* o al formato de visualización de documento
+- ``doctrine:phpcr:dump``  vacía el contenido del repositorio
+- ``doctrine:phpcr:query``  Executa una declaración *SQL2* de *JCR*
+- ``doctrine:phpcr:mapping:info``  Muestra información básica sobre todos los documentos asociados
+
+
+Órdenes específicas de ``Jackrabbit``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Si estás utilizando ``jackalope-jackrabbit``, también tienes una orden para arrancar y detener el servidor ``jackrabbit``:
+
+-  ``jackalope:run:jackrabbit``  Arranca y detiene el servidor ``Jackrabbit``
+
+
+Órdenes específicas para el *DBAL* de *Doctrine*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Si estás utilizando ``jackalope-doctrine-dbal``,  tienes una orden para iniciar la base
+de datos:
+
+- ``jackalope:init:dbal``   Prepara la base de datos para el *DBAL* de *Doctrine* con ``Jackalope``
+
+Ten en cuenta que también puedes utilizar la orden *dbal* de *doctrine* para crear la base de datos.
+
+
+Algunas ordenes de ejemplo
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ejecutando `consultas SQL2 <http://www.h2database.com/jcr/grammar.html>`_ contra el repositorio
+
+.. code-block:: bash
+
+    app/console doctrine:phpcr:query "SELECT title FROM [nt:unstructured] WHERE NAME() = 'home'"
+
+
+Vertiendo nodos bajo /cms/simple incluyendo sus propiedades
+
+.. code-block:: bash
+
+    app/console doctrine:phpcr:dump /cms/simple --props=yes
+
+

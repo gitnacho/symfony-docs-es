@@ -1,0 +1,491 @@
+.. index::
+   single: Config; Definiendo y procesando valores de configuración
+
+Definiendo y procesando valores de configuración
+================================================
+
+Validando valores de configuración
+----------------------------------
+
+Después de cargar los valores de configuración de todo tipo de recursos, los valores y su estructura se pueden validar usando la parte "Definición" del componente ``Config``. Generalmente, se espera que los valores de configuración muestren algún tipo de jerarquía. Además, los valores deben ser de un determinado tipo, estar limitados en número o ser uno de un determinado conjunto de valores. Por ejemplo, la siguiente configuración (en *YAML*) muestra una clara jerarquía y algunas reglas de validación que se deben aplicar (como: "el valor de ``auto_connect`` debe ser un valor booleano"):
+
+.. code-block:: yaml
+
+    auto_connect: true
+    default_connection: mysql
+    connections:
+        mysql:
+            host: localhost
+            driver: mysql
+            username: user
+            password: pass
+        sqlite:
+            host: localhost
+            driver: sqlite
+            memory: true
+            username: user
+            password: pass
+
+Al cargar varios archivos de configuración, debería ser posible combinar y sobrescribir algunos valores. Otros valores no se deben fusionar y quedarse como estaban cuando se encontraron por primera vez. Además, algunas claves sólo están disponibles cuando otra clave tiene un valor específico (en la configuración del ejemplo anterior: la clave ``memory`` sólo tiene sentido cuando ``driver`` es ``sqlite``).
+
+Definiendo una jerarquía de valores de configuración usando el `TreeBuilder`
+----------------------------------------------------------------------------
+
+Todas las normas relativas a los valores de configuración se pueden definir usando el :class:`Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder`.
+
+Debes devolver una instancia de :class:`Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder` desde una clase  ``Configuration`` personalizada que implemente la :class:`Symfony\\Component\\Config\\Definition\\ConfigurationInterface`::
+
+    namespace Acme\DatabaseConfiguration;
+
+    use Symfony\Component\Config\Definition\ConfigurationInterface;
+    use Symfony\Component\Config\Definition\Builder\TreeBuilder;
+
+    class DatabaseConfiguration implements ConfigurationInterface
+    {
+        public function getConfigTreeBuilder()
+        {
+            $treeBuilder = new TreeBuilder();
+            $rootNode = $treeBuilder->root('database');
+
+            // ... añade definiciones de nodo a la raíz del árbol
+
+            return $treeBuilder;
+        }
+    }
+
+Añadiendo definiciones de nodo al árbol
+---------------------------------------
+
+Variables de nodo
+~~~~~~~~~~~~~~~~~
+
+Un árbol contiene definiciones de nodo que se pueden establecer de manera semántica.
+Esto significa que, usando la sangría y una sencilla notación, es posible reflejar la estructura real de los valores de configuración::
+
+    $rootNode
+        ->children()
+            ->booleanNode('auto_connect')
+                ->defaultTrue()
+            ->end()
+            ->scalarNode('default_connection')
+                ->defaultValue('default')
+            ->end()
+        ->end()
+    ;
+
+El nodo raíz en sí es un arreglo de nodos, y tiene hijos, como el nodo booleano ``auto_connect`` y el nodo escalar ``default_connection``. En general:
+después de definir un nodo, una llamada a ``end()`` te lleva un paso más arriba en la jerarquía.
+
+Tipo «node»
+~~~~~~~~~~~
+
+Es posible validar el tipo de un valor proporcionado utilizando la definición
+de nodo apropiada. El tipo de nodo está disponible para:
+
+* ``scalar``
+* ``boolean``
+* ``array``
+* ``enum`` (nuevo en 2.1)
+* ``integer`` (nuevo en 2.2)
+* ``float`` (nuevo en 2.2)
+* variable (sin validación)
+
+y se crean con ``node($nombre, $tipo)`` o su método abreviado asociado
+``xxxxNode($nombre)``.
+
+Restricciones de nodos numéricos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2
+    Los nodos numéricos (``float`` e ``integer``) son nuevos en 2.2
+
+Los nodos numéricos (``float`` e ``integer``) proporcionan dos restricciones extra ---
+:method:`Symfony\\Component\\Config\\Definition\\Builder::min` y
+:method:`Symfony\\Component\\Config\\Definition\\Builder::max` --- que te permiten validar el valor::
+
+    $rootNode
+        ->children()
+            ->integerNode('positive_value')
+                ->min(0)
+            ->end()
+            ->floatNode('big_value')
+                ->max(5E45)
+            ->end()
+            ->integerNode('value_inside_a_range')
+                ->min(-50)->max(50)
+            ->end()
+        ->end()
+    ;
+
+Nodos del arreglo
+~~~~~~~~~~~~~~~~~
+
+Es posible añadir un nivel más profundo a la jerarquía, añadiendo un nodo al arreglo. El arreglo de nodos en sí mismo, puede tener un conjunto predefinido de variables de nodo::
+
+    $rootNode
+        ->children()
+            ->arrayNode('connection')
+                ->children()
+                    ->scalarNode('driver')->end()
+                    ->scalarNode('host')->end()
+                    ->scalarNode('username')->end()
+                    ->scalarNode('password')->end()
+                ->end()
+            ->end()
+        ->end()
+    ;
+
+O puedes definir un prototipo para cada nodo dentro del arreglo de nodos::
+
+    $rootNode
+        ->children()
+            ->arrayNode('connections')
+                ->prototype('array')
+                ->children()
+                    ->scalarNode('driver')->end()
+                    ->scalarNode('host')->end()
+                    ->scalarNode('username')->end()
+                    ->scalarNode('password')->end()
+                    ->end()
+                ->end()
+            ->end()
+        ->end()
+    ;
+
+Puedes utilizar un prototipo para añadir una definición la cual se puede repetir muchas veces dentro del nodo actual. De acuerdo con la definición del prototipo en el ejemplo anterior, es posible tener varios arreglos de conexión (conteniendo un ``driver``, ``host``, etc.).
+
+Opciones del arreglo de nodos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Antes de definir los hijos de un arreglo de nodos, puedes proveer opciones como:
+
+``useAttributeAsKey()``
+    Proporciona el nombre de un nodo secundario, cuyo valor se debe usar como la clave en el arreglo resultante
+``requiresAtLeastOneElement()``
+    Debe haber por lo menos un elemento en el arreglo (sólo funciona cuando además se llama a ``isRequired()``).
+
+Un ejemplo de esto::
+
+    $rootNode
+        ->children()
+            ->arrayNode('parameters')
+                ->isRequired()
+                ->requiresAtLeastOneElement()
+                ->useAttributeAsKey('name')
+                ->prototype('array')
+                    ->children()
+                        ->scalarNode('value')->isRequired()->end()
+                    ->end()
+                ->end()
+            ->end()
+        ->end()
+    ;
+
+En *YAML*, la configuración podría tener esta apariencia:
+
+.. code-block:: yaml
+
+    database:
+        parameters:
+            param1: { value: param1val }
+
+En *XML*, cada nodo ``parameters`` tendría un atributo ``name`` (junto con
+``value``), el cual se sacaría y utilizarí como la clave para ese elemento en el
+arreglo final. El ``useAttributeAsKey`` es útil para normalizar cómo se especifican los arreglos entre diferentes formatos como *XML* y *YAML*.
+
+Valores predefinidos y requeridos
+---------------------------------
+
+Para todos los tipos de nodo, es posible definir valores predeterminados y valores de sustitución en caso de que un nodo tenga un cierto valor:
+
+``defaultValue()``
+    Establece un valor predeterminado
+``isRequired()``
+    Se debe definir (pero puede estar vacío)
+``cannotBeEmpty()``
+    No puede contener un valor vacío
+``default*()``
+    (``null``, ``true``, ``false``), acceso directo para ``defaultValue()``
+``treat*Like()``
+    (``null``, ``true``, ``false``), provee un valor sustituto en caso de que el valor sea ``*.``
+
+.. code-block:: php
+
+    $rootNode
+        ->children()
+            ->arrayNode('connection')
+                ->children()
+                    ->scalarNode('driver')
+                        ->isRequired()
+                        ->cannotBeEmpty()
+                    ->end()
+                    ->scalarNode('host')
+                        ->defaultValue('localhost')
+                    ->end()
+                    ->scalarNode('username')->end()
+                    ->scalarNode('password')->end()
+                    ->booleanNode('memory')
+                        ->defaultFalse()
+                    ->end()
+                ->end()
+            ->end()
+        ->end()
+    ;
+
+Secciones opcionales
+--------------------
+
+.. versionadded:: 2.1
+    Los métodos ``canBeEnabled`` y ``canBeDisabled`` son nuevos en *Symfony 2.2*
+
+Si tienes secciones enteras que son opcionales y se pueden activar/desactivar, puedes aprovechar los métodos abreviados :method:`Symfony\\Component\\Config\\Definition\\Builder\\ArrayNodeDefinition::canBeEnabled` y
+:method:`Symfony\\Component\\Config\\Definition\\Builder\\ArrayNodeDefinition::canBeDisabled`::
+
+    $arrayNode
+        ->canBeEnabled()
+    ;
+
+    // es equivalente a
+
+    $arrayNode
+        ->treatFalseLike(array('enabled' => false))
+        ->treatTrueLike(array('enabled' => true))
+        ->treatNullLike(array('enabled' => true))
+        ->children()
+            ->booleanNode('enabled')
+                ->defaultFalse()
+    ;
+
+El método ``canBeDisabled`` se ve igual salvo que de manera predefinida la sección estaría habilitada.
+
+Combinando opciones
+-------------------
+
+Puedes proporcionar opciones adicionales sobre el proceso de mezcla. Para arreglos:
+
+``performNoDeepMerging()``
+    Cuando también defines el valor en un segundo arreglo de configuración, no se intenta combinar un arreglo, sino que lo sobrescribe por completo.
+
+Para todos los nodos:
+
+``cannotBeOverwritten()``
+    No permite que otros arreglos de configuración sobrescriban un valor existente de este nodo.
+
+Anexando secciones
+------------------
+
+Si tienes una configuración de validación compleja, entonces el árbol puede crecer bastante y posiblemente quieras dividirlo en secciones. Lo puedes conseguir haciendo una sección en un nodo separado y luego anexándolo al árbol principal con ``append()``::
+
+    public function getConfigTreeBuilder()
+    {
+        $treeBuilder = new TreeBuilder();
+        $rootNode = $treeBuilder->root('database');
+
+        $rootNode
+            ->children()
+                ->arrayNode('connection')
+                    ->children()
+                        ->scalarNode('driver')
+                            ->isRequired()
+                            ->cannotBeEmpty()
+                        ->end()
+                        ->scalarNode('host')
+                            ->defaultValue('localhost')
+                        ->end()
+                        ->scalarNode('username')->end()
+                        ->scalarNode('password')->end()
+                        ->booleanNode('memory')
+                            ->defaultFalse()
+                        ->end()
+                    ->end()
+                    ->append($this->addParametersNode())
+                ->end()
+            ->end()
+        ;
+
+        return $treeBuilder;
+    }
+
+    public function addParametersNode()
+    {
+        $builder = new TreeBuilder();
+        $node = $builder->root('parameters');
+
+        $node
+            ->isRequired()
+            ->requiresAtLeastOneElement()
+            ->useAttributeAsKey('name')
+            ->prototype('array')
+                ->children()
+                    ->scalarNode('value')->isRequired()->end()
+                ->end()
+            ->end()
+        ;
+
+        return $node;
+    }
+
+Esto también es útil para ayudarte a evitar repeticiones si tienes repetida la configuración de esas secciones en diferentes sitios.
+
+Normalización
+-------------
+
+Cuándo son procesados los archivos de configuración primero se normalizan, luego se fusionan
+y finalmente el árbol se usa para validar el arreglo resultante. El proceso de normalización se usa para sacar algunos de las diferencias que resultan de diferentes formatos de configuración, principalmente las diferencias entre *Yaml* y *XML*.
+
+El separador utilizado en las claves en *Yaml* típicamente es ``_`` y ``-`` en *XML*. Por ejemplo, ``auto_connect`` en *Yaml* y ``auto-connect`` en *XML*. La normalización debería hacer que ambos fueran ``auto_connect``.
+
+Otra diferencia entre *Yaml* y *XML* es la manera en que los valores del arreglo se pueden
+representar. En *Yaml*  puedes tener:
+
+.. code-block:: yaml
+
+        twig:
+        extensions: ['twig.extension.foo', 'twig.extension.bar']
+
+y en *XML*:
+
+.. code-block:: xml
+
+    <twig:config>
+        <twig:extension>twig.extension.foo</twig:extension>
+        <twig:extension>twig.extension.bar</twig:extension>
+    </twig:config>
+
+Esta diferencia se puede sacar en la normalización pluralizando la clave utilizada
+en *XML*. Puedes especificar que deseas que un clave se pluralice de este modo con ``fixXmlConfig()``::
+
+    $rootNode
+        ->fixXmlConfig('extension')
+        ->children()
+            ->arrayNode('extensions')
+                ->prototype('scalar')->end()
+            ->end()
+        ->end()
+    ;
+
+Si es una pluralización irregular puedes especificar el plural a utilizar como
+segundo argumento::
+
+    $rootNode
+        ->fixXmlConfig('child', 'children')
+        ->children()
+            ->arrayNode('children')
+        ->end()
+    ;
+
+Así como se corrigió este, ``fixXmlConfig`` garantiza que solo los elementos
+*XML* todavía se convierten en un arreglo. Por lo tanto que puedes tener:
+
+.. code-block:: xml
+
+    <connection>default</connection>
+    <connection>extra</connection>
+
+y a veces sólo:
+
+.. code-block:: xml
+
+    <connection>default</connection>
+
+De manera predefinida ``connection`` sería un arreglo en el primer caso y una cadena
+en el segundo dificultando su validación. Puedes garantizar que siempre sea un arreglo con con ``fixXmlConfig``.
+
+Puedes controlar el proceso de normalización más allá, de ser necesario. Por ejemplo, posiblemente quieras permitir que se pueda configurar una cadena y utilizarla como una clave particular o que se configuren varias claves explícitamente. De modo que, si todo aparte del ``name`` es opcional en esta configuración:
+
+.. code-block:: yaml
+
+    connection:
+        name: my_mysql_connection
+        host: localhost
+        driver: mysql
+        username: user
+        password: pass
+
+También puedes permitir lo siguiente:
+
+.. code-block:: yaml
+
+    connection: my_mysql_connection
+
+Cambiando el valor de una cadena a un arreglo asociativo con ``name`` como la clave::
+
+    $rootNode
+        ->children()
+            ->arrayNode('connection')
+                ->beforeNormalization()
+                ->ifString()
+                    ->then(function($v) { return array('name'=> $v); })
+                ->end()
+                ->children()
+                    ->scalarNode('name')->isRequired()
+                    // ...
+                ->end()
+            ->end()
+        ->end()
+    ;
+
+Reglas de validación
+--------------------
+
+Puedes proporcionar reglas de validación más avanzadas utilizando la :class:`Symfony\\Component\\Config\\Definition\\Builder\\ExprBuilder`. Este constructor implementa una interfaz fluida para un bien conocido control de la estructura.
+El constructor se utiliza para agregar reglas avanzadas de validación a las definiciones de nodo, como::
+
+    $rootNode
+        ->children()
+            ->arrayNode('connection')
+                ->children()
+                    ->scalarNode('driver')
+                        ->isRequired()
+                        ->validate()
+                        ->ifNotInArray(array('mysql', 'sqlite', 'mssql'))
+                            ->thenInvalid('Invalid database driver "%s"')
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ->end()
+    ;
+
+Una regla de validación siempre tiene una parte ``«if»``. Puedes especificar esta parte de las siguientes maneras:
+
+- ``ifTrue()``
+- ``ifString()``
+- ``ifNull()``
+- ``ifArray()``
+- ``ifInArray()``
+- ``ifNotInArray()``
+- ``always()``
+
+Una regla de validación también requiere una parte ``«then»``:
+
+- ``then()``
+- ``thenEmptyArray()``
+- ``thenInvalid()``
+- ``thenUnset()``
+
+Normalmente, ``«then»`` es un cierre. Su valor de retorno se utiliza como un nuevo valor para el nodo, en lugar del valor original.
+
+Procesando valores de configuración
+-----------------------------------
+
+La clase :class:`Symfony\\Component\\Config\\Definition\\Processor` utiliza el árbol que fue construido usando el :class:`Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder` para procesar múltiples arreglos de valores de configuración que se deben combinar.
+Si algún valor no es del tipo esperado, todavía es obligatorio e indefinido, o no se pudo validar de alguna otra manera, será lanzada una excepción.
+De lo contrario, el resultado es un arreglo de valores de configuración limpio::
+
+    use Symfony\Component\Yaml\Yaml;
+    use Symfony\Component\Config\Definition\Processor;
+    use Acme\DatabaseConfiguration;
+
+    $config1 = Yaml::parse(__DIR__.'/src/Matthias/config/config.yml');
+    $config2 = Yaml::parse(__DIR__.'/src/Matthias/config/config_extra.yml');
+
+    $configs = array($config1, $config2);
+
+    $processor = new Processor();
+    $configuration = new DatabaseConfiguration;
+    $processedConfiguration = $processor->processConfiguration(
+        $configuration,
+        $configs)
+    ;
+

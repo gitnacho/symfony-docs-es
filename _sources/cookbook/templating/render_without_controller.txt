@@ -1,0 +1,120 @@
+.. index::
+   single: Plantillas; Dibuja la plantilla sin controlador personalizado
+
+Cómo dibujar una plantilla sin un controlador personalizado
+===========================================================
+
+Normalmente, cuándo necesitas crear una página, necesitas crear un controlador y dibujar una plantilla dentro del controlador. Pero si estás reproduciendo una plantilla sencilla a la que no necesitas pasar ningún dato, puedes evitar la creación del controlador por completo, utilizando el controlador integrado ``FrameworkBundle:Template:template``.
+
+Por ejemplo, supón que deseas reproducir la plantilla ``AcmeBundle:Static:privacy.html.twig``, la cual no requiere que se le pasen variables. Lo puedes hacer sin crear un controlador:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        acme_privacy:
+            pattern: /privacy
+            defaults:
+                _controller: FrameworkBundle:Template:template
+                template: 'AcmeBundle:Static:privacy.html.twig'
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <route id="acme_privacy" pattern="/privacy">
+                <default key="_controller">FrameworkBundle:Template:template</default>
+                <default key="template">AcmeBundle:Static:privacy.html.twig</default>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('acme_privacy', new Route('/privacy', array(
+            '_controller'  => 'FrameworkBundle:Template:template',
+            'template'     => 'AcmeBundle:Static:privacy.html.twig',
+        )));
+
+        return $collection;
+
+El controlador ``FrameworkBundle:Template:template`` sencillamente dibujará cualquier plantilla que le pases como el valor predeterminado de ``template``.
+
+Naturalmente, también puedes utilizar este truco al reproducir controladores integrados dentro de una plantilla. Pero debido a que típicamente el propósito de reproducir un controlador dentro de una plantilla es para preparar algún dato en un controlador personalizado, probablemente esto sólo sea útil si quisieras memorizar esta página parcial (ve :ref:`cookbook-templating-no-controller-caching`).
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {% render url('acme_privacy') %}
+
+    .. code-block:: html+php
+
+        <?php echo $view['actions']->render(
+            $view['router']->generate('acme_privacy', array(), true)
+        ) ?>
+
+.. _cookbook-templating-no-controller-caching:
+
+Memorizando en caché una plantilla estática
+-------------------------------------------
+
+.. versionadded:: 2.2
+    La habilidad de memorizar plantillas dibujadas vía ``FrameworkBundle:Template:template`` es nueva en *Symfony 2.2*.
+
+Debido a que las plantillas que se dibujan de este modo típicamente son estáticas, posiblemente tenga sentido memorizarlas en caché. Afortunadamente, ¡esto es muy fácil! Configurando unas cuantas variables en tu ruta, puedes controlar exactamente cómo memorizar tu página:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        acme_privacy:
+            pattern: /privacy
+            defaults:
+                _controller: FrameworkBundle:Template:template
+                template: 'AcmeBundle:Static:privacy.html.twig'
+                maxAge: 86400
+                sharedMaxAge: 86400
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <route id="acme_privacy" pattern="/privacy">
+                <default key="_controller">FrameworkBundle:Template:template</default>
+                <default key="template">AcmeBundle:Static:privacy.html.twig</default>
+                <default key="maxAge">86400</default>
+                <default key="sharedMaxAge">86400</default>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('acme_privacy', new Route('/privacy', array(
+            '_controller'  => 'FrameworkBundle:Template:template',
+            'template'     => 'AcmeBundle:Static:privacy.html.twig',
+            'maxAge'       => 86400,
+            'sharedMaxAge' => 86400,
+        )));
+
+        return $collection;
+
+Los valores ``maxAge`` y ``sharedMaxAge`` se suelen usar para modificar el objeto ``Respuesta`` creado en el controlador. Para más información sobre la memorización, ve la :doc:`/book/http_cache`.
+
+También existe una variable ``privada`` (no mostrada aquí). De manera predeterminada, la ``Respuesta`` será pública, siempre y cuando se le pase ``maxAge`` o ``sharedMaxAge``.
+Si se configura como ``true``, la ``Respuesta`` será marcada como privada.

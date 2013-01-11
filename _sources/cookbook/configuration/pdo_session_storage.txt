@@ -1,13 +1,18 @@
 .. index::
    single: Sesión; Almacenamiento en la base de datos
 
-Cómo utilizar ``PdoSessionStorage`` para almacenar sesiones en la base de datos
+Cómo utilizar ``PdoSessionHandler`` para almacenar sesiones en la base de datos
 ===============================================================================
 
 El almacenamiento de sesiones predeterminado de *Symfony2* escribe la información de la sesión en archivo(s). La mayoría desde medianos hasta grandes sitios web utilizan una base de datos para almacenar valores de sesión en lugar de archivos, porque las bases de datos son más fáciles de usar y escalar en un entorno web multiservidor.
 
-*Symfony2* ha incorporado una solución de almacenamiento en base de datos denominada :class:`Symfony\\\Component\\HttpFoundation\\SessionStorage\\PdoSessionStorage`.
+*Symfony2* ha incorporado una solución para el almacenamiento de la sesión en la base de datos denominada :class:`Symfony\\\Component\\HttpFoundation\\SessionStorage\\PdoSessionStorage`.
 Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` (o el formato de configuración de tu elección):
+
+.. versionadded:: 2.1
+    En *Symfony 2.1* la clase y el espacio de nombres se han modificado significativamente. Ahora puedes encontrar las clases de almacenamiento de sesión en el espacio de nombres `Session\\Storage`:
+    ``Symfony\Component\HttpFoundation\Session\Storage``. Además ten en cuenta que en *Symfony 2.1* debes configurar ``handler_id`` no ``storage_id`` como en *Symfony2.0*. 
+    Abajo, notarás que ya no se utiliza ``%sesión.storage.options%``.
 
 .. configuration-block::
 
@@ -17,7 +22,7 @@ Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` 
         framework:
             session:
                 # ...
-                storage_id:     session.storage.pdo
+                handler_id:     session.handler.pdo
 
         parameters:
             pdo.db_options:
@@ -34,15 +39,15 @@ Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` 
                     user:     myuser
                     password: mypassword
 
-            session.storage.pdo:
-                class:     Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage
-                arguments: [@pdo, %session.storage.options%, %pdo.db_options%]
+            session.handler.pdo:
+                class:     Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+                arguments: [@pdo, %pdo.db_options%]
 
     .. code-block:: xml
 
         <!-- app/config/config.xml -->
         <framework:config>
-            <framework:session storage-id="session.storage.pdo" default-locale="en" lifetime="3600" auto-start="true"/>
+            <framework:session handler-id="session.handler.pdo" lifetime="3600" auto-start="true"/>
         </framework:config>
 
         <parameters>
@@ -61,24 +66,23 @@ Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` 
                 <argument>mypassword</argument>
             </service>
 
-            <service id="session.storage.pdo" class="Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage">
+            <service id="session.handler.pdo" class="Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler">
                 <argument type="service" id="pdo" />
-                <argument>%session.storage.options%</argument>
                 <argument>%pdo.db_options%</argument>
             </service>
             </services>
 
     .. code-block:: php
 
-        // app/config/config.yml
+        // app/config/config.php
         use Symfony\Component\DependencyInjection\Definition;
         use Symfony\Component\DependencyInjection\Reference;
 
         $container->loadFromExtension('framework', array(
             // ...
             'session' => array(
-                // ...
-                'storage_id' => 'session.storage.pdo',
+                ...,
+                'handler_id' => 'session.handler.pdo',
             ),
         ));
 
@@ -96,12 +100,11 @@ Para usarla, sólo tienes que cambiar algunos parámetros en :file:`config.yml` 
         ));
         $container->setDefinition('pdo', $pdoDefinition);
 
-        $storageDefinition = new Definition('Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage', array(
+        $storageDefinition = new Definition('Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler', array(
             new Reference('pdo'),
-            '%session.storage.options%',
             '%pdo.db_options%',
         ));
-        $container->setDefinition('session.storage.pdo', $storageDefinition);
+        $container->setDefinition('session.handler.pdo', $storageDefinition);
 
 * ``db_table``: El nombre de la tabla de sesiones en tu base de datos
 * ``db_id_col``: El nombre de la columna ``id`` en la tabla de sesiones (``VARCHAR (255)`` o más grande)
@@ -122,14 +125,14 @@ Pero si deseas almacenar los datos de sesión en la misma base que el resto de l
         pdo:
             class: PDO
             arguments:
-                - "mysql:dbname=%database_name%"
+                - "mysql:host=%database_host%;port=%database_port%;dbname=%database_name%"
                 - %database_user%
                 - %database_password%
 
     .. code-block:: xml
 
         <service id="pdo" class="PDO">
-            <argument>mysql:dbname=%database_name%</argument>
+            <argument>mysql:host=%database_host%;port=%database_port%;dbname=%database_name%</argument>
             <argument>%database_user%</argument>
             <argument>%database_password%</argument>
         </service>
@@ -137,7 +140,7 @@ Pero si deseas almacenar los datos de sesión en la misma base que el resto de l
     .. code-block:: php
 
         $pdoDefinition = new Definition('PDO', array(
-            'mysql:dbname=%database_name%',
+            'mysql:host=%database_host%;port=%database_port%;dbname=%database_name%',
             '%database_user%',
             '%database_password%',
         ));
@@ -172,3 +175,25 @@ Para *PostgreSQL*, la declaración debe tener este aspecto:
         session_time integer NOT NULL,
         CONSTRAINT session_pkey PRIMARY KEY (session_id)
     );
+
+«Microsoft SQL Server»
+~~~~~~~~~~~~~~~~~~~~~~
+
+Para *MSSQL*, la declaración se podría parecer a la siguiente:
+
+.. code-block:: sql
+
+    CREATE TABLE [dbo].[session](
+	    [session_id] [nvarchar](255) NOT NULL,
+	    [session_value] [ntext] NOT NULL,
+        [session_time] [int] NOT NULL,
+		PRIMARY KEY CLUSTERED(
+			[session_id] ASC
+		) WITH (
+		    PAD_INDEX  = OFF,
+		    STATISTICS_NORECOMPUTE  = OFF,
+		    IGNORE_DUP_KEY = OFF,
+		    ALLOW_ROW_LOCKS  = ON,
+		    ALLOW_PAGE_LOCKS  = ON
+		) ON [PRIMARY]
+    ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]

@@ -14,7 +14,7 @@ La plataforma de pruebas *PHPUnit*
 
 .. note::
 
-    *Symfony2* trabaja con *PHPUnit* 3.5.11 o más reciente.
+    *Symfony2* trabaja con *PHPUnit* 3.5.11 o posterior, aunque se necesita la versión 3.6.4 para probar el código del núcleo de Symfony.
 
 Cada prueba ---si se trata de una prueba unitaria o una prueba funcional--- es una clase *PHP* que debe vivir en el subdirectorio ``Tests/`` de tus paquetes. Si sigues esta regla, entonces puedes ejecutar todas las pruebas de tu aplicación con la siguiente orden:
 
@@ -41,7 +41,7 @@ Escribir pruebas unitarias en *Symfony2* no es diferente a escribir pruebas unit
 
     // src/Acme/DemoBundle/Utility/Calculator.php
     namespace Acme\DemoBundle\Utility;
-    
+
     class Calculator
     {
         public function add($a, $b)
@@ -122,7 +122,10 @@ Por ejemplo, la *edición estándar de Symfony2* proporciona una sencilla prueba
 
             $crawler = $client->request('GET', '/demo/hello/Fabien');
 
-            $this->assertGreaterThan(0, $crawler->filter('html:contains("Hello Fabien")')->count());
+            $this->assertGreaterThan(
+                0,
+                $crawler->filter('html:contains("Hello Fabien")')->count()
+            );
         }
     }
 
@@ -178,7 +181,10 @@ Ahora que puedes navegar fácilmente a través de una aplicación, utiliza las a
 
 O bien, prueba contra el contenido de la respuesta directamente si lo que deseas es acertar que el contenido contiene algún texto, o si la respuesta no es un documento *XML* o *HTML*::
 
-    $this->assertRegExp('/Hello Fabien/', $client->getResponse()->getContent());
+    $this->assertRegExp(
+        '/Hello Fabien/',
+        $client->getResponse()->getContent()
+    );
 
 .. _book-testing-request-method-sidebar:
 
@@ -188,15 +194,15 @@ O bien, prueba contra el contenido de la respuesta directamente si lo que deseas
 
         request(
             $method,
-            $uri, 
-            array $parameters = array(), 
-            array $files = array(), 
-            array $server = array(), 
-            $content = null, 
+            $uri,
+            array $parameters = array(),
+            array $files = array(),
+            array $server = array(),
+            $content = null,
             $changeHistory = true
         )
 
-    El arreglo ``server`` son los valores crudos que esperarías encontrar normalmente en la superglobal `$_SERVER`_ de *PHP*. Por ejemplo, para establecer las cabeceras *HTTP* ``Content-Type`` y ``Referer``, deberías pasar lo siguiente::
+    El arreglo ``server`` son los valores crudos que esperarías encontrar normalmente en la superglobal `$_SERVER`_ de *PHP*. Por ejemplo, para establecer las cabeceras *HTTP* ``Content-Type``, ``Referer`` y ``X-Requested-With``, deberías pasar lo siguiente (no olvides el prefijo ``HTTP_`` para las cabeceras que no son estándar)::
 
         $client->request(
             'GET',
@@ -204,8 +210,9 @@ O bien, prueba contra el contenido de la respuesta directamente si lo que deseas
             array(),
             array(),
             array(
-                'CONTENT_TYPE' => 'application/json',
-                'HTTP_REFERER' => '/foo/bar',
+                'CONTENT_TYPE'          => 'application/json',
+                'HTTP_REFERER'          => '/foo/bar',
+                'HTTP_X-Requested-With' => 'XMLHttpRequest',
             )
         );
 
@@ -216,14 +223,23 @@ O bien, prueba contra el contenido de la respuesta directamente si lo que deseas
 
     Para empezar más rápido, aquí tienes una lista de las aserciones más comunes y útiles::
 
-        // Acierta que este hay más de una etiqueta h2 con clase "subtitle"
-        $this->assertGreaterThan(0, $crawler->filter('h2.subtitle')->count());
+        // Acierta que cuando menos hay una etiqueta h2
+        // con la clase «subtitle»
+        $this->assertGreaterThan(
+            0,
+            $crawler->filter('h2.subtitle')->count()
+        );
 
         // Acierta que hay exactamente 4 etiquetas h2 en la página
         $this->assertCount(4, $crawler->filter('h2'));
 
-        // Acierta que la cabecera "Content-Type" es "application/json"
-        $this->assertTrue($client->getResponse()->headers->contains('Content-Type', 'application/json'));
+        // Acierta que la cabecera 'Content-Type' es 'application/json'
+        $this->assertTrue(
+            $client->getResponse()->headers->contains(
+                'Content-Type',
+                'application/json'
+            )
+        );
 
         // Acierta que el contenido de la respuesta concuerda con una expresión regular.
         $this->assertRegExp('/foo/', $client->getResponse()->getContent());
@@ -233,10 +249,15 @@ O bien, prueba contra el contenido de la respuesta directamente si lo que deseas
         // Acierta que el código de estado de la respuesta es 404
         $this->assertTrue($client->getResponse()->isNotFound());
         // Acierta un código de estado 200 específico
-        $this->assertEquals(200, $client->getResponse()->getStatusCode());
+        $this->assertEquals(
+            200,
+            $client->getResponse()->getStatusCode()
+        );
 
         // Acierta que la respuesta es una redirección a '/demo/contact'
-        $this->assertTrue($client->getResponse()->isRedirect('/demo/contact'));
+        $this->assertTrue(
+            $client->getResponse()->isRedirect('/demo/contact')
+        );
         // o simplemente comprueba que la respuesta es una redirección a cualquier URL
         $this->assertTrue($client->getResponse()->isRedirect());
 
@@ -246,7 +267,7 @@ O bien, prueba contra el contenido de la respuesta directamente si lo que deseas
 Trabajando con el Cliente de pruebas
 ------------------------------------
 
-El Cliente de prueba simula un cliente *HTTP* tal como un navegador y hace peticiones a tu aplicación *Symfony2*::
+El Cliente de pruebas simula un cliente *HTTP* tal como un navegador y hace peticiones a tu aplicación *Symfony2*::
 
     $crawler = $client->request('GET', '/hello/Fabien');
 
@@ -335,7 +356,7 @@ También puedes obtener los objetos relacionados con la última petición::
     $response = $client->getResponse();
     $crawler  = $client->getCrawler();
 
-Si tus peticiones no son aisladas, también puedes acceder al ``Contenedor`` y al ``kernel``::
+Si tus peticiones no son aisladas, también puedes acceder al ``Contenedor`` y al ``núcleo``::
 
     $container = $client->getContainer();
     $kernel    = $client->getKernel();
@@ -356,10 +377,17 @@ Ten en cuenta que esto no tiene efecto si aíslas el cliente o si utilizas una c
 Accediendo a los datos del perfil
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-En cada petición, el generador de perfiles de *Symfony* recoge y guarda una gran variedad de datos sobre el manejo interno de la petición. Por ejemplo, puedes usar el generador de perfiles para verificar que cuando se carga una determinada página ejecuta menos de una cierta cantidad de consultas a la base de datos.
+En cada petición, puedes habilitar el perfilador de *Symfony* para recolectar datos sobre el
+manejo interno de esa petición. Por ejemplo, podrías usar el perfilador para verificar que una determinada página ejecuta menos de un cierto número de consultas a la base de datos al cargarla.
 
 Para obtener el generador de perfiles de la última petición, haz lo siguiente::
 
+    // habilita el perfilador para la próxima petición
+    $client->enableProfiler();
+
+    $crawler = $client->request('GET', '/profiler');
+
+    // consigue el perfil
     $profile = $client->getProfile();
 
 Para detalles específicos en el uso del generador de perfiles en una prueba, consulta el artículo :doc:`/cookbook/testing/profiling` en el recetario.
@@ -367,10 +395,10 @@ Para detalles específicos en el uso del generador de perfiles en una prueba, co
 Redirigiendo
 ~~~~~~~~~~~~
 
-Cuando una petición devuelve una respuesta de redirección, el cliente no la sigue automáticamente. Puedes examinar la ``respuesta`` y después forzar la redirección con el método ``followRedirect()``::
+Cuando una petición devuelve una respuesta de redirección, el cliente no la sigue automáticamente. Puedes examinar la ``Respuesta`` y después forzar la redirección con el método ``followRedirect()``::
 
     $crawler = $client->followRedirect();
-    
+
 Si quieres que el cliente siga todos los cambios de dirección automáticamente, lo puedes forzar con el método ``followRedirects()``::
 
     $client->followRedirects();
@@ -454,11 +482,14 @@ El ``Crawler`` puede extraer información de los nodos::
     // Devuelve el valor del nodo para el primer nodo
     $crawler->text();
 
-    // Extrae un arreglo de atributos de todos los nodos (_text devuelve el valor del nodo)
-    // devuelve un arreglo de cada elemento en 'crawler', cada cual con su valor y href
+    // Extrae un arreglo de atributos de todos los nodos
+    // (_text devuelve el valor del nodo)
+    // devuelve un arreglo de cada elemento en 'crawler',
+    // cada cual con su valor y href
     $info = $crawler->extract(array('_text', 'href'));
 
-    // Ejecuta una función anónima por cada nodo y devuelve un arreglo de resultados
+    // Ejecuta una función anónima por cada nodo y
+    // devuelve un arreglo de resultados
     $data = $crawler->each(function ($node, $i)
     {
         return $node->attr('href');
@@ -489,9 +520,9 @@ Al igual que con cualquier otro enlace, seleccionas el formulario con el método
 
 .. note::
 
-    Ten en cuenta que seleccionamos botones del formulario y no el formulario porque un formulario puede tener varios botones; si utilizas la *API* para recorrerlo, ten en cuenta que debes buscar un botón.
+    Ten en cuenta que seleccionamos botones del formulario y no el formulario porque un formulario puede tener varios botones; si utilizas la *API* para recorrerlos, ten en cuenta que debes buscar un botón.
 
-El método ``selectButton()`` puede seleccionar etiquetas ``button`` y enviar etiquetas ``input``; Este usa diferentes partes de los botones para encontrarlos:
+El método ``selectButton()`` puede seleccionar etiquetas ``button`` y etiquetas ``input`` de envío. Este usa diferentes partes de los botones para encontrarlos:
 
 * El valor del atributo ``value``;
 
@@ -503,7 +534,7 @@ Una vez que tienes un ``Crawler`` que representa un botón, invoca al método ``
 
     $form = $buttonCrawlerNode->form();
 
-Cuando llamas al método ``form()``, también puedes pasar una matriz de valores de campo que sustituyan los valores predeterminados::
+Cuando llamas al método ``form()``, también puedes pasar un arreglo de valores de campo que sustituyan los valores predeterminados::
 
     $form = $buttonCrawlerNode->form(array(
         'name'              => 'Fabien',
@@ -525,7 +556,7 @@ Los valores del campo también se pueden pasar como segundo argumento del métod
         'my_form[subject]'  => 'Symfony rocks!',
     ));
 
-Para situaciones más complejas, utiliza la instancia de ``Form`` como una matriz para establecer el valor de cada campo individualmente::
+Para situaciones más complejas, utiliza la instancia de ``Form`` como un arreglo para establecer el valor de cada campo individualmente::
 
     // Cambia el valor de un campo
     $form['name'] = 'Fabien';
@@ -562,8 +593,8 @@ Por ejemplo, por omisión, el ``swiftmailer`` está configurado para que en el e
     .. code-block:: yaml
 
         # app/config/config_test.yml
-        # ...
 
+        # ...
         swiftmailer:
             disable_delivery: true
 
@@ -572,17 +603,16 @@ Por ejemplo, por omisión, el ``swiftmailer`` está configurado para que en el e
         <!-- app/config/config_test.xml -->
         <container>
             <!-- ... -->
-
             <swiftmailer:config disable-delivery="true" />
         </container>
 
     .. code-block:: php
 
         // app/config/config_test.php
-        // ...
 
+        // ...
         $container->loadFromExtension('swiftmailer', array(
-            'disable_delivery' => true
+            'disable_delivery' => true,
         ));
 
 Además, puedes usar un entorno completamente diferente, o redefinir el modo de depuración predeterminado (``true``) pasando cada opción al método ``createClient()``::
@@ -622,13 +652,13 @@ Cada aplicación tiene su propia configuración de *PHPUnit*, almacenada en el a
 
     Guarda el archivo :file:`phpunit.xml.dist` en tu repositorio de código, e ignora el archivo :file:`phpunit.xml`.
 
-De forma predeterminada, la orden ``PHPUnit`` sólo ejecuta las pruebas almacenadas en los paquetes "estándar" (las pruebas estándar están en el directorio :file:`src/*/Bundle/Tests` o :file:`src/*/Bundle/*Bundle/Tests`), pero fácilmente puedes añadir más directorios. Por ejemplo, la siguiente configuración añade las pruebas de los paquetes de terceros que has instalado:
+De forma predeterminada, la orden ``PHPUnit`` sólo ejecuta las pruebas almacenadas en los paquetes «estándar» (las pruebas estándar están en el directorio :file:`src/*/Bundle/Tests` o :file:`src/*/Bundle/*Bundle/Tests`), pero fácilmente puedes añadir más directorios. Por ejemplo, la siguiente configuración añade las pruebas de los paquetes de terceros que has instalado:
 
 .. code-block:: xml
 
     <!-- hello/phpunit.xml.dist -->
     <testsuites>
-        <testsuite name="Project Test Suite">
+        <testsuite name="Batería de pruebas del proyecto">
             <directory>../src/*/*Bundle/Tests</directory>
             <directory>../src/Acme/Bundle/*Bundle/Tests</directory>
         </testsuite>
@@ -638,6 +668,7 @@ Para incluir otros directorios en la cobertura de código, también edita la sec
 
 .. code-block:: xml
 
+    <!-- ... -->
     <filter>
         <whitelist>
             <directory>../src</directory>
@@ -650,12 +681,15 @@ Para incluir otros directorios en la cobertura de código, también edita la sec
         </whitelist>
     </filter>
 
-Aprende más en el recetario
----------------------------
+Aprende más
+-----------
 
+* :doc:`/components/dom_crawler`
+* :doc:`/components/css_selector`
 * :doc:`/cookbook/testing/http_authentication`
 * :doc:`/cookbook/testing/insulating_clients`
 * :doc:`/cookbook/testing/profiling`
+* :doc:`/cookbook/testing/bootstrap`
 
 
 .. _`DemoControllerTest`: https://github.com/symfony/symfony-standard/blob/master/src/Acme/DemoBundle/Tests/Controller/DemoControllerTest.php

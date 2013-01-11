@@ -1,0 +1,479 @@
+.. index::
+   single: HTTP
+   single: HttpKernel
+   single: Componentes; HttpKernel
+
+El componente ``HttpKernel``
+============================
+
+    El componente ``HttpKernel`` proporciona un proceso estructurado para convertir una ``Petición`` en una ``Respuesta`` usando el despachador de eventos.
+    Es bastante flexible para crear una plataforma completa (*Symfony*), una microplataforma (*Silex*) o un sistema *CMS* avanzado (*Drupal*).
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/httpkernel);
+* :doc:`Instalándolo vía Composer </components/using_components>` (``symfony/http-kernel`` en `Packagist`_).
+
+El flujo de trabajo de una ``Petición``
+---------------------------------------
+
+Cada interacción *web* de *HTTP* empieza con una petición y termina con una respuesta.
+Tu trabajo como desarrollador es crear el código *PHP* que lee la información de la petición
+(p. ej. la *URL*) y crea y devuelve una respuesta (p. ej. una página *HTML* o una cadena *JSON*).
+
+.. image:: /images/components/http_kernel/request-response-flow.png
+   :align: center
+
+Típicamente, alguna clase de la plataforma o sistema está construida para manejar todas las tareas
+repetitivas (p. ej. enrutado, seguridad, etc.) a modo de que un desarrollador pueda fácilmente construir
+cada *página* de la aplicación. Exactamente *cómo* están construidos estos sistemas varía mucho. El componente ``HttpKernel`` proporciona una interfaz que formaliza el proceso de empezar con una petición y crear la respuesta apropiada.
+El componente pretende ser el corazón de cualquier aplicación o plataforma, no importa qué tanto varíe la arquitectura de ese sistema::
+
+    namespace Symfony\Component\HttpKernel;
+
+    use Symfony\Component\HttpFoundation\Request;
+
+    interface HttpKernelInterface
+    {
+        // ...
+
+        /**
+         * @return Response Una instancia de Response
+         */
+        public function handle(
+            Request $request,
+            $type = self::MASTER_REQUEST,
+            $catch = true
+        );
+    }
+
+Internamente, el método :method:`HttpKernel::handle()<Symfony\\Component\\HttpKernel\\HttpKernel::handle>` --- implementa concretamente el método :method:`HttpKernelInterface::handle()<Symfony\\Component\\HttpKernel\\HttpKernelInterface::handle>` --- define un flujo de trabajo que inicia con una :class:`Symfony\\Component\\HttpFoundation\\Request` y termina con una :class:`Symfony\\Component\\HttpFoundation\\Response`.
+
+.. image:: /images/components/http_kernel/01-workflow.png
+   :align: center
+
+Los detalles exactos de este flujo de trabajo son la clave para entender cómo trabaja el núcleo (y la plataforma *Symfony* o cualquier otra biblioteca que use el núcleo).
+
+``HttpKernel``: Conducido por eventos
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+El método ``HttpKernel::handle()`` internamente trabaja despachando eventos.
+Esto hace al método tanto flexible, pero también un poco abstracto, debido a que todo el «trabajo» de una aplicación/plataforma construida con ``HttpKernel`` está hecha con escuchas de eventos.
+
+Para ayudar a explicar este proceso, este documento mira cada paso del proceso y habla sobre cómo trabaja una implementación específica del ``HttpKernel`` ---la plataforma *Symfony*---.
+
+Inicialmente, utilizar el :class:`Symfony\\Component\\HttpKernel\\HttpKernel` es realmente sencillo, e implica crear un :doc:`despachador de  eventos </components/event_dispatcher/introduction>` y un :ref:`resolutor de controlador <component-http-kernel-resolve-controller>` (explicado más adelante). Para completar tu núcleo, añadirás más escuchas de eventos para los eventos explicados más adelante::
+
+    use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Component\HttpKernel\HttpKernel;
+    use Symfony\Component\EventDispatcher\EventDispatcher;
+    use Symfony\Component\HttpKernel\Controller\ControllerResolver;
+
+    // crea el objeto Request
+    $request = Request::createFromGlobals();
+
+    $dispatcher = new EventDispatcher();
+    // ... añade algunos escuchas de eventos
+
+    // crea tu resolutor de  controlador
+    $resolver = new ControllerResolver();
+    // crea una instancia del núcleo
+    $kernel = new HttpKernel($dispatcher, $resolver);
+
+    // en realidad ejecuta el núcleo, el cuál convierte la petición en una respuesta
+    // despachando eventos, invocando a un controlador, y devolviendo la respuesta
+    $response = $kernel->handle($request);
+
+    // difunde el contenido y envía las cabeceras
+    $response->send();
+
+    // desencadena el evento kernel.terminate
+    $kernel->terminate($request, $response);
+
+Ve «:ref:`http-kernel-working-example`» para más implementaciones concretas.
+
+Para información general sobre cómo añadir escuchas a los siguientes eventos, ve :ref:`http-kernel-creating-listener`.
+
+.. tip:: 
+
+    Fabien Potencier también escribió una magnífica serie sobre la utilización del componente ``HttpKernel`` y otros componentes de *Symfony2* para crear tu propia plataforma. Ve `Crea tu propia plataforma... en lo alto de los componentes de Symfony2`_.
+
+.. _component-http-kernel-kernel-request:
+
+1) El evento ``kernel.request``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Propósito típico**: Añadir más información a la ``Petición``, iniciar partes del sistema, o regresar una ``Respuesta`` si es posible (p. ej. una capa
+de seguridad que niega el acceso).
+
+:ref:`Tabla de información de eventos del núcleo <component-http-kernel-event-table>`
+
+El primer evento despachado dentro del método :method:`HttpKernel::handle<Symfony\\Component\\HttpKernel\\HttpKernel::handle>` es ``kernel.request``, el cual puede tener una serie de diferentes escuchas.
+
+.. image:: /images/components/http_kernel/02-kernel-request.png
+   :align: center
+
+Los escuchas de este evento pueden ser bastante diversos. Algunos escuchas ---tal como un escucha de seguridad--- podrían tener suficiente información para crear un objeto ``Respuesta`` inmediatamente.
+Por ejemplo, si un escucha de seguridad determinó que un usuario no tiene acceso, ese escucha puede regresar una :class:`Symfony\\Component\\HttpFoundation\\RedirectResponse` a la página de inicio de sesión o una respuesta 403 de «Acceso denegado».
+
+Si al llegar a este punto regresa una ``Respuesta``, el proceso salta directamente al evento :ref:`kernel.response<component-http-kernel-kernel-response>`.
+
+.. image:: /images/components/http_kernel/03-kernel-request-response.png
+   :align: center
+
+Otros escuchas sencillamente inician cosas o añaden más información a la petición.
+Por ejemplo, un escucha podría determinar y poner la región en el objeto ``Petición``.
+
+Otro escucha común es el de enrutado. Un escucha enrutador puede procesar la ``Petición`` y determinar el controlador que se debería ejecutar (ve la próxima sección).
+De hecho, el objeto ``Petición`` tiene una bolsa de «:ref:`atributos <component-foundation-attributes>`» misma que es un sitio perfecto para almacenar este dato extra, específico de la aplicación sobre la petición. Esto significa que si tu escucha enrutador de alguna manera determina el controlador, lo puedes almacenar en los atributos de la ``Petición`` (los cuáles puede utilizar el resolutor del controlador).
+
+En general, el propósito del evento ``kernel.request`` es o bien, crear y regresar una ``Respuesta`` directamente, o añadir información a la ``Petición`` (p. ej. poniendo la región o configurando alguna otra información en los atributos de la ``Petición``).
+
+.. sidebar:: ``kernel.request`` en la plataforma *Symfony*
+
+    El escucha más importante para ``kernel.request`` en la plataforma *Symfony* es el :class:`Symfony\\Component\\HttpKernel\\EventListener\\RouterListener`.
+    Esta clase ejecuta la capa de enrutado, la cual regresa un *arreglo* de información sobre la petición emparejada, incluyendo el ``_controller`` y cualquier marcador de posición que esté en el patrón de la ruta (p. ej. ``{slug}``). Ve el :doc:`componente Routing </components/routing/introduction>`.
+
+    Este arreglo de información está almacenado en el arreglo ``attributes`` del objeto :class:`Symfony\\Component\\HttpFoundation\\Request`. Añadir la información de enrutado aquí no hace nada todavía, pero se utiliza luego al resolver el controlador.
+
+.. _component-http-kernel-resolve-controller:
+
+2) Resolviendo el controlador
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Suponiendo que ningún escucha del ``kernel.request`` fuera capaz de crear una ``Respuesta``, el próximo paso en ``HttpKernel`` es determinar y preparar (es decir, resolver) el controlador. El controlador es la parte final del código de la aplicación que es responsable de crear y regresar la ``Respuesta`` para una página específica.
+El único requisito es que sea una función *PHP* que se pueda llamar ---es decir, una función o método en un objeto, o un ``Cierre``---.
+
+Pero *el cómo* determinar el controlador exacto para una petición es responsabilidad enteramente de tu aplicación. Este es el trabajo del «resolutor de controlador» ---una clase que implementa la :class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface` y es uno de los argumentos del constructor del ``HttpKernel``.
+
+.. image:: /images/components/http_kernel/04-resolve-controller.png
+   :align: center
+
+Tu trabajo es crear una clase que implemente la interfaz y rellenar sus dos métodos: ``getController`` y ``getArguments``. De hecho, ya existe una implementación predefinida, la cual puedes utilizar directamente o estudiar para ver cómo trabaja:
+:class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolver`.
+Esta implementación se explica más en la barra lateral de abajo::
+
+    namespace Symfony\Component\HttpKernel\Controller;
+
+    use Symfony\Component\HttpFoundation\Request;
+
+    interface ControllerResolverInterface
+    {
+        public function getController(Request $request);
+
+        public function getArguments(Request $request, $controller);
+    }
+
+Internamente, el ``HttpKernel::handle`` primero llama al método :method:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface::getController` en el resolutor del controlador. Este método es pasado a la ``Petición`` y es el responsable de determinar de alguna manera y regresar un ejecutable *PHP* (el controlador) basándose en la información de la petición.
+
+El segundo método, :method:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface::getArguments`, será llamado después de lanzado otro evento ---``kernel.controller``---.
+
+.. sidebar:: Resolviendo el controlador en la plataforma *Symfony2*
+
+    La plataforma *Symfony* utiliza la clase integrada :class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolver` (de hecho, utiliza una subclase, la cual cuenta con alguna funcionalidad extra, mencionada más adelante). Esta clase aprovecha la información colocada en la propiedad ``attributes`` del objeto ``Petición`` durante el ``RouterListener``.
+
+    **getController**
+
+    El ``ControllerResolver`` busca una clave ``_controller`` en la propiedad ``attributes`` del objeto ``Petición`` (recuerda que esta información típicamente se coloca en la ``Petición`` vía el ``RouterListener``).
+    Esta cadena entonces es transformada a un ejecutable *PHP* haciendo lo siguiente:
+
+    a) El formato del ``AcmeDemoBundle:Default:index`` de la clave ``_controller`` se cambia a otra cadena que contiene la clase completa y nombre del método controlador siguiendo la convención utilizada en *Symfony2* ---p. ej. ``Acme\DemoBundle\Controller\DefaultController::indexAction``---. Esta transformación es específica a la subclase :class:`Symfony\\Bundle\\FrameworkBundle\\Controller\\ControllerResolver` utilizada por la plataforma *Symfony2*.
+
+    b) Se crea una nueva instancia de tu clase controlador sin argumentos del constructor.
+
+    c) Si el controlador implementa la :class:`Symfony\\Component\\DependencyInjection\\ContainerAwareInterface`, se llama a ``setContainer`` en el objeto controlador y se pasa al contenedor. Este paso también es específico de la subclase :class:`Symfony\\Bundle\\FrameworkBundle\\Controller\\ControllerResolver` utilizada por la plataforma *Symfony2*.
+
+    También hay otras cuantas variaciones más en el proceso anterior (p. ej. si estás registrando tus controladores como servicios).
+
+3) El evento ``kernel.controller``
+----------------------------------
+
+**Propósito típico**: Iniciar cosas o cambiar el controlador justo antes de ejecutarlo.
+
+:ref:`Tabla de información de eventos del núcleo <component-http-kernel-event-table>`
+
+Después de haber determinado el controlador a ejecutar, ``HttpKernel::handle`` desencadena el evento ``kernel.controller``. Los escuchas de este evento podrían iniciar alguna parte necesaria del sistema después de determinar ciertas cosas (p. ej. el controlador, información de enrutado) pero antes de ejecutar el controlador. Para algunos ejemplos, ve la sección *Symfony2* abajo.
+
+.. image:: /images/components/http_kernel/06-kernel-controller.png
+   :align: center
+
+Los escuchas de este evento también pueden cambiar completamente el controlador ejecutable llamando al método  :method:`FilterControllerEvent::setController<Symfony\\Component\\HttpKernel\\Event\\FilterControllerEvent::setController>` en el objeto ``Evento`` pasado a los escuchas en este evento.
+
+.. sidebar:: ``kernel.controller`` en la plataforma *Symfony*
+
+    Hay unos cuantos escuchas menores del evento ``kernel.controller`` en la plataforma *Symfony*, y muchos tratan con la recolección de datos del perfilador cuándo está habilitado.
+    
+    Un interesante escucha proviene del :doc:`SensioFrameworkExtraBundle </bundles/SensioFrameworkExtraBundle/index>`, el cual viene empacado con la *Edición estándar de Symfony*. El escucha :doc:`@ParamConverter </bundles/SensioFrameworkExtraBundle/annotations/converters>` es la funcionalidad que te permite pasar un objeto completo (p. ej. un objeto ``Post``) a tu controlador en vez de un valor escalar (p. ej. un parámetro ``id`` que venía en tu ruta). El escucha ---``ParamConverterListener``--- usa la reflexión para mirar en cada uno de los argumentos del controlador e intenta utilizar diferentes métodos para convertirlos a objetos, los cuales entonces son almacenados en la propiedad ``attributes`` del objeto ``Petición``. Lee la siguiente sección para ver por qué esto es importante.
+
+4) Obteniendo los argumentos del controlador
+--------------------------------------------
+
+Luego, ``HttpKernel::handle`` llama al método :method:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface::getArguments`.
+Recuerda que el controlador devuelto en ``getController`` es ejecutable.
+El propósito de ``getArguments`` es devolver el arreglo de argumentos que se deberían pasar a ese controlador. Exactamente cómo se hace esto es responsabilidad completamente de tu diseño, aunque el :class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolver` incorporado es un buen ejemplo.
+
+.. image:: /images/components/http_kernel/07-controller-arguments.png
+   :align: center
+
+Al llegar a este punto el núcleo tiene un ejecutable *PHP* (el controlador) y un arreglo de argumentos que se debería pasar al llamar al ejecutable.
+
+.. sidebar:: Obteniendo los argumentos del controlador en la plataforma *Symfony2*
+
+    Ahora que sabes exactamente cuál es el controlador a ejecutar (normalmente un método dentro de un objeto ``Controlador``), el ``ControllerResolver`` usa la `Reflexión`_ en el ejecutable para devolver un arreglo con los *nombres* de cada uno de los argumentos.
+    Luego, itera sobre cada uno de estos argumentos y utiliza los siguientes trucos para determinar qué valor se debería pasar a cada argumento:
+
+    a) Si la bolsa de atributos de la ``Petición`` contiene una clave que coincide con el nombre del argumento, utiliza ese valor. Por ejemplo, si el primer argumento para un controlador es ``$slug``, y hay una clave ``slug`` en la bolsa de ``atributos`` de la ``Petición``, se utiliza ese valor (y típicamente ese valor provino del ``RouterListener``).
+
+    b) Si el argumento en el controlador cuenta con una insinuación de tipo en el objeto :class:`Symfony\\Component\\HttpFoundation\\Request` de *Symfony*, entonces se pasa la ``Petición`` como el valor.
+
+.. _component-http-kernel-calling-controller:
+
+5) Llamando al controlador
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+¡El siguiente paso es sencillo! ``HttpKernel::handle`` ejecuta el controlador.
+
+.. image:: /images/components/http_kernel/08-call-controller.png
+   :align: center
+
+El trabajo del controlador es construir la respuesta para el recurso dado.
+Esta podría ser una página *HTML*, una cadena *JSON* o cualquier otra cosa. A diferencia de todas las demás partes del proceso hasta ahora, este paso es implementado por el «desarrollador final», por cada página construida.
+
+Normalmente, el controlador regresará un objeto ``Respuesta``. Si esto es cierto, ¡entonces el trabajo del núcleo está hecho! En este caso, el próximo paso es el evento :ref:`kernel.response <component-http-kernel-kernel-response>`.
+
+.. image:: /images/components/http_kernel/09-controller-returns-response.png
+   :align: center
+
+Pero si el controlador regresa cualquier otra cosa más alla de una ``Respuesta``, entonces el núcleo tiene que hacer un poco más de trabajo ---:ref:`kernel.view <component-http-kernel-kernel-view>` (debido a que el objetivo final *siempre* es generar un objeto ``Respuesta``).
+
+.. note::
+
+    Un controlador tiene que regresar *algo*. Si un controlador regresa ``null``, inmediatamente se lanzará una excepción.
+
+.. _component-http-kernel-kernel-view:
+
+6) El evento ``kernel.view``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Propósito típico**: Transformar en ``Respuesta`` un valor devuelto por un controlador que no es una ``Respuesta``.
+
+:ref:`Tabla de información de eventos del núcleo <component-http-kernel-event-table>`
+
+Si el controlador no regresa un objeto ``Respuesta``, entonces el núcleo despacha otro evento ---``kernel.view``---. El trabajo de un escucha de este evento es utilizar el valor devuelto por el controlador (p. ej. un arreglo de datos o un objeto) para crear una ``Respuesta``.
+
+.. image:: /images/components/http_kernel/10-kernel-view.png
+   :align: center
+
+Esto puede ser útil si  quieres utilizar una capa para la «vista»: en vez de regresar una ``Respuesta`` desde el controlador, regresas los datos que representan la página.
+Un escucha de este evento entonces podría utilizar estos datos para crear una ``Respuesta`` en el formato correcto (p. ej. *HTML*, *json*, etc.).
+
+En esta etapa, si ningún escucha pone una respuesta en el evento, entonces se lanza una excepción: ya sea un controlador *o* uno de los escuchas de la vista siempre deben regresar una ``Respuesta``.
+
+.. sidebar:: ``kernel.view`` en la plataforma *Symfony*
+
+    No hay escucha predefinido dentro de la plataforma *Symfony* para el ``kernel.view``. Sin embargo, un paquete del núcleo ---:doc:`SensioFrameworkExtraBundle </bundles/SensioFrameworkExtraBundle/index>`--- *añade* un escucha para este evento. Si tu controlador regresa un arreglo, y colocas la anotación :doc:`@Template</bundles/SensioFrameworkExtraBundle/annotations/view>` encima del controlador, entonces este escucha reproduce una plantilla, pasándo a esa plantilla el arreglo que regresó tu controlador, y crea una ``Respuesta`` con el contenido devuelto por esa plantilla.
+
+    Además, un popular paquete de la comunidad `FOSRestBundle`_ implementa un escucha para este evento cuyo objetivo es darte una robusta capa para la vista capaz de utilizar un solo controlador para regresar muchas respuestas con diferente ``content-type`` (p. ej. *HTML*, *JSON*, *XML*, etc.).
+
+.. _component-http-kernel-kernel-response:
+
+7) El evento ``kernel.response``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Propósito típico**: Modificar el objeto ``Respuesta`` justo antes de enviarlo
+
+:ref:`Tabla de información de eventos del núcleo <component-http-kernel-event-table>`
+
+El objetivo final del núcleo es transformar una ``Petición`` a una ``Respuesta``. La ``Respuesta`` se podría crear durante el evento :ref:`kernel.request<component-http-kernel-kernel-request>`, regresado del :ref:`controller<component-http-kernel-calling-controller>`, o regresado por uno de los escuchas del evento :ref:`kernel.view<component-http-kernel-kernel-view>`.
+
+Independientemente de quién creó la ``Respuesta``, otro evento ---``kernel.response``--- es despachado inmediatamente después. Un escucha típico de este evento modificará de alguna manera el objeto ``Respuesta``, tal como modificar cabeceras, añadir ``galletas``, o incluso cambiando el contenido de la ``Respuesta`` él (p. ej. inyectando algún
+*JavaScript* antes de la etiqueta ``</body>`` final de una respuesta *HTML*).
+
+Después de despachado este evento, el objeto ``Respuesta`` final es regresado desde el método :method:`Symfony\\Component\\HttpKernel\\HttpKernel::handle`. En el caso de uso más típico, entonces puedes llamar al método :method:`Symfony\\Component\\HttpFoundation\\Response::send`, el cual envía las cabeceras e imprime el contenido de la ``Respuesta``.
+
+.. sidebar:: ``kernel.response`` en la plataforma *Symfony*
+
+    Hay varios escuchas menores de este evento dentro de la plataforma *Symfony*, y la mayoría modifica la respuesta en alguna manera. Por ejemplo, el :class:`Symfony\\Bundle\\WebProfilerBundle\\EventListener\\WebDebugToolbarListener` inyecta algún *JavaScript* en el fondo de tu página en el entorno ``dev`` lo cual provoca que la barra de depuración web sea mostrada. Otro escucha, :class:`Symfony\\Component\\Security\\Http\\Firewall\\ContextListener` serializa la información del usuario actual en la sesión a modo de que se pueda recargar en la próxima petición. 
+
+8) El evento ``kernel.terminate``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.1
+    El evento ``kernel.terminate`` es nuevo en *Symfony 2.1*.
+
+**Propósito típico**: Realizar alguna acción «pesada» después de transmitir la respuesta al usuario.
+
+:ref:`Tabla de información de eventos del núcleo <component-http-kernel-event-table>`
+
+El evento final del proceso ``HttpKernel`` es ``kernel.terminate`` y es único porque  ocurre *después* del método ``HttpKernel::handle``, y después de enviar la respuesta al usuario. Recuerda de arriba, entonces que el código que usa el núcleo, acaba así::
+
+    // difunde el contenido y envía las cabeceras
+    $response->send();
+
+    // desencadena el evento kernel.terminate
+    $kernel->terminate($request, $response);
+
+Como puedes ver, al llamar al ``$kernel->terminate`` después de enviar la respuesta, desencadenas el evento ``kernel.terminate`` donde puedes llevar a cabo determinadas acciones que puediste haber diferido para regresar la respuesta al cliente tan rápidamente como fuera posible (p. ej. el envío de correo electrónico).
+
+.. note::
+
+    Usar el evento ``kernel.terminate`` es opcional, y sólo lo deberías llamar si tu núcleo implementa la :class:`Symfony\\Component\\HttpKernel\\TerminableInterface`.
+
+.. sidebar:: ``kernel.terminate`` en la plataforma *Symfony*
+
+    Si utilizas el ``SwiftmailerBundle`` con *Symfony2* y usas operaciones simultánea en ``memoria``, entonces la clase :class:`Symfony\\Bundle\\SwiftmailerBundle\\EventListener\\EmailSenderListener` es activada, la cual de hecho entrega cualquier correo electrónico que tengas planificado enviar durante la petición.
+
+.. _component-http-kernel-kernel-exception:
+
+Manejando excepciones: el evento ``kernel.exception``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Propósito típico**: Manejar algún tipo de excepción y crear una ``Respuesta`` apropiada para que la regrese la excepción.
+
+:ref:`Tabla de información de eventos del núcleo <component-http-kernel-event-table>`
+
+Si se desencadena una excepción en cualquier punto dentro del ``HttpKernel::handle``, se lanza otro evento ---``kernel.exception``---. Internamente, el cuerpo de la función ``handle`` está envuelto en un bloque prueba-captura. Al lanzar cualquier excepción, el ``kernel.exception`` es lanzado a modo de que tu sistema pueda responder de alguna manera a la excepción.
+
+.. image:: /images/components/http_kernel/11-kernel-exception.png
+   :align: center
+
+Cada escucha de este evento se pasa a un objeto :class:`Symfony\\Component\\HttpKernel\\Event\\GetResponseForExceptionEvent`, el cual puedes utilizar para acceder a la excepción original vía el método :method:`Symfony\\Component\\HttpKernel\\Event\\GetResponseForExceptionEvent::getException`. Un escucha típico de este evento comprobará algún determinado tipo de excepción y creará una ``Respuesta`` de error apropiada.
+
+Por ejemplo, para generar una página 404, podrías lanzar un tipo de excepción especial y luego añadir un escucha para este evento que busque esta excepción y genere y regrese una ``Respuesta`` 404. De hecho, el componente ``HttpKernel`` viene con un :class:`Symfony\\Component\\HttpKernel\\EventListener\\ExceptionListener`, el cual si eliges usarlo, de manera predeterminada hará esto y más (ve la barra lateral abajo para más detalles).
+
+.. sidebar:: ``kernel.exception`` en la plataforma *Symfony*
+
+    Al utilizar la plataforma *Symfony* hay dos escuchas principales del ``kernel.exception``.
+
+    **ExceptionListener en HttpKernel**
+
+    El primero viene desde el núcleo del componente ``HttpKernel`` y se llama :class:`Symfony\\Component\\HttpKernel\\EventListener\\ExceptionListener`.
+    El escucha tiene varios objetivos:
+
+    1) Al lanzar una excepción esta es convertida a un objeto :class:`Symfony\\Component\\HttpKernel\\Exception\\FlattenException`, la cual contiene toda la información sobre la petición, pero esta se puede imprimir y serializar.
+
+    2) Si la excepción original implementa la :class:`Symfony\\Component\\HttpKernel\\Exception\\HttpExceptionInterface`, entonces ``getStatusCode`` y ``getHeaders`` son invocados en la excepción y utilizados para poblar las cabeceras y código de estado del objeto ``FlattenException``. La idea es que estos se utilicen en el siguiente paso al crear la respuesta final.
+
+    3) Un controlador es ejecutado y pasado a la excepción aplanada. El controlador exacto a ejecutar se pasa como argumento del constructor de este escucha.
+    Este controlador regresará la ``Respuesta`` final para esta página de error.
+
+    **ExceptionListener en Security**
+
+    El otro escucha importante es :class:`Symfony\\Component\\Security\\Http\\Firewall\\ExceptionListener`.
+    El objetivo de este escucha es manejar excepciones de seguridad y, cuándo sea apropiado, *ayudar* a autentificar al usuario (p. ej. redirigiéndolo a la página de inicio de sesión).
+
+.. _http-kernel-creating-listener:
+
+Creando un escucha del evento
+-----------------------------
+
+Como has visto, puedes crear y suscribir escuchas de evento a cualquiera de los eventos despachados durante el ciclo del ``HttpKernel::handle``. Típicamente un escucha es una clase *PHP* con un método retrollamado, pero puede ser cualquier cosa. Para más información sobre la creación y suscripción de escuchas de evento, ve :doc:`/components/event_dispatcher/introduction`.
+
+El nombre de cada uno de los eventos del «núcleo» está definido como constante en la clase :class:`Symfony\\Component\\HttpKernel\\KernelEvents` Además, a cada escucha de evento se le pasa un único argumento, el cual es alguna subclase de :class:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent`.
+Este objeto contiene información sobre el estado actual del sistema y cada evento tiene su propio objeto ``Evento``:
+
+.. _component-http-kernel-event-table:
+
++-------------------+--------------------------------+-------------------------------------------------------------------------------------+
+| **Nombre**        | **Constante** ``KernelEvents`` | **Argumento pasado al escucha**                                                     |
++-------------------+--------------------------------+-------------------------------------------------------------------------------------+
+| kernel.request    | ``KernelEvents::REQUEST``      | :class:`Symfony\\Component\\HttpKernel\\Event\\GetResponseEvent`                    |
++-------------------+--------------------------------+-------------------------------------------------------------------------------------+
+| kernel.controller | ``KernelEvents::CONTROLLER``   | :class:`Symfony\\Component\\HttpKernel\\Event\\FilterControllerEvent`               |
++-------------------+--------------------------------+-------------------------------------------------------------------------------------+
+| kernel.view       | ``KernelEvents::VIEW``         | :class:`Symfony\\Component\\HttpKernel\\Event\\GetResponseForControllerResultEvent` |
++-------------------+--------------------------------+-------------------------------------------------------------------------------------+
+| kernel.response   | ``KernelEvents::RESPONSE``     | :class:`Symfony\\Component\\HttpKernel\\Event\\FilterResponseEvent`                 |
++-------------------+--------------------------------+-------------------------------------------------------------------------------------+
+| kernel.terminate  | ``KernelEvents::TERMINATE``    | :class:`Symfony\\Component\\HttpKernel\\Event\\PostResponseEvent`                   |
++-------------------+--------------------------------+-------------------------------------------------------------------------------------+
+| kernel.exception  | ``KernelEvents::EXCEPTION``    | :class:`Symfony\\Component\\HttpKernel\\Event\\GetResponseForExceptionEvent`        |
++-------------------+--------------------------------+-------------------------------------------------------------------------------------+
+
+.. _http-kernel-working-example:
+
+Un ejemplo completo funcionando
+-------------------------------
+
+Cuándo utilizas el componente ``HttpKernel``, eres libre de asociar cualquier escucha a los eventos del núcleo y utilizar cualquier resolutor de controlador que implemente la :class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface`.
+No obstante, el componente ``HttpKernel`` viene con algunos escuchas incorporados y un ``ControllerResolver`` que puedes usar para crear un ejemplo que funcione::
+
+    use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Component\HttpFoundation\Response;
+    use Symfony\Component\HttpKernel\HttpKernel;
+    use Symfony\Component\EventDispatcher\EventDispatcher;
+    use Symfony\Component\HttpKernel\Controller\ControllerResolver;
+    use Symfony\Component\Routing\RouteCollection;
+    use Symfony\Component\Routing\Route;
+    use Symfony\Component\Routing\Matcher\UrlMatcher;
+    use Symfony\Component\Routing\RequestContext;
+
+    $routes = new RouteCollection();
+    $routes->add('hello', new Route('/hello/{name}', array('_controller' =>
+        function (Request $request) {
+            return new Response(sprintf("Hello %s", $request->get('name')));
+        }
+    )));
+
+    $request = Request::createFromGlobals();
+
+    $matcher = new UrlMatcher($routes, new RequestContext());
+
+    $dispatcher = new EventDispatcher();
+    $dispatcher->addSubscriber(new RouterListener($matcher));
+
+    $resolver = new ControllerResolver();
+    $kernel = new HttpKernel($dispatcher, $resolver);
+
+    $response = $kernel->handle($request);
+    $response->send();
+
+    $kernel->terminate($request, $response);
+
+Subpeticiones
+-------------
+
+Además de la petición «principal» enviada al ``HttpKernel::handle``, también puedes enviar las así llamadas «subpeticiones». Una subpetición se ve y actúa como cualquier otra petición, pero típicamente sirve para reproducir sólo una pequeña porción de una
+página en vez de una página completa. Generalmente haces subpeticiones desde tu controlador (o quizás desde dentro de una plantilla, aquella que está reproduciendo tu controlador).
+
+.. image:: /images/components/http_kernel/sub-request.png
+   :align: center
+
+Para ejecutar una subpetición, usa el ``HttpKernel::handle``, pero cambia el segundo argumento de la siguiente manera::
+
+    use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Component\HttpKernel\HttpKernelInterface;
+
+    // ...
+
+    // crea alguna otra petición manualmente como se necesaria
+    $request = new Request();
+    // por ejemplo, posiblemente definas este _controller manualmente
+    $request->attributes->add('_controller', '...');
+
+    $response = $kernel->handle($request, HttpKernelInterface::SUB_REQUEST);
+    // hace algo con esta respuesta
+
+Esto crea otro ciclo petición-respuesta completo donde esta nueva ``Petición`` es transformada en una ``Respuesta``. La única diferencia es que internamente algunos escuchas (p. ej. seguridad) sólo pueden actuar en la petición maestra. A cada escucha se le pasa alguna subclase de :class:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent`, dónde puedes usar el método :method:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent::getRequestType` para determinar si la petición actual es la «maestra» o una «subpetición».
+
+Por ejemplo, un escucha que únicamente debe actuar en la petición maestra puede tener esta apariencia::
+
+    use Symfony\Component\HttpKernel\HttpKernelInterface;
+    // ...
+
+    public function onKernelRequest(GetResponseEvent $event)
+    {
+        if (HttpKernelInterface::MASTER_REQUEST !== $event->getRequestType()) {
+            return;
+        }
+        
+        // ...
+    }
+
+.. _`Packagist`: https://packagist.org/packages/symfony/http-kernel
+.. _`Reflexión`: http://php.net/manual/en/book.reflection.php
+.. _FOSRestBundle: https://github.com/friendsofsymfony/FOSRestBundle
+.. _`Crea tu propia plataforma... en lo alto de los componentes de Symfony2`: http://fabien.potencier.org/article/50/create-your-own-framework-on-top-of-the-symfony2-components-part-1

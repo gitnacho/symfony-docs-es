@@ -1,9 +1,50 @@
-Cómo organizar el envío de correo electrónico
-=============================================
+.. index::
+   single: Correo electrónico; Organizando
 
-Cuando estás utilizando el ``SwiftmailerBundle`` para enviar correo electrónico desde una aplicación *Symfony2*, de manera predeterminada el mensaje será enviado inmediatamente. Sin embargo, posiblemente quieras evitar el impacto en el rendimiento de la comunicación entre ``SwiftMailer`` y el transporte de correo electrónico, lo cual podría hacer que el usuario tuviera que esperar la carga de la siguiente página, mientras que se envía el correo electrónico. Puedes evitar todo esto eligiendo ``"spool"``, para formar los correos en la cola en lugar de enviarlos directamente. Esto significa que ``SwiftMailer`` no intenta enviar el correo electrónico, sino que guardará el mensaje en alguna parte, tal como un archivo. Otro proceso puede leer de la cola y hacerse cargo de enviar los correos que están organizados en la cola. Actualmente, con ``SwiftMailer`` sólo es compatible la cola en archivo.
+Cómo formar en la cola mensajes de correo electrónico
+=====================================================
 
-Para utilizar la cola, usa la siguiente configuración:
+Cuando estás utilizando el ``SwiftmailerBundle`` para enviar correo electrónico desde una aplicación *Symfony2*, de manera predeterminada el mensaje será enviado inmediatamente. Sin embargo, posiblemente quieras evitar el impacto en el rendimiento de la comunicación entre ``SwiftMailer`` y el transporte de correo electrónico, lo cual podría hacer que el usuario tuviera que esperar la carga de la siguiente página mientras que se envía el correo electrónico. Puedes evitar todo esto eligiendo ``«spool»``, para formar los mensajes en la cola de correo en lugar de enviarlos directamente. Esto significa que ``SwiftMailer`` no intentará enviar el correo electrónico, sino que guardará el mensaje en alguna parte, tal como un archivo. Otro proceso puede leer la cola y hacerse cargo de enviar los correos que están organizados en la cola. Actualmente sólo la organización en archivos o memoria es compatible con ``Swiftmailer``.
+
+Organizar usando la memoria
+---------------------------
+
+Cuándo organizas almacenando los mensajes de correo electrónico en memoria, conseguirás enviarlos antes de que el ``núcleo`` termine. Esto significa que el mensaje de correo será enviado si la petición entera se ejecutó sin excepción no controladas o algún error. Para configurar ``swiftmailer`` con la opción de memoria, usa la siguiente configuración:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        swiftmailer:
+            # ...
+            spool: { type: memory }
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+
+        <!--
+            xmlns:swiftmailer="http://symfony.com/schema/dic/swiftmailer"
+            http://symfony.com/schema/dic/swiftmailer http://symfony.com/schema/dic/swiftmailer/swiftmailer-1.0.xsd
+        -->
+
+        <swiftmailer:config>
+             <swiftmailer:spool type="memory" />
+        </swiftmailer:config>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('swiftmailer', array(
+             ...,
+            'spool' => array('type' => 'memory')
+        ));
+        
+Organizar usando un archivo
+---------------------------
+
+Para utilizar la organización con un archivo, usa la siguiente configuración:
 
 .. configuration-block::
 
@@ -21,8 +62,8 @@ Para utilizar la cola, usa la siguiente configuración:
         <!-- app/config/config.xml -->
 
         <!--
-        xmlns:swiftmailer="http://symfony.com/schema/dic/swiftmailer"
-        http://symfony.com/schema/dic/swiftmailer http://symfony.com/schema/dic/swiftmailer/swiftmailer-1.0.xsd
+            xmlns:swiftmailer="http://symfony.com/schema/dic/swiftmailer"
+            http://symfony.com/schema/dic/swiftmailer http://symfony.com/schema/dic/swiftmailer/swiftmailer-1.0.xsd
         -->
 
         <swiftmailer:config>
@@ -35,10 +76,10 @@ Para utilizar la cola, usa la siguiente configuración:
 
         // app/config/config.php
         $container->loadFromExtension('swiftmailer', array(
-             // ...
+             ...,
             'spool' => array(
                 'type' => 'file',
-                'path' => '/ruta/a/spool',
+                'path' => '/path/to/spool',
             )
         ));
 
@@ -55,18 +96,18 @@ Hay una orden de consola para enviar los mensajes en la cola de correo:
 
 .. code-block:: bash
 
-    php app/console swiftmailer:spool:send --env=prod
+    $ php app/console swiftmailer:spool:send --env=prod
 
 Tiene una opción para limitar el número de mensajes que se enviarán:
 
 .. code-block:: bash
 
-    php app/console swiftmailer:spool:send --message-limit=10 --env=prod
+    $ php app/console swiftmailer:spool:send --message-limit=10 --env=prod
 
 También puedes establecer el límite de tiempo en segundos:
 
 .. code-block:: bash
 
-    php app/console swiftmailer:spool:send --time-limit=10 --env=prod
+    $ php app/console swiftmailer:spool:send --time-limit=10 --env=prod
 
-Por supuesto que en realidad no deseas ejecutar esto manualmente. En cambio, la orden de consola se debe activar por un trabajo cronometrado o tarea programada y ejecutarse a intervalos regulares.
+Por supuesto que en realidad no deseas ejecutar esto manualmente. En cambio, la orden de consola la debe activar un trabajo cronometrado o tarea programada y ejecutarse a intervalos regulares.

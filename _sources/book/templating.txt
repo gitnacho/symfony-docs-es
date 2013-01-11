@@ -7,6 +7,11 @@ Creando y usando plantillas
 Como sabes, el :doc:`Controlador </book/controller>` es responsable de manejar cada petición entrante en una aplicación *Symfony2*. En realidad, el controlador delega la mayor parte del trabajo pesado ​​a otros lugares para que el código se pueda probar y volver a utilizar. Cuando un controlador necesita generar *HTML*, *CSS* o cualquier otro contenido, que maneje el trabajo fuera del motor de plantillas.
 En este capítulo, aprenderás cómo escribir potentes plantillas que puedes utilizar para devolver contenido al usuario, rellenar el cuerpo de correo electrónico y mucho más. Aprenderás métodos abreviados, formas inteligentes para extender las plantillas y cómo reutilizar código de plantilla.
 
+.. note::
+
+    El tema de cómo reproducir plantillas se aborda en la página :ref:`controlador <controller-rendering-templates>` del libro.
+
+
 .. index::
    single: Plantillas; ¿Qué es una plantilla?
 
@@ -34,8 +39,8 @@ Una plantilla simplemente es un archivo de texto que puede generar cualquier for
                     </li>
                 <?php endforeach; ?>
             </ul>
-            </body>
-        </html>
+        </body>
+    </html>
 
 .. index:: Twig; Introducción
 
@@ -57,14 +62,14 @@ Pero *Symfony2* contiene un lenguaje de plantillas aún más potente llamado `Tw
                     <li><a href="{{ item.href }}">{{ item.caption }}</a></li>
                 {% endfor %}
             </ul>
-            </body>
-        </html>
+        </body>
+    </html>
 
 *Twig* define dos tipos de sintaxis especial:
 
-* ``{{ ... }}``: "Dice algo": imprime una variable o el resultado de una expresión a la plantilla;
+* ``{{ ... }}``: «Dice algo»: imprime una variable o el resultado de una expresión a la plantilla;
 
-* ``{% ... %}``: "Hace algo": una **etiqueta** que controla la lógica de la plantilla; se utiliza para declaraciones ``if`` y ejecutar bucles ``for``, por ejemplo.
+* ``{% ... %}``: «Hace algo»: una **etiqueta** que controla la lógica de la plantilla; se utiliza para declaraciones ``if`` y ejecutar bucles ``for``, por ejemplo.
 
 .. note::
 
@@ -84,28 +89,32 @@ El siguiente fragmento convierte a mayúsculas la variable ``title`` antes de re
 
     Registrar una extensión *Twig* es tan fácil como crear un nuevo servicio y etiquetarlo con :ref:`twig.extension <reference-dic-tags-twig-extension>`.
 
-Como verás a través de la documentación, *Twig* también es compatible con funciones y fácilmente puedes añadir nuevas. Por ejemplo, la siguiente función, utiliza una etiqueta ``for`` estándar y la función ``cycle`` para imprimir diez etiquetas div, alternando entre clases ``par`` e ``impar``:
+Como verás a través de la documentación, *Twig* también es compatible con funciones y fácilmente puedes añadir nuevas. Por ejemplo, la siguiente función, utiliza una etiqueta ``for`` estándar y la función ``cycle`` para imprimir diez etiquetas ``div``, alternando entre clases ``par`` e ``impar``:
 
 .. code-block:: html+jinja
 
     {% for i in 0..10 %}
         <div class="{{ cycle(['odd', 'even'], i) }}">
           <!-- some HTML here -->
-            </div>
+        </div>
     {% endfor %}
 
 A lo largo de este capítulo, mostraremos las plantillas de ejemplo en ambos formatos *Twig* y *PHP*.
 
+.. tip::
+
+    Si *decides* no utilizar *Twig* y lo desactivas, tendrás que implementar tu propio controlador de excepciones a través del evento ``kernel.exception``.
+
 .. sidebar:: ¿Porqué *Twig*?
 
     Las plantillas *Twig* están destinadas a ser simples y no procesar etiquetas *PHP*. Esto es por diseño: el sistema de plantillas *Twig* está destinado a expresar la presentación, no la lógica del programa. Cuanto más utilices *Twig*, más apreciarás y te beneficiarás de esta distinción. Y, por supuesto, todos los diseñadores web las amarán.
-    
-    *Twig* también puede hacer cosas que *PHP* no puede, como heredar verdaderas plantillas (las plantillas *Twig* se compilan hasta clases *PHP* que se heredan unas a otras), controlar los espacios en blanco, restringir un ambiente para prácticas, e incluir funciones y filtros personalizados que sólo afectan a las plantillas. *Twig* contiene características que facilitan la escritura de plantillas y estas son más concisas. Tomemos el siguiente ejemplo, el cual combina un bucle con una declaración ``if`` lógica:
-    
+
+    *Twig* también puede hacer cosas que *PHP* no puede, como controlar el espacio en blanco, cuenta con un recinto de seguridad, escape de salida automático y contextual e incluye funciones personalizadas y filtros que sólo afectan a las plantillas. *Twig* contiene pequeñas características que facilitan la escritura de plantillas y estas son más concisas. Tomemos el siguiente ejemplo, el cual combina un bucle con una declaración ``if`` lógica:
+
     .. code-block:: html+jinja
-    
+
         <ul>
-            {% for user in users %}
+            {% for user in users if user.active %}
                 <li>{{ user.username }}</li>
             {% else %}
                 <li>No users found</li>
@@ -130,7 +139,7 @@ Cuando el modo ``debug`` está desactivado (comúnmente en el entorno ``prod``),
 Plantillas, herencia y diseño
 -----------------------------
 
-A menudo, las plantillas en un proyecto comparten elementos comunes, como el encabezado, pie de página, barra lateral o más. En *Symfony2*, nos gusta pensar en este problema de forma diferente: una plantilla se puede decorar con otra. Esto funciona exactamente igual que las clases *PHP*: la herencia de plantillas nos permite crear un "diseño" de plantilla base que contiene todos los elementos comunes de tu sitio definidos como **bloques** (piensa en "clases *PHP* con métodos base"). Una plantilla hija puede extender el diseño base y reemplazar cualquiera de sus bloques (piensa en las "subclases *PHP* que sustituyen determinados métodos de su clase padre").
+A menudo, las plantillas en un proyecto comparten elementos comunes, como el encabezado, pie de página, barra lateral o más. En *Symfony2*, nos gusta pensar en este problema de forma diferente: una plantilla se puede decorar con otra. Esto funciona exactamente igual que las clases *PHP*: la herencia de plantillas nos permite crear un «diseño» de plantilla base que contiene todos los elementos comunes de tu sitio definidos como **bloques** (piensa en «clases *PHP* con métodos base»). Una plantilla hija puede extender el diseño base y reemplazar cualquiera de sus bloques (piensa en las «subclases *PHP* que sustituyen determinados métodos de su clase padre»).
 
 En primer lugar, crea un archivo con tu diseño base:
 
@@ -153,13 +162,13 @@ En primer lugar, crea un archivo con tu diseño base:
                         <li><a href="/blog">Blog</a></li>
                     </ul>
                     {% endblock %}
-                    </div>
+                </div>
 
                 <div id="contenido">
                     {% block body %}{% endblock %}
-                    </div>
-                </body>
-            </html>
+                </div>
+            </body>
+        </html>
 
     .. code-block:: html+php
 
@@ -180,13 +189,13 @@ En primer lugar, crea un archivo con tu diseño base:
                             <li><a href="/blog">Blog</a></li>
                         </ul>
                     <?php endif; ?>
-                    </div>
+                </div>
 
                 <div id="contenido">
                     <?php $view['slots']->output('body') ?>
-                    </div>
-                </body>
-            </html>
+                </div>
+            </body>
+        </html>
 
 .. note::
 
@@ -246,7 +255,7 @@ La clave para la herencia de plantillas es la etiqueta ``{% extends %}``. Esta l
                     <li><a href="/">Home</a></li>
                     <li><a href="/blog">Blog</a></li>
                 </ul>
-                </div>
+            </div>
 
             <div id="contenido">
                 <h2>My first post</h2>
@@ -254,9 +263,9 @@ La clave para la herencia de plantillas es la etiqueta ``{% extends %}``. Esta l
 
                 <h2>Another post</h2>
                 <p>The body of the second post.</p>
-                </div>
-            </body>
-        </html>
+            </div>
+        </body>
+    </html>
 
 Ten en cuenta que como en la plantilla hija no has definido un bloque ``sidebar``, en su lugar, se utiliza el valor de la plantilla padre. Una plantilla padre, de forma predeterminada, siempre utiliza una etiqueta ``{% block %}`` para el contenido.
 
@@ -264,13 +273,13 @@ Puedes utilizar tantos niveles de herencia como quieras. En la siguiente secció
 
 Cuando trabajes con la herencia de plantillas, ten en cuenta los siguientes consejos:
 
-* Si utilizas ``{% extends %}`` en una plantilla, esta debe ser la primer etiqueta en esa plantilla.
+* Si utilizas ``{% extends %}`` en una plantilla, esta debe ser la primer etiqueta en esa plantilla;
 
 * Mientras más etiquetas ``{% block %}`` tengas en tu plantilla base, mejor.
-  Recuerda, las plantillas hijas no tienen que definir todos los bloques de los padres, por lo tanto crea tantos bloques en tus plantillas base como desees y dale a cada uno un valor predeterminado razonable. Mientras más bloques tengan tus plantillas base, más flexible será tu diseño.
+  Recuerda, las plantillas hijas no tienen que definir todos los bloques de los padres, por lo tanto crea tantos bloques en tus plantillas base como desees y dale a cada uno un razonable valor predeterminado. Mientras más bloques tengan tus plantillas base, más flexible será tu diseño;
 
-* Si te encuentras duplicando contenido en una serie de plantillas, probablemente significa que debes mover el contenido a un ``{% block %}`` en una plantilla padre.
-  En algunos casos, una mejor solución podría ser mover el contenido a una nueva plantilla e incluirla con ``include`` (consulta :ref:`incluyendo-plantillas`).
+* Si te encuentras duplicando contenido en una serie de plantillas, muy probablemente significa que debes mover el contenido a un ``{% block %}`` en una plantilla padre.
+  En algunos casos, una mejor solución podría ser mover el contenido a una nueva plantilla e incluirla con ``include`` (consulta :ref:`incluyendo-plantillas`);
 
 * Si necesitas conseguir el contenido de un bloque desde la plantilla padre, puedes usar la función ``{{ parent() }}``. Esta es útil si deseas añadir algo al contenido de un bloque padre en vez de reemplazarlo por completo:
 
@@ -278,7 +287,9 @@ Cuando trabajes con la herencia de plantillas, ten en cuenta los siguientes cons
 
         {% block sidebar %}
             <h3>Table of Contents</h3>
-            ...
+
+            {# ... #}
+
             {{ parent() }}
         {% endblock %}
 
@@ -309,7 +320,7 @@ De forma predeterminada, las plantillas pueden vivir en dos diferentes lugares:
 
   Suponiendo que :dfn:`AcmeBlogBundle` vive en :file:`src/Acme/BlogBundle`, la ruta final para el diseño debería ser :file:`src/Acme/BlogBundle/Resources/views/Blog/index.html.twig`.
 
-* ``AcmeBlogBundle::base.html.twig``: Esta sintaxis se refiere a una plantilla base que es específica para ``AcmeBlogBundle``. Puesto que falta la porción central, "controlador", (por ejemplo, ``Blog``), la plantilla vive en ``Resources/views/base.html.twig`` dentro de ``AcmeBlogBundle``.
+* ``AcmeBlogBundle::layout.html.twig``: Esta sintaxis se refiere a una plantilla base que es específica para ``AcmeBlogBundle``. Puesto que falta la porción central, «controlador» (por ejemplo, ``Blog``), la plantilla vive en ``Resources/views/layout.html.twig`` dentro de ``AcmeBlogBundle``.
 
 * ``::base.html.twig``: Esta sintaxis se refiere a una plantilla o diseño base de la aplicación. Observa que la cadena comienza con dobles dos puntos (``::``), lo cual significa que faltan ambas porciones *paquete* y *controlador*. Esto quiere decir que la plantilla no se encuentra en ningún paquete, sino en el directorio raíz de la aplicación ``app/Resources/views/``.
 
@@ -334,7 +345,7 @@ De forma predeterminada, cualquier plantilla *Symfony2* se puede escribir en *Tw
 
 .. note::
 
-   Los "motores" disponibles se pueden configurar e incluso agregar nuevos motores.
+   Los «motores» disponibles se pueden configurar e incluso agregar nuevos motores.
    Consulta :ref:`Configuración de plantillas <template-configuration>` para más detalles.
 
 .. index::
@@ -348,7 +359,7 @@ Ya entendiste los conceptos básicos de las plantillas, cómo son denominadas y 
 
 *Symfony2* viene con varias etiquetas *Twig* especializadas y funciones que facilitan la labor del diseñador de la plantilla. En *PHP*, el sistema de plantillas extensible ofrece un sistema de *ayudantes* que proporciona funciones útiles en el contexto de la plantilla.
 
-Ya hemos visto algunas etiquetas integradas en *Twig* (``{% block %}`` y ``{% extends %}``), así como un ejemplo de un ayudante *PHP* (consulta ``$view['slot']``). Aprendamos un poco más...
+Ya hemos visto algunas etiquetas integradas en *Twig* (``{% block %}`` y ``{% extends %}``), así como un ejemplo de un ayudante *PHP* (consulta ``$view['slot']``). Aquí aprenderás un poco más.
 
 .. index::
    single: Plantillas; Incluyendo otras plantillas
@@ -358,7 +369,7 @@ Ya hemos visto algunas etiquetas integradas en *Twig* (``{% block %}`` y ``{% ex
 Incluyendo otras plantillas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A menudo querrás incluir la misma plantilla o fragmento de código en varias páginas diferentes. Por ejemplo, en una aplicación con "artículos de noticias", el código de la plantilla que muestra un artículo se puede utilizar en la página de detalles del artículo, en una página que muestra los artículos más populares, o en una lista de los últimos artículos.
+A menudo querrás incluir la misma plantilla o fragmento de código en varias páginas diferentes. Por ejemplo, en una aplicación con «artículos de noticias», el código de la plantilla que muestra un artículo se puede utilizar en la página de detalles del artículo, en una página que muestra los artículos más populares, o en una lista de los artículos más recientes.
 
 Cuando necesitas volver a utilizar un trozo de código *PHP*, normalmente mueves el código a una nueva clase o función *PHP*. Lo mismo es cierto para las plantillas. Al mover el código de la plantilla a su propia plantilla, este se puede incluir en cualquier otra plantilla. En primer lugar, crea la plantilla que tendrás que volver a usar.
 
@@ -390,21 +401,23 @@ Incluir esta plantilla en cualquier otra plantilla es sencillo:
 
     .. code-block:: html+jinja
 
-        {# src/Acme/ArticleBundle/Resources/Article/list.html.twig #}
-        {% extends 'AcmeArticleBundle::base.html.twig' %}
+        {# src/Acme/ArticleBundle/Resources/views/Article/list.html.twig #}
+        {% extends 'AcmeArticleBundle::layout.html.twig' %}
 
         {% block body %}
             <h1>Recent Articles<h1>
 
             {% for article in articles %}
-                {% include 'AcmeArticleBundle:Article:articleDetails.html.twig' with {'article': article} %}
+                {% include 'AcmeArticleBundle:Article:articleDetails.html.twig'
+                       with {'article': article}
+                %}
             {% endfor %}
         {% endblock %}
 
     .. code-block:: html+php
 
         <!-- src/Acme/ArticleBundle/Resources/Article/list.html.php -->
-        <?php $view->extend('AcmeArticleBundle::base.html.php') ?>
+        <?php $view->extend('AcmeArticleBundle::layout.html.php') ?>
 
         <?php $view['slots']->start('body') ?>
             <h1>Recent Articles</h1>
@@ -418,7 +431,7 @@ La plantilla se incluye con la etiqueta ``{% include %}``. Observa que el nombre
 
 .. tip::
 
-    ``{'article': article}`` es la sintaxis de asignación estándar de *Twig* (es decir, una matriz con claves nombradas). Si tuviéramos que pasar varios elementos, se vería así: ``{'foo': foo, 'bar': bar}``.
+    ``{'article': article}`` es la sintaxis de asignación estándar de *Twig* (es decir, un arreglo con claves nombradas). Si tuviéramos que pasar varios elementos, se vería así: ``{'foo': foo, 'bar': bar}``.
 
 .. index::
    single: Plantillas; Integrando acción
@@ -434,7 +447,6 @@ Recuperar los tres artículos puede incluir consultar la base de datos o realiza
 La solución es simplemente insertar el resultado de un controlador en tu plantilla entera. En primer lugar, crea un controlador que reproduzca una cierta cantidad de artículos recientes::
 
     // src/Acme/ArticleBundle/Controller/ArticleController.php
-
     class ArticleController extends Controller
     {
         public function recentArticlesAction($max = 3)
@@ -443,7 +455,10 @@ La solución es simplemente insertar el resultado de un controlador en tu planti
             // para obtener los "$max" artículos más recientes
             $articles = ...;
 
-            return $this->render('AcmeArticleBundle:Article:recentList.html.twig', array('articles' => $articles));
+            return $this->render(
+                'AcmeArticleBundle:Article:recentList.html.twig',
+                array('articles' => $articles)
+            );
         }
     }
 
@@ -471,42 +486,186 @@ La plantilla ``recentList`` es perfectamente clara:
 
 .. note::
 
-    Ten en cuenta que en este ejemplo hemos falsificado y codificado la *URL* del artículo (por ejemplo ``/article/slug``). Esta es una mala práctica. En la siguiente sección, aprenderás cómo hacer esto correctamente.
+    Ten en cuenta que la *URL* del artículo está directamente en el código en este ejemplo
+    (p. ej. ``/article/*slug*``). Esta es una mala práctica. En la siguiente sección, aprenderás cómo hacer esto correctamente.
 
-Para incluir el controlador, tendrás que referirte a él utilizando la sintaxis de cadena estándar para controladores (es decir, **paquete**:**controlador**:**acción**):
+Incluso aunque este controlador sólo será utilizado internamente, necesitarás crear una ruta que apunte al controlador:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        latest_articles:
+            pattern:  /articles/latest/{max}
+            defaults: { _controller: AcmeArticleBundle:Article:recentArticles }
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <route id="latest_articles" pattern="/articles/latest/{max}">
+                <default key="_controller">AcmeArticleBundle:Article:recentArticles</default>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('latest_articles', new Route('/articles/latest/{max}', array(
+            '_controller' => 'AcmeArticleBundle:Article:recentArticles',
+        )));
+
+        return $collection;
+
+Para incluir el controlador, necesitarás referirte a él utilizando una *URL* absoluta:
 
 .. configuration-block::
 
     .. code-block:: html+jinja
 
         {# app/Resources/views/base.html.twig #}
-        ...
 
+        {# ... #}
         <div id="sidebar">
-            {% render "AcmeArticleBundle:Article:recentArticles" with {'max': 3} %}
-            </div>
+            {% render url('latest_articles', { 'max': 3 }) %}
+        </div>
 
     .. code-block:: html+php
 
         <!-- app/Resources/views/base.html.php -->
-        ...
 
+        <!-- ... -->
         <div id="sidebar">
-            <?php echo $view['actions']->render('AcmeArticleBundle:Article:recentArticles', array('max' => 3)) ?>
-            </div>
+            <?php echo $view['actions']->render(
+                $view['router']->generate('latest_articles', array('max' => 3), true)
+            ) ?>
+        </div>
+
+.. include:: /book/_security-2012-6431.rst.inc
 
 Cada vez que te encuentres necesitando una variable o una pieza de información a la que una plantilla no tiene acceso, considera reproducir un controlador.
 Los controladores se ejecutan rápidamente y promueven la buena organización y reutilización de código.
 
+Contenido asíncrono con ``hinclude.js``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.1
+    La compatibilidad con :file:`hinclude.js` se añadió en *Symfony 2.1*
+
+Los controladores se pueden incorporar asincrónicamente usando la biblioteca *JavaScript* `hinclude.js`_.
+Debido a que el contenido integrado proviene de otra página (o controlador para el caso), *Symfony2* utiliza el ayudante ``render`` estándar para configurar las etiquetas ``hinclude``:
+
+.. configuration-block::
+
+    .. code-block:: jinja
+
+        {% render url('...'), {'standalone': 'js'} %}
+
+    .. code-block:: php
+
+        <?php echo $view['actions']->render(
+            $view['router']->generate('...'),
+            array('standalone' => 'js')
+        ) ?>
+
+.. note::
+
+   Para que trabaje, debes incluir `hinclude.js`_ en tu página.
+
+Puedes especificar globalmente el contenido predeterminado (al cargar o si *JavaScript* está desactivado) en la configuración de tu aplicación:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        framework:
+            # ...
+            templating:
+                hinclude_default_template: AcmeDemoBundle::hinclude.html.twig
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <framework:config>
+            <framework:templating hinclude-default-template="AcmeDemoBundle::hinclude.html.twig" />
+        </framework:config>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('framework', array(
+            // ...
+            'templating'      => array(
+                'hinclude_default_template' => array('AcmeDemoBundle::hinclude.html.twig'),
+            ),
+        ));
+
+.. versionadded:: 2.2
+    Las plantillas para etiquetas ``render`` se añadieron en *Symfony 2.2*
+
+Puedes definir plantillas predefinidas para etiquetas ``render`` (las cuáles sustituyen cualquier plantilla global predeterminada que esté definida):
+
+.. configuration-block::
+
+    .. code-block:: jinja
+
+        {% render '...:news' with 
+            {}, 
+            {'standalone': 'js', 'default': 'AcmeDemoBundle:Default:content.html.twig'} 
+        %}
+
+    .. code-block:: php
+
+        <?php echo $view['actions']->render(
+            '...:news',
+            array(),
+            array(
+                'standalone' => 'js',
+                'default' => 'AcmeDemoBundle:Default:content.html.twig',
+            )
+        ) ?>
+
+O puedes especificar además, una cadena que se mostrará como el contenido predefinido:
+
+.. configuration-block::
+
+    .. code-block:: jinja
+
+        {% render '...:news' with 
+            {}, 
+            {'standalone': 'js', 'default': 'Loading...'} 
+        %}
+
+    .. code-block:: php
+
+        <?php echo $view['actions']->render(
+            '...:news',
+            array(),
+            array(
+                'standalone' => 'js',
+                'default' => 'Loading...',
+            )
+        ) ?>
+
 .. index::
    single: Plantillas; Enlazando páginas
+
+.. _book-templating-pages:
 
 Enlazando páginas
 ~~~~~~~~~~~~~~~~~
 
 La creación de enlaces a otras páginas en tu aplicación es uno de los trabajos más comunes de una plantilla. En lugar de codificar las *URL* en las plantillas, utiliza la función ``path`` de *Twig* (o el ayudante ``router`` en *PHP*) para generar *URL* basadas en la configuración de enrutado. Más tarde, si deseas modificar la *URL* de una página en particular, todo lo que tienes que hacer es cambiar la configuración de enrutado; las plantillas automáticamente generarán la nueva *URL*.
 
-En primer lugar, crea el enlace a la página ``"_welcome"``, la cual es accesible a través de la siguiente configuración de enrutado:
+En primer lugar, crea el enlace a la página ``«_welcome»``, la cual es accesible a través de la siguiente configuración de enrutado:
 
 .. configuration-block::
 
@@ -543,7 +702,7 @@ Para enlazar a la página, sólo tienes que utilizar la función ``path`` de *Tw
 
         <a href="<?php echo $view['router']->generate('_welcome') ?>">Home</a>
 
-Como era de esperar, esto genera la *URL* ``/``. Vamos a ver cómo funciona esto con una ruta más complicada:
+Como era de esperar, esto genera la *URL* ``/``. Ahora para una ruta más complicada:
 
 .. configuration-block::
 
@@ -568,7 +727,7 @@ Como era de esperar, esto genera la *URL* ``/``. Vamos a ver cómo funciona esto
 
         return $collection;
 
-En este caso, es necesario especificar el nombre de la ruta (``article_show``) y un valor para el parámetro ``{slug}``. Usando esta ruta, vamos a volver a la plantilla ``recentList`` de la sección anterior y enlazar los artículos correctamente:
+En este caso, es necesario especificar el nombre de la ruta (``article_show``) y un valor para el parámetro ``{slug}``. Usando esta ruta, revisemos la plantilla ``recentList`` de la sección anterior y enlacemos los artículos correctamente:
 
 .. configuration-block::
 
@@ -576,7 +735,7 @@ En este caso, es necesario especificar el nombre de la ruta (``article_show``) y
 
         {# src/Acme/ArticleBundle/Resources/views/Article/recentList.html.twig #}
         {% for article in articles %}
-            <a href="{{ path('article_show', { 'slug': article.slug }) }}">
+            <a href="{{ path('article_show', {'slug': article.slug}) }}">
                 {{ article.title }}
                 </a>
         {% endfor %}
@@ -602,10 +761,16 @@ En este caso, es necesario especificar el nombre de la ruta (``article_show``) y
 
     .. code-block:: html+php
 
-        <a href="<?php echo $view['router']->generate('_welcome', array(), true) ?>">Home</a>
+        <a href="<?php echo $view['router']->generate(
+            '_welcome',
+            array(),
+            true
+        ) ?>">Home</a>
 
 .. index::
    single: Plantillas; Enlazando activos
+
+.. _book-templating-assets:
 
 Enlazando activos
 ~~~~~~~~~~~~~~~~~
@@ -634,7 +799,7 @@ Además, si utilizas la función ``asset``, *Symfony* automáticamente puede añ
 .. index::
    single: Plantillas; Incluyendo hojas de estilo y JavaScript
    single: Hojas de estilo; Incluyendo hojas de estilo
-   single: Archivos JavaScript; Incluyendo archivos JavaScript
+   single: JavaScript; Incluyendo archivos JavaScript
 
 Incluyendo hojas de estilo y *JavaScript* en *Twig*
 ---------------------------------------------------
@@ -652,7 +817,7 @@ uno llamado ``stylesheet`` dentro de la etiqueta ``head`` y otro llamado ``javas
 
 .. code-block:: html+jinja
 
-    {# 'app/Resources/views/base.html.twig' #}
+    {# app/Resources/views/base.html.twig #}
         <html>
             <head>
             {# ... #}
@@ -667,8 +832,8 @@ uno llamado ``stylesheet`` dentro de la etiqueta ``head`` y otro llamado ``javas
             {% block javascripts %}
                 <script src="{{ asset('/js/main.js') }}" type="text/javascript"></script>
             {% endblock %}
-            </body>
-        </html>
+        </body>
+    </html>
 
 ¡Eso es bastante fácil! Pero ¿y si es necesario incluir una hoja de estilo extra o archivos *Javascript* desde una plantilla hija? Por ejemplo, supongamos que tienes una página de contacto y necesitas incluir una hoja de estilo :file:`contact.css` *sólo* en esa página. Desde dentro de la plantilla de la página de contacto, haz lo siguiente:
 
@@ -679,16 +844,16 @@ uno llamado ``stylesheet`` dentro de la etiqueta ``head`` y otro llamado ``javas
 
     {% block stylesheets %}
         {{ parent() }}
-        
+
         <link href="{{ asset('/css/contact.css') }}" type="text/css" rel="stylesheet" />
     {% endblock %}
-    
+
     {# ... #}
 
 En la plantilla hija, sólo tienes que reemplazar el bloque ``stylesheets`` y poner tu nueva etiqueta de hoja de estilo dentro de ese bloque. Por supuesto, debido a que la quieres añadir al contenido del bloque padre (y no *cambiarla* en realidad), debes usar la función ``parent()`` de *Twig* para incluir todo, desde el bloque ``stylesheets`` de la plantilla base.
 
 Además, puedes incluir activos ubicados en el directorio ``Resources/public`` de tus paquetes.
-Deberás ejecutar la orden ``php app/console assets:install destino [--symlink]``, la cual mueve (o enlaza simbólicamente) tus archivos a la ubicación correcta. (destino por omisión es "web").
+Deberás ejecutar la orden ``php app/console assets:install destino [--symlink]``, la cual mueve (o enlaza simbólicamente) tus archivos a la ubicación correcta. (destino por omisión es «web»).
 
 .. code-block:: html+jinja
 
@@ -702,11 +867,11 @@ Variables de plantilla globales
 En cada petición, *Symfony2* debe configurar una variable de plantilla global ``app`` en ambos motores de plantilla predefinidos *Twig* y *PHP*.  La variable ``app`` es una instancia de :class:`Symfony\\Bundle\\FrameworkBundle\\Templating\\GlobalVariables` que automáticamente te proporciona acceso a algunas variables específicas de la aplicación:
 
 * ``app.security`` - El contexto de seguridad.
-* ``app.user`` - El objeto usuario actual.
-* ``app.request`` - El objeto ``petición``.
-* ``app.session`` - El objeto ``sesión``.
-* ``app.environment`` - El entorno actual (dev, prod, etc.)
-* ``app.debug`` - True si está en modo de depuración. False en caso contrario.
+* ``app.user`` - El objeto ``Usuario`` actual.
+* ``app.request`` - El objeto ``Petición``.
+* ``app.session`` - El objeto ``Sesión``.
+* ``app.environment`` - El entorno actual («dev», «prod», etc.)
+* ``app.debug`` - ``True`` si está en modo de depuración. ``False`` en caso contrario.
 
 .. configuration-block::
 
@@ -728,7 +893,7 @@ En cada petición, *Symfony2* debe configurar una variable de plantilla global `
 
 .. tip::
 
-    Puedes agregar tus propias variables de plantilla globales. Ve el ejemplo en el recetario en :doc:`Variables globales</cookbook/templating/global_variables>`.
+    Puedes agregar tus propias variables de plantilla globales. Ve el ejemplo de :doc:`variables globales</cookbook/templating/global_variables>` en el recetario.
 
 .. index::
    single: Plantillas; El servicio plantillas (templating)
@@ -741,7 +906,7 @@ Este objeto especial es el encargado de reproducir las plantillas y devolver su 
 
     return $this->render('AcmeArticleBundle:Article:index.html.twig');
 
-es equivalente a:
+es equivalente a::
 
     $engine = $this->container->get('templating');
     $content = $engine->render('AcmeArticleBundle:Article:index.html.twig');
@@ -750,7 +915,7 @@ es equivalente a:
 
 .. _template-configuration:
 
-El motor de plantillas (o "servicio") está configurado para funcionar automáticamente al interior de *Symfony2*. Por supuesto, puedes configurar más en el archivo de configuración de la aplicación:
+El motor de plantillas (o «servicio») está configurado para funcionar automáticamente al interior de *Symfony2*. Por supuesto, puedes configurar más en el archivo de configuración de la aplicación:
 
 .. configuration-block::
 
@@ -772,8 +937,8 @@ El motor de plantillas (o "servicio") está configurado para funcionar automáti
 
         // app/config/config.php
         $container->loadFromExtension('framework', array(
-            // ...
-            'templating'      => array(
+            ...,
+            'templating' => array(
                 'engines' => array('twig'),
             ),
         ));
@@ -795,13 +960,17 @@ Sustituyendo plantillas del paquete
 La comunidad de *Symfony2* se enorgullece de crear y mantener paquetes de alta calidad (consulta `KnpBundles.com`_) para ver la gran cantidad de diferentes características.
 Una vez que utilizas un paquete de terceros, probablemente necesites redefinir y personalizar una o más de sus plantillas.
 
-Supongamos que hemos incluido el paquete imaginario :dfn:`AcmeBlogBundle` de código abierto en el proyecto (por ejemplo, en el directorio :file:`src/Acme/BlogBundle`). Y si bien estás muy contento con todo, deseas sustituir la página "lista" del *blog* para personalizar el marcado específicamente para tu aplicación. Al excavar en el controlador del ``Blog`` de ``AcmeBlogBundle``, encuentras lo siguiente::
+Supongamos que hemos incluido el paquete imaginario :dfn:`AcmeBlogBundle` de código abierto en el proyecto (por ejemplo, en el directorio :file:`src/Acme/BlogBundle`). Y si bien estás muy contento con todo, deseas sustituir la página «lista» del *blog* para personalizar el marcado específicamente para tu aplicación. Al excavar en el controlador del ``Blog`` de ``AcmeBlogBundle``, encuentras lo siguiente::
 
     public function indexAction()
     {
-        $blogs = // cierta lógica para recuperar las entradas
+        // alguna lógica para recuperar artículos
+        $blogs = ...;
 
-        $this->render('AcmeBlogBundle:Blog:index.html.twig', array('blogs' => $blogs));
+        $this->render(
+            'AcmeBlogBundle:Blog:index.html.twig',
+            array('blogs' => $blogs)
+        );
     }
 
 Al reproducir ``AcmeBlogBundle:Blog:index.html.twig``, en realidad *Symfony2* busca la plantilla en dos diferentes lugares:
@@ -811,12 +980,16 @@ Al reproducir ``AcmeBlogBundle:Blog:index.html.twig``, en realidad *Symfony2* bu
 
 Para sustituir la plantilla del paquete, sólo tienes que copiar la plantilla ``index.html.twig`` del paquete a ``app/Resources/AcmeBlogBundle/views/Blog/index.html.twig`` (el directorio ``app/Resources/AcmeBlogBundle`` no existe, por lo tanto tendrás que crearlo). Ahora eres libre de personalizar la plantilla para tu aplicación.
 
-Esta lógica también aplica a las plantillas base del paquete. Supongamos también que cada plantilla en ``AcmeBlogBundle`` hereda de una plantilla base llamada ``AcmeBlogBundle::base.html.twig``. Al igual que antes, *Symfony2* buscará la plantilla en los dos siguientes lugares:
+.. caution::
 
-#. ``app/Resources/AcmeBlogBundle/views/base.html.twig``
-#. :file:`src/Acme/BlogBundle/Resources/views/base.html.twig`
+    Si agregas una plantilla en una nueva ubicación, *posiblemente* tengas que vaciar la caché (con ``php app/consola cache:clear``), incluso si estás en modo de depuración.
 
-Una vez más, para sustituir la plantilla, sólo tienes que copiarla desde el paquete a ``app/Resources/AcmeBlogBundle/views/base.html.twig``. Ahora estás en libertad de personalizar esta copia como mejor te parezca.
+Esta lógica también aplica a las plantillas base del paquete. Supongamos también que cada plantilla en ``AcmeBlogBundle`` hereda de una plantilla base llamada ``AcmeBlogBundle::layout.html.twig``. Al igual que antes, *Symfony2* buscará la plantilla en los dos siguientes lugares:
+
+#. ``app/Resources/AcmeBlogBundle/views/layout.html.twig``
+#. :file:`src/Acme/BlogBundle/Resources/views/layout.html.twig`
+
+Una vez más, para sustituir la plantilla, sólo tienes que copiarla desde el paquete a ``app/Resources/AcmeBlogBundle/views/layout.html.twig``. Ahora estás en libertad de personalizar esta copia como mejor te parezca.
 
 Si retrocedes un paso, verás que *Symfony2* siempre empieza a buscar una plantilla en el directorio ``app/Resources/{NOMBRE_PAQUETE}/views/``. Si la plantilla no existe allí, continúa buscando dentro del directorio ``Resources/views`` del propio paquete. Esto significa que todas las plantillas del paquete se pueden sustituir colocándolas en el subdirectorio ``app/Resources`` correcto.
 
@@ -832,7 +1005,7 @@ Si retrocedes un paso, verás que *Symfony2* siempre empieza a buscar una planti
 Sustituyendo plantillas del núcleo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Puesto que la plataforma *Symfony2* en sí misma sólo es un paquete, las plantillas del núcleo se pueden sustituir de la misma manera. Por ejemplo, el núcleo de ``TwigBundle`` contiene una serie de diferentes plantillas para "excepción" y "error" que puedes sustituir copiando cada una del directorio ``Resources/views/Exception`` del ``TwigBundle`` a... ¡adivinaste! el directorio ``app/Resources/TwigBundle/views/Exception``.
+Puesto que la plataforma *Symfony2* en sí misma sólo es un paquete, las plantillas del núcleo se pueden sustituir de la misma manera. Por ejemplo, el núcleo de ``TwigBundle`` contiene una serie de diferentes plantillas para «excepción» y «error» que puedes sustituir copiando cada una del directorio ``Resources/views/Exception`` del ``TwigBundle`` a... ¡adivinaste! el directorio ``app/Resources/TwigBundle/views/Exception``.
 
 .. index::
    single: Plantillas; Patrón de herencia de tres niveles
@@ -844,34 +1017,34 @@ Una manera común de usar la herencia es utilizar un enfoque de tres niveles. Es
 
 * Crea un archivo ``app/Resources/views/base.html.twig`` que contenga el diseño principal para tu aplicación (como en el ejemplo anterior). Internamente, esta plantilla se llama ``::base.html.twig``;
 
-* Crea una plantilla para cada "sección" de tu sitio. Por ejemplo, ``AcmeBlogBundle``, tendría una plantilla llamada ``AcmeBlogBundle::base.html.twig`` que sólo contiene los elementos específicos de la sección *blog*;
+* Crea una plantilla para cada «sección» de tu sitio. Por ejemplo, ``AcmeBlogBundle``, tendría una plantilla llamada ``AcmeBlogBundle::layout.html.twig`` que sólo contiene los elementos específicos de la sección *blog*;
 
-    .. code-block:: html+jinja
+  .. code-block:: html+jinja
 
-        {# src/Acme/BlogBundle/Resources/views/base.html.twig #}
-        {% extends '::base.html.twig' %}
+      {# src/Acme/BlogBundle/Resources/views/layout.html.twig #}
+      {% extends '::base.html.twig' %}
 
-        {% block body %}
-            <h1>Blog Application</h1>
+      {% block body %}
+          <h1>Blog Application</h1>
 
-            {% block content %}{% endblock %}
-        {% endblock %}
+          {% block content %}{% endblock %}
+      {% endblock %}
 
-* Crea plantillas individuales para cada página y haz que cada una extienda la plantilla de la sección adecuada. Por ejemplo, la página "index" se llama algo parecido a ``AcmeBlogBundle:Blog:index.html.twig`` y enumera las entradas del *blog* real.
+* Crea plantillas individuales para cada página y haz que cada una extienda la plantilla de la sección adecuada. Por ejemplo, la página «index» se llama algo parecido a ``AcmeBlogBundle:Blog:index.html.twig`` y enumera las entradas del *blog* real.
 
-    .. code-block:: html+jinja
+  .. code-block:: html+jinja
 
-        {# src/Acme/BlogBundle/Resources/views/Blog/index.html.twig #}
-        {% extends 'AcmeBlogBundle::base.html.twig' %}
+      {# src/Acme/BlogBundle/Resources/views/Blog/index.html.twig #}
+      {% extends 'AcmeBlogBundle::layout.html.twig' %}
 
-        {% block content %}
-            {% for entry in blog_entries %}
-                <h2>{{ entry.title }}</h2>
-                <p>{{ entry.body }}</p>
-            {% endfor %}
-        {% endblock %}
+      {% block content %}
+          {% for entry in blog_entries %}
+              <h2>{{ entry.title }}</h2>
+              <p>{{ entry.body }}</p>
+          {% endfor %}
+      {% endblock %}
 
-Ten en cuenta que esta plantilla extiende la plantilla de la sección --- (``AcmeBlogBundle::base.html.twig``), que a su vez, extiende el diseño base de la aplicación (``::base.html.twig``).
+Ten en cuenta que esta plantilla extiende la plantilla de la sección --- (``AcmeBlogBundle::layout.html.twig``), que a su vez, extiende el diseño base de la aplicación (``::base.html.twig``).
 Este es el modelo común de la herencia de tres niveles.
 
 Cuando construyas tu aplicación, podrás optar por este método o, simplemente, hacer que cada plantilla de página extienda directamente la plantilla base de tu aplicación (por ejemplo, ``{% extends '::base.html.twig' %}``). El modelo de plantillas de tres niveles es un método de las buenas prácticas utilizadas por los paquetes de proveedores a fin de que la plantilla base de un paquete se pueda sustituir fácilmente para extender correctamente el diseño base de tu aplicación.
@@ -985,7 +1158,6 @@ Puedes descargar los parámetros de plantilla utilizando la función ``dump``:
 .. code-block:: html+jinja
 
     {# src/Acme/ArticleBundle/Resources/views/Article/recentList.html.twig #}
-
     {{ dump(articles) }}
 
     {% for article in articles %}
@@ -997,12 +1169,31 @@ Puedes descargar los parámetros de plantilla utilizando la función ``dump``:
 
 Las variables serán descargadas si configuras a *Twig* (en :file:`config.yml`) con ``debug`` a ``true``. De manera predeterminada, esto significa que las variables serán descargadas en el entorno ``dev``, pero no el entorno ``prod``.
 
+Comprobando la sintaxis
+-----------------------
+
+.. versionadded:: 2.1
+    La orden ``twig:lint`` fue añadida en *Symfony 2.1*
+
+Puedes localizar errores de sintaxis en plantillas *Twig* utilizando la orden de consola ``twig:lint``:
+
+.. code-block:: bash
+
+    # Puedes buscar por nombre de archivo:
+    $ php app/console twig:lint src/Acme/ArticleBundle/Resources/views/Article/recentList.html.twig
+
+    # o por directorio:
+    $ php app/console twig:lint src/Acme/ArticleBundle/Resources/views
+
+    # o usando el nombre del paquete:
+    $ php app/console twig:lint @AcmeArticleBundle
+
 Formato de plantillas
 ---------------------
 
-Las plantillas son una manera genérica para reproducir contenido en *cualquier* formato. Y aunque en la mayoría de los casos debes utilizar plantillas para reproducir contenido *HTML*, una plantilla fácilmente puede generar *JavaScript*, *CSS*, *XML* o cualquier otro formato que puedas soñar.
+Las plantillas son una manera genérica para reproducir contenido en *cualquier* formato. Y, aunque en la mayoría de los casos debes utilizar plantillas para reproducir contenido *HTML*, una plantilla fácilmente puede generar *JavaScript*, *CSS*, *XML* o cualquier otro formato que puedas soñar.
 
-Por ejemplo, el mismo "recurso" a menudo se reproduce en varios formatos diferentes.
+Por ejemplo, el mismo «recurso» a menudo se reproduce en varios formatos diferentes.
 Para reproducir una página índice de artículos en formato *XML*, basta con incluir el formato en el nombre de la plantilla:
 
 * *nombre de plantilla XML*: ``AcmeArticleBundle:Article:index.xml.twig``
@@ -1010,12 +1201,12 @@ Para reproducir una página índice de artículos en formato *XML*, basta con in
 
 Ciertamente, esto no es más que una convención de nomenclatura y la plantilla realmente no se reproduce de manera diferente en función de ese formato.
 
-En muchos casos, posiblemente quieras permitir que un solo controlador reproduzca múltiples formatos basándose en el "formato de la petición". Por esa razón, un patrón común es hacer lo siguiente::
+En muchos casos, posiblemente quieras permitir que un solo controlador reproduzca múltiples formatos basándose en el «formato de la petición». Por esa razón, un patrón común es hacer lo siguiente::
 
     public function indexAction()
     {
         $format = $this->getRequest()->getRequestFormat();
-    
+
         return $this->render('AcmeBlogBundle:Blog:index.'.$format.'.twig');
     }
 
@@ -1068,3 +1259,4 @@ Aprende más en el recetario
 .. _`etiquetas`: http://gitnacho.github.com/Twig/tags/index.html
 .. _`filtros`: http://gitnacho.github.com/Twig/filters/index.html
 .. _`agregar tus propias extensiones`: http://gitnacho.github.com/Twig/advanced.html#creando-una-extension
+.. _`hinclude.js`: http://mnot.github.com/hinclude/

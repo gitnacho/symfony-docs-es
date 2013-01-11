@@ -1,5 +1,5 @@
 .. index::
-   single: Despachador de evento; Contenedor consciente; Inyección de dependencia; DIC
+   single: Despachador de evento; Contenedor consciente del servicio
 
 Contenedor consciente del despachador de eventos
 ================================================
@@ -10,7 +10,9 @@ Contenedor consciente del despachador de eventos
 Introducción
 ------------
 
-La clase :class:`Symfony\\Component\\EventDispatcher\\ContainerAwareEventDispatcher` es una implementación especial del despachador de eventos que está acoplada al componente contenedor de inyección de dependencias (*DIC* en adelante por ``Dependency Injection Container Component``) en *Symfony2*. Este permite especificar los servicios del *DIC* como escuchas de eventos que vuelven extremadamente potente al despachador de eventos.
+La clase :class:`Symfony\\Component\\EventDispatcher\\ContainerAwareEventDispatcher` es una implementación especial del despachador de eventos que es conectada al contenedor del servicio
+que forma parte del :doc:`componente de Inyección de dependencias </components/dependency_injection/introduction>`.
+Esto te permite especificar servicios como escuchas de evento volviendo extremadamente potente al despachador de eventos.
 
 Los servicios se cargan de manera diferida, lo cual significa que los servicios adjuntos como escuchas sólo se crearán si se despacha un evento que requiere de esos escuchas.
 
@@ -30,16 +32,17 @@ Añadiendo escuchas
 
 El *contenedor consciente del despachador de eventos* puede cargar determinados servicios directamente, o servicios que implementan la :class:`Symfony\\Component\\EventDispatcher\\EventSubscriberInterface`.
 
-Los siguientes ejemplos asumen que el *DIC* se ha cargado con todos los servicios que se mencionan.
+Los siguientes ejemplos asumen que el contenedor de servicios se ha cargado con algunos
+servicios ya mencionados.
 
 .. note::
 
-    Los servicios se deben marcar como públicos en el *DIC*.
+    Los servicios se tienen que marcar como públicos en el contenedor.
 
 Agregando servicios
 ~~~~~~~~~~~~~~~~~~~
 
-Para conectar las definiciones de servicios existentes, usa el método :method:`Symfony\\Component\\EventDispatcher\\ContainerAwareEventDispatcher::addListenerService` dónde ``$callback`` es una matriz de ``array($serviceId, $methodName)``::
+Para conectar las definiciones de servicios existentes, usa el método :method:`Symfony\\Component\\EventDispatcher\\ContainerAwareEventDispatcher::addListenerService` dónde ``$callback`` es un arreglo de ``array($serviceId, $methodName)``::
 
     $dispatcher->addListenerService($eventName, array('foo', 'logListener'));
 
@@ -48,7 +51,10 @@ Agregando suscriptores de servicios
 
 Puedes agregar ``EventSubscribers`` usando el método :method:`Symfony\\Component\\EventDispatcher\\ContainerAwareEventDispatcher::addSubscriberService` dónde el primer argumento es el identificador del suscriptor del servicio, y el segundo argumento es el nombre de la clase del servicio (el cual debe implementar la :class:`Symfony\\Component\\EventDispatcher\\EventSubscriberInterface`) de la siguiente manera::
 
-    $dispatcher->addSubscriberService('kernel.store_subscriber', 'StoreSubscriber');
+    $dispatcher->addSubscriberService(
+        'kernel.store_subscriber',
+        'StoreSubscriber'
+    );
 
 La ``EventSubscriberInterface`` será exactamente como era de esperar::
 

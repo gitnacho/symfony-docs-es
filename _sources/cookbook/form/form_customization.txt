@@ -26,33 +26,33 @@ También puedes reproducir cada una de las tres partes del campo individualmente
 
 .. configuration-block::
 
-    .. code-block:: jinja
+    .. code-block:: html+jinja
 
-            <div>
+        <div>
             {{ form_label(form.age) }}
             {{ form_errors(form.age) }}
             {{ form_widget(form.age) }}
-            </div>
+        </div>
 
     .. code-block:: php
 
-            <div>
+        <div>
             <?php echo $view['form']->label($form['age']) }} ?>
             <?php echo $view['form']->errors($form['age']) }} ?>
             <?php echo $view['form']->widget($form['age']) }} ?>
-            </div>
+        </div>
 
 En ambos casos, la etiqueta, errores y elementos gráficos del formulario *HTML* se reproducen con un conjunto de marcas que se incluyen de serie con *Symfony*. Por ejemplo, ambas plantillas anteriores reproducirán:
 
 .. code-block:: html
 
-        <div>
+    <div>
         <label for="form_age">Age</label>
         <ul>
             <li>This field is required</li>
         </ul>
         <input type="number" id="form_age" name="form[age]" />
-        </div>
+    </div>
 
 para crear prototipos rápidamente y probar un formulario, puedes reproducir el formulario completo con una sola línea:
 
@@ -73,17 +73,17 @@ El resto de esta receta debe explicar cómo se puede modificar cada parte del ma
 ¿Qué son los temas de formulario?
 ---------------------------------
 
-*Symfony* utiliza fragmentos de formulario ---una parte de una plantilla que sólo reproduce una pequeña parte de un formulario--- para reproducir todas las partes de un formulario ---etiquetas de campo, errores, campos de texto ``input``, etiquetas ``select``, etc.
+*Symfony* utiliza fragmentos de formulario ---una parte de una plantilla que sólo dibuja una pequeña parte de un formulario--- para dibujar todas las partes de un formulario ---etiquetas de campo, errores, campos de texto ``input``, etiquetas ``select``, etc.---
 
 Los fragmentos se definen como bloques en *Twig* y como archivos de plantilla en *PHP*.
 
-Un *tema* no es más que un conjunto de fragmentos que deseas utilizar al reproducir un formulario. En otras palabras, si deseas personalizar una parte de cómo reproducir un formulario, importa el *tema* que contiene una personalización apropiada de los fragmentos del formulario.
+Un *tema* no es más que un conjunto de fragmentos que deseas utilizar al dibujar un formulario. En otras palabras, si deseas personalizar una parte de cómo dibujar un formulario, importa el *tema* que contiene una personalización apropiada de esos fragmentos del formulario.
 
-*Symfony* viene con un tema predeterminado (`form_div_base.html.twig`_ en *Twig* y ``FrameworkBundle:Form`` en *PHP*) que define todos y cada uno de los fragmentos necesarios para reproducir todas las partes de un formulario.
+*Symfony* viene con un tema predeterminado (`form_div_layout.html.twig`_ en *Twig* y ``FrameworkBundle:Form`` en *PHP*) que define todos y cada uno de los fragmentos necesarios para dibujar todas las partes de un formulario.
 
 En la siguiente sección aprenderás cómo personalizar un tema redefiniendo todos o algunos de sus fragmentos.
 
-Por ejemplo, cuando reproduces el elemento gráfico de un campo de tipo ``entero``, se genera un campo ``input`` como ``número``.
+Por ejemplo, cuando dibujas el elemento gráfico de un campo de tipo ``entero``, se dibuja un campo ``input`` como ``número``.
 
 .. configuration-block::
 
@@ -101,10 +101,10 @@ reproduce:
 
     <input type="number" id="form_edad" name="form[edad]" required="required" value="33" />
 
-Internamente, *Symfony* utiliza el fragmento ``integer_widget`` para reproducir el campo.
-Esto se debe a que el tipo de campo es ``entero`` y estás reproduciendo su ``elemento gráfico`` (en comparación a ``label`` o ``errores``).
+Internamente, *Symfony* usa el fragmento ``integer_widget`` para dibujar el campo.
+Esto se debe a que el tipo de campo es ``entero`` y estás dibujando su ``elemento gráfico`` (en comparación a ``label`` o ``errors``).
 
-En *Twig* de manera predeterminada en el bloque ``integer_widget`` de la plantilla `form_div_base.html.twig`_.
+En *Twig* de manera predeterminada es el bloque ``integer_widget`` de la plantilla `form_div_layout.html.twig`_.
 
 En *PHP* sería más bien el archivo ``integer_widget.html.php`` ubicado en el directorio ``FrameworkBundle/Resources/views/Form``.
 
@@ -114,39 +114,39 @@ La implementación predeterminada del fragmento ``integer_widget`` tiene el sigu
 
     .. code-block:: jinja
 
+        {# form_div_layout.html.twig #}
         {% block integer_widget %}
             {% set type = type|default('number') %}
-            {{ block('field_widget') }}
+            {{ block('form_widget_simple') }}
         {% endblock integer_widget %}
 
     .. code-block:: html+php
 
         <!-- integer_widget.html.php -->
+        <?php echo $view['form']->block($form, 'form_widget_simple', array('type' => isset($type) ? $type : "number")) ?>
 
-        <?php echo $view['form']->renderBlock('field_widget', array('type' => isset($type) ? $type : "number")) ?>
-
-Como puedes ver, este fragmento reproduce otro fragmento --- ``field_widget``:
+Como puedes ver, este fragmento en sí mismo dibuja otro fragmento --- ``form_widget_simple``:
 
 .. configuration-block::
 
     .. code-block:: html+jinja
 
-        {% block field_widget %}
+        {# form_div_layout.html.twig #}
+        {% block form_widget_simple %}
             {% set type = type|default('text') %}
-            <input type="{{ type }}" {{ block('widget_attributes') }} value="{{ value }}" />
-        {% endblock field_widget %}
+            <input type="{{ type }}" {{ block('widget_attributes') }} {% if value is not empty %}value="{{ value }}" {% endif %}/>
+        {% endblock form_widget_simple %}
 
     .. code-block:: html+php
 
-        <!-- FrameworkBundle/Resources/views/Form/field_widget.html.php -->
-
+        <!-- FrameworkBundle/Resources/views/Form/form_widget_simple.html.php -->
         <input
-            type="<?php echo isset($type) ? $view->escape($type) : "text" ?>"
-            value="<?php echo $view->escape($value) ?>"
-            <?php echo $view['form']->renderBlock('attributes') ?>
+            type="<?php echo isset($type) ? $view->escape($type) : 'text' ?>"
+            <?php if (!empty($value)): ?>value="<?php echo $view->escape($value) ?>"<?php endif ?>
+            <?php echo $view['form']->block($form, 'widget_attributes') ?>
         />
 
-El punto es que los fragmentos dictan la salida *HTML* de cada parte de un formulario. Para personalizar la salida del formulario, sólo tienes que identificar y redefinir el fragmento correcto. Un conjunto de estos fragmentos de formulario personalizados se conoce como un "tema" de formulario.
+El punto es que los fragmentos dictan la salida *HTML* de cada parte de un formulario. Para personalizar la salida del formulario, sólo tienes que identificar y redefinir el fragmento correcto. Un conjunto de estos fragmentos de formulario personalizados se conoce como un «tema» de formulario.
 Al reproducir un formulario, puedes elegir el/los tema(s) que deseas aplicar al formulario.
 
 En *Twig* un tema es un sólo archivo de plantilla y los fragmentos son los bloques definidos en ese archivo.
@@ -161,7 +161,7 @@ En *PHP* un tema es un directorio y los fragmentos son archivos de plantilla ind
 
     Como puedes ver, el nombre del bloque es una combinación del tipo de campo y qué parte del campo se está reproduciendo (por ejemplo, ``widget``, ``label``, ``errores``, ``row``). Como tal, para personalizar cómo se reproducen los errores, tan sólo para campos de entrada ``text``, debes personalizar el fragmento ``text_errors``.
 
-    Muy comúnmente, sin embargo, deseas personalizar cómo se muestran los errores en *todos* los campos. Puedes hacerlo personalizando el fragmento ``field_errors``. Este aprovecha la herencia del tipo de campo. Especialmente, ya que el tipo ``text`` se extiende desde el tipo ``field``, el componente ``form`` busca el bloque del tipo específico (por ejemplo, ``text_errors``) antes de caer de nuevo al nombre del fragmento padre si no existe (por ejemplo, ``field_errors``).
+    Muy comúnmente, sin embargo, deseas personalizar cómo se muestran los errores en *todos* los campos. Puedes hacerlo personalizando el fragmento ``field_errors``. Este aprovecha la herencia del tipo de campo. Específicamente, ya que el tipo ``text`` se extiende desde el tipo ``field``, el componente ``form`` busca el bloque del tipo específico (p. ej. ``text_errors``) antes de caer de nuevo al nombre del fragmento padre si no existe (por ejemplo, ``form_errors``).
 
     Para más información sobre este tema, consulta :ref:`form-template-blocks`.
 
@@ -205,12 +205,12 @@ La forma más sencilla de personalizar el bloque ``integer_widget`` es personali
     {% block integer_widget %}
         <div class="integer_widget">
             {% set type = type|default('number') %}
-            {{ block('field_widget') }}
-            </div>
+            {{ block('form_widget_simple') }}
+        </div>
     {% endblock %}
 
     {% block content %}
-        {# pinta el formulario #}
+        {# ... pinta el formulario #}
 
         {{ form_row(form.age) }}
     {% endblock %}
@@ -229,12 +229,11 @@ También puedes optar por poner el bloque ``integer_widget`` personalizado del f
 .. code-block:: html+jinja
 
     {# src/Acme/DemoBundle/Resources/views/Form/fields.html.twig #}
-
     {% block integer_widget %}
         <div class="integer_widget">
             {% set type = type|default('number') %}
-            {{ block('field_widget') }}
-            </div>
+            {{ block('form_widget_simple') }}
+        </div>
     {% endblock %}
 
 Ahora que has creado el bloque personalizado, es necesario decirle a *Symfony* que lo utilice. Dentro de la plantilla en la que estás reproduciendo tu formulario realmente, dile a *Symfony* que utilice la plantilla por medio de la etiqueta ``form_theme``:
@@ -261,10 +260,9 @@ El archivo de plantilla se debe nombrar después del fragmento. Debes crear un a
 .. code-block:: html+php
 
     <!-- src/Acme/DemoBundle/Resources/views/Form/integer_widget.html.php -->
-
     <div class="integer_widget">
-        <?php echo $view['form']->renderBlock('field_widget', array('type' => isset($type) ? $type : "number")) ?>
-        </div>
+        <?php echo $view['form']->block($form, 'form_widget_simple', array('type' => isset($type) ? $type : "number")) ?>
+    </div>
 
 Ahora que has creado la plantilla del formulario personalizado, necesitas decirlo a *Symfony* para utilizarlo. Dentro de la plantilla en la que estás reproduciendo tu formulario realmente, dile a *Symfony* que utilice la plantilla por medio del método ayudante ``setTheme``:
 
@@ -283,7 +281,7 @@ Al reproducir el elemento gráfico ``form.age``, *Symfony* utilizará la plantil
 Refiriendo bloques del formulario base (específico de *Twig*)
 -------------------------------------------------------------
 
-Hasta ahora, para sustituir un bloque ``form`` particular, el mejor método consiste en copiar el bloque predeterminado desde `form_div_base.html.twig`_, pegarlo en una plantilla diferente y entonces, personalizarlo. En muchos casos, puedes evitarte esto refiriendo al bloque base cuando lo personalizas.
+Hasta ahora, para sustituir un bloque ``form`` particular, el mejor método consiste en copiar el bloque predeterminado desde `form_div_layout.html.twig`_, pegarlo en una plantilla diferente y entonces, personalizarlo. En muchos casos, puedes evitarte esto refiriendo al bloque base cuando lo personalizas.
 
 Esto se logra fácilmente, pero varía ligeramente dependiendo de si el bloque del formulario personalizado se encuentra en la misma plantilla que el formulario o en una plantilla separada.
 
@@ -294,16 +292,16 @@ Importa los bloques añadiendo una etiqueta ``use`` en la plantilla donde estás
 
 .. code-block:: jinja
 
-    {% use 'form_div_base.html.twig' with integer_widget as base_integer_widget %}
+    {% use 'form_div_layout.html.twig' with integer_widget as base_integer_widget %}
 
-Ahora, cuando importes bloques desde `form_div_base.html.twig`_, el bloque ``integer_widget`` es llamado ``base_integer_widget``. Esto significa que cuando redefines el bloque ``integer_widget``, puedes referir el marcado predeterminado a través de ``base_integer_widget``:
+Ahora, cuando importes bloques desde `form_div_layout.html.twig`_, el bloque ``integer_widget`` es llamado ``base_integer_widget``. Esto significa que cuando redefines el bloque ``integer_widget``, puedes referir el marcado predeterminado a través de ``base_integer_widget``:
 
 .. code-block:: html+jinja
 
     {% block integer_widget %}
         <div class="integer_widget">
             {{ block('base_integer_widget') }}
-            </div>
+        </div>
     {% endblock %}
 
 Refiriendo bloques base desde una plantilla externa
@@ -314,13 +312,12 @@ Si tus personalizaciones del formulario viven dentro de una plantilla externa, p
 .. code-block:: html+jinja
 
     {# src/Acme/DemoBundle/Resources/views/Form/fields.html.twig #}
-
-    {% extends 'form_div_base.html.twig' %}
+    {% extends 'form_div_layout.html.twig' %}
 
     {% block integer_widget %}
         <div class="integer_widget">
             {{ parent() }}
-            </div>
+        </div>
     {% endblock %}
 
 .. note::
@@ -344,8 +341,7 @@ Al utilizar la siguiente configuración, los bloques personalizados del formular
     .. code-block:: yaml
 
         # app/config/config.yml
-
-            twig:
+        twig:
             form:
                 resources:
                     - 'AcmeDemoBundle:Form:fields.html.twig'
@@ -354,7 +350,6 @@ Al utilizar la siguiente configuración, los bloques personalizados del formular
     .. code-block:: xml
 
         <!-- app/config/config.xml -->
-
         <twig:config ...>
                 <twig:form>
                     <resource>AcmeDemoBundle:Form:fields.html.twig</resource>
@@ -365,34 +360,31 @@ Al utilizar la siguiente configuración, los bloques personalizados del formular
     .. code-block:: php
 
         // app/config/config.php
-
         $container->loadFromExtension('twig', array(
             'form' => array('resources' => array(
                 'AcmeDemoBundle:Form:fields.html.twig',
-             ))
-            // ...
+             )),
+             ...,
         ));
 
-De forma predeterminada, *Twig* utiliza un diseño con *div* al reproducir formularios. Algunas personas, sin embargo, pueden preferir reproducir formularios en un diseño con *tablas*. Usa el recurso ``form_table_base.html.twig`` para utilizarlo como diseño:
+De forma predeterminada, *Twig* utiliza un diseño con *div* al reproducir formularios. Algunas personas, sin embargo, pueden preferir reproducir formularios en un diseño con *tablas*. Usa el recurso ``form_table_layout.html.twig`` para utilizarlo como diseño:
 
 .. configuration-block::
 
     .. code-block:: yaml
 
         # app/config/config.yml
-
-            twig:
+        twig:
             form:
-                resources: ['form_table_base.html.twig']
+                resources: ['form_table_layout.html.twig']
             # ...
 
     .. code-block:: xml
 
         <!-- app/config/config.xml -->
-
         <twig:config ...>
                 <twig:form>
-                    <resource>form_table_base.html.twig</resource>
+                    <resource>form_table_layout.html.twig</resource>
                 </twig:form>
                 <!-- ... -->
         </twig:config>
@@ -400,19 +392,18 @@ De forma predeterminada, *Twig* utiliza un diseño con *div* al reproducir formu
     .. code-block:: php
 
         // app/config/config.php
-
         $container->loadFromExtension('twig', array(
             'form' => array('resources' => array(
-                'form_table_base.html.twig',
-             ))
-            // ...
+                'form_table_layout.html.twig',
+             )),
+             ...,
         ));
 
 Si sólo quieres hacer el cambio en una plantilla, añade la siguiente línea a tu archivo de plantilla en lugar de agregar la plantilla como un recurso:
 
 .. code-block:: html+jinja
 
-	{% form_theme form 'form_table_base.html.twig' %}
+    {% form_theme form 'form_table_layout.html.twig' %}
 
 Ten en cuenta que la variable ``form`` en el código anterior es la variable de la vista del formulario pasada a la plantilla.
 
@@ -426,7 +417,6 @@ Al utilizar la siguiente configuración, cualquier fragmento de formulario perso
     .. code-block:: yaml
 
         # app/config/config.yml
-
         framework:
             templating:
                 form:
@@ -438,7 +428,6 @@ Al utilizar la siguiente configuración, cualquier fragmento de formulario perso
     .. code-block:: xml
 
         <!-- app/config/config.xml -->
-
         <framework:config ...>
             <framework:templating>
                 <framework:form>
@@ -452,14 +441,13 @@ Al utilizar la siguiente configuración, cualquier fragmento de formulario perso
     .. code-block:: php
 
         // app/config/config.php
-
         // PHP
         $container->loadFromExtension('framework', array(
             'templating' => array('form' =>
                 array('resources' => array(
                     'AcmeDemoBundle:Form',
-             )))
-            // ...
+             ))),
+             ...,
         ));
 
 De manera predeterminada, el motor *PHP* utiliza un diseño *div* al reproducir formularios. Algunas personas, sin embargo, pueden preferir reproducir formularios en un diseño con *tablas*. Utiliza el recurso ``FrameworkBundle:FormTable`` para utilizar este tipo de diseño:
@@ -469,7 +457,6 @@ De manera predeterminada, el motor *PHP* utiliza un diseño *div* al reproducir 
     .. code-block:: yaml
 
         # app/config/config.yml
-
         framework:
             templating:
                 form:
@@ -479,7 +466,6 @@ De manera predeterminada, el motor *PHP* utiliza un diseño *div* al reproducir 
     .. code-block:: xml
 
         <!-- app/config/config.xml -->
-
         <framework:config ...>
             <framework:templating>
                 <framework:form>
@@ -492,20 +478,19 @@ De manera predeterminada, el motor *PHP* utiliza un diseño *div* al reproducir 
     .. code-block:: php
 
         // app/config/config.php
-
         $container->loadFromExtension('framework', array(
             'templating' => array('form' =>
                 array('resources' => array(
                     'FrameworkBundle:FormTable',
-             )))
-            // ...
+             ))),
+             ...,
         ));
 
 Si sólo quieres hacer el cambio en una plantilla, añade la siguiente línea a tu archivo de plantilla en lugar de agregar la plantilla como un recurso:
 
 .. code-block:: html+php
 
-	<?php $view['form']->setTheme($form, array('FrameworkBundle:FormTable')); ?>
+    <?php $view['form']->setTheme($form, array('FrameworkBundle:FormTable')); ?>
 
 Ten en cuenta que la variable ``$form`` en el código anterior es la variable de la vista del formulario que pasaste a tu plantilla.
 
@@ -522,8 +507,8 @@ Hasta ahora, hemos visto diferentes formas en que puedes personalizar elementos 
 
         {% block _product_name_widget %}
             <div class="text_widget">
-                {{ block('field_widget') }}
-                </div>
+                {{ block('form_widget_simple') }}
+            </div>
         {% endblock %}
 
         {{ form_widget(form.name) }}
@@ -531,7 +516,6 @@ Hasta ahora, hemos visto diferentes formas en que puedes personalizar elementos 
     .. code-block:: html+php
 
         <!-- Plantilla principal -->
-
         <?php echo $view['form']->setTheme($form, array('AcmeDemoBundle:Form')); ?>
 
         <?php echo $view['form']->widget($form['name']); ?>
@@ -539,8 +523,8 @@ Hasta ahora, hemos visto diferentes formas en que puedes personalizar elementos 
         <!-- src/Acme/DemoBundle/Resources/views/Form/_product_name_widget.html.php -->
 
         <div class="text_widget">
-              echo $view['form']->renderBlock('field_widget') ?>
-            </div>
+              echo $view['form']->block('form_widget_simple') ?>
+        </div>
 
 Aquí, el fragmento ``_product_name_widget`` define la plantilla a utilizar para el campo cuyo ``id`` es ``product_name`` (y nombre es ``product[name]``).
 
@@ -554,6 +538,7 @@ También puedes sustituir el marcado de toda la fila de un campo usando el mismo
 
     .. code-block:: html+jinja
 
+        {# _product_name_row.html.twig #}
         {% form_theme form _self %}
 
         {% block _product_name_row %}
@@ -561,7 +546,7 @@ También puedes sustituir el marcado de toda la fila de un campo usando el mismo
                 {{ form_label(form) }}
                 {{ form_errors(form) }}
                 {{ form_widget(form) }}
-                </div>
+            </div>
         {% endblock %}
 
     .. code-block:: html+php
@@ -572,7 +557,7 @@ También puedes sustituir el marcado de toda la fila de un campo usando el mismo
             <?php echo $view['form']->label($form) ?>
             <?php echo $view['form']->errors($form) ?>
             <?php echo $view['form']->widget($form) ?>
-            </div>
+        </div>
 
 Otras personalizaciones comunes
 -------------------------------
@@ -610,39 +595,54 @@ De forma predeterminada, los errores se representan dentro de una lista desorden
         <li>This field is required</li>
     </ul>
 
-Para redefinir cómo se reproducen los errores para *todos* los campos, simplemente copia, pega y personaliza el fragmento ``field_errors``.
+Para redefinir cómo se dibujan los errores para *todos* los campos, simplemente copia, pega y personaliza el fragmento ``form_errors``.
 
 .. configuration-block::
 
     .. code-block:: html+jinja
 
-        {% block field_errors %}
-        {% spaceless %}
-            {% if errors|length > 0 %}
-            <ul class="error_list">
-                {% for error in errors %}
-                    <li>{{ error.messageTemplate|trans(error.messageParameters, 'validators') }}</li>
-                {% endfor %}
-            </ul>
-            {% endif %}
-        {% endspaceless %}
-        {% endblock field_errors %}
+        {# form_errors.html.twig #}
+        {% block form_errors %}
+            {% spaceless %}
+                {% if errors|length > 0 %}
+                <ul class="error_list">
+                    {% for error in errors %}
+                        <li>{{
+                            error.messagePluralization is null
+                                ? error.messageTemplate|trans(error.messageParameters, 'validators')
+                                : error.messageTemplate|transchoice(error.messagePluralization, error.messageParameters, 'validators')
+                        }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            {% endspaceless %}
+        {% endblock form_errors %}
 
     .. code-block:: html+php
 
-        <!-- fields_errors.html.php -->
-
+        <!-- form_errors.html.php -->
         <?php if ($errors): ?>
             <ul class="error_list">
                 <?php foreach ($errors as $error): ?>
-                    <li><?php echo $view['translator']->trans(
-                        $error->getMessageTemplate(),
-                        $error->getMessageParameters(),
-                        'validators'
-                    ) ?></li>
+                    <li><?php
+                        if (null === $error->getMessagePluralization()) {
+                            echo $view['translator']->trans(
+                                $error->getMessageTemplate(),
+                                $error->getMessageParameters(),
+                                'validators'
+                            );
+                        } else {
+                            echo $view['translator']->transChoice(
+                                $error->getMessageTemplate(),
+                                $error->getMessagePluralization(),
+                                $error->getMessageParameters(),
+                                'validators'
+                            );
+                        }?></li>
                 <?php endforeach; ?>
             </ul>
         <?php endif ?>
+
 
 .. tip::
     Consulta :ref:`cookbook-form-theming-methods` para ver cómo aplicar esta personalización.
@@ -660,51 +660,51 @@ Por ejemplo, algunos errores que son más globales en tu formulario (es decir, n
 
         <?php echo $view['form']->render($form); ?>
 
-Para personalizar *sólo* el formato utilizado por estos errores, sigue las mismas instrucciones que el anterior, pero ahora llamamos al bloque ``form_errors`` (*Twig*) / el archivo ``form_errors.html.php`` (*PHP*). Ahora, al reproducir errores del tipo ``form``, se utiliza el fragmento personalizado en lugar del ``field_errors`` predeterminado.
+Para personalizar *sólo* el formato utilizado por estos errores, sigue las mismas instrucciones que el anterior, pero ahora llamamos al bloque ``form_errors`` (*Twig*) / el archivo ``form_errors.html.php`` (*PHP*). Ahora, al dibujar errores del tipo ``form``, se utiliza tu fragmento personalizado en lugar del ``form_errors`` predeterminado.
 
-Personalizando una "fila del formulario"
+Personalizando una «fila del formulario»
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Cuando consigas manejarla, la forma más fácil para reproducir un campo de formulario es a través de la función ``form_row``, la cual reproduce la etiqueta, errores y el elemento gráfico *HTML* de un campo. Para personalizar el formato utilizado para reproducir *todas* las filas de los campos del formulario, redefine el fragmento ``field_row``. Por ejemplo, supongamos que deseas agregar una clase al elemento ``div`` alrededor de cada fila:
+Cuando consigas manejarla, la forma más fácil para dibujar un campo de formulario es a través de la función ``form_row``, la cual dibuja la etiqueta, errores y el elemento gráfico *HTML* de un campo. Para personalizar el marcadp utilizado para dibujar *todas* las filas de los campos del formulario, sustituye el fragmento ``form_row``. Por ejemplo, supón que deseas agregar una clase al elemento ``div`` alrededor de cada fila:
 
 .. configuration-block::
 
     .. code-block:: html+jinja
 
-        {% block field_row %}
+        {# form_row.html.twig #}
+        {% block form_row %}
             <div class="form_row">
                 {{ form_label(form) }}
                 {{ form_errors(form) }}
                 {{ form_widget(form) }}
-                </div>
-        {% endblock field_row %}
+            </div>
+        {% endblock form_row %}
 
     .. code-block:: html+php
 
-        <!-- field_row.html.php -->
-
+        <!-- form_row.html.php -->
         <div class="form_row">
             <?php echo $view['form']->label($form) ?>
             <?php echo $view['form']->errors($form) ?>
             <?php echo $view['form']->widget($form) ?>
-            </div>
+        </div>
 
 .. tip::
     Consulta :ref:`cookbook-form-theming-methods` para ver cómo aplicar esta personalización.
 
-Añadiendo un asterisco "Requerido" a las etiquetas de campo
+Añadiendo un asterisco «Requerido» a las etiquetas de campo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Si deseas denotar todos los campos obligatorios con un asterisco requerido (``*``), lo puedes hacer personalizando el fragmento ``field_label``.
+Si deseas denotar todos los campos obligatorios con un asterisco requerido (``*``), lo puedes hacer personalizando el fragmento ``form_label``.
 
 En *Twig*, si estás haciendo la personalización del formulario dentro de la misma plantilla que tu formulario, modifica la etiqueta ``use`` y añade lo siguiente:
 
 .. code-block:: html+jinja
 
-    {% use 'form_div_base.html.twig' with field_label as base_field_label %}
+    {% use 'form_div_layout.html.twig' with form_label as base_form_label %}
 
-    {% block field_label %}
-        {{ block('base_field_label') }}
+    {% block form_label %}
+        {{ block('base_form_label') }}
 
         {% if required %}
             <span class="required" title="This field is required">*</span>
@@ -715,9 +715,9 @@ En *Twig*, si estás haciendo la personalización del formulario dentro de una p
 
 .. code-block:: html+jinja
 
-    {% extends 'form_div_base.html.twig' %}
+    {% extends 'form_div_layout.html.twig' %}
 
-    {% block field_label %}
+    {% block form_label %}
         {{ parent() }}
 
         {% if required %}
@@ -729,10 +729,13 @@ Cuando usas *PHP* como motor de plantillas tienes que copiar el contenido desde 
 
 .. code-block:: html+php
 
-    <!-- field_label.html.php -->
+    <!-- form_label.html.php -->
 
     <!-- contenido original -->
-    <label for="<?php echo $view->escape($id) ?>" <?php foreach($attr as $k => $v) { printf('%s="%s" ', $view->escape($k), $view->escape($v)); } ?>><?php echo $view->escape($view['translator']->trans($label)) ?></label>
+    <?php if ($required) { $label_attr['class'] = trim((isset($label_attr['class']) ? $label_attr['class'] : '').' required'); } ?>
+    <?php if (!$compound) { $label_attr['for'] = $id; } ?>
+    <?php if (!$label) { $label = $view['form']->humanize($name); } ?>
+    <label <?php foreach ($label_attr as $k => $v) { printf('%s="%s" ', $view->escape($k), $view->escape($v)); } ?>><?php echo $view->escape($view['translator']->trans($label, array(), $translation_domain)) ?></label>
 
     <!-- personalización -->
     <?php if ($required) : ?>
@@ -742,19 +745,19 @@ Cuando usas *PHP* como motor de plantillas tienes que copiar el contenido desde 
 .. tip::
     Consulta :ref:`cookbook-form-theming-methods` para ver cómo aplicar esta personalización.
 
-Añadiendo mensajes de "ayuda"
+Añadiendo mensajes de «ayuda»
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-También puedes personalizar los elementos gráficos del formulario para que tengan un mensaje de "ayuda" opcional.
+También puedes personalizar los elementos gráficos del formulario para que tengan un mensaje de «ayuda» opcional.
 
 En *Twig*, si estás haciendo la personalización del formulario dentro de la misma plantilla que tu formulario, modifica la etiqueta ``use`` y añade lo siguiente:
 
 .. code-block:: html+jinja
 
-    {% use 'form_div_base.html.twig' with field_widget as base_field_widget %}
+    {% use 'form_div_layout.html.twig' with form_widget_simple as base_form_widget_simple %}
 
-    {% block field_widget %}
-        {{ block('base_field_widget') }}
+    {% block form_widget_simple %}
+        {{ block('base_form_widget_simple') }}
 
         {% if help is defined %}
             <span class="help">{{ help }}</span>
@@ -765,9 +768,9 @@ En *Twig*, si estás haciendo la personalización del formulario dentro de una p
 
 .. code-block:: html+jinja
 
-    {% extends 'form_div_base.html.twig' %}
+    {% extends 'form_div_layout.html.twig' %}
 
-    {% block field_widget %}
+    {% block form_widget_simple %}
         {{ parent() }}
 
         {% if help is defined %}
@@ -779,13 +782,13 @@ Cuando usas *PHP* como motor de plantillas tienes que copiar el contenido desde 
 
 .. code-block:: html+php
 
-    <!-- field_widget.html.php -->
+    <!-- form_widget_simple.html.php -->
 
     <!-- contenido original -->
     <input
-        type="<?php echo isset($type) ? $view->escape($type) : "text" ?>"
-        value="<?php echo $view->escape($value) ?>"
-        <?php echo $view['form']->renderBlock('attributes') ?>
+        type="<?php echo isset($type) ? $view->escape($type) : 'text' ?>"
+        <?php if (!empty($value)): ?>value="<?php echo $view->escape($value) ?>"<?php endif ?>
+        <?php echo $view['form']->block($form, 'widget_attributes') ?>
     />
 
     <!-- personalización -->
@@ -799,7 +802,7 @@ Para reproducir un mensaje de ayuda debajo de un campo, pásalo en una variable 
 
     .. code-block:: jinja
 
-        {{ form_widget(form.title, { 'help': 'foobar' }) }}
+        {{ form_widget(form.title, {'help': 'foobar'}) }}
 
     .. code-block:: php
 
@@ -808,4 +811,26 @@ Para reproducir un mensaje de ayuda debajo de un campo, pásalo en una variable 
 .. tip::
     Consulta :ref:`cookbook-form-theming-methods` para ver cómo aplicar esta personalización.
 
-.. _`form_div_base.html.twig`: https://github.com/symfony/symfony/blob/master/src/Symfony/Bridge/Twig/Resources/views/Form/form_div_base.html.twig
+Usando variables de formulario
+------------------------------
+
+La mayoría de las funciones disponibles para dibujar diferentes partes de un formulario (p. ej.
+el elemento gráfico del formulario, etiquetas de formulario, elementos gráficos de formulario, etc.) también te permite hacer ciertas personalizaciones directamente. Considera el ejemplo siguiente:
+
+.. configuration-block::
+
+    .. code-block:: jinja
+
+        {# pinta un elemento gráfico, pero añadiéndole la clase "foo" #}
+        {{ form_widget(form.name, { 'attr': {'class': 'foo'} }) }}
+
+    .. code-block:: php
+
+        <!-- pinta un elemento gráfico, pero añadiéndole la clase "foo" -->
+        <?php echo $view['form']->widget($form['name'], array('attr' => array(
+            'class' => 'foo',
+        ))) ?>
+
+El arreglo pasado como segundo argumento contiene «variables» de formulario. Para más detalles sobre este concepto en *Twig*, ve :ref:`twig-reference-form-variables`.
+
+.. _`form_div_layout.html.twig`: https://github.com/symfony/symfony/blob/2.1/src/Symfony/Bridge/Twig/Resources/views/Form/form_div_layout.html.twig

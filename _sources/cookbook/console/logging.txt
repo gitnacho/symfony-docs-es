@@ -1,0 +1,228 @@
+.. index::
+   single: Console; Habilitando el registro cronológico
+
+Cómo habilitar el registro cronológico en la consola de ordenes
+===============================================================
+
+El componente ``Console`` no proporciona la capacidad de registro cronológico fuera de la caja.
+Normalmente, ejecutas manualmente las ordenes de la consola y observas el resultado, motivo por el cual no se proporciona el registro cronológico. Sin embargo, hay casos en los que puedes necesitar el registro. Por ejemplo, si estás ejecutando ordenes de consola desatendidas, tal como trabajos programados o guiones de despliegue, posiblemente sea más fácil usar las capacidades de registro de *Symfony* en lugar de configurar otras herramientas para reunir el resultado de la consola y procesarlo. Esto puede ser especialmente útil si ya tienes alguna configuración existente para agregar y analizar los registros de *Symfony*.
+
+Básicamente, hay dos casos de registro que puedes necesitar:
+ * El registo manual de cierta información de tu orden;
+ * El registro de excepciones no capturadas.
+
+Registrando manualmente una orden de consola
+--------------------------------------------
+
+Esto es realmente sencillo. Cuando creas una orden de consola en la plataforma completa, como se describe en «:doc:`/cookbook/console/console_command`», tu orden extiende a :class:`Symfony\\Bundle\\FrameworkBundle\\Command\\ContainerAwareCommand`.
+Esto significa que sólo tienes que acceder al servicio de registro estándar a través del contenedor y usarlo para hacer el registro::
+
+    // src/Acme/DemoBundle/Command/GreetCommand.php
+    namespace Acme\DemoBundle\Command;
+
+    use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+    use Symfony\Component\Console\Input\InputArgument;
+    use Symfony\Component\Console\Input\InputInterface;
+    use Symfony\Component\Console\Input\InputOption;
+    use Symfony\Component\Console\Output\OutputInterface;
+    use Symfony\Component\HttpKernel\Log\LoggerInterface;
+
+    class GreetCommand extends ContainerAwareCommand
+    {
+        // ...
+
+        protected function execute(InputInterface $input, OutputInterface $output)
+        {
+            /** @var $logger LoggerInterface */
+            $logger = $this->getContainer()->get('logger');
+
+            $name = $input->getArgument('name');
+            if ($name) {
+                $text = 'Hello '.$name;
+            } else {
+                $text = 'Hello';
+            }
+
+            if ($input->getOption('yell')) {
+                $text = strtoupper($text);
+                $logger->warn('Yelled: '.$text);
+            }
+            else {
+                $logger->info('Greeted: '.$text);
+            }
+
+            $output->writeln($text);
+        }
+    }
+
+Dependiendo del entorno en el que se ejecuta la orden (y tu configuración de registro cronológico), deberías ver las entradas registradas en :file:`app/logs/dev.log` o :file:`app/logs/prod.log`.
+
+Habilitando el registro automático de excepciones
+-------------------------------------------------
+
+Para que tu aplicación de consola automáticamente registre las excepciones no capturadas para todas tus órdenes, tendrás que hacer un poco más de trabajo.
+
+En primer lugar, crea una nueva subclase de :class:`Symfony\\Bundle\\FrameworkBundle\\Console\\Application` y reemplaza su método :method:`Symfony\\Bundle\\FrameworkBundle\\Console\\Application::run`, donde debe suceder el manejo de las excepciones:
+
+.. caution::
+
+    Debido a la naturaleza de la clase :class:`Symfony\\Component\\Console\\Application` del núcleo, gran parte del método :method:`run<Symfony\\Bundle\\FrameworkBundle\\Console\\Application::run>` se tiene que duplicar e incluso reimplementar la propiedad privada ``originalAutoExit``. Esto sirve como ejemplo de lo que *podrías* hacer en tu código, aunque hay un muy alto riesgo de que algo se pueda romper al actualizar a las futuras versiones de *Symfony*.
+
+
+.. code-block:: php
+
+    // src/Acme/DemoBundle/Console/Application.php
+    namespace Acme\DemoBundle\Console;
+
+    use Symfony\Bundle\FrameworkBundle\Console\Application as BaseApplication;
+    use Symfony\Component\Console\Input\InputInterface;
+    use Symfony\Component\Console\Output\OutputInterface;
+    use Symfony\Component\Console\Output\ConsoleOutputInterface;
+    use Symfony\Component\HttpKernel\Log\LoggerInterface;
+    use Symfony\Component\HttpKernel\KernelInterface;
+    use Symfony\Component\Console\Output\ConsoleOutput;
+    use Symfony\Component\Console\Input\ArgvInput;
+
+    class Application extends BaseApplication
+    {
+        private $originalAutoExit;
+
+        public function __construct(KernelInterface $kernel)
+        {
+            parent::__construct($kernel);
+            $this->originalAutoExit = true;
+        }
+
+        /**
+         * Ejecuta la aplicación actual.
+         *
+         * @param InputInterface  $input  un ejemplar de entrada
+         * @param OutputInterface $output un ejemplar de salida
+         *
+         * @return integer 0 si todo salió bien, o un código de error
+         *
+         * @throws \Exception cuándo run devuelva una Excepción
+         *
+         * @api
+         */
+        public function run(InputInterface $input = null, OutputInterface $output = null)
+        {
+            // hace que el padre lance excepciones, para que las puedas registrar
+            $this->setCatchExceptions(false);
+
+            if (null === $input) {
+                $input = new ArgvInput();
+            }
+
+            if (null === $output) {
+                $output = new ConsoleOutput();
+            }
+
+            try {
+                $statusCode = parent::run($input, $output);
+            } catch (\Exception $e) {
+
+                /** @var $logger LoggerInterface */
+                $logger = $this->getKernel()->getContainer()->get('logger');
+
+                $message = sprintf(
+                    '%s: %s (uncaught exception) at %s line %s while running console command `%s`',
+                    get_class($e),
+                    $e->getMessage(),
+                    $e->getFile(),
+                    $e->getLine(),
+                    $this->getCommandName($input)
+                );
+                $logger->crit($message);
+
+                if ($output instanceof ConsoleOutputInterface) {
+                    $this->renderException($e, $output->getErrorOutput());
+                } else {
+                    $this->renderException($e, $output);
+                }
+                $statusCode = $e->getCode();
+
+                $statusCode = is_numeric($statusCode) && $statusCode ? $statusCode : 1;
+            }
+
+            if ($this->originalAutoExit) {
+                if ($statusCode > 255) {
+                    $statusCode = 255;
+                }
+                // @codeCoverageIgnoreStart
+                exit($statusCode);
+                // @codeCoverageIgnoreEnd
+            }
+
+            return $statusCode;
+        }
+
+        public function setAutoExit($bool)
+        {
+            // la propiedad parent es privada, por lo que es necesario
+            // interceptarla en un definidor
+            $this->originalAutoExit = (Boolean) $bool;
+            parent::setAutoExit($bool);
+        }
+
+    }
+
+En el código anterior, desactivaste la captura de excepciones para que el padre lance el método ``run`` en todas las excepciones. Cuando se detecta una excepción, simplemente la registras accediendo al servicio ``logger`` del contenedor de servicios y luego manejas el resto de la lógica de la misma manera que lo hace el método ``run`` del padre (específicamente, debido a que el método :method:`run<Symfony\\Bundle\\FrameworkBundle\\Console\\Application::run>` del padre no se encargará de la representación y manipulación del código de estado de las excepciones cuando ``catchExceptions`` se establezca en false, esto se tiene que hacer en el método redefinido).
+
+Para que trabaje correctamente la clase aplicación extendida con la consola en modo de intérprete, tienes que hacer un pequeño truco para interceptar el definidor ``autoExit`` y almacenar el valor en una propiedad diferente, ya que la propiedad del padre es privada.
+
+Ahora, para poder utilizar tu clase ``Aplicación`` extendida es necesario ajustar el guión :file:`app/console` para utilizar la nueva clase en lugar de la predeterminada::
+
+    // app/console
+
+    // ...
+    // reemplaza la siguiente línea:
+    // use Symfony\Bundle\FrameworkBundle\Console\Application;
+    use Acme\DemoBundle\Console\Application;
+
+    // ...
+
+¡Eso es todo! Gracias al cargador automático, ahora puedes utilizar tu clase en lugar de la original.
+
+Registrando estados de salida distintos de 0
+--------------------------------------------
+
+Las capacidades de registro de la consola se pueden ampliar aún más registrando estados de salida distintos de 0. De esta manera sabrás si alguna orden tuvo algún error, incluso si no se lanzaron excepciones.
+
+Con el fin de hacerlo, tendrás que modificar el método ``run()`` de tu clase ``Aplicación`` extendida de la siguiente manera::
+
+    public function run(InputInterface $input = null,
+                        OutputInterface $output = null)
+    {
+        // hace que el padre lance excepciones, para que las puedas registrar
+        $this->setCatchExceptions(false);
+
+        // almacena el valor de autoExit antes de
+        // restablecerlo - lo necesitarás más adelante
+        $autoExit = $this->originalAutoExit;
+        $this->setAutoExit(false);
+
+        // ...
+
+        if ($autoExit) {
+            if ($statusCode > 255) {
+                $statusCode = 255;
+            }
+
+            // registra códigos de salida distintos de 0 junto
+            // con el nombre de la orden
+            if ($statusCode !== 0) {
+                /** @var $logger LoggerInterface */
+                $logger = $this->getKernel()->getContainer()->get('logger');
+                $logger->warn(sprintf('Command `%s` exited with status code %d',
+                                      $this->getCommandName($input),
+                                      $statusCode));
+            }
+
+            // @codeCoverageIgnoreStart
+            exit($statusCode);
+            // @codeCoverageIgnoreEnd
+        }
+
+        return $statusCode;
+    }

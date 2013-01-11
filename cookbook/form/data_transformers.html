@@ -1,12 +1,10 @@
 
-<!DOCTYPE html>
-
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html> 
+<html lang="es">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Utilizando transformadores de datos &mdash; Manual de Symfony2 en Español</title>
+    <title>Cómo usar transformadores de datos &mdash; Manual de Symfony2 en Español</title>
     
     <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -35,7 +33,7 @@
     
   <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
   
-    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
     <div class="social">
       <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
@@ -51,7 +49,6 @@
     </div>
     
 
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -77,91 +74,17 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="utilizando-transformadores-de-datos">
-<h1>Utilizando transformadores de datos<a class="headerlink" href="#utilizando-transformadores-de-datos" title="Enlazar permanentemente con este título">¶</a></h1>
-<p>A menudo te encontrarás con la necesidad de transformar los datos que el usuario introdujo en un formulario a algo
-más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu controlador, pero, ¿qué pasa si quieres utilizar este formulario específico en sitios diferentes?</p>
-<p>Digamos que tienes una relación uno a uno entre una <tt class="docutils literal"><span class="pre">Tarea</span></tt> y una <tt class="docutils literal"><span class="pre">Incidencia</span></tt>, por ejemplo, una <tt class="docutils literal"><span class="pre">Tarea</span></tt> opcionalmente está vinculada a una <tt class="docutils literal"><span class="pre">Incidencia</span></tt>. Añadir un cuadro de lista con todas las posibles <tt class="docutils literal"><span class="pre">Incidencias</span></tt> finalmente te puede conducir a una lista realmente larga en la cual es imposible encontrar algo. En su lugar mejor querrás añadir un cuadro de texto, en el cual el usuario sencillamente puede introducir el número de la incidencia. En el controlador puedes convertir este número de incidencia en una tarea real, y finalmente añadir errores al formulario si no se encuentra, pero por supuesto que esto naturalmente no es limpio.</p>
-<p>Sería mejor si esta incidencia se buscara y convirtiera automáticamente a un objeto <tt class="docutils literal"><span class="pre">Incidencia</span></tt>, para usarla en tu acción. Aquí es donde entran en juego los Transformadores de datos.</p>
-<p>Primero, crea un tipo de formulario personalizado que tenga adjunto un Transformador de datos, el cual regresa la <tt class="docutils literal"><span class="pre">Incidencia</span></tt> por número: El tipo selector de incidencia. Finalmente este sencillamente será un campo de texto, cuando configuremos el padre para que sea un campo de <tt class="docutils literal"><span class="pre">texto</span></tt>, en el cual se introducirá el número de incidencia. El campo mostrará un error si no existe el número introducido:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/Type/IssueSelectorType.php</span>
-<span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Form\Type</span><span class="p">;</span>
-
-<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Acme\TaskBundle\Form\DataTransformer\IssueToNumberTransformer</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Doctrine\Common\Persistence\ObjectManager</span><span class="p">;</span>
-
-<span class="k">class</span> <span class="nc">IssueSelectorType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
-<span class="p">{</span>
-    <span class="sd">/**</span>
-<span class="sd">     * @var ObjectManager</span>
-<span class="sd">     */</span>
-    <span class="k">private</span> <span class="nv">$om</span><span class="p">;</span>
-
-    <span class="sd">/**</span>
-<span class="sd">     * @param ObjectManager $om</span>
-<span class="sd">     */</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">ObjectManager</span> <span class="nv">$om</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">om</span> <span class="o">=</span> <span class="nv">$om</span><span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="nv">$transformer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">IssueToNumberTransformer</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">om</span><span class="p">);</span>
-        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">appendClientTransformer</span><span class="p">(</span><span class="nv">$transformer</span><span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
-            <span class="s1">&#39;invalid_message&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;The selected issue does not exist&#39;</span><span class="p">,</span>
-        <span class="p">);</span>
-    <span class="p">}</span>
-
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">getParent</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">return</span> <span class="s1">&#39;text&#39;</span><span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
-    <span class="p">{</span>
-        <span class="k">return</span> <span class="s1">&#39;issue_selector&#39;</span><span class="p">;</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<div class="admonition tip">
-<p class="first admonition-title">Truco</p>
-<p class="last">También puedes usar transformadores sin crear un nuevo tipo de formulario personalizado llamando a <tt class="docutils literal"><span class="pre">appendClientTransformer</span></tt> en cualquier constructor de campo:</p>
-</div>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Acme\TaskBundle\Form\DataTransformer\IssueToNumberTransformer</span><span class="p">;</span>
-
-<span class="k">class</span> <span class="nc">TaskType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="c1">// ...</span>
-
-        <span class="c1">// este asume que el gestor de la entidad se pasó como una opción</span>
-        <span class="nv">$entityManager</span> <span class="o">=</span> <span class="nv">$options</span><span class="p">[</span><span class="s1">&#39;em&#39;</span><span class="p">];</span>
-        <span class="nv">$transformer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">IssueToNumberTransformer</span><span class="p">(</span><span class="nv">$entityManager</span><span class="p">);</span>
-
-        <span class="c1">// usa un campo de texto normal, pero transforma el texto en un objeto incidencia</span>
-        <span class="nv">$builder</span>
-            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;issue&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span>
-            <span class="o">-&gt;</span><span class="na">appendClientTransformer</span><span class="p">(</span><span class="nv">$transformer</span><span class="p">)</span>
-        <span class="p">;</span>
-    <span class="p">}</span>
-
-    <span class="c1">// ...</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Luego, creamos el transformador de datos, el cual lleva a cabo la conversión real:</p>
+  <div class="section" id="como-usar-transformadores-de-datos">
+<span id="index-0"></span><h1>Cómo usar transformadores de datos<a class="headerlink" href="#como-usar-transformadores-de-datos" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>A menudo te encontrarás con la necesidad de transformar en alguna otra cosa los datos que el usuario introdujo en un formulario para usarlos en tu programa. Lo podrías hacer fácilmente a mano en tu controlador, pero, ¿qué pasa si quieres utilizar ese formulario específico en diferentes sitios?</p>
+<p>Digamos que tienes una relación uno a uno entre una <tt class="docutils literal"><span class="pre">Tarea</span></tt> y una <tt class="docutils literal"><span class="pre">Incidencia</span></tt>, por ejemplo, una <tt class="docutils literal"><span class="pre">Tarea</span></tt> opcionalmente está vinculada a una <tt class="docutils literal"><span class="pre">Incidencia</span></tt>. Añadir un cuadro de lista con todas las posibles <tt class="docutils literal"><span class="pre">Incidencias</span></tt> finalmente te puede conducir a una lista realmente larga en la cual es imposible encontrar algo. En su lugar mejor querrás añadir un cuadro de texto, en el cual el usuario sencillamente puede introducir el número de la incidencia.</p>
+<p>Podrías intentar hacer esto en tu controlador, pero no es la mejor solución.
+Sería mejor si esta incidencia se buscara y convirtiera automáticamente a un objeto <tt class="docutils literal"><span class="pre">Incidencia</span></tt>, para usarla en tu acción.
+Aquí es donde entran en juego los Transformadores de datos.</p>
+<div class="section" id="creando-el-transformador">
+<h2>Creando el transformador<a class="headerlink" href="#creando-el-transformador" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>En primer lugar, crea una clase <tt class="docutils literal"><span class="pre">IssueToNumberTransformer</span></tt> &#8212; esta clase será la responsable de la conversión hacia y desde el número de incidencia y el objeto <tt class="docutils literal"><span class="pre">Incidencia</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/DataTransformer/IssueToNumberTransformer.php</span>
-
 <span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Form\DataTransformer</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Form\DataTransformerInterface</span><span class="p">;</span>
@@ -185,7 +108,7 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
     <span class="p">}</span>
 
     <span class="sd">/**</span>
-<span class="sd">     * Transforma un objeto (issue) a una cadena (number).</span>
+<span class="sd">     * Transforma un objeto (``issue``) a una cadena (``number``).</span>
 <span class="sd">     *</span>
 <span class="sd">     * @param  Issue|null $issue</span>
 <span class="sd">     * @return string</span>
@@ -200,7 +123,7 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
     <span class="p">}</span>
 
     <span class="sd">/**</span>
-<span class="sd">     * Transforma una cadena (number) a un objeto (issue).</span>
+<span class="sd">     * Transforma una cadena (``number``) a un objeto (``issue``).</span>
 <span class="sd">     *</span>
 <span class="sd">     * @param  string $number</span>
 <span class="sd">     * @return Issue|null</span>
@@ -229,7 +152,170 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Finalmente, debido a que hemos decidido crear un tipo de formulario personalizado que usa el transformador de datos, registramos el <tt class="docutils literal"><span class="pre">Tipo</span></tt> en el contenedor de servicios, a modo de poder inyectar el gestor de la entidad automáticamente:</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Si quieres crear una nueva incidencia al introducir un número desconocido, puedes crear una nueva instancia en lugar de lanzar una <tt class="docutils literal"><span class="pre">TransformationFailedException</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="usando-el-transformador">
+<h2>Usando el transformador<a class="headerlink" href="#usando-el-transformador" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Ahora que ya tienes incorporado el transformador, solamente lo tienes que añadir a tu campo <tt class="docutils literal"><span class="pre">incidencia</span></tt> en algún formulario.</p>
+<blockquote>
+<div><p>También puedes utilizar transformadores sin necesidad de crear un nuevo tipo de formulario personalizado llamando a <tt class="docutils literal"><span class="pre">addModelTransformer</span></tt> (o a <tt class="docutils literal"><span class="pre">addViewTransformer</span></tt> &#8212; consulta la sección <a class="reference internal" href="#transformadores-de-modelo-y-vista">Transformadores de modelo y vista</a>) en cualquier campo del constructor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\TaskBundle\Form\DataTransformer\IssueToNumberTransformer</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">TaskType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// ...</span>
+
+        <span class="c1">// este asume que el gestor de la entidad se pasó como una</span>
+        <span class="c1">// opción</span>
+        <span class="nv">$entityManager</span> <span class="o">=</span> <span class="nv">$options</span><span class="p">[</span><span class="s1">&#39;em&#39;</span><span class="p">];</span>
+        <span class="nv">$transformer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">IssueToNumberTransformer</span><span class="p">(</span><span class="nv">$entityManager</span><span class="p">);</span>
+
+        <span class="c1">// agrega un campo de texto normal, pero le añade tu transformador</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span>
+            <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">create</span><span class="p">(</span><span class="s1">&#39;issue&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span>
+                <span class="o">-&gt;</span><span class="na">addModelTransformer</span><span class="p">(</span><span class="nv">$transformer</span><span class="p">)</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setDefaultOptions</span><span class="p">(</span><span class="nx">OptionsResolverInterface</span> <span class="nv">$resolver</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$resolver</span><span class="o">-&gt;</span><span class="na">setDefaults</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;data_class&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\TaskBundle\Entity\Task&#39;</span><span class="p">,</span>
+        <span class="p">));</span>
+
+        <span class="nv">$resolver</span><span class="o">-&gt;</span><span class="na">setRequired</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;em&#39;</span><span class="p">,</span>
+        <span class="p">));</span>
+
+        <span class="nv">$resolver</span><span class="o">-&gt;</span><span class="na">setAllowedTypes</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;em&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Doctrine\Common\Persistence\ObjectManager&#39;</span><span class="p">,</span>
+        <span class="p">));</span>
+
+        <span class="c1">// ...</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>Este ejemplo requiere que pases como una opción el gestor de la entidad al crear el formulario. Más tarde, aprenderás cómo puedes crear un tipo de campo <tt class="docutils literal"><span class="pre">incidencia</span></tt> personalizado para evitar la necesidad de hacer esto en tu controlador:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$taskForm</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createForm</span><span class="p">(</span><span class="k">new</span> <span class="nx">TaskType</span><span class="p">(),</span> <span class="nv">$task</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;em&#39;</span> <span class="o">=&gt;</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">(),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+<p>¡Estupendo, ya está! El usuario será capaz de introducir un número de incidencia en el campo de texto y se transformará en un objeto <tt class="docutils literal"><span class="pre">Incidencia</span></tt>. Esto significa que, después de vincularlo satisfactoriamente, la infraestructura del formulario pasa un objeto <tt class="docutils literal"><span class="pre">Incidencia</span></tt> real a <tt class="docutils literal"><span class="pre">Task::setIssue()</span></tt> en vez de el número de incidencia.</p>
+<p>Si no encuentra la incidencia, creará un error en el formulario para ese campo y puedes controlar su mensaje de error con la opción <tt class="docutils literal"><span class="pre">invalid_message</span></tt> del campo.</p>
+<div class="admonition caution">
+<p class="first admonition-title">Prudencia</p>
+<p>Ten en cuenta que al añadir un transformador necesitas usar una sintaxis un poco más complicada cuando agregas el campo. Lo siguiente es <strong>incorrecto</strong>, debido a que puedes aplicar el transformador a todo el formulario, en lugar de sólo a este campo:</p>
+<div class="last highlight-php"><div class="highlight"><pre><span class="c1">// ESTE ESTÁ MAL - LA TRANSFORMACIÓN SE APLICARÁ AL</span>
+<span class="c1">// FORMULARIO COMPLETO</span>
+<span class="c1">// ve el código correcto en el ejemplo anterior</span>
+<span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;issue&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addModelTransformer</span><span class="p">(</span><span class="nv">$transformer</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="transformadores-de-modelo-y-vista">
+<h3>Transformadores de modelo y vista<a class="headerlink" href="#transformadores-de-modelo-y-vista" title="Enlazar permanentemente con este título">¶</a></h3>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>Los nombres y métodos de los transformadores cambiaron en <em>Symfony 2.1</em>.
+<tt class="docutils literal"><span class="pre">prependNormTransformer</span></tt> se convirtió en <tt class="docutils literal"><span class="pre">addModelTransformer</span></tt> y <tt class="docutils literal"><span class="pre">appendClientTransformer</span></tt> cambió a <tt class="docutils literal"><span class="pre">addViewTransformer</span></tt>.</p>
+<p>En el ejemplo anterior, el transformador se utilizó como un transformador del <tt class="docutils literal"><span class="pre">«modelo»</span></tt>.
+De hecho, hay dos diferentes tipos de transformadores y tres diferentes tipos de datos subyacentes.</p>
+<img alt="../../_images/DataTransformersTypes.png" class="align-center" src="../../_images/DataTransformersTypes.png" />
+<p>En cualquier formulario, los 3 diferentes tipos de datos son los siguientes:</p>
+<ol class="arabic simple">
+<li><strong>Datos del modelo</strong> &#8212; Estos son los datos en el formato que se utiliza en tu aplicación (por ejemplo, un objeto <tt class="docutils literal"><span class="pre">Insidencia</span></tt>). Si llamas a <tt class="docutils literal"><span class="pre">Form::getData</span></tt> o <tt class="docutils literal"><span class="pre">Form::setData</span></tt>, estás tratando con los datos del «modelo».</li>
+<li><strong>Datos normales</strong> &#8212; Esta es una versión normalizada de los datos, y suelen ser los mismos datos que los de tu &#8220;modelo&#8221; (aunque no en nuestro ejemplo). Comúnmente no se utiliza directamente.</li>
+<li><strong>Datos de la vista</strong> &#8212; Este es el formato que se utiliza para rellenar los campos del formulario en sí. También es el formato en el que el usuario enviará los datos. Cuando llamas a <tt class="docutils literal"><span class="pre">Form::bind($datos)</span></tt>, los <tt class="docutils literal"><span class="pre">$datos</span></tt> están en el formato de la  «vista».</li>
+</ol>
+<p>Los 2 diferentes tipos de transformadores te ayudan a convertir hacia y desde cada uno de estos tipos de datos:</p>
+<dl class="docutils">
+<dt><strong>transformadores del modelo</strong>:</dt>
+<dd>&#8212; <tt class="docutils literal"><span class="pre">transform</span></tt>: &#8220;datos del modelo&#8221; =&gt; &#8220;datos normales&#8221;
+&#8212; <tt class="docutils literal"><span class="pre">reverseTransform</span></tt>: &#8220;datos normales&#8221; =&gt; &#8220;datos del modelo&#8221;</dd>
+<dt><strong>Transformadores de la vista</strong>:</dt>
+<dd>&#8212; <tt class="docutils literal"><span class="pre">transform</span></tt>: &#8220;datos normales&#8221; =&gt; &#8220;datos de la vista&#8221;
+&#8212; <tt class="docutils literal"><span class="pre">reverseTransform</span></tt>: &#8220;datos de la vista&#8221; =&gt; &#8220;datos normales&#8221;</dd>
+</dl>
+<p>¿Qué transformador necesitas? depende de tu situación.</p>
+<p>Para utilizar el transformador de la vista, llama a <tt class="docutils literal"><span class="pre">addViewTransformer</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="asi-que-por-que-uso-el-modelo-transformador">
+<h2>¿Así que por qué uso el modelo transformador?<a class="headerlink" href="#asi-que-por-que-uso-el-modelo-transformador" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>En este ejemplo, el campo es un campo <tt class="docutils literal"><span class="pre">text</span></tt>, y un campo de texto siempre se espera que sea un sencillo, formato escalar en los formatos <tt class="docutils literal"><span class="pre">norm</span></tt> y <tt class="docutils literal"><span class="pre">view</span></tt>. Por esta razón, el transformador más adecuado fue el transformador del «modelo» (que se convierte a/desde el formato <em>normal</em> &#8212; cadena a número &#8212; al formato del <em>modelo</em> &#8212; emisión de objeto).</p>
+<p>La diferencia entre los transformadores es sutil y siempre se debe pensar en lo que deben ser realmente los datos «normales» para un campo. Por ejemplo, los datos «normales» de un campo <tt class="docutils literal"><span class="pre">text</span></tt> son una cadena, pero es un objeto <tt class="docutils literal"><span class="pre">DateTime</span></tt> para un campo <tt class="docutils literal"><span class="pre">date</span></tt>.</p>
+</div>
+<div class="section" id="usando-transformadores-en-un-tipo-de-campo-personalizado">
+<h2>Usando transformadores en un tipo de campo personalizado<a class="headerlink" href="#usando-transformadores-en-un-tipo-de-campo-personalizado" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>En el ejemplo anterior, aplicaste el transformador a un campo <tt class="docutils literal"><span class="pre">text</span></tt> normal.
+Esto fue fácil, pero tiene dos inconvenientes:</p>
+<ol class="arabic simple">
+<li>Necesitas recordar siempre que debes aplicar el transformador cuando vas a añadir un campo de número de incidencia.</li>
+<li>Tienes que preocuparte de pasarlo en la opción <tt class="docutils literal"><span class="pre">em</span></tt> cada vez que creas un formulario que utiliza el transformador.</li>
+</ol>
+<p>Debido a esto, puedes optar por <a class="reference internal" href="create_custom_field_type.html"><em>crear un tipo de campo personalizado</em></a>.
+En primer lugar, crea la clase del tipo de campo personalizado:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/Type/IssueSelectorType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\TaskBundle\Form\DataTransformer\IssueToNumberTransformer</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\Common\Persistence\ObjectManager</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\OptionsResolver\OptionsResolverInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">IssueSelectorType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @var ObjectManager</span>
+<span class="sd">     */</span>
+    <span class="k">private</span> <span class="nv">$om</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @param ObjectManager $om</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">ObjectManager</span> <span class="nv">$om</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">om</span> <span class="o">=</span> <span class="nv">$om</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$transformer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">IssueToNumberTransformer</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">om</span><span class="p">);</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">addModelTransformer</span><span class="p">(</span><span class="nv">$transformer</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setDefaultOptions</span><span class="p">(</span><span class="nx">OptionsResolverInterface</span> <span class="nv">$resolver</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$resolver</span><span class="o">-&gt;</span><span class="na">setDefaults</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;invalid_message&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;The selected issue does not exist&#39;</span><span class="p">,</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getParent</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;text&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;issue_selector&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A continuación, registra el tipo como un servicio y etiquétalo con <tt class="docutils literal"><span class="pre">form.type</span></tt>, para que sea reconocido como un tipo de campo personalizado:</p>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
@@ -250,23 +336,21 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
 </li>
 </ul>
 </div>
-<p>Ahora puedes añadir el tipo a tu formulario por su alias de la siguiente manera:</p>
+<p>Ahora, cada vez que necesites utilizar tu tipo de campo <tt class="docutils literal"><span class="pre">issue_selector</span></tt> especial, es muy fácil:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/Type/TaskType.php</span>
-
 <span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Form\Type</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
 
 <span class="k">class</span> <span class="nc">TaskType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
 <span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="nv">$builder</span>
             <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;task&#39;</span><span class="p">)</span>
             <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;dueDate&#39;</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;widget&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;single_text&#39;</span><span class="p">));</span>
-            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;issue&#39;</span><span class="p">,</span> <span class="s1">&#39;issue_selector&#39;</span><span class="p">)</span>
-        <span class="p">;</span>
+            <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;issue&#39;</span><span class="p">,</span> <span class="s1">&#39;issue_selector&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
@@ -276,8 +360,7 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Ahora es muy fácil en cualquier sitio aleatorio en tu aplicación utilizar este tipo selector para elegir una incidencia por número. Ninguna lógica se tiene que añadir a tu Controlador en absoluto.</p>
-<p>Si quieres crear una nueva incidencia cuándo se introduzca un número desconocido, puedes crear una nueva instancia en lugar de lanzar una <tt class="docutils literal"><span class="pre">TransformationFailedException</span></tt>, e incluso persistirla en tu gestor de la entidad si la tarea no tiene opciones en cascada para esa <tt class="docutils literal"><span class="pre">incidencia</span></tt>.</p>
+</div>
 </div>
 
 
@@ -289,7 +372,6 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
   <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
   
   <div style="width:740px;margin:10px auto;">
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -315,8 +397,8 @@ más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu cont
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 14, 2012.
-      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
    <script type="text/javascript">

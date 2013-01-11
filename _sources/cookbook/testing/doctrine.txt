@@ -18,7 +18,6 @@ Probando la funcionalidad
 Si realmente necesitas ejecutar una consulta, tendrás que arrancar el ``núcleo`` para conseguir una conexión válida. En este caso, debes extender a ``WebTestCase``, el cual hace todo esto muy fácil::
 
     // src/Acme/StoreBundle/Tests/Entity/ProductRepositoryFunctionalTest.php
-
     namespace Acme\StoreBundle\Tests\Entity;
 
     use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -30,21 +29,35 @@ Si realmente necesitas ejecutar una consulta, tendrás que arrancar el ``núcleo
          */
         private $em;
 
+        /**
+         * {@inheritDoc}
+         */
         public function setUp()
         {
-            $kernel = static::createKernel();
-            $kernel->boot();
-            $this->em = $kernel->getContainer()->get('doctrine.orm.entity_manager');
+            static::$kernel = static::createKernel();
+            static::$kernel->boot();
+            $this->em = static::$kernel->getContainer()
+                ->get('doctrine')
+                ->getManager()
+            ;
         }
 
-        public function testProductByCategoryName()
+        public function testSearchByCategoryName()
         {
-            $results = $this->em
+            $products = $this->em
                 ->getRepository('AcmeStoreBundle:Product')
-                ->searchProductsByNameQuery('foo')
-                ->getResult()
+                ->searchByCategoryName('foo')
             ;
 
-            $this->assertCount(1, $results);
+            $this->assertCount(1, $products);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        protected function tearDown()
+        {
+            parent::tearDown();
+            $this->em->close();
         }
     }

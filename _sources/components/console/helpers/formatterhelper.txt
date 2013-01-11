@@ -1,0 +1,48 @@
+.. index::
+    single: Ayudantes de consola; Ayudante formateador
+
+Ayudante formateador
+====================
+
+Los ayudantes formateadores proporcionan funciones para aplicar formato al resultado con colores.
+Puedes hacer cosas más avanzadas con este ayudante de las que puedes hacer con :ref:`components-console-coloring`.
+
+La clase :class:`Symfony\\Component\\Console\\Helper\\FormatterHelper` está incluida en el conjunto de ayudantes predefinido, el cual te puedes conseguir llamando al método :method:`Symfony\\Component\\Console\\Command\\Command::getHelperSet`::
+
+    $formatter = $this->getHelperSet()->get('formatter');
+
+Los métodos regresan una cadena, la cual normalmente dibujas en la consola pasándola al
+método :method:`OutputInterface::writeln<Symfony\\Component\\Console\\Output\\OutputInterface::writeln>`
+
+Imprimiendo mensajes en una sección
+-----------------------------------
+
+*Symfony* ofrece un estilo definido cuándo imprimes un mensaje que pertenece a alguna
+«sección». Este imprime la sección en color encerrada entre corchetes y el mensaje real a la derecha de esta. Menos el color, tiene esta apariencia:
+
+.. code-block:: text
+
+    [SomeSection] Here is some message related to that section
+
+Para reproducir este estilo, puedes utilizar el método :method:`Symfony\\Component\\Console\\Helper\\FormatterHelper::formatSection`::
+
+    $formattedLine = $formatter->formatSection(
+        'SomeSection',
+        'Here is some message related to that section'
+    );
+    $output->writeln($formattedLine);
+    
+Imprimiendo mensajes en un bloque
+---------------------------------
+
+A veces quieres poder imprimir un bloque de texto entero con un color de fondo. *Symfony* lo usa al imprimir mensajes de error.
+
+Si imprimes manualmente tu mensaje de error en más de una línea, notarás que el fondo es sólo a lo largo de cada línea individual. Usa el método :method:`Symfony\\Component\\Console\\Helper\\FormatterHelper::formatBlock` para generar una producción de bloque::
+
+    $errorMessages = array('Error!', 'Something went wrong');
+    $formattedBlock = $formatter->formatBlock($errorMessages, 'error');
+    $output->writeln($formattedBlock);
+    
+Como puedes ver, al pasar un arreglo de mensajes al método :method:`Symfony\\Component\\Console\\Helper\\FormatterHelper::formatBlock` el método crea el resultado deseado. Si pasas ``true`` como tercer argumento, el bloque será formateado con más relleno (una línea en blanco por encima y debajo de los mensajes y 2 espacios a la izquierda y derecha).
+
+El «estilo» exacto a utilizar en el bloque depende de ti. En este caso, estás utilizando el estilo de ``error`` predefinido, pero hay otros estilos, o  puedes crear el tuyo propio. Ve :ref:`components-console-coloring`.

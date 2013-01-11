@@ -1,0 +1,244 @@
+``RoutingExtraBundle``
+======================
+
+El `RoutingExtraBundle <https://github.com/symfony-cmf/RoutingExtraBundle#readm]e>`_ integra el enrutado dinámico a *Symfony* utilizando :doc:`../components/routing`.
+
+El ``ChainRouter`` pretende reemplazar el enrutador predefinido de *Symfony*. Todo lo que hace es recoger una lista priorizada de rutas e intenta emparejar peticiones y generar las *url* con todas ellas. Naturalmente, una de las rutas en esa cadena puede ser la ruta predefinida para que todavía la puedas utilizar de la manera estándar en algunas de tus rutas.
+
+Además, este paquete entrega útiles implementaciones de enrutado. Actualmente, existe el ``DynamicRouter`` que enruta basándose en una implementación de repositorio que proporciona objetos ``Route`` de *Symfony2*. El repositorio se puede implementar utilizando una base de datos, por ejemplo con el `PHPCR-ODM`_ de *Doctrine* o el *ORM* de *Doctrine*. El paquete proporciona una implementación predefinida para el `PHPCR-ODM`_ de *Doctrine*.
+
+El servicio *DynamicRouter* sólo está disponible cuándo se habilita explícitamente en la configuración de la aplicación.
+
+Finalmente estos paquetes proporcionan documentos de ruta para el `PHPCR-ODM`_ de *Doctrine* y un controlador para redirigir rutas.
+
+.. index:: RoutingExtraBundle
+.. index:: Routing
+
+Dependencias
+------------
+
+* `Routing del CMF de Symfony <https://github.com/symfony-cmf/Routing#readme>`_
+
+``ChainRouter``
+---------------
+
+El ``ChainRouter`` puede reemplazar el sistema de enrutado predefinido de *Symfony* con una implementación habilitada en cadena. Esta no enruta nada por sí misma, sino que únicamente recorre todos los enrutadores encadenados. Para manejar las rutas estándar configuradas en *Symfony*, el enrutador predefinido de *Symfony* se puede poner en la cadena.
+
+Configurando
+------------
+
+En tu archivo :file:`app/config/config.yml`, puedes especificar cual servicio de enrutado quieres usar. Si no especificas el ``routers_by_id`` asigna todos, de manera predefinida el enrutador encadenado simplemente cargará el enrutador construido en *Symfony*. Cuándo especificas la lista de ``routers_by_id``,  necesitas tener una entrada para ``router.default`` si quieres el enrutador de *Symfony2* (aquel que lee las rutas desde :file:`app/config/routing.yml`).
+
+El formato es ``service_name: priority`` --- el número de prioridad más alto anterior es preguntado a este servicio enrutador para emparejar una ruta o para generar una *url*:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            chain:
+                routers_by_id:
+                    # activa el DynamicRouter con alta prioridad para redefinir el enrutador configurado con contenido
+                    symfony_cmf_routing_extra.dynamic_router: 200
+                    # activa el enrutador predefinido de symfony con baja prioridad
+                    router.default: 100
+                # cuando la cadena de enrutadores debe sustituir al enrutador predefinido. por omisión es true
+                # si lo pones en false, el enrutador sólo estará disponible como servicio
+                # symfony_cmf_routing_extra.router y debes hacer algo para lanzarlo
+                # replace_symfony_router: true
+
+Cargando enrutadores con etiquetado
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Tus enrutadores se pueden registrar automáticamente, justo añadiéndolos como servicios etiquetados con `router` y una ``prioridad`` opcional.
+Mientras más alta prioridad, más temprano será consultado tu enrutador para emparejar la ruta. Si no especificas la prioridad, tu enrutador vendrá al último.
+Si hay varios enrutadores con la misma prioridad, el orden entre ellos es indeterminado.
+El servicio etiquetado tendrá esta apariencia:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            my_namespace.my_router:
+                class: %my_namespace.my_router_class%
+                tags:
+                        - { name: router, priority: 300 }
+
+    .. code-block:: xml
+
+        <service id="my_namespace.my_router" class="%my_namespace.my_router_class%">
+            <tag name="router" priority="300" />
+            ..
+        </service>
+
+Ve también la `documentación oficial de Symfony2 para las etiquetas de inyección de dependencias`_
+
+Enrutador dinámico
+------------------
+
+Esta implementación de un enrutador carga rutas de una ``RouteRepositoryInterface``.
+Esta interfaz se puede implementar fácilmente con *Doctrine*.
+
+El enrutador trabaja con las clases base ``UrlMatcher`` y ``UrlGenerator`` y sólo añade la carga de rutas desde la base de datos y el concepto de contenido referido.
+
+El servicio ``DynamicRouter`` está instalado con un repositorio. Ve en la sección de configuración cómo cambiar el ``route_repository_service`` y la siguiente sección para más detalles sobre la implementación predefinida basada en `PHPCR-ODM`_.
+
+Querrás configurar el controlador de asignación que decide cuál controlador debe manejar la petición, para evitar codificar nombres de controlador en tus documentos de ruta.
+
+La configuración mínima requerida para cargar el enrutador dinámico como un servicio ``symfony_cmf_routing_extra.dynamic_router`` es tenerlo como ``enabled: true`` en tu archivo :file:`config.yml` (El enrutador se activa automáticamente apenas añadas cualquier otra configuración a la entrada ``dynamic``). Sin habilitarlo, el servicio enrutador dinámico no será cargado en absoluto, dejándote utilizar el ``ChainRouter`` con tus propios enrutadores:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            dynamic:
+                enabled: true
+
+Integrando *PHPCR-ODM*
+~~~~~~~~~~~~~~~~~~~~~~
+
+Este paquete viene con una implementación de enrutador con repositorio para `PHPCR-ODM`_.
+*PHPCR* es apropiado para la naturaleza del árbol de datos. Si usas `PHPCR-ODM`_ con un documento de ruta como el proporcionado, justo puedes dejar el servicio repositorio como el predefinido.
+
+El repositorio predefinido carga la ruta desde la ruta en la petición y todas las rutas padre para permitir que algunos de los segmentos de la ruta sigan siendo parámetros. Si necesitas una diferente manera de cargar rutas o, por ejemplo, nunca usar parámetros, puedes escribir tu propia implementación del repositorio para optimizarla (ve en el archivo :file:`cmf_routing.xml` cómo configurar el servicio).
+
+.. index:: PHPCR, ODM
+
+Proceso de concordancia
+~~~~~~~~~~~~~~~~~~~~~~~
+
+La mayoría del proceso de concordancia está descrito en la documentación del `componente enrutador del CMF`_.
+La única diferencia es que el paquete colocará el ``contentDocument`` en los atributos de la petición en vez de en la ruta predefinida.
+
+Tus controladores pueden (y tienen que) declarar el parámetro ``$contentDocument`` en tus métodos ``Action`` si se supone que trabajen con el contenido referido por las rutas.
+Ve ``Symfony\Cmf\Bundle\ContentBundle\Controller\ContentController`` para un ejemplo.
+
+.. _routing-controller-mapper:
+
+Configurando
+~~~~~~~~~~~~
+
+Para configurar el ``ControllerMappers``, puedes especificar asignaciones. La presencia de cada asignación hace que el contenedor de inyección de dependencias inyecte la respectiva asociación al ``DynamicRouter``.
+
+Las posibles asociaciones son (por orden de precedencia):
+
+* (Controlador explícito): Si hay un controlador configurado en ``getRouteDefaults()``, se utiliza y no se pregunta por ninguna asociación.
+* Plantilla explícita: Requiere que el documento de ruta regrese un parámetro ``'_template'`` en ``getRouteDefaults``. El controlador genérico configurado es regresado por la asociación.
+* Controlador por alias: Requiere que el documento de ruta regrese un valor ``'type'`` en ``getRouteDefaults()``
+* Controlador por clase: Requiere que el documento de ruta regrese un objeto para ``getRouteContent()``. El documento contenido se comprueba que sea una instancia de los nombres de clase en la asociación y si coincide, regresa el controlador.
+    Se utiliza ``instanceof`` en vez de buscar directamente para trabajar con clases delegadas.
+* Plantilla por clase: Requiere que el documento de ruta regrese un objeto para ``getRouteContent()``. Se comprueba que el documento contenido sea una instancia de los nombres de clase en la asociación y si coincide la plantilla será configurada como ``'_template'`` en ``$defaults`` y regresa el controlador genérico configurado:
+
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            dynamic:
+                generic_controller: symfony_cmf_content.controller:indexAction
+                controllers_by_alias:
+                    editablestatic: sandbox_main.controller:indexAction
+                controllers_by_class:
+                    Symfony\Cmf\Bundle\ContentBundle\Document\StaticContent: symfony_cmf_content.controller::indexAction
+                templates_by_class:
+                    Symfony\Cmf\Bundle\ContentBundle\Document\StaticContent: SymfonyCmfContentBundle:StaticContent:index.html.twig
+
+                # el repositorio es responsable de cargar las rutas
+                # por PHPCR-ODM, principalmente los usamos porque puede asociar la url a una ruta del repositorio
+                # un repositorio orm posiblemente necesite diferente lógica. ve el cmf_routing.xml para un ejemplo si
+                # necesitas definir tu propio servicio
+                manager_registry: doctrine_phpcr
+                manager_name: default
+
+                # Si usas la ruta predefinida del servicio repositorio de Doctrine, lo puedes usar para personalizar
+                # la ruta raíz para el PHPCR-ODM RouteRepository
+                # esta ruta base será inyectada por el Listener\IdPrefix - pero sólo a las rutas que
+                # emparejen el prefijo, para permitirte más de una ruta fuente.
+                routing_repositoryroot: /cms/routes
+
+                # Si quieres reemplazar la ruta predefinida o contenido de los repositorios
+                # aquí puedes especificar los IDs de tu servicio.
+                route_repository_service_id: my_bundle.repository.endpoint
+                content_repository_service_id: my_bundle.repository.endpoint
+
+Para ver algunos ejemplos, por favor ve en el `recinto de seguridad del CMF`_ y específicamente la carga de accesorios de enrutado.
+
+
+Configurando la administración de ``Sonata``
+""""""""""""""""""""""""""""""""""""""""""""
+
+Si en la sección ``require`` del archivo :file:`composer.json` añades el ``sonata-project/doctrine-phpcr-admin-bundle``, los documentos de ruta serán expuestos en el ``SonataDoctrinePhpcrAdminBundle``.
+Para instrucciones sobre cómo configurar este paquete ve :doc:`doctrine_phpcr_admin`.
+
+De manera predefinida, ``use_sonata_admin`` se pone automáticamente basándose en si ``SonataDoctrinePhpcrAdminBundle`` está disponible pero lo puedes desactivar explícitamente si no tienes habilitado sonata, o activarlo explícitamente para conseguir un error si sonata se vuelve inasequible.
+
+Tienes un par de opciones de configuración para la administración. El ``content_basepath`` apunta a la raíz de tus documentos de contenido.
+
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            use_sonata_admin: auto # usa true/false para forzar el uso / no uso de la administración de sonata
+            content_basepath: ~ # usado con la administración de sonata para manejar el contenido, por omisión a symfony_cmf_core.content_basepath
+
+
+El tipo ``form``
+----------------
+
+El paquete define un tipo ``form`` que puedes utilizar para la clásica casilla de verificación «aceptar términos» donde  colocas las *url* en la etiqueta. Simplemente especifica ``symfony_cmf_routing_extra_terms_form_type`` como el nombre del tipo ``form`` y especifica una etiqueta y un arreglo con ``content_ids`` en las opciones
+
+.. code-block:: php
+
+    $form->add('terms', 'symfony_cmf_routing_extra_terms_form_type', array(
+        'label' => 'I have seen the <a href="%team%">Team</a> and <a href="%more%">More</a> pages ...',
+        'content_ids' => array('%team%' => '/cms/content/static/team', '%more%' => '/cms/content/static/more')
+    ));
+
+El tipo ``form`` automáticamente genera las rutas para el contenido especificado y pasa las rutas al ayudante ``trans`` de *Twig* para sustituirlas en la etiqueta.
+
+Notas adicionales
+-----------------
+
+Ve la documentación del `componente enrutador del CMF`_ para información sobre la ``RouteObjectInterface``, redirecciones y regiones.
+
+Notas:
+
+* RouteObjectInterface: Los documentos proporcionados implementan esta interfaz para asociar contenido a rutas y (opcionalmente) proporcionan un nombre de ruta personalizado en vez del nombre de ruta compatible con el núcleo de *Symfony*. 
+* Redirecciones: Este paquete proporciona un ``RedirectController``.
+
+Pendiente: Ve ``DependencyInjection/Configuration.php`` de este paquete. No podría representar cómo poner esta asociación como la asignación predefinida. Entretanto, para hacer redirecciones, necesitas añadir una entrada a tu asociación en la configuración de tu proyecto:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            controllers_by_class:
+                Symfony\Cmf\Component\Routing\RedirectRouteInterface:  symfony_cmf_routing_extra.redirect_controller:redirectAction
+
+Personalizando
+--------------
+
+Puedes añadir más implementaciones ``ControllerMapperInterface`` si  tienes un caso no manejado por las proporcionadas.
+
+Si usas un *ODM/ORM* diferente a `PHPCR-ODM`_, probablemente necesites especificar la clase para la entidad ruta (en `PHPCR-ODM`_, la clase es detectada automáticamente). Para necesidades más específicas, dale una mirada al ``DynamicRouter`` y ve si lo quieres extender. También puedes escribir tus propios enrutadores para engancharlos a la cadena.
+
+.. _`documentación oficial de Symfony2 para las etiquetas de inyección de dependencias`: http://gitnacho.github.com/symfony-docs-es/reference/dic_tags.html
+.. _`recinto de seguridad del CMF`: https://github.com/symfony-cmf/cmf-sandbox
+.. _`componente enrutador del CMF`: https://github.com/symfony-cmf/Routing
+.. _`PHPCR-ODM`: https://github.com/doctrine/phpcr-odm
+
+Aprende más en el recetario
+---------------------------
+
+* :doc:`../cookbook/using-a-custom-route-repository`

@@ -1,0 +1,342 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Autorización &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Seguridad" href="index.html" />
+    <link rel="next" title="El componente Serializer" href="../serializer.html" />
+    <link rel="prev" title="Autenticación" href="authentication.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../serializer.html" title="El componente Serializer"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="authentication.html" title="Autenticación"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Seguridad</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="autorizacion">
+<span id="index-0"></span><h1>Autorización<a class="headerlink" href="#autorizacion" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Cuando alguno de los proveedores de autenticación (ve <a class="reference internal" href="authentication.html#authentication-providers"><em>Proveedores de autenticación</em></a>) ha verificado la ficha no autenticada aún, devolverá una ficha autenticada. El escucha debe configurar la autenticación de esta ficha directamente en la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\SecurityContextInterface</span></tt> utilizando su método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/SecurityContextInterface.html#method_setToken" title="Symfony\Component\Security\Core\SecurityContextInterface::setToken()"><span class="pre">setToken()</span></a></tt>.</p>
+<p>A partir de ahí, el usuario está autenticado, es decir, identificado. Ahora, otras partes de la aplicación pueden utilizar la ficha para decidir si o no el usuario puede solicitar una determinada <em>URI</em>, o modificar un determinado objeto. Esta decisión la tomará una instancia de la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface</span></tt>.</p>
+<p>Una decisión de autorización siempre se basará en un par de cosas:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>La ficha actual</dt>
+<dd><p class="first last">Por ejemplo, puedes utilizar el método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/Authentication/Token/TokenInterface.html#method_getRoles" title="Symfony\Component\Security\Core\Authentication\Token\TokenInterface::getRoles()"><span class="pre">getRoles()</span></a></tt> de la ficha para recuperar las funciones del usuario actual (por ejemplo, <tt class="docutils literal"><span class="pre">ROLE_SUPER_ADMIN</span></tt>), o una decisión puede estar basada en la clase de la ficha.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Un conjunto de atributos</dt>
+<dd><p class="first last">Cada atributo representa un determinado derecho que el usuario debe tener, por ejemplo, <tt class="docutils literal"><span class="pre">ROLE_ADMIN</span></tt> para asegurarse de que el usuario es un administrador.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Un objeto (opcional)</dt>
+<dd><p class="first last">Cualquier objeto con el cual controlar el acceso necesario, como un artículo o un objeto <tt class="docutils literal"><span class="pre">Comentario</span></tt>.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="section" id="gestor-de-la-decision-de-acceso">
+<h2>Gestor de la decisión de acceso<a class="headerlink" href="#gestor-de-la-decision-de-acceso" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Debido que decidir si un usuario está autorizado a realizar una cierta acción puede ser un proceso complicado, la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authorization\AccessDecisionManager</span></tt> estándar en sí misma depende de varios votantes, y hace un veredicto final basándose en todos los votos (positivos, negativos o neutros) que ha recibido. Este reconoce varias estrategias:</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">affirmative</span></tt> (predeterminada)</dt>
+<dd><p class="first last">concede acceso tan pronto como cualquier votante devuelve una respuesta afirmativa;</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">consensus</span></tt></dt>
+<dd><p class="first last">concede acceso si son más los votantes que garantizan el acceso de los que lo niegan;</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">unanimous</span></tt></dt>
+<dd><p class="first last">permiten el acceso sólo si ninguno de los votantes niega el acceso;</p>
+</dd>
+</dl>
+</li>
+</ul>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Authorization\AccessDecisionManager</span><span class="p">;</span>
+
+<span class="c1">// instancias de</span>
+<span class="c1">// Symfony\Component\Security\Core\Authorization\Voter\VoterInterface</span>
+<span class="nv">$voters</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
+
+<span class="c1">// uno de &quot;affirmative&quot;, &quot;consensus&quot;, &quot;unanimous&quot;</span>
+<span class="nv">$strategy</span> <span class="o">=</span> <span class="o">...</span><span class="p">;</span>
+
+<span class="c1">// si o no conceder acceso cuando todos los votantes se abstienen</span>
+<span class="nv">$allowIfAllAbstainDecisions</span> <span class="o">=</span> <span class="o">...</span><span class="p">;</span>
+
+<span class="c1">// Si o no conceder el acceso cuándo no hay mayoría</span>
+<span class="c1">// (aplica sólo a la estrategia de consenso)</span>
+<span class="nv">$allowIfEqualGrantedDeniedDecisions</span> <span class="o">=</span> <span class="o">...</span><span class="p">;</span>
+
+<span class="nv">$accessDecisionManager</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AccessDecisionManager</span><span class="p">(</span>
+    <span class="nv">$voters</span><span class="p">,</span>
+    <span class="nv">$strategy</span><span class="p">,</span>
+    <span class="nv">$allowIfAllAbstainDecisions</span><span class="p">,</span>
+    <span class="nv">$allowIfEqualGrantedDeniedDecisions</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="votantes">
+<h2>Votantes<a class="headerlink" href="#votantes" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Los votantes son instancias
+de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authorization\Voter\VoterInterface</span></tt>, lo cual significa que tienen que implementar algunos métodos que permiten los utilice el gestor de decisión:</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">supportsAttribute($attribute)</span></tt></dt>
+<dd><p class="first last">se utiliza para comprobar si el votante sabe cómo manejar el atributo dado;</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">supportsClass($class)</span></tt></dt>
+<dd><p class="first last">se utiliza para comprobar si el votante es capaz de conceder o denegar el acceso a un objeto de la clase dada;</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">vote(TokenInterface</span> <span class="pre">$token,</span> <span class="pre">$object,</span> <span class="pre">array</span> <span class="pre">$attributes)</span></tt></dt>
+<dd><p class="first last">Este método hará la votación propiamente dicha y devuelve un valor igual a una de las constantes de la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authorization\Voter\VoterInterface</span></tt>, es decir, <tt class="docutils literal"><span class="pre">VoterInterface::ACCESS_GRANTED</span></tt>, <tt class="docutils literal"><span class="pre">VoterInterface::ACCESS_DENIED</span></tt> o <tt class="docutils literal"><span class="pre">VoterInterface::ACCESS_ABSTAIN</span></tt>;</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>El componente de seguridad contiene algunos votantes estándar que cubren muchos casos de uso:</p>
+<div class="section" id="authenticatedvoter">
+<h3><tt class="docutils literal"><span class="pre">AuthenticatedVoter</span></tt><a class="headerlink" href="#authenticatedvoter" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La clase votante <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authorization\Voter\AuthenticatedVoter</span></tt> admite los atributos <tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_FULLY</span></tt>, <tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_REMEMBERED</span></tt>, e <tt class="docutils literal"><span class="pre">IS_AUTHENTICATED_ANONYMOUSLY</span></tt> y garantiza el acceso basado en el nivel de autenticación actual, es decir, ¿el usuario está autenticado completamente, o sólo en base a una <tt class="docutils literal"><span class="pre">galleta</span></tt> «recuérdame», o incluso autenticado anónimamente?</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Authentication\AuthenticationTrustResolver</span><span class="p">;</span>
+
+<span class="nv">$anonymousClass</span> <span class="o">=</span> <span class="s1">&#39;Symfony\Component\Security\Core\Authentication\Token\AnonymousToken&#39;</span><span class="p">;</span>
+<span class="nv">$rememberMeClass</span> <span class="o">=</span> <span class="s1">&#39;Symfony\Component\Security\Core\Authentication\Token\RememberMeToken&#39;</span><span class="p">;</span>
+
+<span class="nv">$trustResolver</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AuthenticationTrustResolver</span><span class="p">(</span><span class="nv">$anonymousClass</span><span class="p">,</span> <span class="nv">$rememberMeClass</span><span class="p">);</span>
+
+<span class="nv">$authenticatedVoter</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AuthenticatedVoter</span><span class="p">(</span><span class="nv">$trustResolver</span><span class="p">);</span>
+
+<span class="c1">// instancia de Symfony\Component\Security\Core\Authentication\Token\TokenInterface</span>
+<span class="nv">$token</span> <span class="o">=</span> <span class="o">...</span><span class="p">;</span>
+
+<span class="c1">// algún objeto</span>
+<span class="nv">$object</span> <span class="o">=</span> <span class="o">...</span><span class="p">;</span>
+
+<span class="nv">$vote</span> <span class="o">=</span> <span class="nv">$authenticatedVoter</span><span class="o">-&gt;</span><span class="na">vote</span><span class="p">(</span><span class="nv">$token</span><span class="p">,</span> <span class="nv">$object</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;IS_AUTHENTICATED_FULLY&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="rolevoter">
+<h3><tt class="docutils literal"><span class="pre">RoleVoter</span></tt><a class="headerlink" href="#rolevoter" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authorization\Voter\RoleVoter</span></tt> es compatible con atributos que empiezan con <tt class="docutils literal"><span class="pre">ROLE_</span></tt> y conceden acceso al usuario cuándo todos los atributos <tt class="docutils literal"><span class="pre">ROLE_*</span></tt> requeridos se pueden encontrar en el arreglo de roles devuelto por el método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/Authentication/Token/TokenInterface.html#method_getRoles" title="Symfony\Component\Security\Core\Authentication\Token\TokenInterface::getRoles()"><span class="pre">getRoles()</span></a></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Authorization\Voter\RoleVoter</span><span class="p">;</span>
+
+<span class="nv">$roleVoter</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RoleVoter</span><span class="p">(</span><span class="s1">&#39;ROLE_&#39;</span><span class="p">);</span>
+
+<span class="nv">$roleVoter</span><span class="o">-&gt;</span><span class="na">vote</span><span class="p">(</span><span class="nv">$token</span><span class="p">,</span> <span class="nv">$object</span><span class="p">,</span> <span class="s1">&#39;ROLE_ADMIN&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="rolehierarchyvoter">
+<h3><tt class="docutils literal"><span class="pre">RoleHierarchyVoter</span></tt><a class="headerlink" href="#rolehierarchyvoter" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authorization\Voter\RoleHierarchyVoter</span></tt> extiende a <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authorization\Voter\RoleVoter</span></tt> y proporciona alguna funcionalidad adicional: Esta sabe cómo manejar una jerarquía de roles. Por ejemplo, un rol <tt class="docutils literal"><span class="pre">ROLE_SUPER_ADMIN</span></tt> puede tener los subroles <tt class="docutils literal"><span class="pre">ROLE_ADMIN</span></tt> y <tt class="docutils literal"><span class="pre">ROLE_USER</span></tt>, de modo que cuando un determinado objeto requiere que el usuario tenga el rol <tt class="docutils literal"><span class="pre">ROLE_ADMIN</span></tt>, concede acceso a usuarios que de hecho tienen el rol <tt class="docutils literal"><span class="pre">ROLE_ADMIN</span></tt>, pero también a usuarios que tienen el rol <tt class="docutils literal"><span class="pre">ROLE_SUPER_ADMIN</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Authorization\Voter\RoleHierarchyVoter</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Role\RoleHierarchy</span><span class="p">;</span>
+
+<span class="nv">$hierarchy</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;ROLE_SUPER_ADMIN&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;ROLE_ADMIN&#39;</span><span class="p">,</span> <span class="s1">&#39;ROLE_USER&#39;</span><span class="p">),</span>
+<span class="p">);</span>
+
+<span class="nv">$roleHierarchy</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RoleHierarchy</span><span class="p">(</span><span class="nv">$hierarchy</span><span class="p">);</span>
+
+<span class="nv">$roleHierarchyVoter</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RoleHierarchyVoter</span><span class="p">(</span><span class="nv">$roleHierarchy</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Cuándo  haces tu propio votante, naturalmente puedes utilizar su constructor para inyectar cualquier dependencia necesaria para tomar una decisión.</p>
+</div>
+</div>
+</div>
+<div class="section" id="roles">
+<h2>Roles<a class="headerlink" href="#roles" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Los roles son objetos que expresan un determinado derecho que tiene el usuario.
+El único requisito es que implementen la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Role\RoleInterface</span></tt>, lo cual significa también que deberían tener un método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/Role/Role/RoleInterface.html#method_getRole" title="Symfony\Component\Security\Core\Role\Role\RoleInterface::getRole()"><span class="pre">getRole()</span></a></tt> que regrese una cadena representando su rol. La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Role\Role</span></tt> simplemente devuelve el primer argumento del constructor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Role\Role</span><span class="p">;</span>
+
+<span class="nv">$role</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Role</span><span class="p">(</span><span class="s1">&#39;ROLE_ADMIN&#39;</span><span class="p">);</span>
+
+<span class="c1">// hará eco de &#39;ROLE_ADMIN&#39;</span>
+<span class="k">echo</span> <span class="nv">$role</span><span class="o">-&gt;</span><span class="na">getRole</span><span class="p">();</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">La mayoría de las fichas de autenticación extienden la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authentication\Token\AbstractToken</span></tt>, lo cual significa que los roles dados a su constructor serán convertidos automáticamente de cadenas a estos sencillos objetos <tt class="docutils literal"><span class="pre">Role</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="usando-el-gestor-de-decision">
+<h2>Usando el gestor de decisión<a class="headerlink" href="#usando-el-gestor-de-decision" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="el-escucha-de-acceso">
+<h3>El escucha de acceso<a class="headerlink" href="#el-escucha-de-acceso" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El gestor de decisión de acceso se puede utilizar en cualquier punto en una petición para decidir si o no el usuario actual tiene derecho para acceder a un determinado recurso. Un opcional &#8212;pero útil&#8212; método para restringir el acceso basándose en un patrón de <em>URL</em> es el <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Http\Firewall\AccessListener</span></tt>, el cual es uno de los escuchas del cortafuegos (ve <a class="reference internal" href="firewall.html#firewall-listeners"><em>Escuchas del cortafuegos</em></a>) que es lanzado en cada petición que coincide con el cortafuegos asociado (ve <a class="reference internal" href="firewall.html#firewall"><em>Un cortafuegos para peticiones HTTP</em></a>).</p>
+<p>Este utiliza un mapa de acceso (el cuál debería ser una instancia de la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Http\AccessMapInterface</span></tt>) que contiene la petición y el conjunto de atributos correspondiente necesarios para que el usuario actual consiga acceso a la aplicación:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Http\AccessMap</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\RequestMatcher</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Http\Firewall\AccessListener</span><span class="p">;</span>
+
+<span class="nv">$accessMap</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AccessMap</span><span class="p">();</span>
+<span class="nv">$requestMatcher</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RequestMatcher</span><span class="p">(</span><span class="s1">&#39;^/admin&#39;</span><span class="p">);</span>
+<span class="nv">$accessMap</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="nv">$requestMatcher</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;ROLE_ADMIN&#39;</span><span class="p">));</span>
+
+<span class="nv">$accessListener</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AccessListener</span><span class="p">(</span>
+    <span class="nv">$securityContext</span><span class="p">,</span>
+    <span class="nv">$accessDecisionManager</span><span class="p">,</span>
+    <span class="nv">$accessMap</span><span class="p">,</span>
+    <span class="nv">$authenticationManager</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="contexto-de-seguridad">
+<h3>Contexto de seguridad<a class="headerlink" href="#contexto-de-seguridad" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El gestor de decisión de acceso también está disponible en otras partes de la aplicación vía el método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/SecurityContext.html#method_isGranted" title="Symfony\Component\Security\Core\SecurityContext::isGranted()"><span class="pre">isGranted()</span></a></tt> de la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\SecurityContext</span></tt>.
+Una llamada a este método delegará la cuestión directamente al gestor de decisión de acceso:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\SecurityContext</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Exception\AccessDeniedException</span><span class="p">;</span>
+
+<span class="nv">$securityContext</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SecurityContext</span><span class="p">(</span>
+    <span class="nv">$authenticationManager</span><span class="p">,</span>
+    <span class="nv">$accessDecisionManager</span>
+<span class="p">);</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$securityContext</span><span class="o">-&gt;</span><span class="na">isGranted</span><span class="p">(</span><span class="s1">&#39;ROLE_ADMIN&#39;</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nx">AccessDeniedException</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../serializer.html" title="El componente Serializer"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="authentication.html" title="Autenticación"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Seguridad</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

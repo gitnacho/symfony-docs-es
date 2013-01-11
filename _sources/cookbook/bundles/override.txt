@@ -10,6 +10,7 @@ Plantillas
 ----------
 
 Para más información sobre la sustitución de plantillas, consulta:
+
 * :ref:`overriding-bundle-templates`.
 * :doc:`/cookbook/bundles/inheritance`
 
@@ -18,7 +19,7 @@ Enrutado
 
 El enrutado en *Symfony2* no se importa automáticamente. Si quieres incluir las rutas de algún paquete, entonces las debes importar manualmente desde algún lugar de tu aplicación (por ejemplo, ``app/config/routing.yml``).
 
-La forma más fácil de "sustituir" el enrutado de un paquete es no importarlo en absoluto. En lugar de importar el enrutado de un paquete de terceros, simplemente copia el archivo de enrutado a tu aplicación, modifica las rutas, e importarlo en su lugar.
+La forma más fácil de «sustituir» el enrutado de un paquete es no importarlo en absoluto. En lugar de importar el enrutado de un paquete de terceros, simplemente copia el archivo de enrutado a tu aplicación, modifica las rutas, e importarlo en su lugar.
 
 Controladores
 -------------
@@ -28,7 +29,48 @@ Suponiendo que el paquete de terceros involucrado no utiliza los controladores c
 Servicios y configuración
 -------------------------
 
-En curso...
+A fin de redefinir/extender un servicio, tienes dos opciones. En primer lugar, puedes configurar el parámetro que contiene el nombre de clase del servicio ajustándolo a tu propia clase en :file:`app/config/config.yml`. Por supuesto, esto sólo es posible si definiste como parámetro el nombre de la clase en la configuración del servicio en el paquete que contiene el servicio. Por ejemplo, para redefinir la clase utilizada por el servicio ``traductor`` de *Symfony*, debes reajustar el parámetro ``translator.class``. Saber exactamente cual parámetro cambiar posiblemente conlleve un poco de investigación. Para el traductor, el parámetro está definido y se utiliza en el archivo :file:`Resources/config/translation.xml` en el núcleo de ``FrameworkBundle``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        parameters:
+            translator.class:      Acme\HelloBundle\Translation\Translator
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <parameters>
+            <parameter key="translator.class">Acme\HelloBundle\Translation\Translator</parameter>
+        </parameters>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->setParameter('translator.class', 'Acme\HelloBundle\Translation\Translator');
+
+En segundo lugar, si la clase no está disponible como un parámetro, te quieres asegurar de que ---cuando se utilice el paquete--- siempre se redefina la clase, o se tenga que modificar algo más allá de sólo el nombre de la clase, debes utilizar un pase del compilador::
+
+    // src/Acme/FooBundle/DependencyInjection/Compiler/OverrideServiceCompilerPass.php
+    namespace Acme\DemoBundle\DependencyInjection\Compiler;
+
+    use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    class OverrideServiceCompilerPass implements CompilerPassInterface
+    {
+        public function process(ContainerBuilder $container)
+        {
+            $definition = $container->getDefinition('original-service-id');
+            $definition->setClass('Acme\DemoBundle\YourService');
+        }
+    }
+
+En este ejemplo recuperaste la definición del servicio desde el servicio original, y ajustaste el nombre de la clase a tu propia clase.
+
+Consulta :doc:`/cookbook/service_container/compiler_passes` para más información sobre cómo usar los pases del compilador. Si quieres hacer algo más allá que sólo reemplazar la clase ---como agregar una llamada a un método--- sólo puedes usar el método de pase del compilador.
 
 Entidades y asignación de entidades
 -----------------------------------
@@ -38,7 +80,13 @@ En curso...
 Formularios
 -----------
 
-En curso...
+Con el fin de sustituir un tipo de formulario, este se tiene que registrar como un servicio (lo cual significa que se etiqueta como ``«form.type»``). A continuación, lo puedes modificar tal como lo harías para redefinir cualquier servicio, como se explica en `Servicios y configuración`_. Esto, por supuesto, sólo funcionará si el tipo es referido por su alias en lugar de crear una instancia, por ejemplo::
+
+    $builder->add('name', 'custom_type');
+
+rather than::
+
+    $builder->add('name', new CustomType());
 
 Metadatos de validación
 -----------------------

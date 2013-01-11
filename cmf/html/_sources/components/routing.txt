@@ -1,0 +1,148 @@
+El componente ``Routing``
+=========================
+
+La biblioteca del `componente Routing del CMF de Symfony <https://github.com/symfony-cmf/Routing>`_  extiende el componente ``routing`` del núcleo de *Symfony2*. Incluso, aunque este tiene *Symfony* en su nombre, no necesita la plataforma *Symfony2* completa y se puede utilizar en proyectos independientes. Para integración con *Symfony* proporcionamos :doc:`../bundles/routing-extra`.
+
+En el núcleo del ``CMF`` de  *Symfony* el componente de enrutado es el ``ChainRouter``, que se utiliza en vez del sistema de enrutamiento predeterminado de *Symfony2*. El ``ChainRouter`` puede encadenar varias implementaciones de ``RouterInterface``, una tras otra, para determinar cuál tendría que manejar cada petición. Puedes añadir a esta cadena el enrutador predeterminado de *Symfony2*, por lo tanto aún puedes utilizar el mecanismo de enrutado estándar.
+
+Además, este componente se pretende que proporcione útiles implementaciones de la ``RouterInterface``. Actualmente, proporciona ``DynamicRouter`` que es capaz de recuperar dinámicamente un objeto ``Ruta`` de *Symfony2* desde un repositorio. El repositorio se puede implementar utilizando una base de datos, por ejemplo con el *PHPCR-ODM* de *Doctrine* o el *ORM* de *Doctrine*.
+
+.. note::
+
+    Para usar este componente fuera del contexto de la plataforma *Symfony2*, tienes que darle un vistazo al componente `Routing <https://github.com/symfony/Routing>`_ del núcleo de *Symfony2* para conseguir un entendimiento fundamental del componente. El enrutador del ``CMF`` justo extiende el comportamiento básico.
+
+.. index:: Routing
+
+Dependencias
+------------
+
+Este componente usa `composer <http://getcomposer.org>`_. Necesita los componentes ``Routing`` y ``HttpKernel`` de *Symfony2* (para la interfaz del registro cronológico e iniciar la memoria caché).
+
+Para el ``DynamicRouter`` necesitarás algo para implementar la ``RouteRepositoryInterface``. Te sugerimos utilizar *Doctrine* puesto que te permite asociar cualquier clase a una base de datos.
+
+``ChainRouter``
+---------------
+
+En el núcleo del ``CMF`` de  *Symfony* el componente de enrutado es el ``ChainRouter``.
+Este se utiliza en vez del sistema de enrutado predeterminado de *Symfony2*, y es el responsable de determinar cuál controlador manejará cada petición.
+
+El ``ChainRouter`` trabaja aceptando un conjunto priorizado de implementaciones de estrategias de enrutado, `RouterInterface <http://api.symfony.com/2.1/Symfony/Component/Routing/RouterInterface.html>`_, generalmente referidas como ``«Enrutadores»``.
+
+Al manejar una petición entrante, itera sobre los ``enrutadores`` configurados, por su prioridad establecida, hasta que uno de ellos es capaz de `emparejar <http://api.symfony.com/2.1/Symfony/Component/Routing/RouterInterface.html#method_match>`_
+la petición y asignarla a un determinado ``Controlador``.
+
+Enrutadores
+-----------
+
+El ``ChainRouter`` es incapaz ---por sí mismo--- de hacer ningún encaminamiento real.
+Su única responsabilidad es gestionar el conjunto de ``Enrutadores`` dado, los cuales son los verdaderos responsables de emparejar una ``Petición`` a un ``Controlador``.
+
+Fácilmente puedes crear tus propios ``Enrutadores`` implementando la `RouterInterface <http://api.symfony.com/2.1/Symfony/Component/Routing/RouterInterface.html>`_ pero, por omisión, el ``CMF`` de *Symfony* ya incluye algunos mecanismos de encaminamiento básicos para ayudarte a empezar.
+
+.. note::
+
+    Si estás utilizando este como parte de un proyecto completo con el ``CMF`` de *Symfony*, por favor, revisa el :doc:`../bundles/routing-extra` para instrucciones sobre cómo añadir ``Enrutadores`` al ``ChainRouter``. De lo contrario, usa el método ``add`` del ``ChainRouter`` para configurar nuevos ``Enrutadores``.
+
+Enrutador predefinido de *Symfony2*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+El mecanismo de enrutado de *Symfony2* en sí mismo es una implementación de ``RouterInterface``, lo cual significa que lo puedes utilizar como ``Enrutador`` en el ``ChainRouter``. Esto te permite utilizar las declaraciones del sistema de enrutado predefinido.
+
+Enrutador dinámico
+~~~~~~~~~~~~~~~~~~
+
+El ``DynamicRouter`` es capaz de cargar dinámicamente `objetos Ruta <http://api.symfony.com/2.1/Symfony/Component/Routing/Route.html>`_ desde una fuente determinada de datos proporcionada al ``Enrutador`` tal como una implementación de ``RouteRepositoryInterface``. A pesar de que lo puedes utilizar de otras maneras, el principal objetivo de la ``RouteRepositoryInterface`` es facilitar eficientemente la implementación del *PHPCR* en lo alto del *ODM* de *Doctrine*, permitiéndote almacenar y gestionar rutas dinámicamente desde una base de datos.
+
+Procesando la petición
+^^^^^^^^^^^^^^^^^^^^^^
+
+La petición entrante es manejada por el método ``match`` del ``DynamicRouter`` usando el siguiente flujo de trabajo:
+
+* El ``DynamicRouter`` utiliza la ``RouteRepositoryInterface`` para recuperar un conjunto de instancias ``Ruta``
+* Luego utiliza el ``UrlMatcher`` en conjunto devuelto para encontrar una sola ``Ruta`` coincidente
+* Aplica un conjunto opcional de ``RouteEnhancers`` a la ``Ruta``
+
+La recuperación
+"""""""""""""""
+
+Basado en la *URL* solicitada, el ``DynamicRouter`` recuperará un conjunto ordenado de objetos ``Ruta`` desde la ``RouteRepositoryInterface``.
+
+La implementación subyacente de la interfaz ``RouteRepositoryInterface`` no es parte del alcance de este paquete. Consulta la declaración de interfaz para más información. Para un ejemplo funcional, ve el `RoutingExtraBundle <https://github.com/symfony-cmf/RoutingExtraBundle>`_.
+
+La igualación
+"""""""""""""
+
+El ``DynamicRouter`` usa el método `UrlMatcher <http://api.symfony.com/2.1/Symfony/Component/Routing/Matcher/UrlMatcher.html>`_ del componente ``Routing`` de *Symfony* al iterar sobre los objetos ``Ruta`` recuperados, para determinar cuál de ellos utilizar.
+
+Los potenciadores
+"""""""""""""""""
+
+Opcionalmente, puedes declarar un conjunto de instancias de la ``RouteEnhancerInterface`` y asociarlas al ``DynamicRouter``. El objetivo de esto es permitirte manipular la ``Ruta`` y sus parámetros asociados. Estos se pueden utilizar, por ejemplo, para asignar dinámicamente un controlador o una plantilla a una ``Ruta``. Algunos sencillos potenciadores ya vienen integrados con el paquete, puedes encontrar la documentación dentro de cada archivo de clase. 
+
+Enlazando una ``Ruta`` con un ``Contenido``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Dependiendo de la lógica de tu aplicación, una *URL* solicitada puede tener asociado contenido desde la base de datos. Estas ``Rutas`` deberían implementar la ``RouteObjectInterface``, y opcionalmente pueden regresar una instancia del modelo, la cual será vinculada al arreglo devuelto, en la clave ``_content``. Ten en cuenta que una ``Ruta`` puede implementar la interfaz mencionada anteriormente pero todavía no regresar ninguna instancia del modelo, en cuyo caso ningún objeto asociado será regresado.
+
+Además, los enrutadores que implementen esta interfaz también pueden proporcionar un nombre de ruta personalizado. La clave devuelta por ``getRouteKey`` será utilizada como el nombre de ruta en vez del nombre de ruta compatible con el núcleo de *Symfony* y puede contener cualquiera de los caracteres del juego de caracteres actual. Esto te permite, por ejemplo, poner una ruta como el nombre de la ruta.
+
+Todos los enrutadores todavía necesitan extender la clase base ``Symfony\Component\Routing\Route``.
+
+Redirecciones
+^^^^^^^^^^^^^
+
+Puedes construir redirecciones implementando la ``RedirectRouteInterface``.
+Esta bien puede redirigir a una *URI* absoluta, a una ``Ruta`` nombrada que puede
+generar cualquier ``Enrutador`` en la cadena o a otro objeto ``Ruta`` en el repositorio.
+
+Ten en cuenta que la redirección lógica real no es manejada por el paquete. Deberías implementar tu propia lógica para manejar la redirección real. Para un ejemplo implementando esta redirección bajo la pila completa de *Symfony2*, consulta el :doc:`../bundles/routing-extra`.
+
+Rutas e idiomas
+^^^^^^^^^^^^^^^^
+
+Puedes utilizar el valor predefinido de ``_locale`` en una ``Ruta`` para crear una ``Ruta`` por región, todas refiriendose a la misma instancia del modelo multilingüe. El ``DynamicRouter`` respeta el valor de ``_locale`` al generar rutas de instancias del modelo. Al resolver la ruta, el ``_locale`` se obtiene desde la petición y es recogido por el sistema regional de *Symfony2*.
+
+.. note::
+
+    Bajo *PHPCR-ODM*, las rutas nunca deberían ser documentos traducibles, puesto que un documento de ``Ruta`` representa una *URL* única, y no es recomendable servir varias traducciones bajo la misma *URL*.
+
+
+Generando *URL*
+^^^^^^^^^^^^^^^
+
+``DynamicRouter`` usa el `UrlGenerator <http://api.symfony.com/2.1/Symfony/Component/Routing/Generator/UrlGenerator.html>`_ predefinido de *Symfony2* para manejar la generación de *URL*. Puedes generar *URL* para tu contenido en tres distintas maneras:
+
+* Ya sea pasando una implementación de ``RouteObjectInterface`` como el parámetro ``route``
+* O pasando un ejemplar del modelo como el parámetro ``content`` 
+* O supliendo una implementación de ``ContentRepositoryInterface`` y el ``id`` del ejemplar del modelo como el parámetro ``content_id``
+
+Personalizando
+--------------
+
+Los paquetes de enrutado permiten varias opciones de personalización, dependiendo de tus necesidades específicas:
+
+* Tus parámetros de ``Ruta`` se pueden manipular fácilmente utilizando los potenciadores existentes
+* También puedes añadir tu propio potenciador a la lógica del ``Enrutador``.
+* El ``DynamicRouter`` o sus componentes se pueden extender para permitir modificaciones
+* Puedes implementar tus propios ``Enrutadores`` y añadirlos al ``ChainRouter``
+
+.. note::
+
+    Si sientes que tu potenciador o ``Enrutador`` específico le puede ser útil a otros, contáctanos e intentaremos incluirlo en el paquete.
+
+Integrando con *Symfony2*
+-------------------------
+
+Tal como mencioné antes, este paquete fue diseñado para sólo requerir ciertas partes de *Symfony2*. Aun así, si deseas utilizarlo como parte de tu proyecto ``CMF`` de *Symfony*, también hay disponible un paquete de integración. Te recomendamos que le eches un vistazo en :doc:`../bundles/routing-extra`.
+
+Autores
+-------
+
+* Filippo De Santis (p16)
+* Henrik Bjornskov (henrikbjorn)
+* Claudio Beatrice (omissis)
+* Lukas Kahwe Smith (lsmith77)
+* David Buchmann (dbu)
+* `Y otros <https://github.com/symfony-cmf/Routing/contributors>`_
+
+El código original para la cadena de enrutadores fue aportado por Magnus Nordlander.

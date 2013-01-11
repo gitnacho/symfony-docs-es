@@ -36,15 +36,35 @@ Si utilizas el tipo como el del ejemplo anterior, incluso puedes omitir la anota
     {
     }
 
+Para detectar qué convertidor está corrido en un parámetro se ejecuta el siguiente proceso :
+
+* Si se eligió un convertidor explícitamente con ``@ParamConverter(converter="nombre")`` se elige el convertidor con el nombre dado.
+* De lo contrario se itera sobre todos los parámetros de convertidores registrados por prioridad.
+  El método ``supports()`` es invocado para comprobar si un parámetro convertidor puede convertir la petición en el parámetro requerido. Si regresa ``true`` el parámetro ``converter`` es invocado.
+
 Convertidores integrados
 ------------------------
 
-El paquete tiene un solo convertidor integrado, uno de *Doctrine*.
+El paquete tiene dos convertidor integrados, uno es el convertidor *Doctrine* y el otro``DateTime``.
 
 Convertidor *Doctrine*
 ~~~~~~~~~~~~~~~~~~~~~~
 
-De manera predeterminada, el convertidor de *Doctrine* utiliza el valor *predeterminado* del administrador de la entidad. Lo puedes configurar con la opción ``entity_manager``:
+Nombre de convertidor: ``doctrine.orm``
+
+El convertidor de *Doctrine* intenta convertir los atributos de la petición a entidades
+de recuperadas de la base de datos por *Doctrine*. Hay dos distintos posibles enfoques:
+
+- Recuperar el objeto por clave primaria
+- Recuperar el objeto por uno o varios campos que contienen valores únicos en la base de datos.
+
+El siguiente algoritmo determina qué operación realizar.
+
+- Si en la ruta está presente un argumento ``{id}``, busca el objeto por clave primaria.
+- Si se configura una opción ``'id'`` y el argumento ruta concuerda, busca el objeto por clave primaria.
+- Si no aplican las reglas anteriores, intenta encontrar una entidad emparejando los argumentos de la ruta con los campos de la entidad. Puedes controlar este proceso configurando el argumento ``exclude`` o asignando un atributo al campo llamado ``mapping``.
+
+De manera predeterminada, el convertidor de *Doctrine* utiliza el valor *predeterminado* del gestor de la entidad. Lo puedes configurar con la opción ``entity_manager``:
 
 .. code-block:: php
 
@@ -56,6 +76,75 @@ De manera predeterminada, el convertidor de *Doctrine* utiliza el valor *predete
      * @ParamConverter("post", class="SensioBlogBundle:Post", options={"entity_manager" = "foo"})
      */
     public function showAction(Post $post)
+    {
+    }
+
+Si el marcador de posición no tiene el mismo nombre como clave primaria, pasa la opción ``id``::
+
+    /**
+     * @Route("/blog/{post_id}")
+     * @ParamConverter("post", class="SensioBlogBundle:Post", options={"id" = "post_id"})
+     */
+    public function showAction(Post $post)
+    {
+    }
+
+Esto también te permite tener múltiples convertidores en una acción::
+
+    /**
+     * @Route("/blog/{id}/comments/{comment_id}")
+     * @ParamConverter("comment", class="SensioBlogBundle:Comment", options={"id" = "comment_id"})
+     */
+    public function showAction(Post $post, Comment $comment)
+    {
+    }
+
+En el ejemplo anterior, el argumento ``post`` es manejado automáticamente, pero el comentario está configurado con la anotación debido a que ambos no pueden seguir la convención predefinida.
+
+Si quieres emparejar una entidad usando múltiples campos usa ``mapping``::
+
+    /**
+     * @Route("/blog/{date}/{slug}/comments/{comment_slug}")
+     * @ParamConverter("post", options={"mapping": {"date": "date", "slug": "slug"})
+     * @ParamConverter("comment", options={"mapping": {"comment_slug": "slug"})
+     */
+    public function showAction(Post $post, Comment $comment)
+    {
+    }
+
+Si estás emparejando una entidad que utiliza varios campos, pero quieres excluir un
+argumento de la ruta para que forme parte de los criterios::
+
+    /**
+     * @Route("/blog/{date}/{slug}")
+     * @ParamConverter("post", options={"exclude": ["date"]})
+     */
+    public function showAction(Post $post, \DateTime $date)
+    {
+    }
+
+Convertidor ``DateTime``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Nombre de convertidor: ``datetime``
+
+El convertidor ``datetime`` convierte cualquier ruta o atributo de petición a una instancia de ``datetime``::
+
+    /**
+     * @Route("/blog/archive/{start}/{end}")
+     */
+    public function archiveAction(\DateTime $start, \DateTime $end)
+    {
+    }
+
+Por omisión puede analizar cualquier formato de fecha aceptado por el constructor de ``DateTime``. Puedes ser más estricto con la entrada dada a través de las opciones::
+
+    /**
+     * @Route("/blog/archive/{start}/{end}")
+     * @ParamConverter("start", options={"format": "Y-m-d"})
+     * @ParamConverter("end", options={"format": "Y-m-d"})
+     */
+    public function archiveAction(\DateTime $start, \DateTime $end)
     {
     }
 
@@ -85,6 +174,18 @@ La instancia de ``ParamConverter`` tiene tres piezas de información sobre la an
 * ``options``: Un arreglo de opciones
 
 El método ``apply()`` se llama cuando una configuración es compatible. Basándonos en los atributos de la petición, debemos establecer un atributo llamado ``$configuration->getName()``, que almacene un objeto de la clase ``$configuration->getClass()``.
+
+Para registrar tu servicio convertidor tienes que añadir una etiqueta a tu servicio:
+
+.. configuration-block::
+
+    .. code-block:: xml
+
+        <service id="my_converter" class="MyBundle/Request/ParamConverter/MyConverter">
+            <tag name="request.param_converter" priority="-2" converter="my_converter" />
+        </service>
+
+Puedes registrar un convertidor por prioridad, por nombre (atributo ``«converter»``) o ambos. Si no especificas una prioridad o nombre el convertidor será añadido a la pila de convertidores con una prioridad de `0`. Para desactiva explícitamente la inscripción por prioridad tienes que ajustar la ``priority="false"`` en la definición de tu etiqueta.
 
 .. tip::
 

@@ -1,6 +1,8 @@
-**************************
 ``JMSSecurityExtraBundle``
-**************************
+==========================
+
+Resumen
+-------
 
 Este paquete mejora el componente ``Security`` de *Symfony2* añadiendo nuevas características.
 
@@ -9,364 +11,35 @@ Características:
 - Potente lenguaje de autorización basado en expresiones
 - Método de seguridad para autorización
 - Configuración de autorización vía anotaciones
+- Generador de números aleatorios seguros
 
-Instalando
-----------
+Documentación
+-------------
 
-Añade lo siguiente a tu archivo ``deps``:
-
-.. code-block:: bash
-
-    [JMSSecurityExtraBundle]
-        git=https://github.com/schmittjoh/JMSSecurityExtraBundle.git
-        target=/bundles/JMS/SecurityExtraBundle
-
-    ; Dependencias:
-    ;--------------
-    [metadata]
-        git=https://github.com/schmittjoh/metadata.git
-        version=1.1.0 ; <- asegúrate de conseguir 1.1, no 1.0
-
-    ; ve https://github.com/schmittjoh/JMSAopBundle/blob/master/Resources/doc/index.rst    
-    [JMSAopBundle]
-        git=https://github.com/schmittjoh/JMSAopBundle.git
-        target=/bundles/JMS/AopBundle
-
-    [cg-library]
-        git=https://github.com/schmittjoh/cg-library.git
-
-    ; Esta dependencia es opcional (la necesitas si no estás usando
-    ; servicios como controladores):
-    ; ve https://github.com/schmittjoh/JMSDiExtraBundle/blob/master/Resources/doc/index.rst
-    [JMSDiExtraBundle]
-        git=https://github.com/schmittjoh/JMSDiExtraBundle.git
-        target=/bundles/JMS/DiExtraBundle
-
-Finalmente, registra el paquete en tu núcleo:
-
-.. code-block:: php
-
-    // en AppKernel::registerBundles()
-    $bundles = array(
-        // ...
-        new JMS\AopBundle\JMSAopBundle(),
-        new JMS\SecurityExtraBundle\JMSSecurityExtraBundle(),
-        new JMS\DiExtraBundle\JMSDiExtraBundle($this),
-        // ...
-    );
-
-Asegúrate de registrar los espacios de nombres en tu cargador automático::
-
-    // app/autoload.php
-    $loader->registerNamespaces(array(
-        // ...
-        'JMS'              => __DIR__.'/../vendor/bundles',
-        'Metadata'         => __DIR__.'/../vendor/metadata/src',
-        'CG'               => __DIR__.'/../vendor/cg-library/src',
-        // ...
-    ));
-
-Configurando
-------------
-
-La siguiente es la configuración predeterminada:
-
-.. code-block:: yaml
-
-    # app/config/config.yml
-    jms_security_extra:
-        # Cuando desees asegurar todos los servicios (true), o proteger
-        # únicamente servicios específicos (false); ve más adelante
-        secure_all_services: false
-        
-        # Al habilitar esta opción adicionalmente añadirá un atributo
-        # especial "IS_IDDQD". Cualquiera con este atributo efectivamente
-        # evadirá todas las comprobaciones de seguridad.
-        enable_iddqd_attribute: false        
-
-        # Habilita el lenguaje de expresiones
-        expressions: false
-
-        # Te permite inhabilitar algunos, o todos los votantes integrados
-        voters:
-            disable_authenticated: false
-            disable_role:          false
-            disable_acl:           false
-            
-        # Te permite especificar reglas de control de acceso para métodos
-        # específicos, tal como los controladores de acción
-        method_access_control: { }
-
-
-Lenguaje de autorización basado en expresiones
-----------------------------------------------
-
-El lenguaje de expresiones es una muy potente alternativa para los simples atributos de los votantes del sistema de seguridad. Te permiten tomar decisiones complejas para controlar el acceso, y debido a que está compilado hasta *PHP* crudo, son mucho más rápidos que los votantes integrados. Además, nativamente se cargan de manera diferida, por lo tanto también debes asegurar algunos recursos, por ejemplo, al no tener que iniciar el sistema *ACL* completo en cada petición.
-
-Uso programado
-~~~~~~~~~~~~~~
-
-Puedes ejecutar expresiones programadas utilizando el método ``isGranted`` del ``SecurityContext``. Algunos ejemplos:
-
-.. code-block:: php
-
-    use JMS\SecurityExtraBundle\Security\Authorization\Expression\Expression;
+.. toctree::
+    :hidden:
     
-    $securityContext->isGranted(array(new Expression('hasRole("A")')));
-    $securityContext->isGranted(array(new Expression('hasRole("A") or (hasRole("B") and hasRole("C"))')));
-    $securityContext->isGranted(array(new Expression('hasPermission(object, "VIEW")'), $object));
-    $securityContext->isGranted(array(new Expression('token.getUsername() == "Johannes"')));
+    installation
+    expressions
+    configuration
+    method_security_authorization
+    annotations
 
-Usando *Twig*
-~~~~~~~~~~~~~
+- :doc:`installation`
+- :doc:`configuration`
+- :doc:`expressions`
+- :doc:`method_security_authorization`
+- :doc:`random_number_generator`
+- :doc:`annotations`
 
-Puedes comprobar expresiones desde plantillas *Twig* utilizando la función ``is_expr_granted``. Algunos ejemplos:
+Licencia
+--------
 
-.. code-block:: php
+El código está liberado bajo la amigable `Licencia de Apache2`_. 
 
-    is_expr_granted("hasRole('FOO')")
-    is_expr_granted("hasPermission(object, 'VIEW')", object)
+La documentación está sujeta a la `Attribution-NonCommercial-NoDerivs 3.0 Unported
+license`_.
 
-Usando el control de acceso
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _`Licencia de Apache2`: http://www.apache.org/licenses/LICENSE-2.0.html
+.. _`Attribution-NonCommercial-NoDerivs 3.0 Unported license`: http://creativecommons.org/licenses/by-nc-nd/3.0/
 
-También puedes usar expresiones en ``access_control``:
-
-.. code-block:: yaml
-
-    security:
-        access_control:
-            - { path: ^/foo, access: "hasRole('FOO') and hasRole('BAR')" }
-
-Usando en base a anotaciones
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Consulta la anotación ``@PreAuthorize`` en la `referencia`_
-
-Referencia
-~~~~~~~~~~
-
-+-----------------------------------+--------------------------------------------------------+
-| Expresión                         | Descripción                                            |
-+===================================+========================================================+
-| hasRole('ROLE')                   | comprueba si el segmento tiene un determinado rol.     |                                      
-+-----------------------------------+--------------------------------------------------------+
-| hasAnyRole('ROLE1', 'ROLE2', ...) | Comprueba si el segmento tiene alguno de los roles     |
-|                                   | proporcionados.                                        |                               
-+-----------------------------------+--------------------------------------------------------+
-| isAnonymous()                     | Comprueba si el segmento es anónimo.                   |     
-+-----------------------------------+--------------------------------------------------------+
-| isRememberMe()                    | Comprueba si el segmento es del tipo "Recuérdame".     |   
-+-----------------------------------+--------------------------------------------------------+
-| isFullyAuthenticated()            | Comprueba si el segmento está completamente            |
-|                                   | autenticado.                                           |                             
-+-----------------------------------+--------------------------------------------------------+
-| isAuthenticated()                 | Comprueba si el segmento no es anónimo.                | 
-+-----------------------------------+--------------------------------------------------------+
-| hasPermission(var, 'PERMISSION')  | Comprueba si el segmento tiene los permisos            |
-|                                   | proporcionados para un objeto dado (necesita el        |
-|                                   | sistema  *ACL*).                                       |                           
-+-----------------------------------+--------------------------------------------------------+
-| token                             | Variable que permite el acceso al segmento que se      |
-|                                   | encuentra actualmente en el contexto de seguridad.     |
-+-----------------------------------+--------------------------------------------------------+
-| user                              | Variable que permite el acceso al usuario que está     |
-|                                   | actualmente en el contexto de seguridad.               |
-+-----------------------------------+--------------------------------------------------------+
-| object                            | Variable que hace referencia al objeto para el cual se |
-|                                   | solicita acceso.                                       |           
-+-----------------------------------+--------------------------------------------------------+
-| #*paramName*                      | Cualquier identificador prefijado con # se refiere a   |
-|                                   | un parámetro del mismo nombre pasado al método donde   |
-|                                   | se usa la expresión                                    |
-+-----------------------------------+--------------------------------------------------------+
-| and / &&                          | El operador binario "and"                              |
-+-----------------------------------+--------------------------------------------------------+
-| or / ||                           | El operador binario "or"                               |
-+-----------------------------------+--------------------------------------------------------+
-| ==                                | El operador binario "is equal"                         |
-+-----------------------------------+--------------------------------------------------------+
-| not / !                           | Operador de negación                                   |
-+-----------------------------------+--------------------------------------------------------+
-
-Autorización de seguridad para métodos
---------------------------------------
-
-Generalmente, puedes asegurar todos los métodos públicos, o métodos protegidos que no son estáticos, ni finales. Los métodos privados no se pueden asegurar. También puedes añadir metadatos para métodos abstractos, o interfaces que entonces serán aplicados automáticamente a sus implementaciones concretas.
-
-Control de acceso vía configuración ``DI``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Puedes especificar **expresiones** para el control de acceso en la configuración ``DI``:
-
-.. code-block:: yaml
-
-    # config.yml
-    jms_security_extra:
-        method_access_control:
-            ':loginAction$': 'isAnonymous()'
-            'AcmeFooBundle:.*:deleteAction': 'hasRole("ROLE_ADMIN")'
-            '^MyNamespace\MyService::foo$': 'hasPermission(#user, "VIEW")' 
-
-El patrón es una expresión regular que distingue entre mayúsculas y minúsculas emparejada contra dos notaciones.
-Se utiliza la primer coincidencia.
-
-En primer lugar, tu patrón se compara con la notación de controladores que no son servicios. 
-Obviamente, esto sólo se hace si tu clase en realidad es un controlador, por ejemplo, ``AcmeFooBundle:Add:new`` para un controlador llamado ``AddController`` y un método denominado ``NewAction`` en un subespacio de nombres ``Controller`` de un paquete llamado ``AcmeFooBundle``. 
-
-Por último, tu patrón se empareja contra la concatenación del nombre de clase, y el nombre del método que está invocando, por ejemplo, ``Mi\Completamente\Cualificado\NombreClase::miNombreMetodo``.
-
-.. Note::
-
-    Si quisieras asegurar controladores que no son servicios, en su lugar deberías usar el ``JMSDiExtraBundle``.
-
-Control de acceso vía anotaciones
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Si quisieras asegurar un servicio con ``anotaciones``, necesitas habilitar la configuración de ``annotation`` para ese servicio:
-
-.. code-block:: xml
-
-    <service id="foo" class="Bar">
-        <tag name="security.secure_service"/>
-    </service>
-
-En caso, que quieras configurar todos los  servicios vía ``anotaciones``, también puedes poner ``secure_all_services`` a ``true``. Entonces, no necesitas añadir una etiqueta a cada servicio.
-
-
-Anotaciones
------------
-
-``@PreAuthorize``
-~~~~~~~~~~~~~~~~~
-
-Esta anotación te permite definir una expresión (ve el párrafo del lenguaje de expresiones) que se ejecutó anteriormente a la invocación de un método:
-
-.. code-block:: php
-
-    <?php
-
-    use JMS\SecurityExtraBundle\Annotation\PreAuthorize;
-    
-    class MyService
-    {
-        /** @PreAuthorize("hasRole('A') or (hasRole('B') and hasRole('C'))") */
-        public function secureMethod()
-        {
-            // ...
-        }
-    }
-
-``@Secure``
-~~~~~~~~~~~
-
-Esta anotación te permite definir quién está autorizado a invocar un método:
-
-.. code-block:: php
-
-    <?php
-    
-    use JMS\SecurityExtraBundle\Annotation\Secure;
-    
-    class MyService
-    {
-        /**
-         * @Secure(roles="ROLE_USER, ROLE_FOO, ROLE_ADMIN")
-         */
-        public function secureMethod() 
-        {
-            // ...
-        }
-    }
-
-``@SecureParam``
-~~~~~~~~~~~~~~~~
-
-Esta anotación te permite definir restricciones para los parámetros que se le pasan al método. Esto sólo es útil si los parámetros son objetos del dominio:
-
-.. code-block:: php
-
-    <?php
-    
-    use JMS\SecurityExtraBundle\Annotation\SecureParam;
-    
-    class MyService
-    {
-        /**
-         * @SecureParam(name="comment", permissions="EDIT, DELETE")
-         * @SecureParam(name="post", permissions="OWNER")
-         */
-        public function secureMethod($comment, $post)
-        {
-            // ...
-        }
-    }
-
-``@SecureReturn``
-~~~~~~~~~~~~~~~~~~
-
-Esta anotación te permite definir restricciones para el valor que devuelve el método. Esto también es útil sólo si el valor devuelto es un objeto del dominio:
-
-.. code-block:: php
-
-    <?php
-
-    use JMS\SecurityExtraBundle\Annotation\SecureReturn;
-    
-    class MyService
-    {
-        /**
-         * @SecureReturn(permissions="VIEW")
-         */
-        public function secureMethod()
-        {
-            // ...
-
-            return $domainObject;
-        }
-    }
-    
-``@RunAs``
-~~~~~~~~~~
-
-Esta anotación te permite especificar los roles que se añadirán sólo mientras subsista la invocación del método. Estos roles no serán tomados en consideración antes o después de las decisiones de acceso a la invocación. 
-
-Esto se suele utilizar para implementar una capa de dos niveles para el servicio, donde tienes servicios públicos y privados, y los servicios privados únicamente son invocados a través de un servicio público específico:
-
-.. code-block:: php
-
-    <?php
-    
-    use JMS\SecurityExtraBundle\Annotation\Secure;
-    use JMS\SecurityExtraBundle\Annotation\RunAs;
-    
-    class MyPrivateService
-    {
-        /**
-         * @Secure(roles="ROLE_PRIVATE_SERVICE")
-         */
-        public function aMethodOnlyToBeInvokedThroughASpecificChannel()
-        {
-            // ...
-        }
-    }
-    
-    class MyPublicService
-    {
-        protected $myPrivateService;
-    
-        /**
-         * @Secure(roles="ROLE_USER")
-         * @RunAs(roles="ROLE_PRIVATE_SERVICE")
-         */
-        public function canBeInvokedFromOtherServices()
-        {
-            return $this->myPrivateService->aMethodOnlyToBeInvokedThroughASpecificChannel();
-        }
-    }
-
-``@SatisfiesParentSecurityPolicy``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Esto lo debes definir en un método que sustituya al método que tiene metadatos de seguridad.
-Está ahí para asegurarse de que estás consciente de que la seguridad del método reemplazado no se puede hacer valer más, y que tienes que copiar todas las anotaciones si deseas mantenerlas.

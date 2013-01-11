@@ -1,0 +1,200 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Usando un repositorio de rutas personalizado con un enrutador dinámico &mdash; Symblog</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="top" title="Symblog" href="../index.html" />
+    <link rel="next" title="Instalando el recinto de seguridad del CMF" href="installing-cmf-sandbox.html" />
+    <link rel="prev" title="Usando una clase documento personalizada asociada con PHPCR-ODM" href="phpcr-odm-custom-documentclass-mapper.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="installing-cmf-sandbox.html" title="Instalando el recinto de seguridad del CMF"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="phpcr-odm-custom-documentclass-mapper.html" title="Usando una clase documento personalizada asociada con PHPCR-ODM"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">Symblog</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="usando-un-repositorio-de-rutas-personalizado-con-un-enrutador-dinamico">
+<h1>Usando un repositorio de rutas personalizado con un enrutador dinámico<a class="headerlink" href="#usando-un-repositorio-de-rutas-personalizado-con-un-enrutador-dinamico" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El enrutador dinámico te permite personalizar la ruta al repositorio (es decir, la clase responsable de recuperar rutas desde la base de datos), y por extensión, los objetos <tt class="docutils literal"><span class="pre">Ruta</span></tt>.</p>
+<div class="section" id="creando-el-repositorio-de-rutas">
+<h2>Creando el repositorio de rutas<a class="headerlink" href="#creando-el-repositorio-de-rutas" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El repositorio de rutas tiene que implementar la <cite>RouteRepositoryInterface</cite>. La siguiente clase proporciona una solución sencilla que utiliza un repositorio <em>ODM</em>.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="cp">&lt;?php</span>
+
+<span class="k">namespace</span> <span class="nx">MyVendor\Bundle\MyBundle\Repository</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\ODM\PHPCR\DocumentRepository</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Cmf\Component\Routing\RouteRepositoryInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Routing\RouteCollection</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Routing\Route</span> <span class="k">as</span> <span class="nx">SymfonyRoute</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">RouteRepository</span> <span class="k">extends</span> <span class="nx">DocumentRepository</span> <span class="k">implements</span> <span class="nx">RouteRepositoryInterface</span>
+
+<span class="p">{</span>
+    <span class="c1">// Este método se usa para encontrar las rutas que coinciden con la URL dada</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">findManyByUrl</span><span class="p">(</span><span class="nv">$url</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// por simplicidad recuperamos una ruta</span>
+        <span class="nv">$myDocument</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">findOneBy</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;url&#39;</span> <span class="o">=&gt;</span> <span class="nv">$url</span><span class="p">,</span>
+        <span class="p">));</span>
+
+        <span class="nv">$pattern</span> <span class="o">=</span> <span class="nv">$myDocument</span><span class="o">-&gt;</span><span class="na">getUrl</span><span class="p">();</span> <span class="c1">// p. ej. &quot;/esta/es/una/url&quot;</span>
+
+        <span class="nv">$collection</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
+
+        <span class="c1">// crea una nueva ruta y pone nuestro documento como</span>
+        <span class="c1">// predefinido (a modo de que lo podamos recuperar desde la petición)</span>
+        <span class="nv">$route</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SymfonyRoute</span><span class="p">(</span><span class="nv">$ep</span><span class="o">-&gt;</span><span class="na">getPath</span><span class="p">(),</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;document&#39;</span> <span class="o">=&gt;</span> <span class="nv">$document</span><span class="p">,</span>
+        <span class="p">));</span>
+
+        <span class="c1">// Añade la ruta al RouteCollection usando</span>
+        <span class="c1">// como clave un ID único.</span>
+        <span class="nv">$collection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;my_route_&#39;</span><span class="o">.</span><span class="nb">uniqid</span><span class="p">(),</span> <span class="nv">$route</span><span class="p">);</span>
+
+        <span class="k">return</span> <span class="nv">$collection</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// este método se usa para generar URL, p. ej. {{ path(&#39;foobar&#39;) }}</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getRouteByName</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="nv">$params</span> <span class="o">=</span> <span class="k">array</span><span class="p">())</span>
+    <span class="p">{</span>
+        <span class="nv">$document</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">findOneBy</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;name&#39;</span> <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">,</span>
+        <span class="p">));</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$route</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nv">$route</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SymfonyRoute</span><span class="p">(</span><span class="nv">$route</span><span class="o">-&gt;</span><span class="na">getPattern</span><span class="p">(),</span> <span class="k">array</span><span class="p">(</span>
+                <span class="s1">&#39;document&#39;</span> <span class="o">=&gt;</span> <span class="nv">$document</span><span class="p">,</span>
+            <span class="p">));</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="nv">$route</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Como posiblemente hayas notado regresamos un objeto <cite>RouteCollection</cite> &#8212; ¿porqué no regresamos una sola <tt class="docutils literal"><span class="pre">Ruta</span></tt>? El enrutador dinámico nos permite regresar muchas rutas <em>candidatas</em>, en otras palabras, rutas que <em>podrían</em> emparejar con la <em>URL</em> entrante. Esto es importante para habilitar la posibilidad de emparejar rutas <em>dinámicas</em>, <cite>/page/{page_id}/edit</cite> por ejemplo.
+En nuestro ejemplo emparejamos las <em>URL</em> dadas exactamente y siempre regresar únicamente una sola <tt class="docutils literal"><span class="pre">Ruta</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="reemplazando-el-repositorio-predefinido-del-cmf">
+<h2>Reemplazando el repositorio predefinido del <em>CMF</em><a class="headerlink" href="#reemplazando-el-repositorio-predefinido-del-cmf" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para reemplazar el <cite>RouteRepository</cite> predefinido es necesario modificar tu configuración
+de la siguiente manera:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">symfony_cmf_routing_extra</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">dynamic</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">enabled</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+        <span class="l-Scalar-Plain">route_repository_service_id</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">my_bundle.repository.endpoint</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Donde <cite>my_bundle.repository.endpoint</cite> es el ID del servicio de tu repositorio.
+Ve <a class="reference external" href="http://symfony.com/doc/current/book/service_container.html#creating-configuring-services-in-the-container/">Creando y configurando servicios en el contenedor</a> para información sobre la creación de servicios personalizados.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Contenidos</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Usando un repositorio de rutas personalizado con un enrutador dinámico</a><ul>
+<li><a class="reference internal" href="#creando-el-repositorio-de-rutas">Creando el repositorio de rutas</a></li>
+<li><a class="reference internal" href="#reemplazando-el-repositorio-predefinido-del-cmf">Reemplazando el repositorio predefinido del <em>CMF</em></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Tema anterior</h4>
+  <p class="topless"><a href="phpcr-odm-custom-documentclass-mapper.html"
+                        title="Capítulo anterior">Usando una clase documento personalizada asociada con <em>PHPCR-ODM</em></a></p>
+  <h4>Próximo tema</h4>
+  <p class="topless"><a href="installing-cmf-sandbox.html"
+                        title="Próximo capítulo">Instalando el recinto de seguridad del <tt class="docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt></a></p>
+<div id="searchbox" style="display: none">
+  <h3>Búsqueda rápida</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Ir a" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="installing-cmf-sandbox.html" title="Instalando el recinto de seguridad del CMF"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="phpcr-odm-custom-documentclass-mapper.html" title="Usando una clase documento personalizada asociada con PHPCR-ODM"
+             >anterior</a> |</li>
+        <li><a href="../index.html">Symblog</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Comunidad CMF de Symfony Traducido al español por Nacho Pacheco.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

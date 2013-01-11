@@ -1,7 +1,7 @@
 .. index::
    single: Referencia de configuración; Framework
 
-Configuración del ``FrameworkBundle`` ("framework")
+Configuración del ``FrameworkBundle`` («framework»)
 ===================================================
 
 Este documento de referencia es un trabajo en progreso. Este debe ser preciso, pero aún no están cubiertas completamente todas las opciones.
@@ -12,10 +12,10 @@ Esto incluye ajustes relacionados con sesiones, traducción, formularios, valida
 Configurando
 ------------
 
-* `charset`_
 * `secret`_
 * `ide`_
 * `test`_
+* `trust_proxy_headers`_
 * `form`_
     * `enabled`
 * `csrf_protection`_
@@ -27,13 +27,6 @@ Configurando
     * `assets_base_urls`_
     * `assets_version`_
     * `assets_version_format`_
-
-``charset``
-~~~~~~~~~~~
-
-**tipo**: ``string`` **predefinido**: ``UTF-8``
-
-El juego de caracteres utilizado en toda la plataforma. Se convierte en el parámetro del contenedor de servicios llamado ``kernel.charset``.
 
 ``secret``
 ~~~~~~~~~~
@@ -73,6 +66,15 @@ Por supuesto, debido a que cada desarrollador utiliza un *IDE* diferente, es mej
 Si este parámetro de configuración está presente (y no es ``false``), entonces se cargará el servicio relacionado para probar tu aplicación (por ejemplo, ``test.client``).
 Este valor debe estar presente en tu entorno ``test`` (por lo general a través de ``app/config/config_test.yml``). Para más información, consulta :doc:`/book/testing`.
 
+``trust_proxy_headers``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``Boolean``
+
+Configura si las cabeceras *HTTP* (tal como ``HTTP_X_FORWARDED_FOR``, ``X_FORWARDED_PROTO`` y ``X_FORWARDED_HOST``) son de confianza como una indicación para una conexión *SSL*. De forma predeterminada, se establece a ``false``, y sólo las conexiones *SSL_HTTPS* se indican como seguras.
+
+Debes habilitar esta opción si tu aplicación está detrás de un servidor delegado inverso.
+
 .. _reference-framework-form:
 
 ``form``
@@ -99,10 +101,14 @@ Esta determina la duración de la sesión --- en segundos. De manera predetermin
 
 **predeterminado**: ``{ http: [], ssl: [] }``
 
-Esta opción te permite definir direcciones *URL* base que se utilizarán para referirte a los recursos desde las páginas ``http`` y ``ssl`` (``https``). Puedes proporcionar un valor de cadena en vez de una matriz de un solo elemento. Si proporcionas varias *URL* base, *Symfony2* seleccionará una de la colección cada vez que genere una ruta de activo.
+Esta opción te permite definir direcciones *URL* base que se utilizarán para referirte a los recursos desde las páginas ``http`` y ``ssl`` (``https``). Puedes proporcionar un valor de cadena en vez de un arreglo de un solo elemento. Si proporcionas varias *URL* base, *Symfony2* seleccionará una de la colección cada vez que genere una ruta de activo.
 
-Para tu comodidad, puedes establecer directamente ``assets_base_urls`` con una cadena o una matriz de cadenas, que se organizan automáticamente en colecciones de *URL* base para peticiones ``http`` y ``https``. Si una *URL* comienza con ``https://`` o
+Para tu comodidad, puedes establecer directamente ``assets_base_urls`` con una cadena o un arreglo de cadenas, que se organizan automáticamente en colecciones de *URL* base para peticiones ``http`` y ``https``. Si una *URL* comienza con ``https://`` o
 está `relacionada al protocolo`_ (es decir empieza con ``//``) esta se debe añadir en ambas colecciones. las *URL* que empiezan con ``http://`` sólo se agregarán a la colección ``http``.
+
+.. versionadded:: 2.1
+    A diferencia de la mayoría de los bloques de configuración, los valores sucesivos de ``assets_base_urls`` se deben sobrescribir unos a otros en lugar de fusionarse. Este comportamiento fue elegido porque los desarrolladores típicamente definen la *URL* base para cada entorno.
+    Dado que la mayoría de los proyectos tienden a heredar las configuraciones (por ejemplo, :file:`config_test.yml` importa :file:`config_dev.yml`) y/o comparten una configuración base común (es decir, :file:`config.yml`), la fusión podría generar un conjunto de *URL* base para múltiples entornos.
 
 .. _ref-framework-assets-version:
 
@@ -174,9 +180,9 @@ Esto especifica un patrón `sprintf()`_ que se debe utilizar con la opción `ass
 
     Algunos *CDN* no son compatibles con ``caché rota`` a través de cadenas de consulta, por lo que la inyección de la versión en la ruta del archivo real es necesaria. Menos mal, ``assets_version_format`` no se limita a producir cadenas de consulta versionadas.
 
-    El patrón recibe la ruta original del activo y la versión de sus parámetros primero y segundo, respectivamente. Debido a que la ruta del activo es un parámetro, no la podemos modificar en el lugar (por ejemplo ``/images/logo-v5.png``); sin embargo, podemos prefijar la ruta del activo usando un patrón de ``version-%%2$s/%%1$s``, lo cual resultaría en la ruta ``version-5/images/logo.png``.
+    El patrón recibe la ruta original del activo y la versión de sus parámetros primero y segundo, respectivamente. Debido a que la ruta del activo es un parámetro, no la puedes modificar en el lugar (p. ej. ``/images/logo-v5.png``); sin embargo, puedes prefijar la ruta del activo usando un patrón de ``version-%%2$s/%%1$s``, el cual resultará en la ruta ``version-5/images/logo.png``.
 
-    Las reglas de reescritura de *URL* entonces, se podrían utilizar para ignorar el prefijo de la versión antes de servir el activo. Como alternativa, puedes copiar los activos a la ruta de la versión apropiada como parte de tu proceso de despliegue y renunciar a toda la reescritura de *URL*.
+    Entonces, las reglas de reescritura de *URL* se podrían utilizar para ignorar el prefijo de la versión antes de servir el activo. Como alternativa, puedes copiar los activos a la ruta de la versión apropiada como parte de tu proceso de despliegue y renunciar a toda la reescritura de *URL*.
     La última opción es útil si deseas que las versiones anteriores de los activos permanezcan accesibles en la *URL* original.
 
 Configuración predeterminada completa
@@ -189,11 +195,11 @@ Configuración predeterminada completa
         framework:
 
             # configuración general
-            charset:              ~
+            trust_proxy_headers:  false
             secret:               ~ # Requerido
             ide:                  ~
             test:                 ~
-            trust_proxy_headers:  false
+            default_locale:       en
 
             # configuración de formulario
             form:
@@ -210,13 +216,15 @@ Configuración predeterminada completa
             profiler:
                 only_exceptions:      false
                 only_master_requests:  false
-                dsn:                  "sqlite:%kernel.cache_dir%/profiler.db"
+                dsn:                  file:%kernel.cache_dir%/profiler
                 username:
                 password:
                 lifetime:             86400
                 matcher:
                     ip:                   ~
-                    path:                 ~
+
+                    # usa el formato urldecoded
+                    path:                 ~ # Ejemplo: ^/ruta al recurso/
                     service:              ~
 
             # configuración de enrutador
@@ -225,40 +233,65 @@ Configuración predeterminada completa
                 type:                 ~
                 http_port:            80
                 https_port:           443
+                # si es false, se generará una URL vacía de faltar un parámetro ruta requerido
+                strict_requirements:  %kernel.debug%
 
             # configuración de sesión
             session:
-                auto_start:           ~
-                default_locale:       en
+                auto_start:           false
                 storage_id:           session.storage.native
+                handler_id:           session.handler.native_file
                 name:                 ~
-                lifetime:             0
+                cookie_lifetime:      ~
+                cookie_path:          ~
+                cookie_domain:        ~
+                cookie_secure:        ~
+                cookie_httponly:      ~
+                gc_divisor:           ~
+                gc_probability:       ~
+                gc_maxlifetime:       ~
+                save_path:            %kernel.cache_dir%/sessions
+
+                # ¡DESACONSEJADO! Por favor usa: cookie_lifetime
+                lifetime:             ~
+
+                # ¡DESACONSEJADO! Por favor usa: cookie_path
                 path:                 ~
+
+                # ¡DESACONSEJADO! Por favor usa: cookie_domain
                 domain:               ~
+
+                # ¡DESACONSEJADO! Por favor usa: cookie_secure
                 secure:               ~
+
+                # ¡DESACONSEJADO! Por favor usa: cookie_httponly
                 httponly:             ~
 
             # configuración de plantillas
             templating:
                 assets_version:       ~
-                assets_version_format:  "%%s?%%s"
+                assets_version_format:  %%s?%%s
+                hinclude_default_template:  ~
+                form:
+                    resources:
+
+                        # Predefinido:
+                        - FrameworkBundle:Form
                 assets_base_urls:
                     http:                 []
                     ssl:                  []
                 cache:                ~
-                engines:              # Required
-                form:
-                    resources:        [FrameworkBundle:Form]
+                engines:              # Requerido
 
                     # Ejemplo:
                     - twig
                 loaders:              []
                 packages:
 
-                    # Prototipo
-                    name:
+                    # Una colección de nombres de paquete
+                    un_nombre_de_paquete:
                         version:              ~
-                        version_format:       ~
+                        version_format:       %%s?%%s
                         base_urls:
                             http:                 []
                     ssl:                  []

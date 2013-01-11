@@ -1,3 +1,7 @@
+.. index::
+   single: Yaml
+   single: Componentes; Yaml
+
 El componente *YAML*
 ====================
 
@@ -6,8 +10,8 @@ El componente *YAML*
 ¿Qué es entonces?
 -----------------
 
-El componente *YAML* de *Symfony2* analiza cadenas *YAML* para convertirlas a matrices *PHP*.
-También es capaz de convertir matrices *PHP* a cadenas *YAML*.
+El componente *YAML* de *Symfony2* analiza cadenas *YAML* para convertirlas en arreglos *PHP*.
+También es capaz de convertir arreglos *PHP* a cadenas *YAML*.
 
 `YAML`_, *YAML no es un lenguaje de marcado*, es un estándar para la serialización de datos amigable con los humanos para todos los lenguajes de programación. YAML es un formato ideal para tus archivos de configuración. Los archivos *YAML* son tan expresivos como los archivos *XML* y tan fáciles de leer como los archivos ``INI``.
 
@@ -21,8 +25,7 @@ Instalando
 Puedes instalar el componente de varias maneras diferentes:
 
 * Usando el repositorio *Git* oficial (https://github.com/symfony/Yaml);
-* Instalándolo a través de *PEAR* ( `pear.symfony.com/Yaml`);
-* Instalándolo vía ``Composer`` (`symfony/yaml` en Packagist).
+* :doc:`Instalándolo vía Composer </components/using_components>` (``symfony/yaml`` en `Packagist`_).
 
 ¿Por qué?
 ---------
@@ -45,7 +48,7 @@ Cada vez que tienes un problema de sintaxis con tus archivos *YAML*, la bibliote
 Compatibilidad con el volcado
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-También es capaz de volcar matrices de *PHP* a *YAML* con el apoyo de objetos, y el nivel de configuración en línea es bastante bueno.
+También es capaz de volcar arreglos de *PHP* a *YAML* con apoyo a objetos, y el nivel de configuración en línea es bastante bueno.
 
 Compatibilidad de tipos
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -69,7 +72,7 @@ Además de estas dos clases, la clase :class:`Symfony\\Component\\Yaml\\Yaml` ac
 Leyendo archivos *YAML*
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-El método :method:`Symfony\\Component\\Yaml\\Parser::parse` analiza una cadena *YAML* y la convierte en una matriz *PHP*:
+El método :method:`Symfony\\Component\\Yaml\\Parser::parse` analiza una cadena *YAML* y la convierte en un arreglo *PHP*:
 
 .. code-block:: php
 
@@ -101,24 +104,32 @@ Al cargar un archivo *YAML*, a veces es mejor usar el contenedor del método :me
 
     use Symfony\Component\Yaml\Yaml;
 
-    $loader = Yaml::parse('/ruta/a/archivo.yml');
+    $yaml = Yaml::parse('/path/to/file.yml');
 
-El método estático :method:`Symfony\\Component\\Yaml\\Yaml::parse` toma una cadena *YAML* o un archivo que contiene *YAML*. Internamente, llama  al método :method:`Symfony\\Component\\Yaml\\Parser::parse`, pero con algunos bonos añadidos:
+El método estático :method:`Symfony\\Component\\Yaml\\Yaml::parse` toma una cadena *YAML* o un archivo que contiene *YAML*. Internamente, llama al método :method:`Symfony\\Component\\Yaml\\Parser::parse`, pero mejora el error si algo sale mal, añadiendo el nombre del archivo al mensaje.
 
-* Ejecuta el archivo *YAML* como si fuera un archivo *PHP*, por lo tanto puedes incrustar ordenes *PHP* en tus archivos *YAML*;
+Ejecutando *PHP* dentro de los archivos *YAML*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Cuando un archivo no se puede analizar, este agrega automáticamente el nombre del archivo al mensaje de error, lo cual simplifica la depuración cuando tu aplicación está cargando varios archivos *YAML*.
+.. versionadded:: 2.1
+    El método ``Yaml::enablePhpParsing()`` es nuevo en *Symfony 2.1*. Antes de 2.1, *PHP* *siempre* se ejecuta al llamar a la función ``parse()``.
+
+De manera predeterminada, si incluyes *PHP* dentro de un archivo *YAML*, no se va a analizar.
+Si quiere que *PHP* se analice, debes llamar a ``Yaml::enablePhpParsing()`` antes de analizar el archivo para activar ese modo. Si sólo deseas permitir código *PHP* para un único archivo *YAML*, asegúrate de desactivar el intérprete *PHP* después de analizar ese archivo llamando a ``Yaml::$enablePhpParsing = false;``, (``$enablePhpParsing`` es una propiedad pública).
 
 Escribiendo archivos *YAML*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-El método :method:`Symfony\\Component\\Yaml\\Dumper::dump` vuelca cualquier matriz *PHP* en su representación *YAML*:
+El método :method:`Symfony\\Component\\Yaml\\Dumper::dump` vuelca cualquier arreglo *PHP* en su representación *YAML*:
 
 .. code-block:: php
 
     use Symfony\Component\Yaml\Dumper;
 
-    $array = array('foo' => 'bar', 'bar' => array('foo' => 'bar', 'bar' => 'baz'));
+    $array = array(
+        'foo' => 'bar',
+        'bar' => array('foo' => 'bar', 'bar' => 'baz')
+    );
 
     $dumper = new Dumper();
 
@@ -132,7 +143,7 @@ El método :method:`Symfony\\Component\\Yaml\\Dumper::dump` vuelca cualquier mat
 
 Si ocurre un error durante el volcado, el analizador lanza una excepción :class:`Symfony\\Component\\Yaml\\Exception\\DumpException`.
 
-Si sólo necesitas volcar una matriz, puedes utilizar el método estático :method:`Symfony\\Component\\Yaml\\Yaml::dump`:
+Si sólo necesitas volcar un arreglo, puedes utilizar el método estático :method:`Symfony\\Component\\Yaml\\Yaml::dump`:
 
 .. code-block:: php
 
@@ -140,7 +151,7 @@ Si sólo necesitas volcar una matriz, puedes utilizar el método estático :meth
 
     $yaml = Yaml::dump($array, $inline);
 
-El formato *YAML* admite dos tipos de representación de matrices, la ampliada, y en línea. Por omisión, el vertedor utiliza la representación en línea:
+El formato *YAML* admite dos tipos de representación de arreglos, la ampliada, y en línea. Por omisión, el vertedor utiliza la representación en línea:
 
 .. code-block:: yaml
 
@@ -175,7 +186,7 @@ El sitio *web* de `YAML`_ dice que es "un estándar para la serialización de da
 
 Si bien el formato *YAML* puede describir complejas estructuras de datos anidadas, este capítulo sólo describe el conjunto mínimo de características necesarias para usar *YAML* como un formato de archivo de configuración.
 
-*YAML* es un lenguaje simple que describe datos. Como *PHP*, que tiene una sintaxis para tipos simples, como cadenas, booleanos, números en punto flotante, o enteros. Pero a diferencia de *PHP*, este distingue entre matrices (secuencias) y ``hashes`` (asignaciones).
+*YAML* es un lenguaje simple que describe datos. Como *PHP*, que tiene una sintaxis para tipos simples, como cadenas, booleanos, números en punto flotante, o enteros. Pero a diferencia de *PHP*, este distingue entre arreglos (secuencias) y ``hashes`` (asignaciones).
 
 Escalares
 ~~~~~~~~~
@@ -211,7 +222,7 @@ Los estilos de citado son útiles cuando una cadena empieza o termina con uno o 
 
     El estilo entre comillas dobles proporciona una manera de expresar cadenas arbitrarias, utilizando secuencias de escape ``\``. Es muy útil cuando se necesita incrustar un ``\n`` o un carácter Unicode en una cadena.
 
-Cuando una cadena contiene saltos de línea, puedes usar el estilo literal, indicado por la tubería (``|``), para indicar que la cadena abarcará varias líneas. En literales, se conservan los saltos de línea:
+Cuando una cadena contiene saltos de línea, puedes usar el estilo literal, indicado por la línea vertical (``|``), para indicar que la cadena abarcará varias líneas. En literales, se conservan los saltos de línea:
 
 .. code-block:: yaml
 
@@ -293,7 +304,7 @@ Fechas
 Colecciones
 ~~~~~~~~~~~
 
-Rara vez se utiliza un archivo *YAML* para describir un simple escalar. La mayoría de las veces, describe una colección. Una colección puede ser una secuencia o una asignación de elementos. Ambas, secuencias y asignaciones se convierten en matrices *PHP*.
+Rara vez se utiliza un archivo *YAML* para describir un simple escalar. La mayoría de las veces, describe una colección. Una colección puede ser una secuencia o una asignación de elementos. Ambas, secuencias y asignaciones se convierten en arreglos *PHP*.
 
 Las secuencias usan un guión seguido por un espacio:
 
@@ -309,7 +320,7 @@ El archivo *YAML* anterior es equivalente al siguiente código *PHP*:
 
     array('PHP', 'Perl', 'Python');
 
-Las asignaciones usan dos puntos seguidos por un espacio (``':  '``) para marcar cada par de clave/valor:
+La asignación utiliza dos puntos seguidos por un espacio (``:`` ) para marcar cada par clave/valor:
 
 .. code-block:: yaml
 
@@ -382,13 +393,13 @@ Puedes escribir una secuencia como una lista separada por comas entre corchetes 
 
     [PHP, Perl, Python]
 
-Puedes escribir una asignación como una lista separada por comas de clave/valor dentro de llaves (``{}``):
+Una asignación se puede escribir como una lista separada por comas de clave/valores dentro de llaves (``{}``):
 
 .. code-block:: yaml
 
     { PHP: 5.2, MySQL: 5.1, Apache: 2.2.20 }
 
-Puedes mezclar y combinar estilos para conseguir mayor legibilidad:
+Puedes mezclar y combinar estilos para conseguir mejor legibilidad:
 
 .. code-block:: yaml
 
@@ -413,6 +424,7 @@ En *YAML* puedes añadir comentarios anteponiendo una almohadilla (``#``):
 
 .. note::
 
-    Los comentarios simplemente son ignorados por el analizador de *YAML* y no necesitan sangría de acuerdo al nivel de anidamiento actual de una colección.
+    Los comentarios simplemente son ignorados por el analizador de *YAML* y no es necesario sangrarlos de acuerdo al nivel de anidamiento actual de una colección.
 
 .. _YAML: http://yaml.org/
+.. _`Packagist`: https://packagist.org/packages/symfony/yaml

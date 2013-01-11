@@ -1,5 +1,6 @@
 .. index::
    pair: Autocargador; Configuración
+   single: Componentes; ClassLoader
 
 El componente ``ClassLoader``
 =============================
@@ -20,11 +21,13 @@ Instalando
 Puedes instalar el componente de varias maneras diferentes:
 
 * Usando el repositorio *Git* oficial (https://github.com/symfony/ClassLoader);
-* Instalándolo a través de *PEAR* ( `pear.symfony.com/ClassLoader`);
-* Instalándolo vía ``Composer`` (`symfony/class-loader` en Packagist).
+* :doc:`Instalándolo vía Composer </components/using_components>` (``symfony/class-loader`` en `Packagist`_).
 
 Usando
 ------
+
+.. versionadded:: 2.1
+   El método ``useIncludePath`` se agregó en *Symfony* 2.1.
 
 Registrar la clase del cargador automático :class:`Symfony\\Component\\ClassLoader\\UniversalClassLoader` es sencillo::
 
@@ -34,7 +37,11 @@ Registrar la clase del cargador automático :class:`Symfony\\Component\\ClassLoa
 
     $loader = new UniversalClassLoader();
 
-    // aquí registra el espacio de nombres y prefijos - ve más abajo
+    // como último recurso busca en include_path.
+    $loader->useIncludePath(true);
+
+    // ... aquí registra el espacio de nombres y prefijos
+    // - ve más abajo
 
     $loader->register();
 
@@ -56,22 +63,22 @@ El cargador automático es útil sólo si agregas algunas bibliotecas al cargado
 
 Si las clases a cargar automáticamente utilizan espacios de nombres, utiliza cualquiera de los métodos :method:`Symfony\\Component\\ClassLoader\\UniversalClassLoader::registerNamespace` o :method:`Symfony\\Component\\ClassLoader\\UniversalClassLoader::registerNamespaces`::
 
-    $loader->registerNamespace('Symfony', __DIR__.'/vendor/symfony/src');
+    $loader->registerNamespace('Symfony', __DIR__.'/vendor/symfony/symfony/src');
 
     $loader->registerNamespaces(array(
-        'Symfony' => __DIR__.'/../vendor/symfony/src',
-        'Monolog' => __DIR__.'/../vendor/monolog/src',
+        'Symfony' => __DIR__.'/../vendor/symfony/symfony/src',
+        'Monolog' => __DIR__.'/../vendor/monolog/monolog/src',
     ));
 
     $loader->register();
 
 Para las clases que siguen la convención de nomenclatura de PEAR, utiliza cualquiera de los métodos :method:`Symfony\\Component\\ClassLoader\\UniversalClassLoader::registerPrefix` o :method:`Symfony\\Component\\ClassLoader\\UniversalClassLoader::registerPrefixes`::
 
-    $loader->registerPrefix('Twig_', __DIR__.'/vendor/twig/lib');
+    $loader->registerPrefix('Twig_', __DIR__.'/vendor/twig/twig/lib');
 
     $loader->registerPrefixes(array(
-        'Swift_' => __DIR__.'/vendor/swiftmailer/lib/classes',
-        'Twig_'  => __DIR__.'/vendor/twig/lib',
+        'Swift_' => __DIR__.'/vendor/swiftmailer/swiftmailer/lib/classes',
+        'Twig_'  => __DIR__.'/vendor/twig/twig/lib',
     ));
 
     $loader->register();
@@ -83,10 +90,10 @@ Para las clases que siguen la convención de nomenclatura de PEAR, utiliza cualq
 Las clases de un subespacio de nombres o una subjerarquía de clases *PEAR* se puede buscar en una lista de ubicaciones para facilitar la utilización de un subconjunto de clases de terceros para los grandes proyectos::
 
     $loader->registerNamespaces(array(
-        'Doctrine\\Common'           => __DIR__.'/vendor/doctrine-common/lib',
-        'Doctrine\\DBAL\\Migrations' => __DIR__.'/vendor/doctrine-migrations/lib',
-        'Doctrine\\DBAL'             => __DIR__.'/vendor/doctrine-dbal/lib',
-        'Doctrine'                   => __DIR__.'/vendor/doctrine/lib',
+        'Doctrine\\Common'           => __DIR__.'/vendor/doctrine/common/lib',
+        'Doctrine\\DBAL\\Migrations' => __DIR__.'/vendor/doctrine/migrations/lib',
+        'Doctrine\\DBAL'             => __DIR__.'/vendor/doctrine/dbal/lib',
+        'Doctrine'                   => __DIR__.'/vendor/doctrine/orm/lib',
     ));
 
     $loader->register();
@@ -96,3 +103,4 @@ El orden de registro es importante en este caso.
 
 .. _`estándares`: http://symfony.com/PSR0
 .. _`PEAR`:      http://pear.php.net/manual/en/standards.php
+.. _`Packagist`: https://packagist.org/packages/symfony/class-loader

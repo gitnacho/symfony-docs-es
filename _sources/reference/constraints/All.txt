@@ -1,7 +1,7 @@
 ``All``
 =======
 
-Cuando se aplica a una matriz (o a un objeto ``atravesable``), esta restricción te permite aplicar un conjunto de restricciones a cada elemento de la matriz.
+Cuando se aplica a un arreglo (o a un objeto ``atravesable``), esta restricción te permite aplicar un conjunto de restricciones a cada elemento del arreglo.
 
 +----------------+------------------------------------------------------------------------+
 | Aplica a       | :ref:`propiedad o método <validation-property-target>`                 |
@@ -16,7 +16,7 @@ Cuando se aplica a una matriz (o a un objeto ``atravesable``), esta restricción
 Uso básico
 ----------
 
-Supongamos que tienes una matriz de cadenas, y que deseas validar cada entrada de esa matriz:
+Supongamos que tienes un arreglo de cadenas, y que deseas validar cada entrada de ese arreglo:
 
 .. configuration-block::
 
@@ -28,27 +28,65 @@ Supongamos que tienes una matriz de cadenas, y que deseas validar cada entrada d
                 favoriteColors:
                     - All:
                         - NotBlank:  ~
-                        - MinLength: 5
+                        - Length:
+                            min: 5
 
     .. code-block:: php-annotations
 
-       // src/Acme/UserBundle/Entity/User.php
-       namespace Acme\UserBundle\Entity;
+        // src/Acme/UserBundle/Entity/User.php
+        namespace Acme\UserBundle\Entity;
+        
+        use Symfony\Component\Validator\Constraints as Assert;
+  
+        class User
+        {
+            /**
+             * @Assert\All({
+             *     @Assert\NotBlank
+             *     @Assert\Length(min = "5"),
+             * })
+             */
+             protected $favoriteColors = array();
+        }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/UserBundle/Resources/config/validation.xml -->
+        <class name="Acme\UserBundle\Entity\User">
+            <property name="favoriteColors">
+                <constraint name="All">
+                    <option name="constraints">
+                        <constraint name="NotBlank" />
+                        <constraint name="Length">
+                            <option name="min">5</option>
+                        </constraint>
+                    </option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php
+
+        // src/Acme/UserBundle/Entity/User.php
+        namespace Acme\UserBundle\Entity;
        
-       use Symfony\Component\Validator\Constraints as Assert;
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints as Assert;
 
-       class User
-       {
-           /**
-            * @Assert\All({
-            *     @Assert\NotBlank
-            *     @Assert\MinLength(5),
-            * })
-            */
-            protected $favoriteColors = array();
-       }
+        class User
+        {
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('favoriteColors', new Assert\All(array(
+                    'constraints' => array(
+                        new Assert\NotBlank(),
+                        new Assert\Length(array('limit' => 5)),
+                    ),
+                )));
+            }
+        }
 
-Ahora, cada entrada en la matriz ``favoriteColors`` será validada para que no esté en blanco y que por lo menos sea de 5 caracteres.
+Ahora, cada entrada en el arreglo ``favoriteColors`` será validada para que no esté en blanco y que por lo menos sea de 5 caracteres.
 
 Opciones
 --------
@@ -58,4 +96,4 @@ Opciones
 
 **tipo**: ``array`` [:ref:`opción predeterminada <validation-default-option>`]
 
-Esta opción requerida es el arreglo de restricciones de validación que deseas aplicar a cada elemento de la matriz subyacente.
+Esta opción requerida es el arreglo de restricciones de validación que deseas aplicar a cada elemento del arreglo subyacente.

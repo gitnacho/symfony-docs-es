@@ -1,5 +1,5 @@
 .. index::
-   single: Seguridad; votantes
+   single: Seguridad; Voters
 
 Cómo implementar tu propio votante para agregar direcciones *IP* a la lista negra
 =================================================================================
@@ -34,15 +34,16 @@ El método ``vote()`` debe implementar la lógica del negocio que verifica cuand
 * ``VoterInterface::ACCESS_ABSTAIN``: El votante no puede decidir si permitir al usuario o no
 * ``VoterInterface::ACCESS_DENIED``: El usuario no tiene permitido el acceso a la aplicación
 
-En este ejemplo, vamos a comprobar si la dirección *IP* del usuario coincide con una lista de direcciones en la lista negra. Si la *IP* del usuario está en la lista negra, devolveremos ``VoterInterface::ACCESS_DENIED``, de lo contrario devolveremos ``VoterInterface::ACCESS_ABSTAIN`` porque la finalidad del votante sólo es para negar el acceso, no para permitir el acceso.
+En este ejemplo, debes comprobar si la dirección *IP* del usuario coincide con una lista de direcciones en la lista negra. Si la *IP* del usuario está en la lista negra, devuelves ``VoterInterface::ACCESS_DENIED``, de lo contrario devuelves ``VoterInterface::ACCESS_ABSTAIN`` porque la finalidad del votante sólo es denegar el acceso, no permitir el acceso.
 
 Creando un votante personalizado
 --------------------------------
 
-Para poner a un usuario en la lista negra basándonos en su *IP*, podemos utilizar el servicio ``Petición`` y comparar la dirección *IP* contra un conjunto de direcciones *IP* en la lista negra:
+Para poner a un usuario en la lista negra basándote en su *IP*, puedes utilizar el servicio ``request`` y comparar la dirección *IP* contra un conjunto de direcciones *IP* en la lista negra:
 
 .. code-block:: php
 
+    // src/Acme/DemoBundle/Security/Authorization/Voter/ClientIpVoter.php
     namespace Acme\DemoBundle\Security\Authorization\Voter;
 
     use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -59,15 +60,13 @@ Para poner a un usuario en la lista negra basándonos en su *IP*, podemos utiliz
 
         public function supportsAttribute($attribute)
         {
-            // no vamos a verificar contra un atributo de usuario,
-            // por lo tanto devuelve 'true'
+            // no vas a verificar contra un atributo de usuario, por tanto devuelve 'true'
             return true;
         }
 
         public function supportsClass($class)
         {
-            // nuestro votante apoya todo tipo de clases,
-            // por lo tanto devuelve 'true'
+            // tu votante apoya todo tipo de clases, por tanto devuelve 'true'
             return true;
         }
 
@@ -87,14 +86,13 @@ Para poner a un usuario en la lista negra basándonos en su *IP*, podemos utiliz
 Declarando el votante como servicio
 -----------------------------------
 
-Para inyectar al votante en la capa de seguridad, lo debemos declarar como servicio, y etiquetarlo como "security.voter":
+Para inyectar al votante en la capa de seguridad, lo debes declarar como servicio, y etiquetarlo como ``«security.voter»``:
 
 .. configuration-block::
 
     .. code-block:: yaml
 
         # src/Acme/AcmeBundle/Resources/config/services.yml
-
         services:
             security.access.blacklist_voter:
                 class:      Acme\DemoBundle\Security\Authorization\Voter\ClientIpVoter
@@ -106,7 +104,6 @@ Para inyectar al votante en la capa de seguridad, lo debemos declarar como servi
     .. code-block:: xml
 
         <!-- src/Acme/AcmeBundle/Resources/config/services.xml -->
-
         <service id="security.access.blacklist_voter"
                  class="Acme\DemoBundle\Security\Authorization\Voter\ClientIpVoter" public="false">
             <argument type="service" id="service_container" strict="false" />
@@ -120,7 +117,6 @@ Para inyectar al votante en la capa de seguridad, lo debemos declarar como servi
     .. code-block:: php
 
         // src/Acme/AcmeBundle/Resources/config/services.php
-
         use Symfony\Component\DependencyInjection\Definition;
         use Symfony\Component\DependencyInjection\Reference;
 
@@ -138,16 +134,16 @@ Para inyectar al votante en la capa de seguridad, lo debemos declarar como servi
 
 .. tip::
 
-   Asegúrate de importar este archivo de configuración desde el archivo de configuración principal de tu aplicación (por ejemplo, ``app/config/config.yml``). Para más información, consulta :ref:`service-container-imports-directive`. Para leer más acerca de definir los servicios en general, consulta el capítulo :doc:`/book/service_container`.
+   Asegúrate de importar este archivo de configuración desde el archivo de configuración principal de tu aplicación (por ejemplo, :file:`app/config/config.yml`). Para más información, consulta :ref:`service-container-imports-directive`. Para leer más acerca de definir los servicios en general, consulta el capítulo :doc:`/book/service_container`.
 
 Cambiando la estrategia de decisión de acceso
 ---------------------------------------------
 
-A fin de que los cambios del nuevo votante tengan efecto, tenemos que cambiar la estrategia de decisión de acceso predeterminada, que, por omisión, concede el acceso si *cualquier* votante permite el acceso.
+A fin de que los cambios del nuevo votante tengan efecto, tienes que cambiar la estrategia de decisión de acceso predeterminada, la cual por omisión, concede el acceso si *cualquier* votante permite el acceso.
 
-En nuestro caso, vamos a elegir la estrategia ``unánime``. A diferencia de la estrategia ``afirmativa`` (predeterminada), con la estrategia ``unánime``, aunque un votante sólo niega el acceso (por ejemplo, el ``ClientIpVoter``), no otorga acceso al usuario final.
+En este caso, escoge la estrategia ``unanimous``. A diferencia de la estrategia ``afirmativa`` (predeterminada), con la estrategia ``unanimous``, aunque un votante sólo niega el acceso (p. ej. el ``ClientIpVoter``), no otorga acceso al usuario final.
 
-Para ello, sustituye la sección ``access_decision_manager`` predeterminada del archivo de configuración de tu aplicación con el siguiente código.
+Para ello, sustituye la sección predeterminada ``access_decision_manager`` del archivo de configuración de tu aplicación con el siguiente código.
 
 .. configuration-block::
 

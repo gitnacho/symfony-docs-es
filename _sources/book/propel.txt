@@ -4,21 +4,21 @@
 Bases de datos y *Propel*
 =========================
 
-Seamos realistas, una de las tareas más comunes y desafiantes para cualquier aplicación consiste en la persistencia y lectura de información hacia y desde una base de datos. *Symfony2* no viene integrado con ningún *ORM*, pero integrar *Propel* en fácil.
+Seamos realistas, una de las tareas más comunes y desafiantes para cualquier aplicación involucra la persistencia y lectura de información hacia y desde una base de datos. *Symfony2* no viene integrado con ningún *ORM*, pero integrar *Propel* es relativamente fácil.
 Para empezar, consulta `Trabajando con Symfony2`_.
 
 Un sencillo ejemplo: Un producto
 --------------------------------
 
-En esta sección, configuraremos tu base de datos, crearemos un objeto ``Producto``, lo persistiremos en la base de datos y lo recuperaremos de nuevo.
+En esta sección, configurarás tu base de datos, crearás un objeto ``Producto``, lo persistirás en la base de datos y lo recuperarás de nuevo.
 
 .. sidebar:: El código del ejemplo
 
     Si quieres seguir el ejemplo de este capítulo, crea el paquete ``AcmeStoreBundle`` ejecutando la orden:
 
-   .. code-block:: php
+    .. code-block:: bash
 
-      php app/console generate:bundle --namespace=Acme/StoreBundle
+        $ php app/console generate:bundle --namespace=Acme/StoreBundle
 
 Configurando la base de datos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,14 +28,14 @@ Antes de poder comenzar realmente, tendrás que establecer tu información para 
 
 .. code-block:: yaml
 
-    ;app/config/parameters.yml
-    [parameters]
-        database_driver   = mysql
-        database_host     = localhost
-        database_name     = proyecto_de_prueba
-        database_user     = usuario_de_pruebas
-        database_password = clave_de_acceso
-        database_charset  = UTF8
+    # app/config/parameters.yml
+    parameters:
+        database_driver:   mysql
+        database_host:     localhost
+        database_name:     proyecto_de_prueba
+        database_user:     nombre_de_usuario
+        database_password: password
+        database_charset:  UTF8
 
 .. note::
 
@@ -45,20 +45,20 @@ Antes de poder comenzar realmente, tendrás que establecer tu información para 
 
         propel:
             dbal:
-                driver:     %database_driver%
-                user:       %database_user%
-                password:   %database_password%
-                dsn:        %database_driver%:host=%database_host%;dbname=%database_name%;charset=%database_charset%
+                driver:     "%database_driver%"
+                user:       "%database_user%"
+                password:   "%database_password%"
+                dsn:        "%database_driver%:host=%database_host%;dbname=%database_name%;charset=%database_charset%"
 
 Ahora que *Propel* está consciente de tu base de datos, posiblemente tenga que crear la base de datos para ti:
 
 .. code-block:: bash
 
-    php app/console propel:database:create
+    $ php app/console propel:database:create
 
 .. note::
 
-    En este ejemplo, tienes configurada una conexión, denominada ``default``. Si quieres configurar más de una conexión, consulta la `sección de configuración del PropelBundle <http://www.propelorm.org/cookbook/symfony2/working-with-symfony2.html#project_configuration>`_.
+    En este ejemplo, tienes configurada una conexión, denominada ``default``. Si quieres configurar más de una conexión, lee la `sección de configuración del PropelBundle <Working With Symfony2 - Configuration>`_.
 
 Creando una clase ``Modelo``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,7 +91,7 @@ Después de crear tu archivo ``schema.xml``, genera tu modelo ejecutando:
 
 .. code-block:: bash
 
-    php app/console propel:model:build
+    $ php app/console propel:model:build
 
 Esto genera todas las clases del modelo en el directorio ``Model/`` del paquete ``AcmeStoreBundle`` para que desarrolles rápidamente tu aplicación.
 
@@ -102,19 +102,14 @@ Ahora tienes una clase ``Producto`` utilizable con todo lo que necesitas para pe
 
 .. code-block:: bash
 
-    php app/console propel:sql:build
-
-    php app/console propel:sql:insert --force
+    $ php app/console propel:sql:build
+    $ php app/console propel:sql:insert --force
 
 Tu base de datos ahora cuenta con una tabla ``producto`` completamente funcional, con columnas que coinciden con el esquema que has especificado.
 
 .. tip::
 
-    Puedes combinar las tres últimas ordenes ejecutando la siguiente orden:
-
-   .. code-block:: php
-
-       php app/console propel:build --insert-sql
+    Puedes combinar las tres últimas ordenes ejecutando la siguiente orden: ``php app/console propel:build --insert-sql``.
 
 Persistiendo objetos a la base de datos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -122,9 +117,10 @@ Persistiendo objetos a la base de datos
 Ahora que tienes un objeto ``Producto`` y la tabla ``producto`` correspondiente, estás listo para persistir la información a la base de datos.  Desde el interior de un controlador, esto es bastante fácil. Agrega el siguiente método al ``DefaultController`` del paquete::
 
     // src/Acme/StoreBundle/Controller/DefaultController.php
+
+    // ...
     use Acme\StoreBundle\Model\Product;
     use Symfony\Component\HttpFoundation\Response;
-    // ...
 
     public function createAction()
     {
@@ -149,40 +145,46 @@ Recuperando objetos desde la base de datos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Recuperar un objeto desde la base de datos es aún más fácil. Por ejemplo, supongamos que has configurado una ruta para mostrar un ``Producto`` específico en función del valor de su ``id``::
-    
+
+    // ...
     use Acme\StoreBundle\Model\ProductQuery;
-    
+
     public function showAction($id)
     {
         $product = ProductQuery::create()
             ->findPk($id);
-    
+
         if (!$product) {
-            throw $this->createNotFoundException('No product found for id '.$id);
+            throw $this->createNotFoundException(
+                'No product found for id '.$id
+            );
         }
-    
-        // haz algo, como pasar el objeto $product a una plantilla
+
+        // ... haz algo, como pasar el objeto $product a una plantilla
     }
 
 Actualizando un objeto
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Una vez que hayas recuperado un objeto de *Propel*, actualizarlo es relativamente fácil. Supongamos que tienes una ruta que asigna un identificador de producto a una acción de actualización en un controlador::
-    
+
+    // ...
     use Acme\StoreBundle\Model\ProductQuery;
-    
+
     public function updateAction($id)
     {
         $product = ProductQuery::create()
             ->findPk($id);
-    
+
         if (!$product) {
-            throw $this->createNotFoundException('No product found for id '.$id);
+            throw $this->createNotFoundException(
+                'No product found for id '.$id
+            );
         }
-    
+
         $product->setName('New product name!');
         $product->save();
-    
+
         return $this->redirect($this->generateUrl('homepage'));
     }
 
@@ -199,20 +201,18 @@ Eliminar un objeto es muy similar, pero requiere una llamada al método ``delete
 
     $product->delete();
 
-Consultando objetos
--------------------
+Consultando por objetos
+-----------------------
 
 *Propel* provee clases ``Query`` generadas para ejecutar ambas consultas, básicas y complejas sin mayor esfuerzo::
-    
+
     \Acme\StoreBundle\Model\ProductQuery::create()->findPk($id);
-    
+
     \Acme\StoreBundle\Model\ProductQuery::create()
         ->filterByName('Foo')
         ->findOne();
 
-Imagina que deseas consultar los productos, pero sólo quieres devolver aquellos que cuestan más de ``19.99``, ordenados del más barato al más caro. Desde el interior de un controlador, haz lo siguiente:
-
-.. code-block:: php
+Imagina que deseas consultar los productos, pero sólo quieres devolver aquellos que cuestan más de ``19.99``, ordenados del más barato al más caro. Desde el interior de un controlador, haz lo siguiente::
 
     $products = \Acme\StoreBundle\Model\ProductQuery::create()
         ->filterByPrice(array('min' => 19.99))
@@ -221,18 +221,15 @@ Imagina que deseas consultar los productos, pero sólo quieres devolver aquellos
 
 En una línea, recuperas tus productos en una potente manera orientada a objetos. No necesitas gastar tu tiempo con *SQL* o ninguna otra cosa, *Symfony2* ofrece programación completamente orientada a objetos y *Propel* respeta la misma filosofía proveyendo una impresionante capa de abstracción.
 
-Si quieres reutilizar algunas consultas, puedes añadir tus propios métodos a la clase ``ProductQuery``:
-
-.. code-block:: php
+Si quieres reutilizar algunas consultas, puedes añadir tus propios métodos a la clase ``ProductQuery``::
 
     // src/Acme/StoreBundle/Model/ProductQuery.php
-
     class ProductQuery extends BaseProductQuery
     {
         public function filterByExpensivePrice()
         {
             return $this
-                ->filterByPrice(array('min' => 1000))
+                ->filterByPrice(array('min' => 1000));
         }
     }
 
@@ -245,7 +242,7 @@ Pero, ten en cuenta que *Propel* genera una serie de métodos por ti y puedes es
 Relaciones/Asociaciones
 -----------------------
 
-Supongamos que los productos en tu aplicación pertenecen exactamente a una "categoría". En este caso, necesitarás un objeto ``Categoría`` y una manera de relacionar un objeto ``Producto`` a un objeto ``Categoría``.
+Supón que los productos en tu aplicación pertenecen exactamente a una «categoría». En este caso, necesitarás un objeto ``Categoría`` y una manera de relacionar un objeto ``Producto`` a un objeto ``Categoría``.
 
 Comienza agregando la definición de ``categoría`` en tu archivo :file:`schema.xml`:
 
@@ -257,13 +254,13 @@ Comienza agregando la definición de ``categoría`` en tu archivo :file:`schema.
             <column name="name" type="varchar" primaryString="true" size="100" />
             <column name="price" type="decimal" />
             <column name="description" type="longvarchar" />
-    
+
             <column name="category_id" type="integer" />
             <foreign-key foreignTable="category">
                 <reference local="category_id" foreign="id" />
             </foreign-key>
         </table>
-    
+
         <table name="category">
             <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
             <column name="name" type="varchar" primaryString="true" size="100" />
@@ -274,28 +271,26 @@ Crea las clases:
 
 .. code-block:: bash
 
-    php app/console propel:model:build
+    $ php app/console propel:model:build
 
 Asumiendo que tienes productos en tu base de datos, no los querrás perder. Gracias a las migraciones, *Propel* es capaz de actualizar tu base de datos sin perder la información existente.
 
 .. code-block:: bash
 
-    php app/console propel:migration:generate-diff
-
-    php app/console propel:migration:migrate
+    $ php app/console propel:migration:generate-diff
+    $ php app/console propel:migration:migrate
 
 Tu base de datos se ha actualizado, puedes continuar escribiendo tu aplicación.
 
 Guardando objetos relacionados
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Ahora, vamos a ver el código en acción. Imagina que estás dentro de un controlador::
+Ahora, veamos el código en acción. Imagina que estás dentro de un controlador::
 
     // ...
     use Acme\StoreBundle\Model\Category;
     use Acme\StoreBundle\Model\Product;
     use Symfony\Component\HttpFoundation\Response;
-    // ...
 
     class DefaultController extends Controller
     {
@@ -303,16 +298,16 @@ Ahora, vamos a ver el código en acción. Imagina que estás dentro de un contro
         {
             $category = new Category();
             $category->setName('Main Products');
-    
+
             $product = new Product();
             $product->setName('Foo');
             $product->setPrice(19.99);
             // relaciona este producto a la categoría
             $product->setCategory($category);
-    
+
             // guarda todo
             $product->save();
-    
+
             return new Response(
                 'Created product id: '.$product->getId().' and category id: '.$category->getId()
             );
@@ -328,15 +323,15 @@ Cuando necesites recuperar objetos asociados, tu flujo de trabajo se ve justo co
 
     // ...
     use Acme\StoreBundle\Model\ProductQuery;
-    
+
     public function showAction($id)
     {
         $product = ProductQuery::create()
             ->joinWithCategory()
             ->findPk($id);
-    
+
         $categoryName = $product->getCategory()->getName();
-    
+
         // ...
     }
 
@@ -351,14 +346,13 @@ Encontrarás más información sobre las relaciones leyendo el capítulo dedicad
 Ciclo de vida de las retrollamadas
 ----------------------------------
 
-A veces, es necesario realizar una acción justo antes o después de insertar, actualizar o eliminar un objeto.  Este tipo de acciones se conoce como "ciclo de vida" de las retrollamadas o :dfn:`hooks` (en adelante "ganchos"), ya que son métodos retrollamados que necesitas ejecutar durante las diferentes etapas del ciclo de vida de un objeto (por ejemplo, cuando insertas, actualizas, eliminas, etc. un objeto)
+A veces, es necesario realizar una acción justo antes o después de insertar, actualizar o eliminar un objeto.  Este tipo de acciones se conoce como «ciclo de vida» de las retrollamadas o :dfn:`hooks` (en adelante «ganchos»), ya que son métodos retrollamados que necesitas ejecutar durante las diferentes etapas del ciclo de vida de un objeto (por ejemplo, cuando insertas, actualizas, eliminas, etc., un objeto)
 
 Para añadir un gancho, solo tenemos que añadir un método a la clase del objeto::
 
     // src/Acme/StoreBundle/Model/Product.php
 
     // ...
-
     class Product extends BaseProduct
     {
         public function preInsert(\PropelPDO $con = null)
@@ -389,7 +383,8 @@ Ordenes
 
 Debes leer la sección dedicada a las `Ordenes de Propel en Symfony2`_.
 
-.. _`Trabajando con Symfony2`: http://www.propelorm.org/cookbook/symfony2/working-with-symfony2.html#installation
-.. _`relaciones`: http://www.propelorm.org/documentation/04-relationships.html
-.. _`referencia de comportamientos`: http://www.propelorm.org/documentation/#behaviors_reference
-.. _`Ordenes de Propel en Symfony2`: http://www.propelorm.org/cookbook/symfony2/working-with-symfony2#commands
+.. _`Trabajando con Symfony2`: http://propelorm.org/cookbook/symfony2/working-with-symfony2.html#installation
+.. _`Working With Symfony2 - Configuration`: http://propelorm.org/cookbook/symfony2/working-with-symfony2.html#configuration
+.. _`relaciones`: http://propelorm.org/documentation/04-relationships.html
+.. _`referencia de comportamientos`: http://propelorm.org/documentation/#behaviors_reference
+.. _`Ordenes de Propel en Symfony2`: http://propelorm.org/cookbook/symfony2/working-with-symfony2#the_commands

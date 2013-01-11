@@ -1,4 +1,7 @@
-Cómo agregar la funcionalidad "recuérdame" al inicio de sesión
+.. index::
+   single: Seguridad; «Recuérdame»
+
+Cómo agregar la funcionalidad «recuérdame» al inicio de sesión
 ==============================================================
 
 Una vez que un usuario está autenticado, normalmente sus credenciales se almacenan en la sesión. Esto significa que cuando termina la sesión esta se desechará y tendrás que proporcionar de nuevo tus datos de acceso la siguiente vez que quieras acceder a la aplicación. Puedes permitir a tus usuarios que elijan entre permanecer conectados durante más tiempo del que dure la sesión con una :dfn:`cookie` con la opción ``remember_me`` del cortafuegos.
@@ -9,26 +12,24 @@ El cortafuegos necesita tener configurada una clave secreta, la cual se utiliza 
     .. code-block:: yaml
 
         # app/config/security.yml
-
         firewalls:
             main:
                 remember_me:
                     key:      "%secret%"
-                    lifetime: 3600
+                    lifetime: 31536000 # 365 días en segundos
                     path:     /
                     domain:   ~ # El valor predeterminado es el dominio actual de $_SERVER
 
     .. code-block:: xml
 
         <!-- app/config/security.xml -->
-
         <config>
             <firewall>
                 <remember-me
                     key      = "%secret%"
-                    lifetime = "3600"
+                    lifetime = "31536000" <!-- 365 días en segundos -->
                     path     = "/"
-                    domain   = "" <!-- Predefinido al dominio actual de $_SERVER -->
+                    domain   = "" <!-- El valor predeterminado es el dominio actual de $_SERVER -->
                 />
             </firewall>
         </config>
@@ -36,15 +37,14 @@ El cortafuegos necesita tener configurada una clave secreta, la cual se utiliza 
     .. code-block:: php
 
         // app/config/security.php
-
         $container->loadFromExtension('security', array(
             'firewalls' => array(
                 'main' => array('remember_me' => array(
                     'key'      => '%secret%',
-                    'lifetime' => 3600,
+                    'lifetime' => 31536000, // 365 días en segundos
                     'path'     => '/',
-                    'domain'   => '', // predefinido al domino actual de $_SERVER
-                )),
+                    'domain'   => '', // El valor predeterminado es el
+                )),                   // dominio actual de $_SERVER
             ),
         ));
 
@@ -74,7 +74,7 @@ Es buena idea ofrecer al usuario la opción de utilizar o no la funcionalidad re
 
     .. code-block:: html+php
 
-        <?php // src/Acme/SecurityBundle/Resources/views/Security/login.html.php ?>
+        <!-- src/Acme/SecurityBundle/Resources/views/Security/login.html.php -->
         <?php if ($error): ?>
             <div><?php echo $error->getMessage() ?></div>
         <?php endif; ?>
@@ -100,7 +100,7 @@ Forzando al usuario a volver a autenticarse antes de acceder a ciertos recursos
 
 Cuando el usuario vuelve a tu sitio, se autentica automáticamente en función de la información almacenada en la :dfn:`cookie` recuérdame. Esto permite al usuario acceder a recursos protegidos como si el usuario se hubiera autenticado en realidad al visitar el sitio.
 
-En algunos casos, sin embargo, puedes obligar al usuario a realmente volver a autenticarse antes de acceder a ciertos recursos. Por ejemplo, podrías permitir a un usuario de "recuérdame" ver la información básica de la cuenta, pero luego obligarlo a volver a autenticarse realmente antes de modificar dicha información.
+En algunos casos, sin embargo, puedes obligar al usuario a realmente volver a autenticarse antes de acceder a ciertos recursos. Por ejemplo, podrías permitir a un usuario de «recuérdame» ver la información básica de la cuenta, pero luego obligarlo a volver a autenticarse realmente antes de modificar dicha información.
 
 El componente de seguridad proporciona una manera fácil de hacerlo. Además de los roles asignados explícitamente, a los usuarios se les asigna automáticamente uno de los siguientes roles, dependiendo de cómo se hayan autenticado:
 
@@ -123,14 +123,14 @@ En el siguiente ejemplo, la acción sólo es permitida si el usuario tiene el ro
 
 .. code-block:: php
 
-    use Symfony\Component\Security\Core\Exception\AccessDeniedException
     // ...
+    use Symfony\Component\Security\Core\Exception\AccessDeniedException
 
     public function editAction()
     {
         if (false === $this->get('security.context')->isGranted(
             'IS_AUTHENTICATED_FULLY'
-        )) {
+           )) {
             throw new AccessDeniedException();
         }
 

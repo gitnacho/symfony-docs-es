@@ -5,36 +5,34 @@ Cómo crear un tipo de campo personalizado para formulario
 =========================================================
 
 *Symfony* viene con un montón de tipos de campos fundamentales para la construcción de formularios.
-Sin embargo, hay situaciones en las que queremos crear un tipo de campo de formulario personalizado
-para un propósito específico. Esta receta asume que necesitamos una definición de campo que contiene el género de una persona, basándose en el campo ``choice`` existente. Esta sección explica cómo definir el campo, cómo podemos personalizar su diseño y, por último, cómo lo podemos registrar para usarlo en nuestra aplicación.
+Sin embargo, hay situaciones en las cuales quieres crear un tipo de campo de formulario personalizado
+para un propósito específico. Esta receta asume que necesitas una definición de campo que contiene el género de una persona, basándote en el campo ``choice`` existente. Esta sección explica cómo definir el campo, cómo puedes personalizar su diseño y, por último, cómo lo puedes registrar para usarlo en tu aplicación.
 
 Definiendo el tipo de campo
 ---------------------------
 
-Con el fin de crear el tipo de campo personalizado, primero tenemos que crear la clase que representa al campo. En nuestra situación, la clase contendrá el tipo de campo que se llamará ``GenderType`` y el archivo se guardará en la ubicación predeterminada para campos de formulario, la cual es ``<NombrePaquete>\form\Type``. Asegúrese de que el campo se extiende de
-:class:`Symfony\\Component\\Form\\AbstractType`:
+Con el fin de crear el tipo de campo personalizado, primero tienes que crear la clase que representa el campo. En esta situación, la clase contendrá el tipo de campo que se llamará ``GenderType`` y el archivo se guardará en la ubicación predeterminada para campos de formulario, la cual es ``<NombrePaquete>\Form\Type``. Asegúrate de que el campo se extiende de
+:class:`Symfony\\Component\\Form\\AbstractType`::
 
-.. code-block:: php
-
-    # src/Acme/DemoBundle/Form/Type/GenderType.php
+    // src/Acme/DemoBundle/Form/Type/GenderType.php
     namespace Acme\DemoBundle\Form\Type;
 
     use Symfony\Component\Form\AbstractType;
-    use Symfony\Component\Form\FormBuilder;
+    use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
     class GenderType extends AbstractType
     {
-        public function getDefaultOptions(array $options)
+        public function setDefaultOptions(OptionsResolverInterface $resolver)
         {
-            return array(
+            $resolver->setDefaults(array(
                 'choices' => array(
                     'm' => 'Male',
                     'f' => 'Female',
                 )
-            );
+            ));
         }
 
-        public function getParent(array $options)
+        public function getParent()
         {
             return 'choice';
         }
@@ -49,50 +47,49 @@ Con el fin de crear el tipo de campo personalizado, primero tenemos que crear la
 
     La ubicación de este archivo no es importante - el directorio ``Form\Type`` sólo es una convención.
 
-En este caso, el valor de retorno de la función ``getParent`` indica que estamos extendiendo el tipo de campo ``choice``. Esto significa que, por omisión, heredamos toda la lógica y prestación de ese tipo de campo. Para ver algo de la lógica, echa un vistazo a la clase `ChoiceType`_. Hay tres métodos que son particularmente importantes:
+En este caso, el valor de retorno de la función ``getParent`` indica que estas extendiendo el tipo de campo ``choice``. Esto significa que, por omisión, heredas toda la lógica y represtación de ese tipo de campo. Para ver algo de la lógica, echa un vistazo a la clase `ChoiceType`_. Hay tres métodos que son particularmente importantes:
 
 * ``buildForm()`` - Cada tipo de campo tiene un método ``buildForm``, que es donde configuras y construyes cualquier campo(s). Ten en cuenta que este es el mismo método que utilizas para configurar *tus* formularios, y aquí funciona igual.
 
 * ``buildView()`` - Este método se utiliza para establecer las variables extra que necesitarás al reproducir el campo en una plantilla. Por ejemplo, en `ChoiceType`_, está definida una variable ``multiple`` que se fija y utiliza en la plantilla para establecer (o no un conjunto), el atributo ``multiple`` en el campo ``select``. Ve `Creando una plantilla para el campo`_ para más detalles.
 
-* ``getDefaultOptions()`` --- Este define las opciones para el tipo de tu formulario mismas que puedes utilizar en ``buildForm()`` y ``buildView()``. Hay un montón de opciones comunes a todos los campos (consulta `FieldType`_), pero aquí, puedes crear cualquier otro que necesites.
+* ``setDefaultOptions()`` - Define opciones para tu tipo de formulario que puedes utilizar en ``buildForm()`` y ``buildView()``. Hay un montón de opciones comunes a todos los campos (consulta :doc:`/reference/forms/types/form`), pero aquí, puedes crear cualquier otra que necesites.
 
 .. tip::
 
-    Si vas a crear un campo que consiste de muchos campos, entonces, asegúrate de establecer tu tipo "padre" como ``form`` o algo que extienda a ``form``.
-    Además, si es necesario modificar la "vista" de cualquiera de tus tipos descendientes de tu tipo padre, utiliza el método ``buildViewBottomUp()``.
+    Si vas a crear un campo que consta de muchos campos, entonces, asegúrate de establecer tu tipo «padre» como ``form`` o algo que extienda a ``form``.
+    Además, si necesitas modificar la «vista» de cualquiera de tus tipos descendientes de tu tipo padre, usa el método ``finishView()``.
 
 El método ``getName()`` devuelve un identificador que debe ser único en tu aplicación. Este se utiliza en varios lugares, tales como cuando personalizas cómo será pintado tu tipo de formulario.
 
-El objetivo de nuestro campo es extender el tipo ``choice`` para habilitar la selección de un género. Esto se consigue fijando las opciones a una lista de posibles géneros.
+El objetivo de este campo es extender el tipo ``choice`` para habilitar la selección de un género. Esto se consigue fijando las opciones a una lista de posibles géneros.
 
 Creando una plantilla para el campo
 -----------------------------------
 
 Cada tipo de campo está representado por un fragmento de la plantilla, el cual se determina en parte por el valor de su método ``getName()``. Para más información, consulta :ref:`cookbook-form-customization-form-themes`.
 
-En este caso, debido a que nuestro campo padre es ``choice``, no *necesitamos* hacer ningún trabajo que nuestro tipo de campo personalizado como tipo ``choice``, hace automáticamente. Pero para beneficio de este ejemplo, vamos a suponer que cuando nuestro campo es "extendido" (es decir, botones de radio o casillas de verificación, en lugar de un campo selección), queremos pintarlo siempre como un elemento ``ul``. En tu plantilla del tema de tu formulario (consulta el enlace de arriba para más detalles), crea un bloque ``gender_widget`` para manejar esto:
+En este caso, debido a que el campo padre es ``choice``, no *necesitas* hacer ningún trabajo debido a que el tipo de campo personalizado automáticamente lo dibuja como el tipo ``choice``. Pero por el bien de este ejemplo, supón que al «expandir» tu campo (es decir, botones de radio o casillas de verificación, en vez de un campo de selección), lo quieres dibujar siempre en un elemento ``ul``. En la plantilla del tema de tu formulario (consulta el enlace de arriba para más detalles), crea un bloque ``gender_widget`` para manejar esto:
 
 .. code-block:: html+jinja
 
     {# src/Acme/DemoBundle/Resources/views/Form/fields.html.twig #}
-
     {% block gender_widget %}
-    {% spaceless %}
-        {% if expanded %}
-            <ul {{ block('widget_container_attributes') }}>
-            {% for child in form %}
-                <li>
-                    {{ form_widget(child) }}
-                    {{ form_label(child) }}
-                </li>
-            {% endfor %}
-            </ul>
-        {% else %}
-            {# simplemente deja que el elemento gráfico 'choice' reproduzca la etiqueta select #}
-            {{ block('choice_widget') }}
-        {% endif %}
-    {% endspaceless %}
+        {% spaceless %}
+            {% if expanded %}
+                <ul {{ block('widget_container_attributes') }}>
+                {% for child in form %}
+                    <li>
+                        {{ form_widget(child) }}
+                        {{ form_label(child) }}
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                {# simplemente deja que el elemento gráfico 'choice' reproduzca la etiqueta select #}
+                {{ block('choice_widget') }}
+            {% endif %}
+        {% endspaceless %}
     {% endblock %}
 
 .. note::
@@ -103,8 +100,7 @@ En este caso, debido a que nuestro campo padre es ``choice``, no *necesitamos* h
     .. code-block:: yaml
 
         # app/config/config.yml
-
-            twig:
+        twig:
             form:
                 resources:
                     - 'AcmeDemoBundle:Form:fields.html.twig'
@@ -118,11 +114,11 @@ Ahora puedes utilizar el tipo de campo personalizado de inmediato, simplemente c
     namespace Acme\DemoBundle\Form\Type;
 
     use Symfony\Component\Form\AbstractType;
-    use Symfony\Component\Form\FormBuilder;
-    
+    use Symfony\Component\Form\FormBuilderInterface;
+
     class AuthorType extends AbstractType
     {
-        public function buildForm(FormBuilder $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options)
         {
             $builder->add('gender_code', new GenderType(), array(
                 'empty_value' => 'Choose a gender',
@@ -136,13 +132,12 @@ Creando tu tipo de campo como un servicio
 -----------------------------------------
 
 Hasta ahora, este artículo ha supuesto que tienes un tipo de campo personalizado muy simple.
-Pero si necesitas acceder a la configuración de una conexión base de datos, o a algún otro servicio, entonces querrás registrar tu tipo personalizado como un servicio. por ejemplo, supongamos que estamos almacenando los parámetros de género en la configuración:
-
+Pero si necesitas acceder a la configuración de una conexión base de datos, o a algún otro servicio, entonces querrás registrar tu tipo personalizado como un servicio. Por ejemplo, supón que estas almacenando los parámetros de género en la configuración:
 
 .. configuration-block::
 
     .. code-block:: yaml
-    
+
         # app/config/config.yml
         parameters:
             genders:
@@ -159,7 +154,7 @@ Pero si necesitas acceder a la configuración de una conexión base de datos, o 
             </parameter>
         </parameters>
 
-Para utilizar el parámetro, vamos a definir nuestro tipo de campo personalizado como un servicio, inyectando el valor del parámetro ``genders`` como el primer argumento de la función ``__construct`` que vamos a crear:
+Para utilizar el parámetro, define tu tipo de campo personalizado como un servicio, inyectando el valor del parámetro ``genders`` como el primer argumento de la función ``__construct`` que vas a crear:
 
 .. configuration-block::
 
@@ -167,7 +162,7 @@ Para utilizar el parámetro, vamos a definir nuestro tipo de campo personalizado
 
         # src/Acme/DemoBundle/Resources/config/services.yml
         services:
-            form.type.gender:
+            acme_demo.form.type.gender:
                 class: Acme\DemoBundle\Form\Type\GenderType
                 arguments:
                     - "%genders%"
@@ -177,7 +172,7 @@ Para utilizar el parámetro, vamos a definir nuestro tipo de campo personalizado
     .. code-block:: xml
 
         <!-- src/Acme/DemoBundle/Resources/config/services.xml -->
-        <service id="form.type.gender" class="Acme\DemoBundle\Form\Type\GenderType">
+        <service id="acme_demo.form.type.gender" class="Acme\DemoBundle\Form\Type\GenderType">
             <argument>%genders%</argument>
             <tag name="form.type" alias="gender" />
         </service>
@@ -186,41 +181,46 @@ Para utilizar el parámetro, vamos a definir nuestro tipo de campo personalizado
 
     Asegúrate de que estás importando el archivo de servicios. Consulta :ref:`service-container-imports-directive` para más detalles.
 
-Asegúrate de que la etiqueta del atributo ``alias`` corresponde con el valor devuelto por el método ``getName`` definido anteriormente. Vamos a ver la importancia de esto en un momento cuando utilicemos el tipo de campo personalizado. Pero en primer lugar, agrega un argumento ``GenderType`` al ``__construct``, el cual recibe la configuración del género::
+Asegúrate de que la etiqueta del atributo ``alias`` corresponde con el valor devuelto por el método ``getName`` definido anteriormente. Verás la importancia de esto en un momento cuando utilices el tipo de campo personalizado. Pero en primer lugar, agrega un argumento ``GenderType`` al ``__construct``, el cual recibe la configuración del género::
 
-
-    # src/Acme/DemoBundle/Form/Type/GenderType.php
+    // src/Acme/DemoBundle/Form/Type/GenderType.php
     namespace Acme\DemoBundle\Form\Type;
+
+    use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+
     // ...
 
     class GenderType extends AbstractType
     {
         private $genderChoices;
-        
+
         public function __construct(array $genderChoices)
         {
             $this->genderChoices = $genderChoices;
         }
-    
-        public function getDefaultOptions(array $options)
+
+        public function setDefaultOptions(OptionsResolverInterface $resolver)
         {
-            return array(
+            $resolver->setDefaults(array(
                 'choices' => $this->genderChoices,
-            );
+            ));
         }
-        
+
         // ...
     }
 
-¡Genial! El ``GenderType`` ahora es impulsado por los parámetros de configuración y está registrado como un servicio. Y debido a que utilizamos el alias de ``form.type`` en su configuración, es mucho más fácil utilizar el campo::
+¡Genial! El ``GenderType`` ahora es impulsado por los parámetros de configuración y está registrado como un servicio. Adicionalmente, debido a que utilizaste el alias ``form.type`` en tu configuración, es mucho más fácil utilizar el campo::
 
     // src/Acme/DemoBundle/Form/Type/AuthorType.php
     namespace Acme\DemoBundle\Form\Type;
+
+    use Symfony\Component\Form\FormBuilderInterface;
+
     // ...
 
     class AuthorType extends AbstractType
     {
-        public function buildForm(FormBuilder $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options)
         {
             $builder->add('gender_code', 'gender', array(
                 'empty_value' => 'Choose a gender',
@@ -228,7 +228,8 @@ Asegúrate de que la etiqueta del atributo ``alias`` corresponde con el valor de
         }
     }
 
-Ten en cuenta que en lugar de crear una nueva instancia, podemos referirnos a esta por el alias utilizado en la configuración de nuestro servicio, ``gender``. ¡Que te diviertas!
+Ten en cuenta que en vez de crear una nueva instancia, puedes simplemente referirte a ella
+por el alias utilizado en tu configuración del servicio, ``gender``. ¡Que te diviertas!
 
 .. _`ChoiceType`: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Extension/Core/Type/ChoiceType.php
 .. _`FieldType`: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Extension/Core/Type/FieldType.php

@@ -1,3 +1,7 @@
+.. index::
+   single: Doctrine; Subiendo archivos
+
+
 Cómo manejar archivos subidos con *Doctrine*
 ============================================
 
@@ -43,23 +47,29 @@ En primer lugar, crea una sencilla clase Entidad de *Doctrine* con la cual traba
 
         public function getAbsolutePath()
         {
-            return null === $this->path ? null : $this->getUploadRootDir().'/'.$this->path;
+            return null === $this->path
+                ? null
+                : $this->getUploadRootDir().'/'.$this->path;
         }
 
         public function getWebPath()
         {
-            return null === $this->path ? null : $this->getUploadDir().'/'.$this->path;
+            return null === $this->path
+                ? null
+                : $this->getUploadDir().'/'.$this->path;
         }
 
         protected function getUploadRootDir()
         {
-            // la ruta absoluta del directorio donde se deben guardar los archivos cargados
+            // la ruta absoluta del directorio donde se deben
+            // guardar los archivos cargados
             return __DIR__.'/../../../../web/'.$this->getUploadDir();
         }
 
         protected function getUploadDir()
         {
-            // se libra del __DIR__ para no desviarse al mostrar `doc/image` en la vista.
+            // se deshace del __DIR__ para no meter la pata
+            // al mostrar el documento/imagen cargada en la vista.
             return 'uploads/documents';
         }
     }
@@ -75,7 +85,7 @@ El ``getAbsolutePath()`` es un método útil que devuelve la ruta absoluta al ar
 
     Si estás utilizando anotaciones para especificar tus reglas de validación (como muestra este ejemplo), asegúrate de que has habilitado la validación por medio de anotaciones (consulta :ref:`configurando la validación <book-validation-configuration>`).
 
-Para manejar el archivo real subido en el formulario, utiliza un campo ``file`` "virtual".
+Para manejar el archivo real subido en el formulario, utiliza un campo ``file`` «virtual».
 Por ejemplo, si estás construyendo tu formulario directamente en un controlador, este podría tener el siguiente aspecto::
 
     public function uploadAction()
@@ -85,8 +95,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
         $form = $this->createFormBuilder($document)
             ->add('name')
             ->add('file')
-            ->getForm()
-        ;
+            ->getForm();
 
         // ...
     }
@@ -128,15 +137,15 @@ El siguiente controlador muestra cómo manipular todo el proceso::
             ->getForm()
         ;
 
-        if ($this->getRequest()->getMethod() === 'POST') {
-            $form->bindRequest($this->getRequest());
+        if ($this->getRequest()->isMethod('POST')) {
+            $form->bind($this->getRequest());
             if ($form->isValid()) {
-                $em = $this->getDoctrine()->getEntityManager();
+                $em = $this->getDoctrine()->getManager();
 
                 $em->persist($document);
                 $em->flush();
 
-                $this->redirect($this->generateUrl('...'));
+                $this->redirect($this->generateUrl(...));
             }
         }
 
@@ -147,7 +156,7 @@ El siguiente controlador muestra cómo manipular todo el proceso::
 
     Al escribir la plantilla, no olvides fijar el atributo ``enctype``:
 
-    .. code-block:: html+php
+    .. code-block:: html+jinja
 
         <h1>Upload File</h1>
 
@@ -162,14 +171,14 @@ El controlador anterior automáticamente persistirá la entidad ``Documento`` co
 Una manera fácil de manejar la carga de archivos es que lo muevas justo antes de que se persista la entidad y a continuación, establece la propiedad ``path`` en consecuencia. Comienza por invocar a un nuevo método ``upload()`` en la clase ``Documento``, el cual deberás crear en un momento para manejar la carga del archivo::
 
     if ($form->isValid()) {
-        $em = $this->getDoctrine()->getEntityManager();
+        $em = $this->getDoctrine()->getManager();
 
         $document->upload();
 
         $em->persist($document);
         $em->flush();
 
-        $this->redirect('...');
+        $this->redirect(...);
     }
 
 El método ``upload()`` tomará ventaja del objeto :class:`Symfony\\Component\\HttpFoundation\\File\\UploadedFile`, el cual es lo que devuelve después de que se presenta un campo ``file``::
@@ -181,23 +190,27 @@ El método ``upload()`` tomará ventaja del objeto :class:`Symfony\\Component\\H
             return;
         }
 
-        // aquí utilizamos el nombre de archivo original pero lo deberías
-        // desinfectar por lo menos para evitar cualquier problema de seguridad
+        // aquí usa el nombre de archivo original pero lo debes
+        // sanear al menos para evitar cualquier problema de seguridad
 
-        // 'move' toma el directorio y nombre de archivo destino al cual trasladarlo
-        $this->file->move($this->getUploadRootDir(), $this->file->getClientOriginalName());
+        // lo mueve tomando el directorio destino y luego
+        // el nombre de archivo al cual moverlo
+        $this->file->move(
+            $this->getUploadRootDir(),
+            $this->file->getClientOriginalName()
+        );
 
-        // establece la propiedad path al nombre de archivo dónde lo hayas guardado
-        $this->path = $this->file->getClientOriginalName();
+        // configura la propiedad 'path' al nombre de archivo en que lo guardaste
+        $this->path = $this->file->getClientOriginalName()
 
-        // limpia la propiedad 'file' ya que no la necesitas más
+        // limpia la propiedad «file» ya que no la necesitas más
         $this->file = null;
     }
 
 Usando el ciclo de vida de las retrollamadas
 --------------------------------------------
 
-Incluso si esta implementación trabaja, adolece de un defecto importante: ¿Qué pasa si hay un problema al persistir la entidad? El archivo ya se ha movido a su ubicación final, incluso aunque la propiedad ``path`` de la entidad no se persista correctamente.
+Incluso si esta implementación trabaja, sufre de un importante defecto: ¿Qué pasa si hay un problema al persistir la entidad? El archivo ya se ha movido a su ubicación final, incluso aunque la propiedad ``path`` de la entidad no se persista correctamente.
 
 Para evitar estos problemas, debes cambiar la implementación para que la operación de base de datos y el traslado del archivo sean atómicos: si hay un problema al persistir la entidad o si el archivo no se puede mover, entonces, no debe suceder *nada*.
 
@@ -228,8 +241,9 @@ A continuación, reconstruye la clase ``Documento`` para que tome ventaja de est
         public function preUpload()
         {
             if (null !== $this->file) {
-                // haz cualquier cosa para generar un nombre único
-                $this->path = uniqid().'.'.$this->file->guessExtension();
+                // haz lo que quieras para generar un nombre único
+                $filename = sha1(uniqid(mt_rand(), true));
+                $this->path = $filename.'.'.$this->file->guessExtension();
             }
         }
 
@@ -264,17 +278,15 @@ A continuación, reconstruye la clase ``Documento`` para que tome ventaja de est
 
 La clase ahora hace todo lo que necesitas: genera un nombre de archivo único antes de persistirlo, mueve el archivo después de persistirlo y elimina el archivo si la entidad es eliminada.
 
-Ahora que la entidad maneja automáticamente el movimiento del archivo, debes quitar del controlador la llamada a ``$document->upload()``:
-
-.. code-block:: php
+Ahora que la entidad maneja automáticamente el movimiento del archivo, debes quitar del controlador la llamada a ``$document->upload()``::
 
     if ($form->isValid()) {
-        $em = $this->getDoctrine()->getEntityManager();
+        $em = $this->getDoctrine()->getManager();
 
         $em->persist($document);
         $em->flush();
 
-        $this->redirect('...');
+        $this->redirect(...);
     }
 
 .. note::
@@ -323,9 +335,12 @@ Si deseas utilizar el ``id`` como el nombre del archivo, la implementación es u
             }
 
             // aquí debes lanzar una excepción si el archivo no se puede mover
-            // para que la entidad no se conserve en la base de datos
+            // para que la entidad no se persista en la base de datos
             // lo cual hace el método move() del archivo subido
-            $this->file->move($this->getUploadRootDir(), $this->id.'.'.$this->file->guessExtension());
+            $this->file->move(
+                $this->getUploadRootDir(),
+                $this->id.'.'.$this->file->guessExtension()
+            );
 
             unset($this->file);
         }
@@ -350,7 +365,9 @@ Si deseas utilizar el ``id`` como el nombre del archivo, la implementación es u
 
         public function getAbsolutePath()
         {
-            return null === $this->path ? null : $this->getUploadRootDir().'/'.$this->id.'.'.$this->path;
+            return null === $this->path
+                ? null
+                : $this->getUploadRootDir().'/'.$this->id.'.'.$this->path;
         }
     }
 

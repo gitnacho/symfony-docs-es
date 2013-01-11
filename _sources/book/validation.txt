@@ -4,12 +4,10 @@
 Validando
 =========
 
-La validación es una tarea muy común en aplicaciones web. Los datos introducidos en formularios se tienen que validar. Los datos también se deben validar antes de escribirlos en una base de datos o pasarlos a un servicio web.
+La validación es una tarea muy común en aplicaciones *web*. Los datos introducidos en formularios se tienen que validar. Los datos también se deben validar antes de escribirlos en una base de datos o pasarlos a un servicio *web*.
 
-*Symfony2* viene con un componente `Validator`_ que facilita esta tarea transparentemente.
-Este componente está basado en la `especificación de validación Bean JSR303`_. ¿Qué?
-¿Una especificación de Java en *PHP*? Has oído bien, pero no es tan malo como suena.
-Vamos a ver cómo se puede utilizar en *PHP*.
+*Symfony2* viene con un componente `Validator`_ que facilita y transparenta esta tarea. Este componente está basado en la `especificación de validación Bean JSR303`_. ¿Qué? ¿Una especificación de Java en *PHP*?
+Has oído bien, pero no es tan malo como suena. Verás cómo la puedes utilizar en *PHP*.
 
 .. index::
    single: Validación; Fundamentos
@@ -17,9 +15,7 @@ Vamos a ver cómo se puede utilizar en *PHP*.
 Fundamentos de la validación
 ----------------------------
 
-La mejor manera de entender la validación es verla en acción. Para empezar, supongamos que hemos creado un objeto plano en *PHP* el cual en algún lugar tiene que utilizar tu aplicación:
-
-.. code-block:: php
+La mejor manera de entender la validación es verla en acción. Para empezar, supongamos que creaste un objeto *PHP* plano el cual en algún lugar tiene que utilizar tu aplicación::
 
     // src/Acme/BlogBundle/Entity/Author.php
     namespace Acme\BlogBundle\Entity;
@@ -46,6 +42,8 @@ Por ejemplo, para garantizar que la propiedad ``$name`` no esté vacía, agrega 
     .. code-block:: php-annotations
 
         // src/Acme/BlogBundle/Entity/Author.php
+
+        // ...
         use Symfony\Component\Validator\Constraints as Assert;
 
         class Autor
@@ -75,6 +73,7 @@ Por ejemplo, para garantizar que la propiedad ``$name`` no esté vacía, agrega 
 
         // src/Acme/BlogBundle/Entity/Author.php
 
+        // ...
         use Symfony\Component\Validator\Mapping\ClassMetadata;
         use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -90,7 +89,7 @@ Por ejemplo, para garantizar que la propiedad ``$name`` no esté vacía, agrega 
 
 .. tip::
 
-    Las propiedades protegidas y privadas también se pueden validar, así como los métodos "get" (consulta la sección :ref:`validator-constraint-targets`).
+    Las propiedades protegidas y privadas también se pueden validar, así como los métodos «get» (consulta la sección :ref:`validator-constraint-targets`).
 
 .. index::
    single: Validación; Usando el validador
@@ -99,13 +98,11 @@ Usando el servicio ``validador``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A continuación, para validar realmente un objeto ``Author``, utiliza el método ``validate`` del servicio ``validador`` (clase :class:`Symfony\\Component\\Validator\\Validator`).
-El trabajo del ``validador`` es fácil: lee las restricciones (es decir, las reglas) de una clase y comprueba si los datos en el objeto satisfacen esas restricciones. Si la validación falla, devuelve un arreglo de errores. Toma este sencillo ejemplo desde el interior de un controlador:
+El trabajo del ``validador`` es fácil: lee las restricciones (es decir, las reglas) de una clase y comprueba si los datos en el objeto satisfacen esas restricciones. Si la validación falla, devuelve un arreglo de errores. Toma este sencillo ejemplo desde el interior de un controlador::
 
-.. code-block:: php
-
+    // ...
     use Symfony\Component\HttpFoundation\Response;
     use Acme\BlogBundle\Entity\Author;
-    // ...
 
     public function indexAction()
     {
@@ -154,7 +151,6 @@ Dentro de la plantilla, puedes sacar la lista de errores exactamente como la nec
     .. code-block:: html+jinja
 
         {# src/Acme/BlogBundle/Resources/views/Autor/validate.html.twig #}
-
         <h3>The author has the following errors</h3>
         <ul>
         {% for error in errors %}
@@ -165,7 +161,6 @@ Dentro de la plantilla, puedes sacar la lista de errores exactamente como la nec
     .. code-block:: html+php
 
         <!-- src/Acme/BlogBundle/Resources/views/Autor/validar.html.php -->
-
         <h3>The author has the following errors</h3>
         <ul>
         <?php foreach ($errors as $error): ?>
@@ -175,7 +170,7 @@ Dentro de la plantilla, puedes sacar la lista de errores exactamente como la nec
 
 .. note::
 
-    Cada error de validación (conocido cómo "violación de restricción"), está representado por un objeto :class:`Symfony\\Component\\Validator\\ConstraintViolation`.
+    Cada error de validación (conocido cómo «violación de restricción»), está representado por un objeto :class:`Symfony\\Component\\Validator\\ConstraintViolation`.
 
 .. index::
    single: Validación; Validando con formularios
@@ -186,25 +181,25 @@ Validación y formularios
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Puedes utilizar el servicio ``validator`` en cualquier momento para validar cualquier objeto.
-En realidad, sin embargo, por lo general al trabajar con formularios vas a trabajar con el ``validador`` indirectamente. La biblioteca de formularios de *Symfony* utiliza internamente el servicio ``validador`` para validar el objeto subyacente después de que los valores se han presentado y vinculado. Las violaciones de restricción en el objeto se convierten en objetos ``FieldError`` los cuales puedes mostrar fácilmente en tu formulario. El flujo de trabajo típico en la presentación del formulario se parece a lo siguiente visto desde el interior de un controlador::
+En realidad, sin embargo, por lo general al trabajar con formularios vas a trabajar con el ``validador`` indirectamente. La biblioteca de formularios de *Symfony* utiliza internamente el servicio ``validador`` para validar el objeto subyacente después de que los valores se han presentado y vinculado. Las violaciones de restricción en el objeto se convierten en objetos ``FieldError`` los cuales puedes mostrar fácilmente en tu formulario. El flujo de trabajo típico en la presentación del formulario se parece al siguiente visto desde el interior de un controlador::
 
+    // ...
     use Acme\BlogBundle\Entity\Author;
     use Acme\BlogBundle\Form\AuthorType;
     use Symfony\Component\HttpFoundation\Request;
-    // ...
 
     public function updateAction(Request $request)
     {
-        $author = new Acme\BlogBundle\Entity\Author();
+        $author = new Author();
         $form = $this->createForm(new AuthorType(), $author);
 
-        if ($request->getMethod() == 'POST') {
-            $form->bindRequest($request);
+        if ($request->isMethod('POST')) {
+            $form->bind($request);
 
             if ($form->isValid()) {
                 // validación superada, haz algo con el objeto $author
 
-                return $this->redirect($this->generateUrl('...'));
+                return $this->redirect($this->generateUrl(...));
             }
         }
 
@@ -261,7 +256,7 @@ Restricciones
 
 El ``validador`` está diseñado para validar objetos contra *restricciones* (es decir, reglas). A fin de validar un objeto, basta con asignar una o más restricciones a tu clase y luego pasarla al servicio ``validador``.
 
-Detrás del escenario, una restricción simplemente es un objeto *PHP* que hace una declaración asertiva. En la vida real, una restricción podría ser: "El pastel no se debe quemar".
+Detrás del escenario, una restricción simplemente es un objeto *PHP* que hace una declaración asertiva. En la vida real, una restricción podría ser: «El pastel no se debe quemar».
 En *Symfony2*, las restricciones son similares: son aserciones de que una condición es verdadera. Dado un valor, una restricción te dirá si o no el valor se adhiere a las reglas de tu restricción.
 
 Restricciones compatibles
@@ -271,7 +266,7 @@ Restricciones compatibles
 
 .. include:: /reference/constraints/map.rst.inc
 
-También puedes crear tus propias restricciones personalizadas. Este tema se trata en el artículo ":doc:`/cookbook/validation/custom_constraint`" del recetario.
+También puedes crear tus propias restricciones personalizadas. Este tema se trata en el artículo «:doc:`/cookbook/validation/custom_constraint`» del recetario.
 
 .. index::
    single: Validación; Configurando restricciones
@@ -281,7 +276,7 @@ También puedes crear tus propias restricciones personalizadas. Este tema se tra
 Configurando restricciones
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Algunas restricciones, como :doc:`NotBlank</reference/constraints/NotBlank>`, son simples, mientras que otras, como la restricción :doc:`Choice</reference/constraints/Choice>`, tienen varias opciones de configuración disponibles. Supongamos que la clase ``Autor`` tiene otra propiedad, ``género`` que se puede configurar como "masculino" o "femenino":
+Algunas restricciones, como :doc:`NotBlank</reference/constraints/NotBlank>`, son simples, mientras que otras, como la restricción :doc:`Choice</reference/constraints/Choice>`, tienen varias opciones de configuración disponibles. Supongamos que la clase ``Autor`` tiene otra propiedad, ``género`` que se puede configurar como «masculino» o «femenino»:
 
 .. configuration-block::
 
@@ -333,8 +328,10 @@ Algunas restricciones, como :doc:`NotBlank</reference/constraints/NotBlank>`, so
     .. code-block:: php
 
         // src/Acme/BlogBundle/Entity/Author.php
+
+        // ...
         use Symfony\Component\Validator\Mapping\ClassMetadata;
-        use Symfony\Component\Validator\Constraints\NotBlank;
+        use Symfony\Component\Validator\Constraints\Choice;
 
         class Autor
         {
@@ -351,7 +348,7 @@ Algunas restricciones, como :doc:`NotBlank</reference/constraints/NotBlank>`, so
 
 .. _validation-default-option:
 
-Las opciones de una restricción siempre se pueden pasar como una matriz. Algunas restricciones, sin embargo, también te permiten pasar el valor de una opción "*predeterminada*", en lugar del arreglo. En el caso de la restricción ``Choice``, las ``opciones`` se pueden especificar de esta manera.
+Las opciones de una restricción siempre se pueden pasar como un arreglo. Algunas restricciones, sin embargo, también te permiten pasar el valor de una opción *«predeterminada»*, en lugar del arreglo. En el caso de la restricción ``Choice``, las ``opciones`` se pueden especificar de esta manera.
 
 .. configuration-block::
 
@@ -366,6 +363,8 @@ Las opciones de una restricción siempre se pueden pasar como una matriz. Alguna
     .. code-block:: php-annotations
 
         // src/Acme/BlogBundle/Entity/Author.php
+
+        // ...
         use Symfony\Component\Validator\Constraints as Assert;
 
         class Autor
@@ -397,6 +396,8 @@ Las opciones de una restricción siempre se pueden pasar como una matriz. Alguna
     .. code-block:: php
 
         // src/Acme/BlogBundle/Entity/Author.php
+
+        // ...
         use Symfony\Component\Validator\Mapping\ClassMetadata;
         use Symfony\Component\Validator\Constraints\Choice;
 
@@ -406,7 +407,10 @@ Las opciones de una restricción siempre se pueden pasar como una matriz. Alguna
 
             public static function loadValidatorMetadata(ClassMetadata $metadata)
             {
-                $metadata->addPropertyConstraint('gender', new Choice(array('male', 'female')));
+                $metadata->addPropertyConstraint(
+                    'gender',
+                    new Choice(array('male', 'female'))
+                );
             }
         }
 
@@ -448,18 +452,21 @@ La validación de propiedades de clase es la técnica de validación más básic
             properties:
                 firstName:
                     - NotBlank: ~
-                    - MinLength: 3
+                    - Length:
+                        min: 3
 
     .. code-block:: php-annotations
 
         // Acme/BlogBundle/Entity/Author.php
+
+        // ...
         use Symfony\Component\Validator\Constraints as Assert;
 
         class Autor
         {
             /**
              * @Assert\NotBlank()
-             * @Assert\MinLength(3)
+             * @Assert\Length(min = "3")
              */
             private $firstName;
         }
@@ -470,16 +477,20 @@ La validación de propiedades de clase es la técnica de validación más básic
         <class name="Acme\BlogBundle\Entity\Author">
             <property name="firstName">
                 <constraint name="NotBlank" />
-                <constraint name="MinLength">3</constraint>
+                <constraint name="Length">
+                    <option name="min">3</option>
+                </constraint>
             </property>
         </class>
 
     .. code-block:: php
 
         // src/Acme/BlogBundle/Entity/Author.php
+
+        // ...
         use Symfony\Component\Validator\Mapping\ClassMetadata;
         use Symfony\Component\Validator\Constraints\NotBlank;
-        use Symfony\Component\Validator\Constraints\MinLength;
+        use Symfony\Component\Validator\Constraints\Length;
 
         class Autor
         {
@@ -488,7 +499,9 @@ La validación de propiedades de clase es la técnica de validación más básic
             public static function loadValidatorMetadata(ClassMetadata $metadata)
             {
                 $metadata->addPropertyConstraint('firstName', new NotBlank());
-                $metadata->addPropertyConstraint('firstName', new MinLength(3));
+                $metadata->addPropertyConstraint(
+                    'firstName',
+                    new Length(array("min" => 3)));
             }
         }
 
@@ -498,7 +511,7 @@ La validación de propiedades de clase es la técnica de validación más básic
 Captadores
 ~~~~~~~~~~
 
-Las restricciones también se pueden aplicar al valor devuelto por un método. *Symfony2* te permite agregar una restricción a cualquier método público cuyo nombre comience con ``get`` o ``is``. En esta guía, ambos métodos de este tipo son conocidos como "captadores" o ``getters``.
+Las restricciones también se pueden aplicar al valor devuelto por un método. *Symfony2* te permite agregar una restricción a cualquier método público cuyo nombre comience con ``get`` o ``is``. En esta guía, ambos métodos de este tipo son conocidos como «captadores» o ``getters``.
 
 La ventaja de esta técnica es que te permite validar el objeto de forma dinámica. Por ejemplo, supongamos que quieres asegurarte de que un campo de contraseña no coincide con el nombre del usuario (por razones de seguridad). Puedes hacerlo creando un método ``isPasswordLegal``, a continuación, acertar que este método debe devolver ``true``:
 
@@ -515,6 +528,8 @@ La ventaja de esta técnica es que te permite validar el objeto de forma dinámi
     .. code-block:: php-annotations
 
         // src/Acme/BlogBundle/Entity/Author.php
+
+        // ...
         use Symfony\Component\Validator\Constraints as Assert;
 
         class Autor
@@ -542,6 +557,8 @@ La ventaja de esta técnica es que te permite validar el objeto de forma dinámi
     .. code-block:: php
 
         // src/Acme/BlogBundle/Entity/Author.php
+
+        // ...
         use Symfony\Component\Validator\Mapping\ClassMetadata;
         use Symfony\Component\Validator\Constraints\True;
 
@@ -578,7 +595,7 @@ Algunas restricciones se aplican a toda la clase que se va a validar. Por ejempl
 Validando grupos
 ----------------
 
-Hasta ahora, hemos sido capaces de agregar restricciones a una clase y consultar si o no esa clase pasa todas las restricciones definidas. En algunos casos, sin embargo, tendrás que validar un objeto contra únicamente *algunas* restricciones de esa clase. Para ello, puedes organizar cada restricción en uno o más "grupos de validación", y luego aplicar la validación contra un solo grupo de restricciones.
+Hasta ahora, hemos sido capaces de agregar restricciones a una clase y consultar si o no esa clase pasa todas las restricciones definidas. En algunos casos, sin embargo, tendrás que validar un objeto contra únicamente *algunas* restricciones de esa clase. Para ello, puedes organizar cada restricción en uno o más «grupos de validación», y luego aplicar la validación contra un solo grupo de restricciones.
 
 Por ejemplo, supongamos que tienes una clase ``Usuario``, la cual se usa más adelante tanto cuando un usuario se registra como cuando un usuario actualiza su información de contacto:
 
@@ -593,9 +610,10 @@ Por ejemplo, supongamos que tienes una clase ``Usuario``, la cual se usa más ad
                     - Email: { groups: [registration] }
                 password:
                     - NotBlank: { groups: [registration] }
-                    - MinLength: { limit: 7, groups: [registration] }
+                    - Length: { min: 7, groups: [registration] }
                 city:
-                    - MinLength: 2
+                    - Length:
+                        min: 2
 
     .. code-block:: php-annotations
 
@@ -614,12 +632,12 @@ Por ejemplo, supongamos que tienes una clase ``Usuario``, la cual se usa más ad
 
             /**
             * @Assert\NotBlank(groups={"registration"})
-            * @Assert\MinLength(limit=7, groups={"registration"})
+            * @Assert\Length(min=7, groups={"registration"})
             */
             private $password;
 
             /**
-            * @Assert\MinLength(2)
+            * @Assert\Length(min = "2")
             */
             private $city;
         }
@@ -641,15 +659,17 @@ Por ejemplo, supongamos que tienes una clase ``Usuario``, la cual se usa más ad
                         <value>registration</value>
                     </option>
                 </constraint>
-                <constraint name="MinLength">
-                    <option name="limit">7</option>
+                <constraint name="Length">
+                    <option name="min">7</option>
                     <option name="groups">
                         <value>registration</value>
                     </option>
                 </constraint>
             </property>
             <property name="city">
-                <constraint name="MinLength">7</constraint>
+                <constraint name="Length">
+                    <option name="min">7</option>
+                </constraint>
             </property>
         </class>
 
@@ -661,25 +681,27 @@ Por ejemplo, supongamos que tienes una clase ``Usuario``, la cual se usa más ad
         use Symfony\Component\Validator\Mapping\ClassMetadata;
         use Symfony\Component\Validator\Constraints\Email;
         use Symfony\Component\Validator\Constraints\NotBlank;
-        use Symfony\Component\Validator\Constraints\MinLength;
+        use Symfony\Component\Validator\Constraints\Length;
 
         class User
         {
             public static function loadValidatorMetadata(ClassMetadata $metadata)
             {
                 $metadata->addPropertyConstraint('email', new Email(array(
-                    'groups' => array('registration')
+                    'groups' => array('registration'),
                 )));
 
                 $metadata->addPropertyConstraint('password', new NotBlank(array(
-                    'groups' => array('registration')
+                    'groups' => array('registration'),
                 )));
-                $metadata->addPropertyConstraint('password', new MinLength(array(
-                    'limit'  => 7,
+                $metadata->addPropertyConstraint('password', new Length(array(
+                    'min'  => 7,
                     'groups' => array('registration')
                 )));
 
-                $metadata->addPropertyConstraint('city', new MinLength(3));
+                $metadata->addPropertyConstraint(
+                    'city',
+                    Length(array("min" => 3)));
             }
         }
 
@@ -703,11 +725,11 @@ Por supuesto, por lo general vas a trabajar con la validación indirectamente a 
 Validando valores y arreglos
 ----------------------------
 
-Hasta ahora, hemos visto cómo puedes validar objetos completos. Pero a veces, sólo deseas validar un único valor ---como verificar que una cadena es una dirección de correo electrónico válida. Esto realmente es muy fácil de hacer. Desde el interior de un controlador, se ve así::
+Hasta ahora, hemos visto cómo puedes validar objetos completos. Pero a veces, sólo deseas validar un único valor ---como verificar que una cadena es una dirección de correo electrónico válida---. Esto realmente es muy fácil de hacer. Desde el interior de un controlador, se ve así::
 
-    // añade esto en lo alto de tu clase
     use Symfony\Component\Validator\Constraints\Email;
-    
+    // ...
+
     public function addEmailAction($email)
     {
         $emailConstraint = new Email();
@@ -715,17 +737,20 @@ Hasta ahora, hemos visto cómo puedes validar objetos completos. Pero a veces, s
         $emailConstraint->message = 'Invalid email address';
 
         // usa el validador para validar el valor
-        $errorList = $this->get('validator')->validateValue($email, $emailConstraint);
+        $errorList = $this->get('validator')->validateValue(
+            $email,
+            $emailConstraint
+        );
 
         if (count($errorList) == 0) {
             // esta ES una dirección de correo válida, haz algo
         } else {
-            // esta no es una dirección de correo electrónico válida
-            $errorMessage = $errorList[0]->getMessage()
-            
-            // haz algo con el error
+            // esta *no* es una dirección de correo electrónico válida
+            $errorMessage = $errorList[0]->getMessage();
+
+            // ... haz algo con el error
         }
-        
+
         // ...
     }
 
@@ -736,7 +761,7 @@ El método ``validateValue`` devuelve un objeto :class:`Symfony\\Component\\Vali
 Consideraciones finales
 -----------------------
 
-El ``validador`` de *Symfony2* es una herramienta poderosa que puedes aprovechar para garantizar que los datos de cualquier objeto son "válidos". El poder detrás de la validación radica en las "restricciones", las cuales son reglas que se pueden aplicar a propiedades o métodos captadores de tu objeto. Y mientras más utilices la plataforma de validación indirectamente cuando uses formularios, recordarás que puedes utilizarla en cualquier lugar para validar cualquier objeto.
+El ``validador`` de *Symfony2* es una herramienta poderosa que puedes aprovechar para garantizar que los datos de cualquier objeto son «válidos». El poder detrás de la validación radica en las «restricciones», las cuales son reglas que se pueden aplicar a propiedades o métodos captadores de tu objeto. Y mientras más utilices la plataforma de validación indirectamente cuando uses formularios, recordarás que puedes utilizarla en cualquier lugar para validar cualquier objeto.
 
 Aprende más en el recetario
 ---------------------------

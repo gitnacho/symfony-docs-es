@@ -1,17 +1,18 @@
-**************
 El controlador
-**************
+==============
 
-¿Todavía con nosotros después de las dos primeras partes? ¡Ya te estás volviendo adicto a *Symfony2*! Sin más preámbulos, vamos a descubrir lo que los controladores pueden hacer por ti.
+¿Todavía aquí después de las dos primeras partes? ¡Ya te estás volviendo adicto a *Symfony2*! Sin más preámbulos, descubre lo que pueden hacer por ti los controladores.
 
 Usando Formatos
 ---------------
 
-Hoy día, una aplicación web debe ser capaz de ofrecer algo más que solo páginas *HTML*. Desde *XML* para alimentadores *RSS* o Servicios *Web*, hasta *JSON* para peticiones *Ajax*, hay un montón de formatos diferentes a elegir. Apoyar estos formatos en *Symfony2* es sencillo. Modifica la ruta añadiendo un valor predeterminado de ``xml`` a la variable ``_format``::
+Hoy día, una aplicación *web* debe ser capaz de ofrecer algo más que solo páginas *HTML*. Desde *XML* para alimentadores *RSS* o Servicios *Web*, hasta *JSON* para peticiones *Ajax*, hay un montón de formatos diferentes a elegir. Apoyar estos formatos en *Symfony2* es sencillo. Modifica la ruta añadiendo un valor predeterminado de ``xml`` a la variable ``_format``::
 
     // src/Acme/DemoBundle/Controller/DemoController.php
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+
+    // ...
 
     /**
      * @Route("/hello/{name}", defaults={"_format"="xml"}, name="_demo_hello")
@@ -37,8 +38,11 @@ Eso es todo lo que hay que hacer. Para los formatos estándar, *Symfony2* tambi�
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 
+    // ...
+
     /**
-     * @Route("/hello/{name}.{_format}", defaults={"_format"="html"}, requirements={"_format"="html|xml|json"}, name="_demo_hello")
+     * @Route("/hello/{name}.{_format}", defaults={"_format"="html"}, ↓
+              requirements={"_format"="html|xml|json"}, name="_demo_hello")
      * @Template()
      */
     public function helloAction($name)
@@ -55,15 +59,22 @@ Redirigiendo y reenviando
 
 Si deseas redirigir al usuario a otra página, utiliza el método ``redirect()``::
 
-    return $this->redirect($this->generateUrl('_demo_hello', array('name' => 'Lucas')));
+    return $this->redirect($this->generateUrl('_demo_hello',
+                                              array('name' => 'Lucas')
+                                  )
+           );
 
-El método ``generateUrl()`` es el mismo que la función ``path()`` que utilizamos en las plantillas. Este toma el nombre de la ruta y una serie de parámetros como argumentos y devuelve la *URL* amigable asociada.
+El método ``generateUrl()`` es el mismo que la función ``path()`` utilizada en las plantillas. Este toma el nombre de la ruta y una serie de parámetros como argumentos y devuelve la *URL* amigable asociada.
 
-Además, fácilmente puedes reenviar a otra acción con el método ``forward()``. Internamente, *Symfony* hace una "subpetición", y devuelve el objeto ``Respuesta`` desde la subpetición::
+Además, fácilmente puedes reenviar a otra acción con el método ``forward()``. Internamente, *Symfony* hace una «subpetición», y devuelve el objeto ``Respuesta`` desde la subpetición::
 
-    $response = $this->forward('AcmeDemoBundle:Hello:fancy', array('name' => $name, 'color' => 'green'));
+    $response = $this->forward('AcmeDemoBundle:Hello:fancy',
+                               array('name' => $name,
+                                     'color' => 'green'
+                               )
+                );
 
-    // hace algo con la respuesta o la devuelve directamente
+    // ... hace algo con la respuesta o la devuelve directamente
 
 Obteniendo información de la petición
 -------------------------------------
@@ -97,24 +108,30 @@ Almacenar y recuperar información de la sesión se puede conseguir fácilmente 
 
     $session = $this->getRequest()->getSession();
 
-    // guarda un atributo para reutilizarlo durante una posterior petición del usuario
+    // guarda un atributo para reutilizarlo durante una
+    // posterior petición del usuario
     $session->set('foo', 'bar');
 
     // en otro controlador por otra petición
     $foo = $session->get('foo');
 
-    // set the user locale
-    $session->setLocale('fr');
+    // usa un valor predefinido si la clave no existe
+    $filters = $session->set('filters', array());
 
 También puedes almacenar pequeños mensajes que sólo estarán disponibles para la siguiente petición::
 
-    // guarda un mensaje para la siguiente petición (en un controlador)
-    $session->setFlash('notice', 'Congratulations, your action succeeded!');
+    // almacena un mensaje para la próxima petición (en un controlador)
+    $session->getFlashBag()->add('notice',
+                                 'Congratulations, your action succeeded!'
+                             );
 
-    // muestra el mensaje de nuevo en la siguiente petición (en una plantilla)
-    {{ app.session.flash('notice') }}
+    // muestra algún mensaje en la próxima petición (en una plantilla)
 
-Esto es útil cuando es necesario configurar un mensaje de éxito antes de redirigir al usuario a otra página (la cual entonces mostrará el mensaje).
+    {% for flashMessage in app.session.flashbag.get('notice') %}
+        <div>{{ flashMessage }}</div>
+    {% endfor %}
+
+Esto es útil cuando es necesario configurar un mensaje de éxito antes de redirigir al usuario a otra página (la cual entonces mostrará el mensaje). Por favor, ten en cuenta que cuándo utilizas ``has()`` en vez de ``get()``, el mensaje flash no será limpiado y por lo tanto queda disponible para las siguientes peticiones.
 
 Protegiendo recursos
 --------------------
@@ -134,9 +151,10 @@ La *edición estándar de Symfony* viene con una configuración de seguridad sen
 
         providers:
             in_memory:
-                users:
-                    user:  { password: userpass, roles: [ 'ROLE_USER' ] }
-                    admin: { password: adminpass, roles: [ 'ROLE_ADMIN' ] }
+                memory:
+                    users:
+                        user:  { password: userpass, roles: [ 'ROLE_USER' ] }
+                        admin: { password: adminpass, roles: [ 'ROLE_ADMIN' ] }
 
         firewalls:
             dev:
@@ -163,9 +181,7 @@ Por otra parte, el usuario ``admin`` tiene un rol ``ROLE_ADMIN``, el cual incluy
 
     Para facilitar la lectura, las contraseñas se almacenan en texto plano en esta configuración simple, pero puedes usar cualquier algoritmo de codificación ajustando la sección ``encoders``.
 
-Al ir a la dirección ``http://localhost/Symfony/web/app_dev.php/demo/secured/hello``
-automáticamente redirigirá al formulario de acceso, porque el recurso está
-protegido por un ``cortafuegos``.
+Al ir a la dirección ``http://localhost/app_dev.php/demo/secured/hello`` automáticamente te redirigirá al formulario de acceso, porque el recurso está protegido por un ``cortafuegos``.
 
 También puedes forzar la acción para exigir un determinado rol usando la anotación ``@Secure`` en el controlador::
 
@@ -183,12 +199,12 @@ También puedes forzar la acción para exigir un determinado rol usando la anota
         return array('name' => $name);
     }
 
-Ahora, inicia sesión como ``user`` (el cual no *tiene* el rol ``ROLE_ADMIN``) y desde la página protegida ``hello``, haz clic en el enlace "Hola recurso protegido".
-*Symfony2* debe devolver un código de estado *HTTP 403*, el cual indica que el usuario tiene "prohibido" el acceso a ese recurso.
+Ahora, inicia sesión como ``user`` (el cual *no* tiene el rol ``ROLE_ADMIN``) y desde la página protegida ``hello``, haz clic en el enlace «Hola recurso protegido».
+*Symfony2* debe devolver un código de estado *HTTP 403*, el cual indica que el usuario tiene «prohibido» el acceso a ese recurso.
 
 .. note::
 
-    La capa de seguridad de *Symfony2* es muy flexible y viene con muchos proveedores de usuario diferentes (por ejemplo, uno para el *ORM* de *Doctrine*) y proveedores de autenticación (como *HTTP* básica, *HTTP digest* o certificados X509). Lee el capítulo ":doc:`/book/security`" del libro para más información en cómo se usa y configura.
+    La capa de seguridad de *Symfony2* es muy flexible y viene con muchos proveedores de usuario diferentes (por ejemplo, uno para el *ORM* de *Doctrine*) y proveedores de autenticación (como *HTTP* básica, suma de comprobación *HTTP* o certificados X509). Lee el capítulo «:doc:`/book/security`» del libro para más información en cómo se usa y configura.
 
 Memorizando recursos en caché
 -----------------------------
@@ -211,15 +227,15 @@ Tan pronto como tu sitio web comience a generar más tráfico, tendrás que evit
 
 En este ejemplo, el recurso se mantiene en caché por un día. Pero también puedes utilizar validación en lugar de caducidad o una combinación de ambas, si se ajusta mejor a tus necesidades.
 
-El recurso memorizado en caché es gestionado por el delegado inverso integrado en *Symfony2*. Pero debido a que la memorización en caché se gestiona usando cabeceras de caché *HTTP*, puedes reemplazar el delegado inverso integrado, con *Varnish* o *Squid* y escalar tu aplicación fácilmente.
+El recurso memorizado en caché es gestionado por el delegado inverso integrado en *Symfony2*. Pero debido a que la memorización en caché se gestiona usando cabeceras de caché *HTTP* normales, puedes sustituir el delegado inverso integrado, con *Varnish* o *Squid* y escalar tu aplicación fácilmente.
 
 .. note::
 
-    Pero ¿qué pasa si no puedes guardar en caché todas las páginas? *Symfony2* todavía tiene la solución vía *ESI* (*Edge Side Includes* o Inclusión de borde lateral), con la cual es compatible nativamente. Consigue más información leyendo el capítulo ":doc:`/book/http_cache`" del libro.
+    Pero ¿qué pasa si no puedes guardar en caché todas las páginas? *Symfony2* todavía tiene la solución vía *ESI* (*Edge Side Includes* o Inclusión de borde lateral), con la cual es compatible nativamente. Consigue más información leyendo el capítulo «:doc:`/book/http_cache`» del libro.
 
 Consideraciones finales
 -----------------------
 
-Eso es todo lo que hay que hacer, y ni siquiera estoy seguro de que hayan pasado los 10 minutos completos. Presentamos brevemente los paquetes en la primera parte, y todas las características que hemos explorado hasta ahora son parte del paquete básico de la plataforma.
-Pero gracias a los paquetes, todo en *Symfony2* se puede ampliar o sustituir.
+Eso es todo lo que hay que hacer, y ni siquiera estoy seguro de que hayan pasado los 10 minutos completos. En la primera parte te presentamos brevemente los paquetes, y todas las características que hemos explorado hasta ahora son parte del paquete básico de la plataforma.
+Pero gracias a los paquetes, todo en *Symfony2* se puede extender o sustituir.
 Ese, es el tema de la :doc:`siguiente parte de esta guía <the_architecture>`.

@@ -1,0 +1,159 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Construyendo el flujo de trabajo del contenedor &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Inyección de dependencias" href="index.html" />
+    <link rel="next" title="Despachador de eventos" href="../event_dispatcher/index.html" />
+    <link rel="prev" title="Configuración avanzada del contenedor" href="advanced.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../event_dispatcher/index.html" title="Despachador de eventos"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="advanced.html" title="Configuración avanzada del contenedor"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="construyendo-el-flujo-de-trabajo-del-contenedor">
+<span id="index-0"></span><h1>Construyendo el flujo de trabajo del contenedor<a class="headerlink" href="#construyendo-el-flujo-de-trabajo-del-contenedor" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>En las páginas anteriores de esta sección, ha habido muy poco que decir acerca de donde se deben ubicar los diversos archivos y clases. Esto es porque eso depende de la aplicación, biblioteca o plataforma en la que deseas utilizar el contenedor. En cuanto a la forma de configurar el contenedor y construirlo en la pila completa de la plataforma, <em>Symfony2</em> te ayudará a ver cómo encaja todo esto junto, si estás utilizando la pila completa de la plataforma o buscando cómo utilizar el contenedor de servicios en otra aplicación.</p>
+<p>La pila completa de la plataforma usa el componente <tt class="docutils literal"><span class="pre">HttpKernel</span></tt> para manejar la carga de la configuración del contenedor de servicios desde la aplicación y paquetes, y también se encarga de su compilación y almacenamiento en caché. Incluso si no estás usando el <tt class="docutils literal"><span class="pre">HttpKernel</span></tt>, debería darte una idea de una forma de organizar la configuración en una aplicación modular.</p>
+<div class="section" id="trabajando-con-contenedores-en-cache">
+<h2>Trabajando con contenedores en caché<a class="headerlink" href="#trabajando-con-contenedores-en-cache" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Antes de construrlo, el núcleo comprueba si existe una versión en caché del contenedor. El <tt class="docutils literal"><span class="pre">HttpKernel</span></tt> tiene un ajuste de depuración y si este es falso, se utiliza la versión en caché si existe. Si <tt class="docutils literal"><span class="pre">debug</span></tt> es verdadero, entonces el núcleo <a class="reference internal" href="../config/caching.html"><em>comprueba si la configuración es fresca</em></a> y si lo es, utiliza la versión en caché del contenedor. Si no, entonces el contenedor es construido a partir de la configuración a nivel de la aplicación y la configuración de los paquetes de extensión.</p>
+<p>Revisa <a class="reference internal" href="compilation.html#components-dependency-injection-dumping"><em>Volcando la configuración por rendimiento</em></a> para más detalles.</p>
+</div>
+<div class="section" id="configurando-a-nivel-de-la-aplicacion">
+<h2>Configurando a nivel de la aplicación<a class="headerlink" href="#configurando-a-nivel-de-la-aplicacion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La configuración a nivel de la aplicación se carga desde el directorio <tt class="docutils literal"><span class="pre">app/chonfig</span></tt>. Se cargan varios archivos, mismos que luego se fusionan al procesar las extensiones. Esto permite una diferente configuración para diferentes entornos, por ejemplo, <tt class="docutils literal"><span class="pre">dev</span></tt>, <tt class="docutils literal"><span class="pre">prod</span></tt>.</p>
+<p>Estos archivos contienen los parámetros y servicios que se cargan directamente en el contenedor de acuerdo a <a class="reference internal" href="introduction.html#components-dependency-injection-loading-config"><em>Configurando el contenedor con archivos de configuración</em></a>.
+También contienen configuración que es procesada por extensiones de acuerdo con <a class="reference internal" href="compilation.html#components-dependency-injection-extension"><em>Gestionando la configuración con extensiones</em></a>.
+Estos se consideran configuración del paquete, ya que cada paquete contiene la extensión de una clase.</p>
+</div>
+<div class="section" id="configuracion-a-nivel-de-paquete-con-las-extensiones">
+<h2>Configuración a nivel de paquete con las extensiones<a class="headerlink" href="#configuracion-a-nivel-de-paquete-con-las-extensiones" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Por convención, cada paquete contiene la extensión de una clase que se encuentra en directorio <tt class="docutils literal"><span class="pre">DependencyInjection</span></tt> del paquete. Éstas son registradas con el <tt class="docutils literal"><span class="pre">ContainerBuilder</span></tt> al arrancar el núcleo. Cuando el <tt class="docutils literal"><span class="pre">ContainerBuilder</span></tt> es <a class="reference internal" href="compilation.html"><em>compilado</em></a>, la configuración a nivel de la aplicación correspondiente a la extensión del paquete se pasa a la extensión que también suele cargar sus propios archivos de configuración, típicamente desde el directorio <tt class="docutils literal"><span class="pre">Resources/config</span></tt>. La configuración a nivel de la aplicación normalmente es procesada con un :doc: <cite>objeto Configuration &lt;/components/config/definition&gt;</cite> también almacenado en el directorio <tt class="docutils literal"><span class="pre">DependencyInjection</span></tt> del paquete.</p>
+</div>
+<div class="section" id="pases-del-compilador-para-permitir-la-interaccion-entre-paquetes">
+<h2>Pases del compilador para permitir la interacción entre paquetes<a class="headerlink" href="#pases-del-compilador-para-permitir-la-interaccion-entre-paquetes" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Los <a class="reference internal" href="compilation.html#components-dependency-injection-compiler-passes"><em>pases del compilador</em></a> se utilizan para permitir la interacción entre los diferentes paquetes, ya que estos no pueden afectar a la configuración de las demás clases de la extensión. Uno de sus principales usos es el procesamiento de servicios etiquetados, lo cual permite a los paquetes registrar servicios captados por otros paquetes, tal como registradores de <em>Monolog</em>, extensiones <em>Twig</em> y Colectores de datos para el generador de perfiles web. Se suele colocar los pases del compilador en el directorio <tt class="docutils literal"><span class="pre">DependencyInjection/Compiler</span></tt>.</p>
+</div>
+<div class="section" id="compilacion-y-almacenamiento-en-cache">
+<h2>Compilación y almacenamiento en caché<a class="headerlink" href="#compilacion-y-almacenamiento-en-cache" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Después de cargar el proceso de compilación los servicios de configuración, extensiones y pases del compilador, se vuelcan para que la memoria caché se pueda utilizar la próxima vez. La versión vertida se utiliza durante las posteriores peticiones, ya que es más eficiente.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../event_dispatcher/index.html" title="Despachador de eventos"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="advanced.html" title="Configuración avanzada del contenedor"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

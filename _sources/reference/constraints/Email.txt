@@ -8,6 +8,7 @@ Valida que un valor es una dirección de correo electrónico válida. El valor s
 +----------------+---------------------------------------------------------------------+
 | Opciones       | - `message`_                                                        |
 |                | - `checkMX`_                                                        |
+|                | - `checkHost`_                                                      |
 +----------------+---------------------------------------------------------------------+
 | Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\Email`          |
 +----------------+---------------------------------------------------------------------+
@@ -45,23 +46,42 @@ Uso básico
                 </property>
             </class>
         </constraint-mapping>
-        
+
     .. code-block:: php-annotations
 
         // src/Acme/BlogBundle/Entity/Author.php
         namespace Acme\BlogBundle\Entity;
-        
+
         use Symfony\Component\Validator\Constraints as Assert;
 
         class Autor
         {
-            /** 
+            /**
              * @Assert\Email(
              *     message = "The email '{{ value }}' is not a valid email.",
              *     checkMX = true
              * )
              */
              protected $email;
+        }
+
+    .. code-block:: php
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        namespace Acme\BlogBundle\Entity;
+        
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('email', new Assert\Email(array(
+                    'message' => 'The email "{{ value }}" is not a valid email.',
+                    'check'   => true,
+                )));
+            }
         }
 
 Opciones
@@ -79,6 +99,14 @@ Este mensaje se muestra si los datos subyacentes no son una dirección de correo
 
 **tipo**: ``Boolean`` **predeterminado**: ``false``
 
-Si es ``true``, entonces puedes utilizar la función `checkdnsrr`_ de *PHP* para comprobar la validez de los registros *MX* del servidor del correo electrónico dado.
+Si es ``true``, entonces puedes utilizar la función :phpfunction:`checkdnsrr` de *PHP* para comprobar la validez de los registros *MX* del servidor del correo electrónico dado.
 
-.. _`checkdnsrr`: http://www.php.net/manual/es/function.checkdnsrr.php
+``checkHost``
+~~~~~~~~~~~~~
+
+.. versionadded:: 2.1
+    La opción ``checkHost`` se añadió en *Symfony 2.1*
+
+**tipo**: ``Boolean`` **predeterminado**: ``false``
+
+Si es ``true``, entonces puedes utilizar la función :phpfunction:`checkdnsrr` de *PHP* para comprobar la validez de los registros *MX*, *A* o *AAAA* del servidor del correo electrónico dado.

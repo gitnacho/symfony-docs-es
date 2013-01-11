@@ -1,0 +1,103 @@
+.. index::
+   single: Enrutando; _method
+
+Cómo utilizar métodos *HTTP* además de ``GET`` y ``POST`` en rutas
+==================================================================
+
+El método *HTTP* de la petición es uno de los requisitos que se pueden comprobar al ver si coincide con una ruta. Este se introduce en el capítulo de enrutado del libro «:doc:`/book/routing`», con ejemplos del uso de ``GET`` y ``POST``. También puedes utilizar otros verbos *HTTP* de esta manera. Por ejemplo, si tienes una entrada de blog, entonces podrías utilizar el mismo patrón de dirección URL para mostrarlo, realizar cambios y eliminarlo, haciéndolo coincidir con ``GET``, ``PUT`` y ``DELETE``.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        blog_show:
+            pattern:  /blog/{slug}
+            defaults: { _controller: AcmeDemoBundle:Blog:show }
+            requirements:
+                _method:  GET
+
+        blog_update:
+            pattern:  /blog/{slug}
+            defaults: { _controller: AcmeDemoBundle:Blog:update }
+            requirements:
+                _method:  PUT
+
+        blog_delete:
+            pattern:  /blog/{slug}
+            defaults: { _controller: AcmeDemoBundle:Blog:delete }
+            requirements:
+                _method:  DELETE
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <route id="blog_show" pattern="/blog/{slug}">
+                <default key="_controller">AcmeDemoBundle:Blog:show</default>
+                <requirement key="_method">GET</requirement>
+            </route>
+
+            <route id="blog_update" pattern="/blog/{slug}">
+                <default key="_controller">AcmeDemoBundle:Blog:update</default>
+                <requirement key="_method">PUT</requirement>
+            </route>
+
+            <route id="blog_delete" pattern="/blog/{slug}">
+                <default key="_controller">AcmeDemoBundle:Blog:delete</default>
+                <requirement key="_method">DELETE</requirement>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('blog_show', new Route('/blog/{slug}', array(
+            '_controller' => 'AcmeDemoBundle:Blog:show',
+        ), array(
+            '_method' => 'GET',
+        )));
+
+        $collection->add('blog_update', new Route('/blog/{slug}', array(
+            '_controller' => 'AcmeDemoBundle:Blog:update',
+        ), array(
+            '_method' => 'PUT',
+        )));
+
+        $collection->add('blog_delete', new Route('/blog/{slug}', array(
+            '_controller' => 'AcmeDemoBundle:Blog:delete',
+        ), array(
+            '_method' => 'DELETE',
+        )));
+
+        return $collection;
+
+Desafortunadamente, la vida no es así de simple, ya que la mayoría de los navegadores no son compatibles con el envío de peticiones ``PUT`` y ``DELETE``. Afortunadamente *Symfony2* te proporciona una forma sencilla de trabajar en torno a esta limitación. Al incluir un argumento ``_method`` en la cadena de consulta o en los parámetros de una petición *HTTP*, *Symfony2* lo utilizará como el método a coincidir con las rutas. Esto se puede hacer fácilmente en formularios con un campo oculto. Supongamos que tienes un formulario para editar una entrada de blog:
+
+.. code-block:: html+jinja
+
+    <form action="{{ path('blog_update', {'slug': blog.slug}) }}" method="post">
+        <input type="hidden" name="_method" value="PUT" />
+        {{ form_widget(form) }}
+        <input type="submit" value="Update" />
+    </form>
+
+La petición presentada ahora coincide con la ruta ``blog_update`` y usará el ``updateAction`` para procesar el formulario.
+
+Del mismo modo puedes cambiar el formulario de eliminación para que se parezca a esto:
+
+.. code-block:: html+jinja
+
+    <form action="{{ path('blog_delete', {'slug': blog.slug}) }}" method="post">
+        <input type="hidden" name="_method" value="DELETE" />
+        {{ form_widget(delete_form) }}
+        <input type="submit" value="Delete" />
+    </form>
+
+Entonces, este coincidirá con la ruta ``blog_delete``.

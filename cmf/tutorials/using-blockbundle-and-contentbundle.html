@@ -1,0 +1,677 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Usando BlockBundle y ContentBundle con PHPCR &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Documentación del CMF de Symfony" href="../index.html" />
+    <link rel="next" title="BlockBundle" href="../bundles/block.html" />
+    <link rel="prev" title="Creando un CMS con CMF y Sonata" href="creating-cms-using-cmf-and-sonata.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../bundles/block.html" title="BlockBundle"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="creating-cms-using-cmf-and-sonata.html" title="Creando un CMS con CMF y Sonata"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="usando-blockbundle-y-contentbundle-con-phpcr">
+<h1>Usando <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> y <tt class="docutils literal"><span class="pre">ContentBundle</span></tt> con <em>PHPCR</em><a class="headerlink" href="#usando-blockbundle-y-contentbundle-con-phpcr" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El objetivo de esta guía es demostrar cómo puedes utilizar el <tt class="docutils literal"><span class="pre">CMF</span></tt> <a class="reference internal" href="../bundles/block.html"><em>BlockBundle</em></a>  y <a class="reference internal" href="../bundles/content.html"><em>ContentBundle</em></a> como componentes independientes, y mostrarte cómo complementan al <em>PHPCR</em>.</p>
+<p>Esta guía demuestra el uso más sencillo posible, para instalarlo y ejecutarlo
+rápidamente. Una vez que estés familiarizado con lo básico, la documentación en profundidad de ambos paquetes te
+ayudará a adaptar estos ejemplos básicos para servir casos de uso más avanzados.</p>
+<p>Empezarás utilizando únicamente el <tt class="docutils literal"><span class="pre">BlockBundle</span></tt>, con bloques de contenido enlazados directamente al <em>PHPCR</em>.
+Luego, verás una introducción al <tt class="docutils literal"><span class="pre">ContentBundle</span></tt> para mostrarte cómo puedes representar contenido en las páginas con bloques.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">A pesar de que no es un requisito utilizar <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> o <tt class="docutils literal"><span class="pre">ContentBundle</span></tt>, esta guía también usa <a class="reference external" href="http://gitnacho.github.com/symfony-docs-es/bundles/DoctrineFixturesBundle/index.html">DoctrineFixturesBundle</a>.
+Esto es porque este proporciona una manera fácil de cargar algún contenido de prueba.</p>
+</div>
+<div class="section" id="requisitos-previos">
+<h2>Requisitos previos<a class="headerlink" href="#requisitos-previos" title="Enlazar permanentemente con este título">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="http://gitnacho.github.com/symfony-docs-es/book/installation.html">Instalando Symfony2</a> (2.1.x)</li>
+<li><a class="reference internal" href="installing-configuring-doctrine-phpcr-odm.html"><em>Instalando y configurando Doctrine y PHPCR-ODM</em></a></li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Esta guía está basada en la utilización de <em>PHPCR-ODM</em> instalado con <tt class="docutils literal"><span class="pre">Jackalope</span></tt>, <em>DBAL</em> de <em>Doctrine</em> y una base de datos <em>MySQL</em>. Debería ser fácil adaptarlo para trabajar con una de las otras opciones <em>PHPCR</em> documentadas en <a class="reference internal" href="installing-configuring-doctrine-phpcr-odm.html"><em>Instalando y configurando Doctrine y PHPCR-ODM</em></a>.</p>
+</div>
+</div>
+<div class="section" id="creando-y-configurando-la-base-de-datos">
+<h2>Creando y configurando la base de datos<a class="headerlink" href="#creando-y-configurando-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes utilizar una base de datos existente, o crear una ahora para ayudarte a seguir esta guía. Para una nueva base de datos, ejecuta estas órdenes en <em>MySQL</em>:</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">CREATE</span> <span class="k">DATABASE</span> <span class="n">symfony</span> <span class="k">DEFAULT</span> <span class="nb">CHARACTER</span> <span class="k">SET</span> <span class="n">utf8</span> <span class="k">DEFAULT</span> <span class="k">COLLATE</span> <span class="n">utf8_general_ci</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">USER</span> <span class="s1">&#39;symfony&#39;</span><span class="o">@</span><span class="s1">&#39;localhost&#39;</span> <span class="n">IDENTIFIED</span> <span class="k">BY</span> <span class="s1">&#39;UseABetterPassword&#39;</span><span class="p">;</span>
+<span class="k">GRANT</span> <span class="k">ALL</span> <span class="k">ON</span> <span class="n">symfony</span><span class="p">.</span><span class="o">*</span> <span class="k">TO</span> <span class="s1">&#39;symfony&#39;</span><span class="o">@</span><span class="s1">&#39;localhost&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Tu archivo <tt class="file docutils literal"><span class="pre">parameters.yml</span></tt> necesita emparejar lo anterior, por ejemplo:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/parameters.yml</span>
+<span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">database_driver</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">pdo_mysql</span>
+    <span class="l-Scalar-Plain">database_host</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">localhost</span>
+    <span class="l-Scalar-Plain">database_port</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">~</span>
+    <span class="l-Scalar-Plain">database_name</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">symfony</span>
+    <span class="l-Scalar-Plain">database_user</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">symfony</span>
+    <span class="l-Scalar-Plain">database_password</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">UseABetterPassword</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="configurando-el-componente-phpcr-de-doctrine">
+<h2>Configurando el componente <em>PHPCR</em> de <em>Doctrine</em><a class="headerlink" href="#configurando-el-componente-phpcr-de-doctrine" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si seguiste la guía <a class="reference internal" href="installing-configuring-doctrine-phpcr-odm.html"><em>Instalando y configurando Doctrine y PHPCR-ODM</em></a>, puedes saltarte esta sección.</p>
+</div>
+<p>Necesitas instalar los componentes del <em>PHPCR-ODM</em>. Añade los siguiente a tu archivo <tt class="file docutils literal"><span class="pre">composer.json</span></tt>:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="s2">&quot;require&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="p">...</span>
+    <span class="s2">&quot;jackalope/jackalope-jackrabbit&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;jackalope/jackalope-doctrine-dbal&quot;</span><span class="o">:</span> <span class="s2">&quot;dev-master&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;doctrine/phpcr-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;doctrine/phpcr-odm&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Para instalar lo anterior, ejecuta:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php composer.phar update
+</pre></div>
+</div>
+<p>En tu archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt>, añade la siguiente configuración para <tt class="docutils literal"><span class="pre">doctrine_phpcr</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">doctrine_phpcr</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">session</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">backend</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">doctrinedbal</span>
+            <span class="l-Scalar-Plain">connection</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">doctrine.dbal.default_connection</span>
+        <span class="l-Scalar-Plain">workspace</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">default</span>
+    <span class="l-Scalar-Plain">odm</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">auto_mapping</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Añade la siguiente línea al método <tt class="docutils literal"><span class="pre">registerBundles()</span></tt> en el archivo <tt class="file docutils literal"><span class="pre">AppKernel.php</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/AppKernel.php</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">registerBundles</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$bundles</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+        <span class="c1">// ...</span>
+        <span class="k">new</span> <span class="nx">Doctrine\Bundle\PHPCRBundle\DoctrinePHPCRBundle</span><span class="p">(),</span>
+    <span class="p">);</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Añade la siguiente línea a tu archivo <tt class="file docutils literal"><span class="pre">autoload.php</span></tt>, inmediatamente después de la
+última línea <tt class="docutils literal"><span class="pre">AnnotationRegistry::registerFile</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre>   <span class="c1">// app/autoload.php</span>
+
+   <span class="c1">// ...</span>
+<span class="nx">AnnotationRegistry</span><span class="o">::</span><span class="na">registerFile</span><span class="p">(</span><span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../vendor/doctrine/phpcr-odm/lib/Doctrine/ODM/PHPCR/Mapping/Annotations/DoctrineAnnotations.php&#39;</span><span class="p">);</span>
+   <span class="c1">// ...</span>
+</pre></div>
+</div>
+<p>Crea el esquema de la base de datos y registra el tipo de nodo <em>PHPCR</em> usando las siguientes órdenes de consola:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console doctrine:phpcr:init:dbal
+php app/console doctrine:phpcr:register-system-node-types
+</pre></div>
+</div>
+<p>Ahora deberías tener una serie de tablas en tu base de datos <em>MySQL</em> con el prefijo <tt class="docutils literal"><span class="pre">phpcr_</span></tt>.</p>
+</div>
+<div class="section" id="instala-los-componentes-necesarios-del-cmf-de-symfony">
+<h2>Instala los componentes necesarios del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em><a class="headerlink" href="#instala-los-componentes-necesarios-del-cmf-de-symfony" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Añade lo siguiente al archivo <tt class="file docutils literal"><span class="pre">composer.json</span></tt>:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="s2">&quot;require&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="p">...</span>
+    <span class="s2">&quot;symfony-cmf/block-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;dev-master&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Para instalar las dependencias anteriores, ejecuta:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php composer.phar update
+</pre></div>
+</div>
+<p>Añade las siguientes líneas al archivo <tt class="file docutils literal"><span class="pre">AppKernel.php</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/AppKernel.php</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">registerBundles</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$bundles</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+        <span class="c1">// ...</span>
+        <span class="k">new</span> <span class="nx">Sonata\BlockBundle\SonataBlockBundle</span><span class="p">(),</span>
+        <span class="k">new</span> <span class="nx">Symfony\Cmf\Bundle\BlockBundle\SymfonyCmfBlockBundle</span><span class="p">(),</span>
+    <span class="p">);</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">SonataBlockBundle</span></tt> es una dependencia del <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> de <tt class="docutils literal"><span class="pre">CMF</span></tt> y necesitas configurarlas. Añade lo siguiente a tu archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">sonata_block</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">default_contexts</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="nv">cms</span><span class="p-Indicator">]</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="instala-doctrinefixturesbundle">
+<h2>Instala <tt class="docutils literal"><span class="pre">DoctrineFixturesBundle</span></tt><a class="headerlink" href="#instala-doctrinefixturesbundle" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Como mencioné al inicio, este no es un requisito para <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> o <tt class="docutils literal"><span class="pre">ContentBundle</span></tt>; No obstante, es una buena manera de manejar contenido predefinido o de ejemplo.</p>
+</div>
+<p>Añade lo siguiente al archivo <tt class="file docutils literal"><span class="pre">composer.json</span></tt>:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="s2">&quot;require&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="p">...</span>
+    <span class="s2">&quot;doctrine/doctrine-fixtures-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;dev-master&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Para instalar las dependencias anteriores, ejecuta:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php composer.phar update
+</pre></div>
+</div>
+<p>Añade la siguiente línea al método <tt class="docutils literal"><span class="pre">registerBundles()</span></tt> en el archivo <tt class="file docutils literal"><span class="pre">AppKernel.php</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/AppKernel.php</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">registerBundles</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$bundles</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+        <span class="c1">// ...</span>
+        <span class="k">new</span> <span class="nx">Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle</span><span class="p">(),</span>
+    <span class="p">);</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="cargando-accesorios">
+<h2>Cargando accesorios<a class="headerlink" href="#cargando-accesorios" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Basándote en la <a class="reference external" href="http://gitnacho.github.com/symfony-docs-es/bundles/DoctrineFixturesBundle/index.html">documentación de DoctrineFixturesBundle</a>, necesitarás crear una clase <tt class="docutils literal"><span class="pre">fixtures</span></tt>.</p>
+<p>Para empezar, crea un directorio <tt class="docutils literal"><span class="pre">DataFixtures</span></tt> dentro de tu propio paquete (p. ej. <tt class="docutils literal"><span class="pre">«MainBundle»</span></tt>), y dentro, crea un directorio llamado <tt class="docutils literal"><span class="pre">PHPCR</span></tt>. Si quieres seguir los ejemplos de más adelante, el <tt class="docutils literal"><span class="pre">DoctrineFixturesBundle</span></tt> cargará automáticamente las clases <tt class="docutils literal"><span class="pre">fixtures</span></tt> colocadas allí.</p>
+<p>En el cargador de <tt class="docutils literal"><span class="pre">accesorios</span></tt>, un ejemplo de la creación de un bloque de contenido podría tener esta apariencia:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$myBlock</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SimpleBlock</span><span class="p">();</span>
+<span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setParentDocument</span><span class="p">(</span><span class="nv">$parentPage</span><span class="p">);</span>
+<span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setName</span><span class="p">(</span><span class="s1">&#39;sidebarBlock&#39;</span><span class="p">);</span>
+<span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="s1">&#39;My first block&#39;</span><span class="p">);</span>
+<span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setContent</span><span class="p">(</span><span class="s1">&#39;Hello block world!&#39;</span><span class="p">);</span>
+
+<span class="nv">$documentManager</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$myBlock</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Aún así, lo anterior en sí mismo no será suficiente, porque no hay ninguna página padre (<tt class="docutils literal"><span class="pre">$parentPage</span></tt>) con la cual enlazar los bloques. Hay varias posibles opciones que puedes utilizar como el padre:</p>
+<ul class="simple">
+<li>Enlaza los bloques directamente al documento raíz (no mostrado)</li>
+<li>Crea un documento del paquete <em>PHPCR</em> (mostrado abajo usando el tipo de documento <tt class="docutils literal"><span class="pre">Genérico</span></tt>)</li>
+<li>Crea un documento del <tt class="docutils literal"><span class="pre">ContentBundle</span></tt> del <tt class="docutils literal"><span class="pre">CMF</span></tt> (mostrado abajo utilizando el tipo de documento <tt class="docutils literal"><span class="pre">StaticContent</span></tt>)</li>
+</ul>
+</div>
+<div class="section" id="usando-el-phpcr">
+<h2>Usando el <em>PHPCR</em><a class="headerlink" href="#usando-el-phpcr" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para almacenar un bloque directamente en el <em>PHPCR</em> del <tt class="docutils literal"><span class="pre">CMF</span></tt>, crea la siguiente clase dentro de tu directorio <tt class="docutils literal"><span class="pre">DataFixtures/PHPCR</span></tt>:</p>
+<div class="highlight-html+php"><div class="highlight"><pre><span class="cp">&lt;?php</span>
+<span class="c1">// src/Acme/MainBundle/DataFixtures/PHPCR/LoadBlockWithPhpcrParent.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\MainBundle\DataFixtures\ORM</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Doctrine\Common\DataFixtures\AbstractFixture</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\Common\Persistence\ObjectManager</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\ODM\PHPCR\Document\Generic</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerAwareInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">LoadBlockWithPhpcrParent</span> <span class="k">extends</span> <span class="nx">AbstractFixture</span> <span class="k">implements</span> <span class="nx">ContainerAwareInterface</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="nx">ObjectManager</span> <span class="nv">$manager</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// obtiene el documento raíz desde el PHPCR</span>
+        <span class="nv">$rootDocument</span> <span class="o">=</span> <span class="nv">$manager</span><span class="o">-&gt;</span><span class="na">find</span><span class="p">(</span><span class="k">null</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">);</span>
+
+        <span class="c1">// Crea un documento PHPCR genérico bajo la raíz, para usarlo</span>
+        <span class="c1">// como el tipo de categoría para los bloques</span>
+        <span class="nv">$document</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Generic</span><span class="p">();</span>
+        <span class="nv">$document</span><span class="o">-&gt;</span><span class="na">setParent</span><span class="p">(</span><span class="nv">$rootDocument</span><span class="p">);</span>
+        <span class="nv">$document</span><span class="o">-&gt;</span><span class="na">setNodename</span><span class="p">(</span><span class="s1">&#39;blocks&#39;</span><span class="p">);</span>
+        <span class="nv">$manager</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
+
+        <span class="c1">// Crea un nuevo SimpleBlock (ve</span>
+        <span class="c1">// http://gitnacho.github.com/symfony-doc-es/cmf/bundles/block.html#block-types)</span>
+        <span class="nv">$myBlock</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SimpleBlock</span><span class="p">();</span>
+        <span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setParentDocument</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
+        <span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setName</span><span class="p">(</span><span class="s1">&#39;testBlock&#39;</span><span class="p">);</span>
+        <span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="s1">&#39;CMF BlockBundle only&#39;</span><span class="p">);</span>
+        <span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setContent</span><span class="p">(</span><span class="s1">&#39;Block from CMF BlockBundle, parent from the PHPCR (Generic document).&#39;</span><span class="p">);</span>
+        <span class="nv">$manager</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$myBlock</span><span class="p">);</span>
+
+        <span class="c1">// Confirma los cambios de $document y $block a la base de datos</span>
+        <span class="nv">$manager</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setContainer</span><span class="p">(</span><span class="nx">ContainerInterface</span> <span class="nv">$container</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">container</span> <span class="o">=</span> <span class="nv">$container</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Esta clase carga un bloque de contenido de ejemplo que utiliza el <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> de <tt class="docutils literal"><span class="pre">CMF</span></tt> (sin necesitar ningún otro paquete del <tt class="docutils literal"><span class="pre">CMF</span></tt>). Para asegurar el bloque tienes un padre en el repositorio, el cargador también crea un documento <tt class="docutils literal"><span class="pre">Genérico</span></tt> llamado <tt class="docutils literal"><span class="pre">'blocks'</span></tt> dentro del <em>PHPCR</em>.</p>
+<p>Ahora, carga los accesorios usando la consola:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console doctrine:phpcr:fixtures:load
+</pre></div>
+</div>
+<p>El contenido en tu base de datos ahora se tendría que ver algo así:</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="n">path</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">local_name</span> <span class="k">FROM</span> <span class="n">phpcr_nodes</span><span class="p">;</span>
+</pre></div>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="48%" />
+<col width="23%" />
+<col width="30%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">path</th>
+<th class="head">parent</th>
+<th class="head">local_name</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>/</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>/blocks</td>
+<td>/</td>
+<td>blocks</td>
+</tr>
+<tr class="row-even"><td>/blocks/testBlock</td>
+<td>/ blocks</td>
+<td>testBlock</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="usando-el-contentbundle-del-cmf">
+<h2>Usando el <tt class="docutils literal"><span class="pre">ContentBundle</span></tt> del <tt class="docutils literal"><span class="pre">CMF</span></tt><a class="headerlink" href="#usando-el-contentbundle-del-cmf" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Sigue este ejemplo para utilizar ambos componentes <tt class="docutils literal"><span class="pre">Block</span></tt> y <tt class="docutils literal"><span class="pre">Content</span></tt>.</p>
+<p>El paquete <tt class="docutils literal"><span class="pre">ContentBundle</span></tt> también requiere del <tt class="docutils literal"><span class="pre">RoutingExtraBundle</span></tt>, así que para ahorrar tiempo puedes instalar ambos.
+Añade lo siguiente al archivo <tt class="file docutils literal"><span class="pre">composer.json</span></tt>:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="s2">&quot;require&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="p">...</span>
+    <span class="s2">&quot;symfony-cmf/content-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;dev-master&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;symfony-cmf/routing-extra-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;dev-master&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Instala todo de la manera habitual:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php composer.phar update
+</pre></div>
+</div>
+<p>Añade la siguiente línea al archivo <tt class="file docutils literal"><span class="pre">AppKernel.php</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/AppKernel.php</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">registerBundles</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$bundles</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+        <span class="c1">// ...</span>
+        <span class="k">new</span> <span class="nx">Symfony\Cmf\Bundle\ContentBundle\SymfonyCmfContentBundle</span><span class="p">(),</span>
+    <span class="p">);</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Ahora deberías tener todo lo necesario para cargar una página de contenido con un bloque de ejemplo, así que crea la clase <tt class="docutils literal"><span class="pre">LoadBlockWithCmfParent.php</span></tt>:</p>
+<div class="highlight-html+php"><div class="highlight"><pre><span class="cp">&lt;?php</span>
+<span class="c1">// src/Acme/Bundle/MainBundle/DataFixtures/PHPCR/LoadBlockWithCmfParent.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\MainBundle\DataFixtures\ORM</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Doctrine\Common\DataFixtures\AbstractFixture</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\Common\Persistence\ObjectManager</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerAwareInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">PHPCR\Util\NodeHelper</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Cmf\Bundle\ContentBundle\Document\StaticContent</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">LoadBlockWithCmfParent</span> <span class="k">extends</span> <span class="nx">AbstractFixture</span> <span class="k">implements</span> <span class="nx">ContainerAwareInterface</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="nx">ObjectManager</span> <span class="nv">$manager</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// Obtiene el nombre de la ruta base a utilizar en la configuración</span>
+        <span class="nv">$session</span> <span class="o">=</span> <span class="nv">$manager</span><span class="o">-&gt;</span><span class="na">getPhpcrSession</span><span class="p">();</span>
+        <span class="nv">$basepath</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">container</span><span class="o">-&gt;</span><span class="na">getParameter</span><span class="p">(</span><span class="s1">&#39;symfony_cmf_content.static_basepath&#39;</span><span class="p">);</span>
+
+        <span class="c1">// Crea la ruta en el repositorio</span>
+        <span class="nx">NodeHelper</span><span class="o">::</span><span class="na">createPath</span><span class="p">(</span><span class="nv">$session</span><span class="p">,</span> <span class="nv">$basepath</span><span class="p">);</span>
+
+        <span class="c1">// Crea un nuevo documento que utiliza StaticContent de ContentBundle del CMF</span>
+        <span class="nv">$document</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">StaticContent</span><span class="p">();</span>
+        <span class="nv">$document</span><span class="o">-&gt;</span><span class="na">setPath</span><span class="p">(</span><span class="nv">$basepath</span> <span class="o">.</span> <span class="s1">&#39;/blocks&#39;</span><span class="p">);</span>
+        <span class="nv">$manager</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
+
+        <span class="c1">// Crea un nuevo SimpleBlock (ve</span>
+        <span class="c1">// http://gitnacho.github.com/symfony-doc-es/cmf/bundles/block.html#block-types)</span>
+        <span class="nv">$myBlock</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SimpleBlock</span><span class="p">();</span>
+        <span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setParentDocument</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
+        <span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setName</span><span class="p">(</span><span class="s1">&#39;testBlock&#39;</span><span class="p">);</span>
+        <span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setTitle</span><span class="p">(</span><span class="s1">&#39;CMF BlockBundle and ContentBundle&#39;</span><span class="p">);</span>
+        <span class="nv">$myBlock</span><span class="o">-&gt;</span><span class="na">setContent</span><span class="p">(</span><span class="s1">&#39;Block from CMF BlockBundle, parent from CMF ContentBundle (StaticContent).&#39;</span><span class="p">);</span>
+        <span class="nv">$manager</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$myBlock</span><span class="p">);</span>
+
+        <span class="c1">// Confirma los cambios de $document y $block a la base de datos</span>
+        <span class="nv">$manager</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setContainer</span><span class="p">(</span><span class="nx">ContainerInterface</span> <span class="nv">$container</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">container</span> <span class="o">=</span> <span class="nv">$container</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Esta clase crea una página de contenido de ejemplo que utiliza el <tt class="docutils literal"><span class="pre">ContentBundle</span></tt> del <tt class="docutils literal"><span class="pre">CMF</span></tt>. Luego, carga el bloque de ejemplo como antes, usando la nueva página de contenido como su padre.</p>
+<p>De manera predeterminada, la ruta base para el contenido es <tt class="file docutils literal"><span class="pre">/cms/content/static</span></tt>. Para mostrar cómo lo puedes configurar a cualquier ruta, añade la siguiente entrada opcional a tu archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">symfony_cmf_content</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">static_basepath</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/content</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Ahora deberías poder cargar los accesorios anteriores:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console doctrine:phpcr:fixtures:load
+</pre></div>
+</div>
+<p>Todo va sobre ruedas, el contenido en tu base de datos se tendría que ver algo así (si también seguiste el ejemplo <tt class="docutils literal"><span class="pre">LoadBlockWithPhpcrParent</span></tt>, todavía deberías tener dos entradas <tt class="docutils literal"><span class="pre">/blocks</span></tt> también):</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">SELECT</span> <span class="n">path</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">local_name</span> <span class="k">FROM</span> <span class="n">phpcr_nodes</span><span class="p">;</span>
+</pre></div>
+</div>
+<table border="1" class="docutils">
+<colgroup>
+<col width="48%" />
+<col width="30%" />
+<col width="21%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">path</th>
+<th class="head">parent</th>
+<th class="head">local_name</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>/</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr class="row-odd"><td>/content</td>
+<td>/</td>
+<td>content</td>
+</tr>
+<tr class="row-even"><td>/content/blocks</td>
+<td>/content</td>
+<td>blocks</td>
+</tr>
+<tr class="row-odd"><td>/content/blocks/testBlock</td>
+<td>/content/blocks</td>
+<td>testBlock</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="dibujando-los-bloques">
+<h2>Dibujando los bloques<a class="headerlink" href="#dibujando-los-bloques" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Esto lo maneja el <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> de <tt class="docutils literal"><span class="pre">Sonata</span></tt>. <tt class="docutils literal"><span class="pre">sonata_block_render</span></tt> ya está registrado como extensión de <em>Twig</em> al incluir <tt class="docutils literal"><span class="pre">SonataBlockBundle</span></tt> en el archivo <tt class="file docutils literal"><span class="pre">AppKernel.php</span></tt>. Por lo tanto, puedes dibujar cualquier bloque dentro de cualquier plantilla simplemente refiriéndote a su ruta.</p>
+<p>El siguiente código muestra el resultado de ambas instancias de los bloques <tt class="docutils literal"><span class="pre">testBlock</span></tt> de los ejemplos anteriores.
+Si sólo seguiste uno de los ejemplos, asegúrate de incluir únicamente ese bloque:</p>
+<div class="highlight-text"><div class="highlight"><pre>{# src/Acme/Bundle/MainBundle/resources/views/Default/index.html.twig #}
+
+{# Incluye esto si seguiste el ejemplo BlockBundle con PHPCR #}
+{{ sonata_block_render({
+    &#39;name&#39;: &#39;/blocks/testBlock&#39;
+}) }}
+
+{# incluye esto si seguiste el ejemplo BlockBundle con ContentBundle #}
+{{ sonata_block_render({
+    &#39;name&#39;: &#39;/content/blocks/testBlock&#39;
+}) }}
+</pre></div>
+</div>
+<p>Ahora tu página <tt class="docutils literal"><span class="pre">index</span></tt> debería mostrar lo siguiente (suponiendo que seguiste ambos ejemplos):</p>
+<div class="highlight-text"><div class="highlight"><pre>CMF BlockBundle only
+Block from CMF BlockBundle, parent from the PHPCR (Generic document).
+
+CMF BlockBundle and ContentBundle
+Block from CMF BlockBundle, parent from CMF ContentBundle (StaticContent).
+</pre></div>
+</div>
+</div>
+<div class="section" id="siguientes-pasos">
+<h2>Siguientes pasos<a class="headerlink" href="#siguientes-pasos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Ahora deberías estar listo para usar en tu aplicación el <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> y/o el <tt class="docutils literal"><span class="pre">ContentBundle</span></tt>, o para explorar los otros paquetes disponibles en el <tt class="docutils literal"><span class="pre">CMF</span></tt>.</p>
+<ul class="simple">
+<li>Ve la documentación de los paquetes <a class="reference internal" href="../bundles/block.html"><em>BlockBundle</em></a> y <a class="reference internal" href="../bundles/content.html"><em>ContentBundle</em></a> para aprender usos más avanzados de estos paquetes - para ver una manera mejor de cargar accesorios, mira los <a class="reference external" href="https://github.com/symfony-cmf/cmf-sandbox/tree/master/src/Sandbox/MainBundle/DataFixtures/PHPCR">accesorios en el recinto de seguridad del CMF</a></li>
+<li>Dale un vistazo a la <a class="reference external" href="https://github.com/phpcr/phpcr-docs/blob/master/tutorial/Tutorial.md">guía PHPCR</a> para entender mejor el repositorio de contenido subyacente</li>
+</ul>
+</div>
+<div class="section" id="solucionando-problemas">
+<h2>Solucionando problemas<a class="headerlink" href="#solucionando-problemas" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si tienes problemas, posiblemente sea más fácil empezar con una instalación de <em>Symfony2</em> fresca. También puedes probar ejecutando y modificando el código en el ejemplo externo del <a class="reference external" href="https://github.com/fazy/cmf-block-sandbox">recinto de seguridad del bloque del CMF</a>.</p>
+<p><strong>Configuración de Doctrine</strong></p>
+<p>Si empezaste con la distribución estándar de <em>Symfony2</em> (versión 2.1.x), ya deberías tener correctamente configurado tu archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt>. Si no, inténtalo usando la siguiente sección:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">doctrine</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">dbal</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">driver</span><span class="p-Indicator">:</span>   <span class="s">&quot;%database_driver%&quot;</span>
+        <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span>     <span class="s">&quot;%database_host%&quot;</span>
+        <span class="l-Scalar-Plain">port</span><span class="p-Indicator">:</span>     <span class="s">&quot;%database_port%&quot;</span>
+        <span class="l-Scalar-Plain">dbname</span><span class="p-Indicator">:</span>   <span class="s">&quot;%database_name%&quot;</span>
+        <span class="l-Scalar-Plain">user</span><span class="p-Indicator">:</span>     <span class="s">&quot;%database_user%&quot;</span>
+        <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="s">&quot;%database_password%&quot;</span>
+        <span class="l-Scalar-Plain">charset</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">UTF8</span>
+    <span class="l-Scalar-Plain">orm</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">auto_generate_proxy_classes</span><span class="p-Indicator">:</span> <span class="s">&quot;%kernel.debug%&quot;</span>
+        <span class="l-Scalar-Plain">auto_mapping</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p><strong>&#8220;Ninguna orden definida&#8221; al cargar accesorios</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>[InvalidArgumentException]
+No hay ninguna orden definida en el espacio de nombres ``doctrine:phpcr:fixtures``.
+</pre></div>
+</div>
+<p>Asegúrate de que tu archivo <tt class="file docutils literal"><span class="pre">AppKernel.php</span></tt> contiene las siguientes líneas:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">new</span> <span class="nx">Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle</span><span class="p">(),</span>
+<span class="k">new</span> <span class="nx">Doctrine\Bundle\PHPCRBundle\DoctrinePHPCRBundle</span><span class="p">(),</span>
+</pre></div>
+</div>
+<p><strong>&#8220;No configuraste una sesión&#8221;</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>[InvalidArgumentException]
+No configuraste una sesión para los gestores de documento
+</pre></div>
+</div>
+<p>Asegúrate de que tienes lo siguiente en tu archivo <tt class="file docutils literal"><span class="pre">app/config.yml</span></tt>:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">doctrine_phpcr</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">session</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">backend</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">doctrinedbal</span>
+            <span class="l-Scalar-Plain">connection</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">doctrine.dbal.default_connection</span>
+        <span class="l-Scalar-Plain">workspace</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">default</span>
+    <span class="l-Scalar-Plain">odm</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">auto_mapping</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p><strong>&#8220;La anotación no existe&#8221;</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>[Doctrine\Common\Annotations\AnnotationException]
+[Error semántico] La anotación «@Doctrine\ODM\PHPCR\Mapping\Annotations\Document» en la clase «Doctrine\ODM\PHPCR\Document\Generic» no existe, o no se puede cargar automáticamente.
+</pre></div>
+</div>
+<p>Asegúrate de añadir esta línea a tu archivo <tt class="file docutils literal"><span class="pre">app/autoload.php</span></tt> (inmediatamente después de la línea <tt class="docutils literal"><span class="pre">AnnotationRegistry::registerLoader</span></tt>):</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nx">AnnotationRegistry</span><span class="o">::</span><span class="na">registerFile</span><span class="p">(</span><span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/../vendor/doctrine/phpcr-odm/lib/Doctrine/ODM/PHPCR/Mapping/Annotations/DoctrineAnnotations.php&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>no se encuentra la clase SimpleBlock</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>[Doctrine\Common\Persistence\Mapping\MappingException]
+La clase &#39;Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock&#39; no se encuentra en la cadena de espacios de nombres configurada Doctrine\ODM\PHPCR\Document, Sonata\UserBundle\Document, FOS\UserBundle\Document
+</pre></div>
+</div>
+<p>Asegúrate de que está instalado el <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> del <tt class="docutils literal"><span class="pre">CMF</span></tt> y de que se carga en el archivo <tt class="file docutils literal"><span class="pre">app/AppKernel.php</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">new</span> <span class="nx">Symfony\Cmf\Bundle\BlockBundle\SymfonyCmfBlockBundle</span><span class="p">(),</span>
+</pre></div>
+</div>
+<p><strong>No se encuentra la RouteAwareInterface</strong></p>
+<div class="highlight-text"><div class="highlight"><pre>Error fatal: No se encuentra la interfaz &#39;Symfony\Cmf\Component\Routing\RouteAwareInterface&#39; en /var/www/your-site/vendor/symfony-cmf/content-bundle/Symfony/Cmf/Bundle/ContentBundle/Document/StaticContent.php en la línea 15
+</pre></div>
+</div>
+<p>Si estás utilizando el <tt class="docutils literal"><span class="pre">ContentBundle</span></tt>, asegúrate de instalar el <tt class="docutils literal"><span class="pre">RoutingExtraBundle</span></tt>, también:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="c1">// composer.json</span>
+<span class="s2">&quot;symfony-cmf/routing-extra-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;dev-master&quot;</span>
+</pre></div>
+</div>
+<p>...e instala:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php composer.phar update
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../bundles/block.html" title="BlockBundle"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="creating-cms-using-cmf-and-sonata.html" title="Creando un CMS con CMF y Sonata"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

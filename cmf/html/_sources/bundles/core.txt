@@ -1,0 +1,77 @@
+``CoreBundle``
+==============
+
+Este es el `CoreBundle <https://github.com/symfony-cmf/CoreBundle#readme>`_ para el ``CMF`` de *Symfony 2*. Este paquete proporciona funcionalidad común, ayudantes y utilidades para los otros paquetes del ``CMF``.
+
+Una de las características proporcionadas es una interfaz e implementación de un supervisor del flujo de trabajo para la publicación con una interfaz acompañante en la cual los modelos pueden implementar aquello que quieran apoyar con este supervisor.
+
+Además, proporciona un ayudante de *Twig* que expone varias funciones útiles para que las plantillas de *Twig* interaccinen con documentos *PHPCR-ODM*.
+
+.. index:: CoreBundle, PHPCR, ODM, publish workflow
+
+Configurando
+------------
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_core:
+            document_manager: default
+            role``: IS_AUTHENTICATED_ANONYMOUSLY # usado por el supervisor del
+                                                 # flujo de trabajo
+                                                 # para publicación
+
+Supervisor del flujo de trabajo para publicación
+------------------------------------------------
+
+El paquete proporciona un servicio ``symfony_cmf_core.publish_workflow_checker`` que implementa la ``PublishWorkflowCheckerInterface``. Esta interfaz define un solo método ``checkIsPublished()``.
+
+.. code-block:: php
+
+    $publishWorkflowChecker = $container->get('symfony_cmf_core.publish_workflow_checker');
+    $ignoreRole = false // si ignora el rol al momento de decidir si considera
+                        // el documento como publicado
+    if ($publishWorkflowChecker->checkIsPublished($document, $ignoreRole)) {
+        ..
+    }
+
+Extensión *Twig*
+----------------
+
+Implementa las siguientes funciones:
+
+* ``cmf_find``: Encuentra el documento por medio de la ruta y clase proporcionadas
+* ``cmf_is_published``: Comprueba si el documento proporcionado está publicado
+* ``cmf_prev``: Devuelve el anterior documento publicado examinando los nodos hijos del padre proporcionado
+* ``cmf_next``: Devuelve el siguiente documento publicado examinando los nodos hijos del padre proporcionado
+* ``cmf_children``: Devuelve un arreglo con todos los documentos hijo de los documentos proporcionados que están publicados
+* ``cmf_document_locales``: Obtiene las regiones del documento proporcionado
+
+.. code-block:: jinja
+
+    {% set page = cmf_find('/alguna/ruta') %}
+
+    {% if cmf_is_published(page) %}
+        {% set prev = cmf_prev(page) %}
+        {% if prev %}
+            <a href="{{ path(prev) }}">prev</a>
+        {% endif %}
+
+        {% set next = cmf_next(page) %}
+        {% if next %}
+            <span style="float: right; padding-right: 40px;"><a href="{{ path(next) }}">next</a></span>
+        {% endif %}
+
+        {% for news in cmf_children(page)|reverse %}
+            <li><a href="{{ path(news) }}">{{ news.title }}</a> ({{ news.publishStartDate | date('Y-m-d')  }})</li>
+        {% endfor %}
+
+        {% if 'de' in cmf_document_locales(page) %}
+            <a href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge(app.request.query.all)|merge({'_locale': 'de'})) }}">DE</a>
+        {% endif %}
+        {% if 'fr' in cmf_document_locales(page) %}
+            <a href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|merge(app.request.query.all)|merge({'_locale': 'fr'})) }}">DE</a>
+        {% endif %}
+    {% endif %}

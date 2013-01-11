@@ -1,5 +1,6 @@
 .. index::
    single: DomCrawler
+   single: Componentes; DomCrawler
 
 El componente ``DomCrawler``
 ============================
@@ -12,8 +13,7 @@ Instalando
 Puedes instalar el componente de varias maneras diferentes:
 
 * Usando el repositorio *Git* oficial (https://github.com/symfony/DomCrawler);
-* Instalándolo a través de *PEAR* ( `pear.symfony.com/DomCrawler`);
-* Instalándolo vía ``Composer`` (`symfony/dom-crawler` en Packagist).
+* :doc:`Instalándolo vía Composer </components/using_components>` (``symfony/dom-crawler`` en `Packagist`_).
 
 Usando
 ------
@@ -26,12 +26,13 @@ de objetos :phpclass:`DOMElement`, los cuales básicamente son nodos que puedes 
     use Symfony\Component\DomCrawler\Crawler;
 
     $html = <<<'HTML'
-    <html>
+    <!DOCTYPE html>
+        <html>
             <body>
             <p class="message">Hello World!</p>
             <p>Hello Crawler!</p>
-            </body>
-        </html>
+        </body>
+    </html>
     HTML;
 
     $crawler = new Crawler($html);
@@ -114,7 +115,10 @@ Accede al valor del atributo del primer nodo de la selección actual::
 
 Extrae el atributo y/o los valores del nodo desde la lista de nodos::
 
-    $attributes = $crawler->filterXpath('//body/p')->extract(array('_text', 'class'));
+    $attributes = $crawler
+        ->filterXpath('//body/p')
+        ->extract(array('_text', 'class'))
+    ;
 
 .. note::
 
@@ -127,7 +131,7 @@ Invoca a una función anónima en cada nodo de la lista::
     });
 
 La función anónima recibe como argumentos la posición y el nodo.
-El resultado es una matriz de valores devueltos por las llamadas a la función anónima.
+El resultado es un arreglo de valores devueltos por las llamadas a la función anónima.
 
 Añadiendo contenido
 ~~~~~~~~~~~~~~~~~~~
@@ -168,7 +172,7 @@ Dentro del árbol del *DOM* los enlaces y formularios reciben un tratamiento esp
 Enlaces
 .......
 
-Para un enlace por nombre (o una imagen clicable por su atributo ``alt``), usa el método ``selectLink`` en un ``crawler`` existente. Este devuelve una instancia de un rastreador con únicamente el/los enlace(s) seleccionado(s). Al invocar a ``link()`` recibes un objeto :class:`Symfony\\Component\\DomCrawler\\Link`::
+Para un enlace por nombre (o una imagen clicable por su atributo ``alt``), usa el método ``selectLink`` en un ``crawler`` existente. Este devuelve una instancia de un rastreador con únicamente el/los enlace(s) seleccionado(s). Al invocar a ``link()`` recibes un objeto especial :class:`Symfony\\Component\\DomCrawler\\Link`::
 
     $linksCrawler = $crawler->selectLink('Go elsewhere...');
     $link = $linksCrawler->link();
@@ -178,13 +182,12 @@ Para un enlace por nombre (o una imagen clicable por su atributo ``alt``), usa e
 
 El objeto :class:`Symfony\\Component\\DomCrawler\\Link` tiene varios métodos útiles para obtener más información sobre el propio enlace seleccionado::
 
-    // Devuelve el valor href crudo
-    $href = $link->getRawUri();
-
     // Devuelve la URI adecuada que puedes utilizar para hacer otra petición
     $uri = $link->getUri();
 
-Especialmente es útil el ``getUri()``, ya que limpia el valor ``href`` y lo transforma en la manera en que se debe procesar realmente. Por ejemplo, para un enlace con ``href="#foo"``, esto devolvería la *URI* completa con el prefijo ``#foo`` de la página actual. ``getUri()`` siempre devuelve una *URI* completa en la cual puedes actuar.
+.. note::
+
+    El ``getUri()`` es especialmente útil, ya que limpia el valor de ``href`` y lo transforma a cómo se debe procesar realmente. Por ejemplo, para un enlace con ``href="#foo"``, este devolvería la *URI* completa de la página actual sufijada con ``#foo``. El valor de retorno de``getUri()`` siempre es una *URI* completa en la cual puedes actuar.
 
 Formularios
 ...........
@@ -199,9 +202,7 @@ texto dado. Este método es especialmente útil porque lo puedes utilizar para d
         'name' => 'Ryan',
     ));
 
-El objeto :class:`Symfony\\Component\\DomCrawler\\Form` tiene un montón de métodos muy útiles para trabajar con formularios:
-
-.. code-block:: php
+El objeto :class:`Symfony\\Component\\DomCrawler\\Form` tiene un montón de métodos muy útiles para trabajar con formularios::
 
     $uri = $form->getUri();
 
@@ -217,10 +218,11 @@ Prácticamente puedes configurar y obtener valores en el formulario::
         'registration[terms]'    => 1,
     ));
 
-    // recupera una matriz de valores - en la matriz "plana" como la de arriba
+    // recupera un arreglo de valores - en el arreglo 'plano' como el de arriba
     $values = $form->getValues();
 
-    // devuelve los valores como los devolvería PHP, en el "registro" de su propia matriz
+    // devuelve los valores como los devolvería PHP,
+    // donde «registro» de su propio arreglo
     $values = $form->getPhpValues();
 
 Para trabajar con campos multidimensionales::
@@ -291,4 +293,5 @@ directamente::
     // envía el formulario
     $crawler = $client->submit($form);
 
-.. _`Goutte`: https://github.com/fabpot/goutte
+.. _`Goutte`:  https://github.com/fabpot/goutte
+.. _`Packagist`: https://packagist.org/packages/symfony/dom-crawler

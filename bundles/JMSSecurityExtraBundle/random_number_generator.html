@@ -1,0 +1,165 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Generador de números aleatorios seguros &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="generador-de-numeros-aleatorios-seguros">
+<h1>Generador de números aleatorios seguros<a class="headerlink" href="#generador-de-numeros-aleatorios-seguros" title="Enlazar permanentemente con este título">¶</a></h1>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 1.2: </span>Se añadió el generador de números aleatorios seguros.</p>
+</div>
+<div class="section" id="introduccion">
+<h1>Introducción<a class="headerlink" href="#introduccion" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>En casi todas las aplicaciones, necesitas generar números aleatorios que un posible atacante no pueda adivinar. Desafortunadamente, <em>PHP</em> no proporciona la capacidad para hacerlo de forma consistente en todas las plataformas.</p>
+<p>Este paquete viene con varias implementaciones de proveedores de semillas, y se elige el mejor proveedor posible, dependiendo de tu configuración de <em>PHP</em>.</p>
+</div>
+<div class="section" id="configurando">
+<h1>Configurando<a class="headerlink" href="#configurando" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Puedes activar el servicio <tt class="docutils literal"><span class="pre">&quot;security.secure_random&quot;</span></tt> con la siguiente configuración:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">jms_security_extra</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">util</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">secure_random</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">~</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;jms-security-extra&gt;</span>
+    <span class="nt">&lt;util&gt;</span>
+        <span class="nt">&lt;secure-random</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/util&gt;</span>
+<span class="nt">&lt;/jms-security-extra&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>También asegúrate de ejecutar <tt class="docutils literal"><span class="pre">php</span> <span class="pre">app/console</span> <span class="pre">doctrine:scheme:update</span></tt>, o crea una migración equivalente para importar la tabla <tt class="docutils literal"><span class="pre">seed</span></tt>.</p>
+</div>
+<div class="section" id="usandolo">
+<h1>Usándolo<a class="headerlink" href="#usandolo" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El generador se activa con el <tt class="docutils literal"><span class="pre">id</span></tt> de servicio  <tt class="docutils literal"><span class="pre">security.secure_random</span></tt>.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="nv">$generator</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">container</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;security.secure_random&#39;</span><span class="p">);</span>
+<span class="nv">$bytes</span> <span class="o">=</span> <span class="nv">$generator</span><span class="o">-&gt;</span><span class="na">nextBytes</span><span class="p">(</span><span class="mi">16</span><span class="p">);</span> <span class="c1">// número aleatorio de 128-bit</span>
+</pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">$bytes</span></tt> en el ejemplo anterior contiene datos binarios. Luego puedes convertir estos datos a un formato que puedas imprimir utilizando una de estas funciones:</p>
+<div class="highlight-php"><div class="highlight"><pre>
+</pre></div>
+</div>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="nv">$base64Encoded</span> <span class="o">=</span> <span class="nb">base64_encode</span><span class="p">(</span><span class="nv">$bytes</span><span class="p">);</span> <span class="c1">// número en base 64</span>
+<span class="nv">$hexEncoded</span> <span class="o">=</span> <span class="nb">bin2hex</span><span class="p">(</span><span class="nv">$bytes</span><span class="p">);</span> <span class="c1">// número en base 16</span>
+<span class="nv">$decEncoded</span> <span class="o">=</span> <span class="nb">bindec</span><span class="p">(</span><span class="nv">$bytes</span><span class="p">);</span> <span class="c1">// número en base 10</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Dec 08, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

@@ -3,19 +3,216 @@
 
 La restricción ``Image`` funciona exactamente igual que la restricción :doc:`File </reference/constraints/File>`, salvo que sus opciones `mimeTypes`_ y `mimeTypesMessage`_ se configuran automáticamente para trabajar con archivos de imagen específicamente.
 
+Además, a partir de *Symfony 2.1*, cuentas con opciones que puedes validar contra la anchura y altura de la imagen.
+
 Consulta la restricción :doc:`File </reference/constraints/File>` para la mayor parte de la documentación relativa a esta restricción.
+
++----------------+----------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`               |
++----------------+----------------------------------------------------------------------+
+| Opciones       | - `mimeTypes`_                                                       |
+|                | - `minWidth`_                                                        |
+|                | - `maxWidth`_                                                        |
+|                | - `maxHeight`_                                                       |
+|                | - `minHeight`_                                                       |
+|                | - `mimeTypesMessage`_                                                |
+|                | - `sizeNotDetectedMessage`_                                          |
+|                | - `maxWidthMessage`_                                                 |
+|                | - `minWidthMessage`_                                                 |
+|                | - `maxHeightMessage`_                                                |
+|                | - `minHeightMessage`_                                                |
+|                | - Consulta :doc:`File </reference/constraints/File>` para las        |
+|                |   opciones heredadas                                                 |
++----------------+----------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\File`            |
++----------------+----------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\FileValidator`   |
++----------------+----------------------------------------------------------------------+
+
+Uso básico
+----------
+
+Esta restricción se utiliza comúnmente en una propiedad que se debe pintar en un formulario con tipo de formulario :doc:`archivo </reference/forms/types/file>`. Por ejemplo, supongamos que estás creando un formulario de autor donde puedes cargar una imagen con el "semblante" del autor. En tu formulario, la propiedad ``semblante`` sería de tipo ``file``. La clase ``Autor`` podría ser la siguiente::
+
+    // src/Acme/BlogBundle/Entity/Author.php
+    namespace Acme\BlogBundle\Entity;
+
+    use Symfony\Component\HttpFoundation\File\File;
+
+    class Author
+    {
+        protected $headshot;
+
+        public function setHeadshot(File $file = null)
+        {
+            $this->headshot = $file;
+        }
+
+        public function getHeadshot()
+        {
+            return $this->headshot;
+        }
+    }
+
+Para garantizar que el objeto ``semblante`` es un tipo ``File`` de imagen válido y que está en cierto rango de tamaño, añade lo siguiente:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/BlogBundle/Resources/config/validation.yml
+        Acme\BlogBundle\Entity\Author
+            properties:
+                headshot:
+                    - Image:
+                        minWidth: 200
+                        maxWidth: 400
+                        minHeight: 200
+                        maxHeight: 400
+                        
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\Image(
+             *     minWidth = 200,
+             *     maxWidth = 400,
+             *     minHeight = 200,
+             *     maxHeight = 400
+             * )
+             */
+            protected $headshot;
+        }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/BlogBundle/Resources/config/validation.xml -->
+        <class name="Acme\BlogBundle\Entity\Author">
+            <property name="headshot">
+                <constraint name="Image">
+                    <option name="minWidth">200</option>
+                    <option name="maxWidth">400</option>
+                    <option name="minHeight">200</option>
+                    <option name="maxHeight">400</option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        // ...
+
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints\Image;
+
+        class Autor
+        {
+            // ...
+
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('headshot', new Image(array(
+                    'minWidth' => 200,
+                    'maxWidth' => 400,
+                    'minHeight' => 200,
+                    'maxHeight' => 400,
+                )));
+            }
+        }
+
+La propiedad ``headshot`` se valida para garantizar que es una imagen real y que tiene una cierta anchura y altura.
 
 Opciones
 --------
 
-Esta restricción comparte todas sus opciones con la restricción :doc:`File </reference/constraints/File>`. No obstante, esta modifica dos de los valores de opción predefinidos:
+Esta restricción comparte todas sus opciones con la restricción :doc:`File </reference/constraints/File>`. No obstante, modifica dos de los valores predefinidos de la opción y añade muchas otras opciones.
 
 ``mimeTypes``
 ~~~~~~~~~~~~~
 
-**tipo**: ``array`` o ``string`` **predefinido**: una matriz de tipos mime para imágenes *jpg*, *gif* y *png*
+**tipo**: ``array`` o ``string`` **predefinido**: ``image/*``
+
+Puedes encontrar una lista de tipos mime existentes en el `sitio web de IANA`_
 
 ``mimeTypesMessage``
 ~~~~~~~~~~~~~~~~~~~~
 
 **tipo**: ``string`` **predefinido**: ``This file is not a valid image`` (``Este archivo no es una imagen válida``)
+
+.. versionadded:: 2.1
+    Todas las opciones min/max width/height son nuevas para *Symfony 2.1*.
+
+``minWidth``
+~~~~~~~~~~~~
+
+**tipo**: ``integer``
+
+Si lo fijas, el ancho del archivo de imagen tiene que ser mayor que o igual a este
+valor en píxeles.
+
+``maxWidth``
+~~~~~~~~~~~~
+
+**tipo**: ``integer``
+
+Si lo fijas, el ancho del archivo de imagen tiene que ser menor de o igual a este
+valor en píxeles.
+
+``minHeight``
+~~~~~~~~~~~~~
+
+**tipo**: ``integer``
+
+Si lo fijas, la altura del archivo de imagen tiene que ser mayor que o igual a este
+valor en píxeles.
+
+``maxHeight``
+~~~~~~~~~~~~~
+
+**tipo**: ``integer``
+
+Si lo fijas, la altura del archivo de imagen tiene que ser menor de o igual a este
+valor en píxeles.
+
+``sizeNotDetectedMessage``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``The size of the image could not be detected`` ---(``no se puede determinar el tamaño de la imagen``)
+
+Si el sistema es incapaz de determinar el tamaño de la imagen, este error será mostrado. Esto sólo ocurrirá cuándo al menos se haya fijado una de las cuatro opciones de restricción de tamaño.
+
+``maxWidthMessage``
+~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``The image width is too big ({{ width }}px).  Allowed maximum width is {{ max_width }}px`` ---(``El ancho de la imagen es demasiado grande ({{ width }}px). El máximo permitido es {{ max_width }}``).
+
+El mensaje de error mostrado si el ancho de la imagen supera el `maxWidth`_.
+
+``minWidthMessage``
+~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``The image width is too small ({{ width }}px). Minimum width expected is {{ min_width }}px`` ---(``El ancho de la imagen es demasiado pequeño ({{ width }}px). El ancho mínimo esperado es de {{ min_width }}px``).
+
+El mensaje de error mostrado si el ancho de la imagen es menor de `minWidth`_.
+
+``maxHeightMessage``
+~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``The image height is too big ({{ height }}px). Allowed maximum height is {{ max_height }}px`` ---(``La altura de la imagen es demasiado grande ({{ height }}px). La altura máxima permitida es de {{ max_height }}px``)
+
+El mensaje de error mostrado si la altura de la imagen supera el `maxHeight`_.
+
+``minHeightMessage``
+~~~~~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``The image height is too small ({{ height }}px). Minimum height expected is {{ min_height }}px`` ---(``La altura de la imagen es demasiado pequeña ({{ height }}px). La altura mínima esperada es de {{ min_hegiht }}px.``)
+
+El mensaje de error mostrado si la altura de la imagen es menor que `minHeight`_.
+
+.. _`sitio web de IANA`: http://www.iana.org/assignments/media-types/image/index.html

@@ -1,8 +1,6 @@
 
-<!DOCTYPE html>
-
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html> 
+<html lang="es">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
@@ -27,7 +25,7 @@
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
     <link rel="up" title="Seguridad" href="index.html" />
-    <link rel="next" title="Cómo agregar la funcionalidad “recuérdame” al inicio de sesión" href="remember_me.html" />
+    <link rel="next" title="Cómo agregar la funcionalidad «recuérdame» al inicio de sesión" href="remember_me.html" />
     <link rel="prev" title="Seguridad" href="index.html" /> 
   </head>
   <body>
@@ -35,7 +33,7 @@
     
   <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
   
-    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
     <div class="social">
       <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
@@ -51,7 +49,6 @@
     </div>
     
 
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -59,7 +56,7 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="remember_me.html" title="Cómo agregar la funcionalidad “recuérdame” al inicio de sesión"
+          <a href="remember_me.html" title="Cómo agregar la funcionalidad «recuérdame» al inicio de sesión"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
           <a href="index.html" title="Seguridad"
@@ -91,8 +88,7 @@ Por último, la guía muestra cómo crear un objeto <tt class="xref php php-clas
 <p>Para los fines de esta receta, el paquete <tt class="docutils literal"><span class="pre">AcmeUserBundle</span></tt> contiene una clase de entidad <tt class="docutils literal"><span class="pre">User</span></tt> con los siguientes campos: <tt class="docutils literal"><span class="pre">id</span></tt>, <tt class="docutils literal"><span class="pre">username</span></tt>, <tt class="docutils literal"><span class="pre">salt</span></tt>, <tt class="docutils literal"><span class="pre">password</span></tt>, <tt class="docutils literal"><span class="pre">email</span></tt> e <tt class="docutils literal"><span class="pre">isActive</span></tt>. El campo <tt class="docutils literal"><span class="pre">isActive</span></tt> indica si o no la cuenta de usuario está activa.</p>
 <p>Para hacerlo más corto, los métodos <tt class="docutils literal"><span class="pre">get</span></tt> y <tt class="docutils literal"><span class="pre">set</span></tt> para cada uno se han removido para concentrarnos en los métodos más importantes que provienen de la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserInterface</span></tt>.</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/UserBundle/Entity/User.php</span>
-
-    <span class="k">namespace</span> <span class="nx">Acme\UsuarioBundle\Entity</span><span class="p">;</span>
+<span class="k">namespace</span> <span class="nx">Acme\UserBundle\Entity</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Doctrine\ORM\Mapping</span> <span class="k">as</span> <span class="nx">ORM</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\User\UserInterface</span><span class="p">;</span>
@@ -103,7 +99,7 @@ Por último, la guía muestra cómo crear un objeto <tt class="xref php php-clas
 <span class="sd"> * @ORM\Table(name=&quot;acme_users&quot;)</span>
 <span class="sd"> * @ORM\Entity(repositoryClass=&quot;Acme\UserBundle\Entity\UserRepository&quot;)</span>
 <span class="sd"> */</span>
-<span class="k">class</span> <span class="nc">User</span> <span class="k">implements</span> <span class="nx">UserInterface</span>
+<span class="k">class</span> <span class="nc">User</span> <span class="k">implements</span> <span class="nx">UserInterface</span><span class="p">,</span> <span class="nx">\Serializable</span>
 <span class="p">{</span>
     <span class="sd">/**</span>
 <span class="sd">     * @ORM\Column(type=&quot;integer&quot;)</span>
@@ -183,28 +179,59 @@ Por último, la guía muestra cómo crear un objeto <tt class="xref php php-clas
     <span class="p">}</span>
 
     <span class="sd">/**</span>
-<span class="sd">     * @inheritDoc</span>
+<span class="sd">     * @see \Serializable::serialize()</span>
 <span class="sd">     */</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">equals</span><span class="p">(</span><span class="nx">UserInterface</span> <span class="nv">$user</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">serialize</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">username</span> <span class="o">===</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getUsername</span><span class="p">();</span>
+        <span class="k">return</span> <span class="nb">serialize</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="p">,</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @see \Serializable::unserialize()</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">unserialize</span><span class="p">(</span><span class="nv">$serialized</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">list</span> <span class="p">(</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="nb">unserialize</span><span class="p">(</span><span class="nv">$serialized</span><span class="p">);</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Para utilizar una instancia de la clase <tt class="docutils literal"><span class="pre">AcmeUserBundle:User</span></tt> en la capa de seguridad de <em>Symfony</em>, la clase entidad debe implementar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserInterface</span></tt>.  Esta interfaz obliga a la clase a implementar los siguientes seis métodos:</p>
+<p>Para utilizar una instancia de la clase <tt class="docutils literal"><span class="pre">AcmeUserBundle:User</span></tt> en la capa de seguridad de <em>Symfony</em>, la clase entidad debe implementar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserInterface</span></tt>.  Esta interfaz obliga a la clase a implementar los siguientes cinco métodos:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">getUsername()</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">getSalt()</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">getPassword()</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">getRoles()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">getRoles()</span></tt>,</li>
+<li><tt class="docutils literal"><span class="pre">getPassword()</span></tt>,</li>
+<li><tt class="docutils literal"><span class="pre">getSalt()</span></tt>,</li>
+<li><tt class="docutils literal"><span class="pre">getUsername()</span></tt>,</li>
 <li><tt class="docutils literal"><span class="pre">eraseCredentials()</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">equals()</span></tt></li>
 </ul>
 <p>Para más detalles sobre cada uno de ellos, consulta la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserInterface</span></tt>.</p>
-<p>Para hacerlo simple, el método <tt class="docutils literal"><span class="pre">equals()</span></tt> simplemente compara el campo <tt class="docutils literal"><span class="pre">username</span></tt> pero también es posible hacer más comprobaciones en función de la complejidad de tu modelo de datos. Por otro lado, el método <tt class="docutils literal"><span class="pre">eraseCredentials()</span></tt> permanece vacío ya que no nos interesa en esta guía.</p>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>En <em>Symfony</em> 2.1, se removió el método <tt class="docutils literal"><span class="pre">equals</span></tt> de la <tt class="docutils literal"><span class="pre">UserInterface</span></tt>.
+Si necesitas sustituir la implementación predeterminada de la lógica de comparación, implementa la nueva interfaz <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\EquatableInterface</span></tt> e implementa el método <tt class="docutils literal"><span class="pre">isEqualTo</span></tt>.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/UserBundle/Entity/User.php</span>
+
+    <span class="k">namespace</span> <span class="nx">Acme\UsuarioBundle\Entity</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\User\EquatableInterface</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">isEqualTo</span><span class="p">(</span><span class="nx">UserInterface</span> <span class="nv">$user</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">username</span> <span class="o">===</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getUsername</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">La interfaz <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/class.serializable.php" title="Serializable"><span class="pre">Serializable</span></a></tt> y sus métodos <tt class="docutils literal"><span class="pre">serialize</span></tt> y <tt class="docutils literal"><span class="pre">unserialize</span></tt> se añadieron para permitir serializar la clase <tt class="docutils literal"><span class="pre">Usuario</span></tt> a la sesión. Esto puede o no ser necesario dependiendo de tu configuración, pero probablemente sea una buena idea. Sólo necesitas serializar el <tt class="docutils literal"><span class="pre">id</span></tt>, porque el método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Bridge/Doctrine/Security/User/EntityUserProvider.html#method_refreshUser" title="Symfony\Bridge\Doctrine\Security\User\EntityUserProvider::refreshUser()"><span class="pre">refreshUser()</span></a></tt> vuelve a cargar el usuario en cada petición usando el <tt class="docutils literal"><span class="pre">id</span></tt>.</p>
+</div>
 <p>A continuación se muestra una exportación de mi tabla <tt class="docutils literal"><span class="pre">User</span></tt> de <em>MySQL</em>. Para obtener más información sobre cómo crear registros de usuario y codificar su contraseña, consulta <a class="reference internal" href="../../book/security.html#book-security-encoding-user-password"><em>Codificando la contraseña del usuario</em></a>.</p>
-<div class="highlight-text"><div class="highlight"><pre>mysql&gt; select * from user;
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>mysql&gt; <span class="k">select</span> * from user;
 +----+----------+----------------------------------+------------------------------------------+--------------------+-----------+
 | id | username | salt                             | password                                 | email              | is_active |
 +----+----------+----------------------------------+------------------------------------------+--------------------+-----------+
@@ -213,7 +240,7 @@ Por último, la guía muestra cómo crear un objeto <tt class="xref php php-clas
 |  3 | maxime   | cd01749bb995dc658fa56ed45458d807 | 9764731e5f7fb944de5fd8efad4949b995b72a3c | maxime@example.com |         0 |
 |  4 | donald   | 6683c2bfd90c0426088402930cadd0f8 | 5c3bcec385f59edcc04490d1db95fdb8673bf612 | donald@example.com |         1 |
 +----+----------+----------------------------------+------------------------------------------+--------------------+-----------+
-4 rows in set (0.00 sec)
+4 rows in <span class="nb">set</span> <span class="o">(</span>0.00 sec<span class="o">)</span>
 </pre></div>
 </div>
 <p>La base de datos contiene cuatro usuarios con diferentes nombres de usuario, correos electrónicos y
@@ -222,11 +249,10 @@ estados. La segunda parte se centrará en cómo autenticar uno de estos usuarios
 <div class="section" id="autenticando-a-alguien-contra-una-base-de-datos">
 <h2>Autenticando a alguien contra una base de datos<a class="headerlink" href="#autenticando-a-alguien-contra-una-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Autenticar a un usuario de <em>Doctrine</em> contra la base de datos con la capa de seguridad de <em>Symfony</em> es un trozo del pastel. Todo reside en la configuración de la <a class="reference internal" href="../../reference/configuration/security.html"><em>SecurityBundle</em></a> almacenada en el archivo <tt class="docutils literal"><span class="pre">app/config/security.yml</span></tt>.</p>
-<p>A continuación se muestra un ejemplo de configuración donde el usuario podrá ingresar su nombre de usuario y contraseña a través de la autenticación <em>HTTP</em> básica. Esa información luego se cotejará con los registros de la entidad usuario en la base de datos:</p>
+<p>A continuación se muestra un ejemplo de configuración donde el usuario podrá ingresar su nombre de usuario y contraseña a través de la autenticación <em>HTTP</em> básica. Esa información luego se cotejará con los registros de la entidad Usuario en la base de datos:</p>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/security.yml</span>
-
 <span class="l-Scalar-Plain">security</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">encoders</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">Acme\UserBundle\Entity\User</span><span class="p-Indicator">:</span>
@@ -257,10 +283,10 @@ estados. La segunda parte se centrará en cómo autenticar uno de estos usuarios
 <p>La sección <tt class="docutils literal"><span class="pre">encoders</span></tt> asocia el codificador de contraseña <tt class="docutils literal"><span class="pre">sha1</span></tt> a la clase entidad. Esto significa que <em>Symfony</em> espera que la contraseña en la base de datos esté cifrada usando este algoritmo. Para más información sobre cómo crear un nuevo objeto <tt class="docutils literal"><span class="pre">usuario</span></tt> con una contraseña cifrada correctamente, consulta la sección <a class="reference internal" href="../../book/security.html#book-security-encoding-user-password"><em>Codificando la contraseña del usuario</em></a> del capítulo de seguridad.</p>
 <p>La sección  <tt class="docutils literal"><span class="pre">proveedores</span></tt> define un proveedor de usuario <tt class="docutils literal"><span class="pre">administradores</span></tt>. A proveedor de usuario es una &#8220;fuente&#8221; de donde se cargan los usuarios durante la autenticación.
 En este caso, la palabra clave <tt class="docutils literal"><span class="pre">entidad</span></tt> significa que <em>Symfony</em> utilizará la entidad proveedor de usuarios de <em>Doctrine</em> para cargar los objetos entidad de usuario desde la base de datos usando el campo único <tt class="docutils literal"><span class="pre">username</span></tt>. En otras palabras, esto le dice a <em>Symfony</em> cómo buscar al usuario en la base de datos antes de comprobar la validez de la contraseña.</p>
-<p>Este código y configuración funciona, pero no es suficiente para asegurar la aplicación para usuarios <strong>activos</strong>. A partir de ahora, todavía se pueden autenticar con <tt class="docutils literal"><span class="pre">maxime</span></tt>. la siguiente sección explica cómo prohibir a usuarios no activos.</p>
+<p>Este código y configuración funciona, pero no es suficiente para asegurar la aplicación para usuarios <strong>activos</strong>. A partir de ahora, todavía puedes autenticar con <tt class="docutils literal"><span class="pre">maxime</span></tt>. La siguiente sección explica cómo negar el acceso a usuarios no activos.</p>
 </div>
-<div class="section" id="prohibiendo-a-usuarios-no-activos">
-<h2>Prohibiendo a usuarios no activos<a class="headerlink" href="#prohibiendo-a-usuarios-no-activos" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="denegando-acceso-a-usuarios-no-activos">
+<h2>Denegando acceso a usuarios no activos<a class="headerlink" href="#denegando-acceso-a-usuarios-no-activos" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>La forma más fácil de excluir a los usuarios inactivos es implementar la interfaz <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\AdvancedUserInterface</span></tt> que se encarga de comprobar el estado de la cuenta del usuario.
 La <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\AdvancedUserInterface</span></tt> extiende la interfaz <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserInterface</span></tt>, por lo que sólo hay que cambiar a la nueva interfaz en la clase de la entidad <tt class="docutils literal"><span class="pre">AcmeUserBundle:User</span></tt> para beneficiarse del comportamiento de autenticación simple y avanzado.</p>
 <p>La interfaz <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\AdvancedUserInterface</span></tt> añade cuatro métodos adicionales para validar el estado de la cuenta:</p>
@@ -272,16 +298,15 @@ La <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Com
 </ul>
 <p>Para este ejemplo, los tres primeros métodos devolverán <tt class="docutils literal"><span class="pre">true</span></tt> mientras que el método <tt class="docutils literal"><span class="pre">isEnabled()</span></tt> devolverá el valor booleano del campo <tt class="docutils literal"><span class="pre">isActive</span></tt>.</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/UserBundle/Entity/User.php</span>
-
-<span class="k">namespace</span> <span class="nx">Acme\Bundle\UserBundle\Entity</span><span class="p">;</span>
+<span class="k">namespace</span> <span class="nx">Acme\UserBundle\Entity</span><span class="p">;</span>
 
 <span class="c1">// ...</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\User\AdvancedUserInterface</span><span class="p">;</span>
 
-<span class="c1">// ...</span>
 <span class="k">class</span> <span class="nc">User</span> <span class="k">implements</span> <span class="nx">AdvancedUserInterface</span>
 <span class="p">{</span>
     <span class="c1">// ...</span>
+
     <span class="k">public</span> <span class="k">function</span> <span class="nf">isAccountNonExpired</span><span class="p">()</span>
     <span class="p">{</span>
             <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
@@ -304,10 +329,10 @@ La <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Com
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Si tratamos de autenticar a un <tt class="docutils literal"><span class="pre">maxime</span></tt>, el acceso está prohibido, puesto que el usuario no tiene una cuenta activa. La siguiente sesión se centrará en cómo escribir un proveedor de entidad personalizado para autenticar a un usuario con su nombre de usuario o dirección de correo electrónico.</p>
+<p>Si tratas de autenticarte como <tt class="docutils literal"><span class="pre">maxime</span></tt>, el acceso ahora está prohibido, puesto que el usuario no tiene una cuenta activa. La siguiente sesión se enfocará en cómo escribir un proveedor de entidad personalizado para autenticar a un usuario con su nombre de usuario o dirección de correo electrónico.</p>
 </div>
-<div class="section" id="autenticando-a-una-persona-con-un-proveedor-de-entidad-personalizado">
-<h2>Autenticando a una persona con un proveedor de entidad personalizado<a class="headerlink" href="#autenticando-a-una-persona-con-un-proveedor-de-entidad-personalizado" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="autenticando-a-alguien-con-un-proveedor-de-entidad-personalizado">
+<h2>Autenticando a alguien con un proveedor de entidad personalizado<a class="headerlink" href="#autenticando-a-alguien-con-un-proveedor-de-entidad-personalizado" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>El siguiente paso es permitir a un usuario que se autentique con su nombre de usuario o su
 dirección de correo electrónico, puesto que ambos son únicos en la base de datos. Desafortunadamente, el proveedor de entidad nativo sólo puede manejar una sola propiedad al buscar al usuario en
 la base de datos.</p>
@@ -315,8 +340,7 @@ la base de datos.</p>
 La buena noticia es que un objeto repositorio de <em>Doctrine</em> puede actuar como un proveedor de entidad usuario si implementa la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserProviderInterface</span></tt>. Esta interfaz viene con tres métodos a implementar: <tt class="docutils literal"><span class="pre">loadUserByUsername($username)</span></tt>, <tt class="docutils literal"><span class="pre">refreshUser(UserInterface</span> <span class="pre">$user)</span></tt> y <tt class="docutils literal"><span class="pre">supportsClass($class)</span></tt>. para más detalles, consulta la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserProviderInterface</span></tt>.</p>
 <p>El siguiente código muestra la implementación de la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserProviderInterface</span></tt> en la clase <tt class="docutils literal"><span class="pre">UserRepository</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/UserBundle/Entity/UserRepository.php</span>
-
-    <span class="k">namespace</span> <span class="nx">Acme\UsuarioBundle\Entity</span><span class="p">;</span>
+<span class="k">namespace</span> <span class="nx">Acme\UserBundle\Entity</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\User\UserInterface</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\User\UserProviderInterface</span><span class="p">;</span>
@@ -355,7 +379,7 @@ La buena noticia es que un objeto repositorio de <em>Doctrine</em> puede actuar 
             <span class="k">throw</span> <span class="k">new</span> <span class="nx">UnsupportedUserException</span><span class="p">(</span><span class="nb">sprintf</span><span class="p">(</span><span class="s1">&#39;Instances of &quot;%s&quot; are not supported.&#39;</span><span class="p">,</span> <span class="nv">$class</span><span class="p">));</span>
         <span class="p">}</span>
 
-        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">loadUserByUsername</span><span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getUsername</span><span class="p">());</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">find</span><span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getId</span><span class="p">());</span>
     <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">supportsClass</span><span class="p">(</span><span class="nv">$class</span><span class="p">)</span>
@@ -384,7 +408,7 @@ La buena noticia es que un objeto repositorio de <em>Doctrine</em> puede actuar 
 </div>
 <div class="section" id="gestionando-roles-en-la-base-de-datos">
 <h2>Gestionando roles en la base de datos<a class="headerlink" href="#gestionando-roles-en-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>El final de esta guía se centra en cómo almacenar y recuperar una lista de roles desde la base de datos. Como se mencionó anteriormente, cuando se carga el usuario, su método <tt class="docutils literal"><span class="pre">getRoles()</span></tt> devuelve la matriz de roles de seguridad que se deben asignar al usuario. Puedes cargar estos datos desde cualquier lugar &#8212; una lista de palabras codificada para todos los usuarios (por ejemplo, <tt class="docutils literal"><span class="pre">array('ROLE_USER')</span></tt>), una propiedad <tt class="docutils literal"><span class="pre">array</span></tt> de <em>Doctrine</em> llamada <tt class="docutils literal"><span class="pre">roles</span></tt>, o por medio de una relación de <em>Doctrine</em>, como vamos a aprender en esta sección.</p>
+<p>El final de esta guía se centra en cómo almacenar y recuperar una lista de roles desde la base de datos. Como se mencionó anteriormente, cuando se carga el usuario, su método <tt class="docutils literal"><span class="pre">getRoles()</span></tt> devuelve el arreglo de roles de seguridad que se deben asignar al usuario. Puedes cargar estos datos desde cualquier lugar &#8212;una lista de palabras codificadas para todos los usuarios (p. ej. <tt class="docutils literal"><span class="pre">array('ROLE_USER')</span></tt>), una propiedad <tt class="docutils literal"><span class="pre">array</span></tt> de <em>Doctrine</em> llamada <tt class="docutils literal"><span class="pre">roles</span></tt>, o por medio de una relación de <em>Doctrine</em>, como aprenderás en esta sección.</p>
 <div class="admonition caution">
 <p class="first admonition-title">Prudencia</p>
 <p class="last">En una configuración típica, el método <tt class="docutils literal"><span class="pre">getRoles()</span></tt> siempre debe devolver un rol por lo menos. Por convención, se suele devolver una función denominada <tt class="docutils literal"><span class="pre">ROLE_USER</span></tt>.
@@ -392,13 +416,12 @@ Si no devuelves ningún rol, puede aparentar como si el usuario no estuviera aut
 </div>
 <p>En este ejemplo, la clase de la entidad <tt class="docutils literal"><span class="pre">AcmeUserBundle:User</span></tt> define una relación muchos-a-muchos con una clase entidad <tt class="docutils literal"><span class="pre">AcmeUserBundle:Group</span></tt>. Un usuario puede estar relacionado con varios grupos y un grupo puede estar compuesto por uno o más usuarios. Puesto que un grupo también es un rol, el método <tt class="docutils literal"><span class="pre">getRoles()</span></tt> anterior ahora devuelve la lista de los grupos relacionados:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/UserBundle/Entity/User.php</span>
-
-<span class="k">namespace</span> <span class="nx">Acme\Bundle\UserBundle\Entity</span><span class="p">;</span>
+<span class="k">namespace</span> <span class="nx">Acme\UserBundle\Entity</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Doctrine\Common\Collections\ArrayCollection</span><span class="p">;</span>
-
 <span class="c1">// ...</span>
-<span class="k">class</span> <span class="nc">User</span> <span class="k">implements</span> <span class="nx">AdvancedUserInterface</span>
+
+<span class="k">class</span> <span class="nc">User</span> <span class="k">implements</span> <span class="nx">AdvancedUserInterface</span><span class="p">,</span> <span class="nx">\Serializable</span>
 <span class="p">{</span>
     <span class="sd">/**</span>
 <span class="sd">     * @ORM\ManyToMany(targetEntity=&quot;Group&quot;, inversedBy=&quot;users&quot;)</span>
@@ -417,11 +440,32 @@ Si no devuelves ningún rol, puede aparentar como si el usuario no estuviera aut
     <span class="p">{</span>
         <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">groups</span><span class="o">-&gt;</span><span class="na">toArray</span><span class="p">();</span>
     <span class="p">}</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @see \Serializable::serialize()</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">serialize</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nb">serialize</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="p">,</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @see \Serializable::unserialize()</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">unserialize</span><span class="p">(</span><span class="nv">$serialized</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">list</span> <span class="p">(</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">=</span> <span class="nb">unserialize</span><span class="p">(</span><span class="nv">$serialized</span><span class="p">);</span>
+    <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>La clase de la entidad <tt class="docutils literal"><span class="pre">AcmeUserBundle:Group</span></tt> define tres campos de tabla (<tt class="docutils literal"><span class="pre">id</span></tt>, <tt class="docutils literal"><span class="pre">username</span></tt> y <tt class="docutils literal"><span class="pre">role</span></tt>). El campo único <tt class="docutils literal"><span class="pre">role</span></tt> contiene el nombre del rol utilizado por la capa de seguridad de <em>Symfony</em> para proteger partes de la aplicación. Lo más importante a resaltar es que la clase de la entidad <tt class="docutils literal"><span class="pre">AcmeUserBundle:Group</span></tt> implementa la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Role\RoleInterface</span></tt> que te obliga a tener un método <tt class="docutils literal"><span class="pre">getRole()</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\Bundle\UserBundle\Entity</span><span class="p">;</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/Bundle/UserBundle/Entity/Group.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\UserBundle\Entity</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Role\RoleInterface</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Doctrine\Common\Collections\ArrayCollection</span><span class="p">;</span>
@@ -474,8 +518,7 @@ Si no devuelves ningún rol, puede aparentar como si el usuario no estuviera aut
 </div>
 <p>Para mejorar el rendimiento y evitar la carga diferida de grupos al recuperar un usuario desde el proveedor de entidad personalizado, la mejor solución es unir la relación de grupos en el método <tt class="docutils literal"><span class="pre">UserRepository::loadUserByUsername()</span></tt>. Esto buscará al usuario y sus roles / grupos asociados con una sola consulta:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/UserBundle/Entity/UserRepository.php</span>
-
-<span class="k">namespace</span> <span class="nx">Acme\Bundle\UserBundle\Entity</span><span class="p">;</span>
+<span class="k">namespace</span> <span class="nx">Acme\UserBundle\Entity</span><span class="p">;</span>
 
 <span class="c1">// ...</span>
 
@@ -490,8 +533,7 @@ Si no devuelves ningún rol, puede aparentar como si el usuario no estuviera aut
             <span class="o">-&gt;</span><span class="na">where</span><span class="p">(</span><span class="s1">&#39;u.username = :username OR u.email = :email&#39;</span><span class="p">)</span>
             <span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="nv">$username</span><span class="p">)</span>
             <span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="nv">$username</span><span class="p">)</span>
-            <span class="o">-&gt;</span><span class="na">getQuery</span><span class="p">()</span>
-        <span class="p">;</span>
+            <span class="o">-&gt;</span><span class="na">getQuery</span><span class="p">();</span>
 
         <span class="c1">// ...</span>
     <span class="p">}</span>
@@ -513,7 +555,6 @@ Si no devuelves ningún rol, puede aparentar como si el usuario no estuviera aut
   <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
   
   <div style="width:740px;margin:10px auto;">
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -521,7 +562,7 @@ Si no devuelves ningún rol, puede aparentar como si el usuario no estuviera aut
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="remember_me.html" title="Cómo agregar la funcionalidad “recuérdame” al inicio de sesión"
+          <a href="remember_me.html" title="Cómo agregar la funcionalidad «recuérdame» al inicio de sesión"
              >siguiente</a> |</li>
         <li class="right" >
           <a href="index.html" title="Seguridad"
@@ -539,8 +580,8 @@ Si no devuelves ningún rol, puede aparentar como si el usuario no estuviera aut
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 14, 2012.
-      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
    <script type="text/javascript">

@@ -1,0 +1,116 @@
+.. index::
+   single: Configuración; Semántica
+   single: Paquete; Configuración de extensión
+
+Cómo simplificar la configuración de múltiples paquetes
+=======================================================
+
+Al crear aplicaciones reutilizables y extensibles, los desarrolladores suelen enfrentarse a una elección: o bien crear un gran paquete único o múltiples paquetes más pequeños. La creación de un único paquete tiene la gran desventaja de que le es imposible a los usuarios optar por eliminar funcionalidad que no estén utilizando. La creación de múltiples paquetes tiene la desventaja que la configuración se vuelve más tediosa y los ajustes a menudo se tienen que repetir para varios paquetes.
+
+Utilizando el enfoque de abajo, es posible eliminar la desventaja del enfoque de múltiples paquetes, permitiendo a una única extensión anteponer los ajustes para cualquier paquete. Puedes utilizar los ajustes definidos en el archivo :file:`app/config/config.yml` anteponiendo los ajustes tal y como si el usuario los hubiera escrito expresamente en la configuración de la aplicación.
+
+Por ejemplo, esto lo podrías utilizar para configurar el nombre del gestor de entidades a utilizar en múltiples paquetes. O se puede utilizar para activar una función opcional que depende de que otro paquete se cargue también.
+
+Para posibilitar esto en una extensión, es necesario implementar la :class:`Symfony\\Component\\DependencyInjection\\Compiler\\PrependExtensionInterface`::
+
+    // src/Acme/HelloBundle/DependencyInjection/AcmeHelloExtension.php
+    namespace Acme\HelloBundle\DependencyInjection;
+
+    use Symfony\Component\HttpKernel\DependencyInjection\Extension;
+    use Symfony\Component\DependencyInjection\PrependExtensionInterface;
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+    class AcmeHelloExtension extends Extension implements PrependExtensionInterface
+    {
+        // ...
+
+        public function prepend(ContainerBuilder $container)
+        {
+            // ...
+        }
+    }
+
+Dentro del método :method:`Symfony\\Component\\DependencyInjection\\Compiler\\PrependExtensionInterface::prepend`, los desarrolladores tienen acceso completo a la instancia de la clase :class:`Symfony\\Component\\DependencyInjection\\ContainerBuilder` justo antes de llamar al método :method:`Symfony\\Component\\DependencyInjection\\Extension\\ExtensionInterface::load` en cada una de las extensiones registradas en el paquete. Para añadir al principio una configuración los desarrolladores de la extensión del paquete pueden utilizar el método :method:`Symfony\\Component\\DependencyInjection\\ContainerBuilder::prependExtensionConfig` de la instancia de :class:`Symfony\\Component\\DependencyInjection\\ContainerBuilder`. Dado que este método sólo añade la configuracion al principio, cualquier otra opción colocada explícitamente dentro del archivo :file:`app/config/config.yml` debería reemplazar esta configuración antepuesta.
+
+El siguiente ejemplo muestra cómo añadir al principio una opción de configuración en múltiples paquetes, así como desactivar una bandera en múltiples paquetes en el caso de que otro paquete específico no esté registrado::
+
+    public function prepend(ContainerBuilder $container)
+    {
+        // obtiene todos los paquetes
+        $bundles = $container->getParameter('kernel.bundles');
+        // determina si AcmeGoodbyeBundle está registrado
+        if (!isset($bundles['AcmeGoodbyeBundle'])) {
+            // desactiva AcmeGoodbyeBundle en los paquetes
+            $config = array('use_acme_goodbye' => false);
+            foreach ($container->getExtensions() as $name => $extension) {
+                switch ($name) {
+                    case 'acme_something':
+                    case 'acme_other':
+                        // establece use_acme_goodbye a false en la configuración
+                        // de acme_something y acme_other ten en cuenta que
+                        // si el usuario configura manualmente
+                        // use_acme_goodbye a true en app/config/config.yml
+                        // entonces al final el ajuste sería true y no false
+                        $container->prependExtensionConfig($name, $config);
+                        break;
+                }
+            }
+        }
+
+        // procesa la configuración de AcmeHelloExtension
+        $configs = $container->getExtensionConfig($this->getAlias());
+        // usa la clase Configuration para generar un arreglo config
+        // con los ajustes de ``acme_hello``
+        $config = $this->processConfiguration(new Configuration(), $configs);
+
+        // comprueba si entity_manager_name se ajustó en la
+        // configuración de ``acme_hello``
+        if (isset($config['entity_manager_name'])) {
+            // añade al principio la configuracion de acme_something
+            // con el entity_manager_name
+            $config = array('entity_manager_name' => $config['entity_manager_name']);
+            $container->prependExtensionConfig('acme_something', $config);
+        }
+    }
+
+Lo anterior sería el equivalente de escribir lo siguiente en el archivo :file:`app/config/config.yml` en caso de que ``AcmeGoodbyeBundle`` no se haya registrado y la opcion ``entity_manager_name`` para ``acme_hello`` esté configurada como ``non_default``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+
+        acme_something:
+            # ...
+            use_acme_goodbye: false
+            entity_manager_name: non_default
+
+        acme_other:
+            # ...
+            use_acme_goodbye: false
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+
+        <acme-something:config use-acme-goodbye="false">
+            <acme-something:entity-manager-name>non_default</acme-something:entity-manager-name>
+        </acme-something:config>
+
+        <acme-other:config use-acme-goodbye="false" />
+
+    .. code-block:: php
+
+        // app/config/config.php
+
+        $container->loadFromExtension('acme_something', array(
+            ...,
+            'use_acme_goodbye' => false,
+            'entity_manager_name' => 'non_default',
+        ));
+        $container->loadFromExtension('acme_other', array(
+            ...,
+            'use_acme_goodbye' => false,
+        ));
+

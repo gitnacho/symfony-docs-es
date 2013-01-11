@@ -1,0 +1,111 @@
+.. index::
+   single: Enrutando; Parámetros del contenedor del servicio
+
+Cómo utilizar parámetros del contenedor de servicios en tus rutas
+=================================================================
+
+.. versionadded:: 2.1
+    La capacidad para usar parámetros en tus rutas se añadió en *Symfony 2.1*.
+
+En ocasiones, posiblemente te resulte útil hacer configurables globalmente algunas partes de tus rutas. Por ejemplo, si construyes un sitio internacionalizado, probablemente sea bueno comenzar con una o dos localidades. Seguramente vas a añadir un requisito a tus rutas para evitar que un usuario coincida con una región que no estás apoyando.
+
+*Podrías* codificar tu requisito ``_locale`` en todas tus rutas. Pero la mejor solución es utilizar un parámetro configurable del contenedor de servicios justo dentro de la configuración de enrutado:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        contact:
+            pattern:  /{_locale}/contact
+            defaults: { _controller: AcmeDemoBundle:Main:contact }
+            requirements:
+                _locale: %acme_demo.locales%
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <route id="contact" pattern="/{_locale}/contact">
+                <default key="_controller">AcmeDemoBundle:Main:contact</default>
+                <requirement key="_locale">%acme_demo.locales%</requirement>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('contact', new Route('/{_locale}/contact', array(
+            '_controller' => 'AcmeDemoBundle:Main:contact',
+        ), array(
+            '_locale' => '%acme_demo.locales%',
+        )));
+
+        return $collection;
+
+Ahora, puedes controlar y poner el parámetro ``acme_demo.locales`` en algún lugar en tu contenedor:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        parameters:
+            acme_demo.locales: en|es
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <parameters>
+            <parameter key="acme_demo.locales">en|es</parameter>
+        </parameters>
+
+    .. code-block:: php
+
+        # app/config/config.php
+        $container->setParameter('acme_demo.locales', 'en|es');
+
+También puedes usar un parámetro para definir el patrón de tu ruta (o parte de tu patrón):
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        some_route:
+            pattern:  /%acme_demo.route_prefix%/contact
+            defaults: { _controller: AcmeDemoBundle:Main:contact }
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <route id="some_route" pattern="/%acme_demo.route_prefix%/contact">
+                <default key="_controller">AcmeDemoBundle:Main:contact</default>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('some_route', new Route('/%acme_demo.route_prefix%/contact', array(
+            '_controller' => 'AcmeDemoBundle:Main:contact',
+        )));
+
+        return $collection;
+
+.. note::
+
+    Justo como en los archivos de configuración de contenedor de servicio normal, si realmente necesitas un ``%`` en tu ruta, puedes escapar el signo de porcentaje duplicándolo, p. ej. ``/puntuacion-50%%``, la cual resolvería a ``/puntuacion-50%``.

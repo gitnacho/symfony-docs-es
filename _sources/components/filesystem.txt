@@ -1,0 +1,213 @@
+.. index::
+   single: Filesystem
+
+El componente ``Filesystem``
+============================
+
+    El componente ``Filesystem`` proporciona herramientas básicas para el sistema de archivos.
+
+.. versionadded:: 2.1
+    El componente ``Filesystem`` es una novedad en *Symfony 2.1*. Anteriormente, la clase ``Filesystem`` se encontraba en el componente ``HttpKernel``.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/Filesystem);
+* Instalándolo vía ``Composer`` (``symfony/filesystem`` en `Packagist`_).
+
+Usando
+------
+
+La clase :class:`Symfony\\Component\\Filesystem\\Filesystem` es el único punto final para las operaciones del sistema de archivos::
+
+    use Symfony\Component\Filesystem\Filesystem;
+    use Symfony\Component\Filesystem\Exception\IOException;
+
+    $fs = new Filesystem();
+
+    try {
+        $fs->mkdir('/tmp/random/dir/' . mt_rand());
+    } catch (IOException $e) {
+        echo "An error occurred while creating your directory";
+    }
+
+.. note::
+
+    Los métodos :method:`Symfony\\Component\\Filesystem\\Filesystem::mkdir`, :method:`Symfony\\Component\\Filesystem\\Filesystem::chown`, :method:`Symfony\\Component\\Filesystem\\Filesystem::chgrp`, :method:`Symfony\\Component\\Filesystem\\Filesystem::chown`, :method:`Symfony\\Component\\Filesystem\\Filesystem::remove` y :method:`Symfony\\Component\\Filesystem\\Filesystem::touch` pueden recibir una cadena, un arreglo o cualquier objeto que implemente :phpclass:`Traversable` como argumento destino.
+
+
+``Mkdir``
+~~~~~~~~~
+
+``Mkdir`` crea directorios. En sistemas de archivos *POSIX*, de manera predeterminada los directorios se crean con un valor de `0777` para el modo. Puedes utilizar el segundo argumento para establecer tu propio modo::
+
+    $fs->mkdir('/tmp/photos', 0700);
+
+.. note::
+
+    Puedes pasar como primer argumento un arreglo o cualquier otro objeto :phpclass:`Traversable`.
+
+``Exists``
+~~~~~~~~~~
+
+``Exists`` comprueba la presencia de todos los archivos o directorios y devuelve ``false`` si falta un archivo::
+
+    // este directorio existe, devuelve true
+    $fs->exists('/tmp/photos');
+
+    // rabbit.jpg existe, bottle.png no existe, devuelve false
+    $fs->exists(array('rabbit.jpg', 'bottle.png'));
+
+.. note::
+
+    Puedes pasar como primer argumento un arreglo o cualquier otro objeto :phpclass:`Traversable`.
+
+``Copy``
+~~~~~~~~
+
+Este método se utiliza para copiar archivos. Si el destino ya existe, el archivo se copia sólo si la fecha de modificación del archivo origen es anterior a la del archivo destino. Puedes redefinir este comportamiento con el tercer argumento booleano::
+
+    // sólo funciona si image-ICC.jpg se modificó después de image.jpg
+    $fs->copy('image-ICC.jpg', 'image.jpg');
+
+    // image.jpg será reemplazada
+    $fs->copy('image-ICC.jpg', 'image.jpg', true);
+
+``Touch``
+~~~~~~~~~
+
+``Touch`` establece el acceso y la hora de modificación de un archivo. De manera predeterminada utiliza la hora actual. Puedes configurar la tuya con el segundo argumento. El tercer argumento es la hora de acceso::
+
+    // establece la hora de modificación a la fecha y hora actual
+    $fs->touch('file.txt');
+    // establece la hora de modificación 10 segundos en el futuro
+    $fs->touch('file.txt', time() + 10);
+    // establece la hora de acceso 10 segundos en el pasado
+    $fs->touch('file.txt', time(), time() - 10);
+
+.. note::
+
+    Puedes pasar como primer argumento un arreglo o cualquier otro objeto :phpclass:`Traversable`.
+
+``Chown``
+~~~~~~~~~
+
+Utiliza ``chown`` para cambiar el propietario de un archivo. El tercer argumento es una opción booleana recursiva::
+
+    // establece el propietario del video lolcat a www-data
+    $fs->chown('lolcat.mp4', 'www-data');
+    // cambia recursivamente el propietario del directorio video
+    $fs->chown('/video', 'www-data', true);
+
+.. note::
+
+    Puedes pasar como primer argumento un arreglo o cualquier otro objeto :phpclass:`Traversable`.
+
+``Chgrp``
+~~~~~~~~~
+
+Utiliza ``chgrp`` para cambiar el grupo de un archivo. El tercer argumento es una opción booleana recursiva::
+
+    // establecer el grupo del vídeo lolcat a nginx
+    $fs->chgrp('lolcat.mp4', 'nginx');
+    // cambia recursivamente el grupo del directorio video
+    $fs->chgrp('/video', 'nginx', true);
+
+
+.. note::
+
+    Puedes pasar como primer argumento un arreglo o cualquier otro objeto :phpclass:`Traversable`.
+
+``Chmod``
+~~~~~~~~~
+
+``Chmod`` se utiliza para cambiar el modo de un archivo. El tercer argumento es una opción booleana recursiva::
+
+    // establece el modo de vídeo a 0600
+    $fs->chmod('video.ogg', 0600);
+    // cambia recursivamente el modo del directorio src
+    $fs->chmod('src', 0700, 0000, true);
+
+.. note::
+
+    Puedes pasar como primer argumento un arreglo o cualquier otro objeto :phpclass:`Traversable`.
+
+``Remove``
+~~~~~~~~~~
+
+``Remove`` te permite eliminar fácilmente archivos, enlaces simbólicos y directorios::
+
+    $fs->remove(array('symlink', '/path/to/directory', 'activity.log'));
+
+.. note::
+
+    Puedes pasar como primer argumento un arreglo o cualquier otro objeto :phpclass:`Traversable`.
+
+``Rename``
+~~~~~~~~~~
+
+Utiliza ``rename`` para cambiar el nombre de archivos y directorios::
+
+    // renombra un archivo
+    $fs->rename('/tmp/processed_video.ogg', '/path/to/store/video_647.ogg');
+    // renombra un directorio
+    $fs->rename('/tmp/files', '/path/to/store/files');
+
+``symlink``
+~~~~~~~~~~~
+
+Crea un enlace simbólico desde fuente hasta destino. Si el sistema de archivos no es compatible con los enlaces simbólicos, hay disponible un tercer argumento booleano::
+
+    // crea un enlace simbólico
+    $fs->symlink('/path/to/source', '/path/to/destination');
+    // duplica el directorio fuente, si el sistema de archivos no
+    // es compatible con enlaces simbólicos
+    $fs->symlink('/ruta/a/source', '/ruta/a/destination', true);
+
+``makePathRelative``
+~~~~~~~~~~~~~~~~~~~~
+
+Devuelve la ruta relativa de un directorio dado::
+
+    // devuelve '../'
+    $fs->makePathRelative(
+        '/var/lib/symfony/src/Symfony/',
+        '/var/lib/symfony/src/Symfony/Component'
+    );
+    // devuelve 'videos'
+    $fs->makePathRelative('/tmp', '/tmp/videos');
+
+``mirror``
+~~~~~~~~~~
+
+Refleja un directorio::
+
+    $fs->mirror('/path/to/source', '/path/to/target');
+
+``isAbsolutePath``
+~~~~~~~~~~~~~~~~~~
+
+``isAbsolutePath`` devuelve ``true`` si la ruta especificada es absoluta, ``false`` en caso contrario::
+
+    // devuelve true
+    $fs->isAbsolutePath('/tmp');
+    // devuelve true
+    $fs->isAbsolutePath('c:\\Windows');
+    // devuelve false
+    $fs->isAbsolutePath('tmp');
+    // devuelve false
+    $fs->isAbsolutePath('../dir');
+
+Manejando errores
+-----------------
+
+Cuando sucede algo malo, se lanza una excepción que implementa la clase
+:class:`Symfony\\Component\\Filesystem\\Exception\\ExceptionInterface`.
+
+.. note::
+
+    Antes de la versión 2.1, :method:`Symfony\\Component\\Filesystem\\Filesystem::mkdir` devolvía un valor lógico y no lanzaba excepciones. A partir de 2.1, se lanza una :class:`Symfony\\Component\\Filesystem\\Exception\\IOException` si falla la creación del directorio.
+
+.. _`Packagist`: https://packagist.org/packages/symfony/filesystem

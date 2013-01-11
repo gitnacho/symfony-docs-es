@@ -32,6 +32,20 @@ Configurando
                 - Callback:
                     methods:   [isAuthorValid]
 
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        namespace Acme\BlogBundle\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        /**
+         * @Assert\Callback(methods={"isAuthorValid"})
+         */
+        class Author
+        {
+        }
+
     .. code-block:: xml
 
         <!-- src/Acme/BlogBundle/Resources/config/validation.xml -->
@@ -43,16 +57,22 @@ Configurando
             </constraint>
         </class>
 
-    .. code-block:: php-annotations
+    .. code-block:: php
 
         // src/Acme/BlogBundle/Entity/Author.php
+        namespace Acme\BlogBundle\Entity;
+
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
         use Symfony\Component\Validator\Constraints as Assert;
 
-        /**
-         * @Assert\Callback(methods={"isAuthorValid"})
-         */
-        class Author
+        class Autor
         {
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addConstraint(new Assert\Callback(array(
+                    'methods' => array('isAuthorValid'),
+                )));
+            }
         }
 
 El método ``Callback``
@@ -75,11 +95,10 @@ Al método ``callback`` se le pasa un objeto ``ExecutionContext`` especial. Pued
         
             // comprueba si el nombre en realidad es un nombre ficticio
             if (in_array($this->getFirstName(), $fakeNames)) {
-                $propertyPath = $context->getPropertyPath() . '.firstName';
-                $context->setPropertyPath($propertyPath);
-                $context->addViolation('This name sounds totally fake!', array(), null);
+                $context->addViolationAtSubPath('firstname', 'This name sounds totally fake!', array(), null);
             }
         }
+    }
 
 Opciones
 --------
@@ -97,7 +116,7 @@ Este es un arreglo de los métodos que se deben ejecutar durante el proceso de v
 
 2) **Arreglo estático de retrollamada**
 
-    También puedes especificar cada método como una matriz de retrollamada estándar:
+    También puedes especificar cada método como un arreglo de retrollamada estándar:
 
     .. configuration-block::
 

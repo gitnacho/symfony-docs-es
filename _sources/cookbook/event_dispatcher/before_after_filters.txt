@@ -1,0 +1,246 @@
+.. index::
+   single: Despachador de evento
+
+Cómo configurar los filtros ``before`` y ``after``
+==================================================
+
+Es bastante común en el desarrollo de aplicaciones *web* la necesidad de ejecutar algo de lógica justo antes o justo después de la acción actuando como filtros o ganchos.
+
+En *symfony1*, esto se consiguió con los métodos ``preExecute`` y ``postExecute``.
+La mayoría de las plataformas importantes tienen métodos similares pero no hay tal cosa en *Symfony2*.
+La buena noticia es que hay mucho mejor una manera de interferir en el proceso ``Petición -> Respuesta`` usando el :doc:`componente EventDispatcher </components/event_dispatcher/introduction>`.
+
+Ejemplo de validación de ficha
+------------------------------
+
+Imagina que necesitas desarrollar una *API* dónde algunos controladores son públicos, pero otros se restringen a uno o algunos clientes. Por estas características particulares, podrías proporcionar una ficha a tus clientes para identificarse.
+
+Por lo tanto, antes de ejecutar la acción del controlador, necesitas comprobar si la acción está restringida o no. Si está restringida, necesitas validar la ficha proporcionada.
+
+.. note::
+
+    Por favor, ten en cuenta que para simplificar esta receta, las fichas se definen en la configuración y no utilizaremos ni configuración de base de datos ni proveedor de autenticación a través del componente ``Security``.
+
+Filtros «antes» con el evento ``kernel.controller``
+---------------------------------------------------
+
+Primero, almacena alguna ficha de configuración básica usando :file:`config.yml` y parámetros clave:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        parameters:
+            tokens:
+                client1: pass1
+                client2: pass2
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <parameters>
+            <parameter key="tokens" type="collection">
+                <parameter key="client1">pass1</parameter>
+                <parameter key="client2">pass2</parameter>
+            </parameter>
+        </parameters>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->setParameter('tokens', array(
+            'client1' => 'pass1',
+            'client2' => 'pass2',
+        ));
+
+Comprobando etiquetas de controladores
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Un escucha del ``kernel.controller`` recibe una notificación en cada petición, justo antes de ejecutar el controlador. Por lo tanto, primero necesitas alguna manera de identificar si el controlador que responde a la petición necesita validar la ficha.
+
+Una forma limpia y fácil es crear una interfaz vacía y hacer que los controladores la implementen::
+
+    namespace Acme\DemoBundle\Controller;
+
+    interface TokenAuthenticatedController
+    {
+        // ...
+    }
+
+Un controlador que implementa esta interfaz es similar al siguiente::
+
+    namespace Acme\DemoBundle\Controller;
+
+    use Acme\DemoBundle\Controller\TokenAuthenticatedController;
+    use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+
+    class FooController extends Controller implements TokenAuthenticatedController
+    {
+        // una acción que necesita autenticación
+        public function barAction()
+        {
+            // ...
+        }
+    }
+
+Creando un escucha del evento
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A continuación, tienes que crear un escucha del evento que contenga la lógica que deseas ejecutar antes que tus controladores. Si no estás familiarizado con los escuchas de eventos, puedes aprender más sobre ellos en :doc:`/cookbook/service_container/event_listener`::
+
+    // src/Acme/DemoBundle/EventListener/TokenListener.php
+    namespace Acme\DemoBundle\EventListener;
+
+    use Acme\DemoBundle\Controller\TokenAuthenticatedController;
+    use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+    use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+
+    class TokenListener
+    {
+        private $tokens;
+
+        public function __construct($tokens)
+        {
+            $this->tokens = $tokens;
+        }
+
+        public function onKernelController(FilterControllerEvent $event)
+        {
+            $controller = $event->getController();
+
+            /*
+             * el $controller pasado puede ser una clase o un cierre.
+             * Esto no es habitual en Symfony2 pero puede suceder.
+             * Si se trata de una clase, viene en formato de arreglo
+             */
+            if (!is_array($controller)) {
+                return;
+            }
+
+            if ($controller[0] instanceof TokenAuthenticatedController) {
+                $token = $event->getRequest()->query->get('token');
+                if (!in_array($token, $this->tokens)) {
+                    throw new AccessDeniedHttpException('This action needs a valid token!');
+                }
+            }
+        }
+    }
+
+Registrando el escucha
+~~~~~~~~~~~~~~~~~~~~~~
+
+Por último, registra tu escucha como un servicio y etiquétalo como un escucha de eventos.
+Al escuchar el ``kernel.controller``, le estas diciendo a *Symfony* que deseas que tu escucha sea llamado justo antes de ejecutar cualquier controlador:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml (o en tu services.yml)
+        services:
+            demo.tokens.action_listener:
+                class: Acme\DemoBundle\EventListener\TokenListener
+                arguments: [ %tokens% ]
+                tags:
+                        - { name: kernel.event_listener, event: kernel.controller, method: onKernelController }
+
+    .. code-block:: xml
+
+        <!-- app/config/config.yml (o en tu services.yml) -->
+        <service id="demo.tokens.action_listener" class="Acme\DemoBundle\EventListener\TokenListener">
+            <argument>%tokens%</argument>
+            <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" />
+        </service>
+
+    .. code-block:: php
+
+        // app/config/config.php (or inside your services.php)
+        use Symfony\Component\DependencyInjection\Definition;
+
+        $listener = new Definition('Acme\DemoBundle\EventListener\TokenListener', array('%tokens%'));
+        $listener->addTag('kernel.event_listener', array('event' => 'kernel.controller', 'method' => 'onKernelController'));
+        $container->setDefinition('demo.tokens.action_listener', $listener);
+
+Con esta configuración, tu método ``TokenListener`` del ``onKernelController`` será ejecutado en cada petición. Si el controlador que está a punto de ejecutarse implementa el ``TokenAuthenticatedController``, se aplica la autenticación. Esto te permite tener un filtro «antes» en cualquier controlador que desees.
+
+Filtros «después» con el evento ``kernel.response``
+---------------------------------------------------
+
+Además de tener un gancho que se ejecuta antes que tu controlador, también puedes añadir un gancho que se ejecuté «después» de tu controlador. Para este ejemplo, imagina que quieres agregar un fragmento cifrado con ``sha1`` (con cierta sal que utiliza la ficha) a todas las respuestas a la que se les pase esta ficha de autenticación.
+
+Otro evento del núcleo de *Symfony* ---llamado ``kernel.response``--- es notificado en cada petición, pero después de que el controlador regresa un objeto ``Respuesta``. Crear un escucha «después» es tan fácil cómo crear una clase escucha y registrarla como servicio en este evento.
+
+Por ejemplo, tomando el ``TokenListener`` del ejemplo anterior y grabando primero la ficha de autenticación en los atributos de la petición. Esto servirá como indicador básico de que esta petición experimentó la autenticación de la ficha::
+
+    public function onKernelController(FilterControllerEvent $event)
+    {
+        // ...
+
+        if ($controller[0] instanceof TokenAuthenticatedController) {
+            $token = $event->getRequest()->query->get('token');
+            if (!in_array($token, $this->tokens)) {
+                throw new AccessDeniedHttpException('This action needs a valid token!');
+            }
+
+            // marca la petición con autenticación de ficha aprobada
+            $event->getRequest()->attributes->set('auth_token', $token);
+        }
+    }
+
+Ahora, añade otro método a esta clase ---``onKernelResponse``--- que busque este indicador en el objeto ``Petición`` y de encontrarlo ponga una cabecera personalizada en la respuesta::
+
+    // Añade la nueva declaración use en la parte superior de tu archivo
+    use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+
+    public function onKernelResponse(FilterResponseEvent $event)
+    {
+        // comprueba si onKernelController marcó este como una 
+        // petición de ficha autenticada
+        if (!$token = $event->getRequest()->attributes->get('auth_token')) {
+            return;
+        }
+
+        $response = $event->getResponse();
+
+        // crea un fragmento cifrado y lo pone como cabecera de la respuesta
+        $hash = sha1($respuesta->getContent().$token);
+        $response->headers->set('X-CONTENT-HASH', $hash);
+    }
+
+Finalmente, es necesaria una segunda «etiqueta» en la definición del servicio para notificar a *Symfony* que el evento ``onKernelResponse`` se tendrá que notificar al evento ``kernel.response``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml (o en tu services.yml)
+        services:
+            demo.tokens.action_listener:
+                class: Acme\DemoBundle\EventListener\TokenListener
+                arguments: [ %tokens% ]
+                tags:
+                        - { name: kernel.event_listener, event: kernel.controller, method: onKernelController }
+                        - { name: kernel.event_listener, event: kernel.response, method: onKernelResponse }
+
+    .. code-block:: xml
+
+        <!-- app/config/config.yml (o en tu services.yml) -->
+        <service id="demo.tokens.action_listener" class="Acme\DemoBundle\EventListener\TokenListener">
+            <argument>%tokens%</argument>
+            <tag name="kernel.event_listener" event="kernel.controller" method="onKernelController" />
+            <tag name="kernel.event_listener" event="kernel.response" method="onKernelResponse" />
+        </service>
+
+    .. code-block:: php
+
+        // app/config/config.php (or inside your services.php)
+        use Symfony\Component\DependencyInjection\Definition;
+
+        $listener = new Definition('Acme\DemoBundle\EventListener\TokenListener', array('%tokens%'));
+        $listener->addTag('kernel.event_listener', array('event' => 'kernel.controller', 'method' => 'onKernelController'));
+        $listener->addTag('kernel.event_listener', array('event' => 'kernel.response', 'method' => 'onKernelResponse'));
+        $container->setDefinition('demo.tokens.action_listener', $listener);
+
+¡Eso es todo! El evento ``TokenListener`` ahora es notificado antes de ejecutar cada controlador (``onKernelController``) y después de que cada controlador regrese una respuesta (``onKernelResponse``). Al hacer que controladores específicos implementen la interfaz ``TokenAuthenticatedController``, tu escucha sabe cuales controladores deben tomar una acción.
+Y almacenando un valor en la bolsa de «atributos» de la petición, el método ``onKernelResponse`` sabe que tiene que añadir la cabecera extra. ¡Que te diviertas!

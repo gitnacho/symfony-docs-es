@@ -1,0 +1,228 @@
+El sistema de enrutado del ``CMF`` de *Symfony*
+===============================================
+
+Concepto
+--------
+
+¿Por qué un nuevo mecanismo de enrutado?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Los *CMS* son sitios altamente dinámicos, donde la mayoría del contenido lo gestionan los administradores en lugar de los desarrolladores. El número de páginas disponibles fácilmente puede alcanzar miles, lo cual normalmente es multiplicado por el número de traducciones disponibles. Mejor accesibilidad y prácticas *SEO*, así como preferencias de usuario dictan que direcciones *URL* deberían ser definibles por los gestores de contenido.
+
+El mecanismo de enrutado predefinido de *Symfony2*, con enfoque de archivos de configuración, no es la mejor solución para este problema, puesto que no es apropiado para manejar rutas dinámicas definidas por el usuario, ni escalan bien para un gran número de rutas.
+
+La solución
+~~~~~~~~~~~
+
+Para afrontar estos problemas, se desarrolló un nuevo sistema de enrutado, este tiene en cuenta las necesidades típicas de enrutado de un *CMS*:
+
+- *URL* definidas por el usuario.
+- Multisitio.
+- Multilingüe.
+- Estructura estilo árbol para facilitar la administración.
+- Contenido, Menú y separación de ``Rutas`` para flexibilidad adicional.
+
+Con estos requisitos en mente, fue desarrollado el componente ``Routing`` del ``CMF`` de *Symfony*.
+
+La ``ChainRouter``
+------------------
+
+En el núcleo del ``CMF`` de *Symfony* el componente de enrutado es la ``ChainRouter``.
+Esta se utiliza como sustituta para el sistema de enrutado predefinido de *Symfony2* y, como tal, es responsable de determinar cuál ``Controlador`` manejará cada ``petición``.
+
+La ``ChainRouter`` trabaja aceptando un conjunto priorizado de implementaciones de estrategias de enrutado, `RouterInterface <http://api.symfony.com/2.1/Symfony/Component/Routing/RouterInterface.html>`_, generalmente conocidos como ``«Enrutadores»``. Los enrutadores son los responsables de emparejar una petición entrante con un ``Controlador`` real, y para hacerlo, la ``ChainRouter`` itera sobre los ``Enrutadores`` configurados de acuerdo a su prioridad establecida:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            chain:
+                routers_by_id:
+                    # activa el DynamicRouter con alta prioridad para redefinir
+                    # el enrutador configurado con contenido
+                    symfony_cmf_routing_extra.dynamic_router: 200
+                    
+                    # habilita el enrutador predefinido de symfony
+                    # con baja prioridad
+                    router.default: 100
+
+También puedes cargar ``Enrutadores`` utilizando servicios etiquetados, usando la etiqueta `router` y una `priority` opcional. Mientras más alta prioridad, más temprano será consultado tu enrutador para emparejar la ruta. Si no especificas la prioridad, tu enrutador vendrá al último. Si hay varios enrutadores con la misma prioridad, el orden entre ellos es indeterminado. El servicio etiquetado se verá como este:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            my_namespace.my_router:
+                class: %my_namespace.my_router_class%
+                tags:
+                        - { name: router, priority: 300 }
+
+    .. code-block:: xml
+
+        <service id="my_namespace.my_router" class="%my_namespace.my_router_class%">
+            <tag name="router" priority="300" />
+            ..
+        </service>
+
+El sistema de enrutado del ``CMF`` de *Symfony* añade un nuevo ``DynamicRouter``, el cual complementa el ``Router`` predefinido de *Symfony2*.
+
+El enrutador predefinido de *Symfony2*
+--------------------------------------
+
+A pesar de que reemplaza el mecanismo de enrutado predefinido, el ``Routing`` del ``CMF`` de *Symfony* te permite seguir utilizando el sistema existente. De hecho, el enrutado predefinido está habilitado por omisión, así que puedes seguir utilizando las rutas que declaraste en tus archivos de configuración, o como fueron declaradas por otros paquetes.
+
+El ``DynamicRouter``
+--------------------
+
+Este enrutador puede cargar instancias de ``Ruta`` dinámicamente desde un determinado proveedor. Luego usa un proceso para emparejar la petición entrante a una ``Ruta`` específica, la cual en turno suele determinar a qué ``Controlador`` enviar la petición.
+
+La configuración predefinida del paquete declara que el ``DynamicRouter`` está inhabilitado
+por omisión. Para activarlo, sólo añade lo siguiente a tu archivo de configuración:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            dynamic:
+                enabled: true
+
+Esta es la configuración mínima requirida para cargar el ``DynamicRouter`` como servicio, esta lo capacita para realizar cualquier enrutamiento. De hecho, cuándo exploras las páginas predefinidas que vienen con la *EE* del ``CMF`` de *Symfony*, el ``DynamicRouter`` es el que empareja tus peticiones con los Controladores y Plantillas.
+
+Consiguiendo la ``Ruta``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Puedes configurar el proveedor a usar para adaptarlo a las necesidades de cada implementación, y debe implementar la ``RouteProviderInterface``. Como parte de este paquete, se proporciona una implementación para el `PHPCR-ODM <https://github.com/doctrine/phpcr-odm>`_, pero fácilmente puedes crear una propia, puesto que el ``Enrutador`` es de almacenamiento agnóstico. El proveedor predefinido carga la ruta como el camino en la petición y todas las rutas padre permiten que algunos segmentos de la ruta sean parámetros.
+
+Para información más detallada sobre esta implementación y cómo la puedes personalizar o extender, consulta el :doc:`../bundles/routing-extra`.
+
+El ``DynamicRouter`` es capaz de emparejar la petición entrante con un objeto ``Ruta`` del proveedor subyacente. Los detalles sobre cómo se lleva a cabo el proceso de emparejamiento se pueden encontrar en :doc:`../components/routing`.
+
+Consiguiendo el controlador y la plantilla
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Una ``Ruta`` necesita especificar cuál ``Controlador`` debería manejar una ``Petición`` específica.
+El ``DynamicRouter`` utiliza uno de varios métodos posibles para determinarlo (por orden de precedencia):
+
+- Explicito: El documento ``Ruta`` en sí mismo puede almacenar explícitamente el ``Controlador`` declarado como destino especificando el valor  de ``'_controller'`` en ``getRouteDefaults()``.
+- Por alias: La ``Ruta`` regresa un valor ``'type'`` en ``getRouteDefaults()``, el cual luego se empareja contra la configuración proporcionada en el archivo :file:`config.yml`
+- Por clase: Requiere que la instancia de la ``Ruta`` implemente la ``RouteObjectInterface`` y ``getRouteContent()`` regrese un objeto. El tipo de la clase devuelta luego se empareja contra la configuración proporcionada en el archivo :file:`config.yml`.
+- Predefinido: Si está configurado, utilizará un controlador predefinido.
+
+Aparte de esto, el ``DynamicRouter`` también es capaz de especificar dinámicamente qué plantilla será utilizada, de manera similar a la utilizada para determinar el ``controlador`` (por orden de precedencia):
+
+- Explicito: El documento ``Ruta`` almacenado en sí mismo puede declarar explícitamente la plantilla destino en ``getRouteDefaults()``.
+- Por clase: Requiere que la instancia de la ``Ruta`` implemente la ``RouteObjectInterface`` y ``getRouteContent()`` regrese un objeto. El tipo de la clase devuelta luego se empareja contra la configuración proporcionada en el archivo :file:`config.yml`.
+
+
+Aquí tienes un ejemplo sobre cómo configurar las opciones mencionadas anteriormente:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            dynamic:
+                generic_controller: symfony_cmf_content.controller:indexAction
+                controllers_by_alias:
+                    editablestatic: sandbox_main.controller:indexAction
+                controllers_by_class:
+                    Symfony\Cmf\Bundle\ContentBundle\Document\StaticContent: symfony_cmf_content.controller::indexAction
+                templates_by_class:
+                    Symfony\Cmf\Bundle\ContentBundle\Document\StaticContent: SymfonyCmfContentBundle:StaticContent:index.html.twig
+
+Ten en cuenta que ``enabled: true`` ya no está presente. Este únicamente se requiere si no proporcionas otro parámetro de configuración. El enrutador es habilitado automáticamente tan pronto como añadas cualquiera otra configuración a la opción ``dynamic``.
+
+.. note::
+    
+    Internamente, el componente ``Routing`` asocia estas opciones de configuración a varias instancias de la ``RouteEnhancerInterface``. El alcance real de estos potenciadores es mucho mayor, y puedes encontrar más información sobre ellos en la página :doc:`../components/routing` de la documentación.
+
+Enlazando una ``Ruta`` con una instancia del modelo
+---------------------------------------------------
+
+Dependiendo de la lógica de tu aplicación, una *URL* solicitada puede tener una instancia
+del modelo asociado en la base de datos. Estas ``Rutas`` pueden implementar la ``RouteObjectInterface``, y opcionalmente regresar una instancia del modelo, esta automáticamente será pasada al ``Controlador`` como la variable ``$contentDocument``, si la declaras como parámetro.
+
+Ten en cuenta que una ``Ruta`` puede implementar la interfaz mencionada anteriormente pero todavía no regresar ninguna instancia del modelo, en cuyo caso ningún objeto asociado será proporcionado.
+
+Además, las ``Rutas`` que implementen esta interfaz también pueden tener un nombre de ``Ruta`` personalizado, en vez del predefinido compatible con el núcleo de *Symfony*, y pueden contener
+cualquier carácter. Esto te permite, por ejemplo, poner una ruta como el nombre de la ruta.
+
+Redirecciones
+-------------
+
+Puedes construir redirecciones implementando la ``RedirectRouteInterface``.
+Si estás utilizando el proveedor de ruta ``PHPCR-ODM`` predefinido, uno listo para usar la implementación es proporcionado en el ``Documento`` ``RedirectRoute``. Este puede redirigir o bien a una *URI* absoluta, a una ``Ruta`` nombrada que puede generar cualquier ``Enrutador`` en la cadena o a otro objeto ``Ruta`` conocido por el proveedor de rutas. La redirección real es manejada por un ``Controlador`` específico, el cual puedes configurar como gustes:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            controllers_by_class:
+                Symfony\Cmf\Component\Routing\RedirectRouteInterface:  symfony_cmf_routing_extra.redirect_controller:redirectAction
+
+.. note::
+    
+    La configuración real para esta asociación existe como un servicio, no como parte de un archivo :file:`config.yml`. Como se explicó antes, puedes utilizar cualquier enfoque.
+
+Generando *URL*
+---------------
+
+El componente de enrutado del ``CMF`` de *Symfony* utiliza los componentes predefinidos de *Symfony2* para manejar la generación de rutas, así que puedes utilizar los métodos predefinidos para generar tus *url*, con unas cuantas posibilidades añadidas:
+
+* Pasa o bien una implementación de la ``RouteObjectInterface`` o una ``RouteAwareInterface`` como el parámetro ``name``
+* O suministra una implementación de la ``ContentRepositoryInterface`` y el ``id`` de la instancia del modelo como el parámetro ``content_id``
+
+Integrando con *SonataAdmin*
+----------------------------
+
+Si en la sección ``require`` del archivo :file:`composer.json` añades el ``sonata-project/doctrine-phpcr-admin-bundle``, los documentos de ruta serán expuestos en el ``SonataDoctrinePhpcrAdminBundle``.
+Para instrucciones sobre cómo configurar este paquete ve :doc:`../bundles/doctrine_phpcr_admin`.
+
+De manera predefinida, ``use_sonata_admin`` se pone automáticamente basándose en si ``SonataDoctrinePhpcrAdminBundle`` está disponible pero lo puedes desactivar explícitamente si no tienes habilitado sonata, o activarlo explícitamente para conseguir un error si sonata se vuelve inasequible.
+
+Tienes un par de opciones de configuración para la administración. El ``content_basepath`` apunta a la raíz de tus documentos de contenido.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            use_sonata_admin: auto # usa true/false para forzar el uso / no uso de
+                                   # la administración de sonata
+            content_basepath: ~ # usado con la administración de sonata para
+                                # manejar el contenido, por omisión a
+                                # symfony_cmf_core.content_basepath
+
+Términos del tipo ``Form``
+--------------------------
+
+El paquete define un tipo ``form`` que puedes utilizar para la clásica casilla de verificación «aceptar términos» donde  colocas las *url* en la etiqueta. Simplemente especifica ``symfony_cmf_routing_extra_terms_form_type`` como el nombre del tipo ``form`` y especifica una etiqueta y un arreglo con ``content_ids`` en las opciones
+
+.. code-block:: php
+
+    $form->add('terms',
+               'symfony_cmf_routing_extra_terms_form_type',
+               array('label' => 'I have seen the <a href="%team%">Team</a> and <a href="%more%">More</a> pages ...',
+                     'content_ids' => array('%team%' => '/cms/content/static/team',
+                                            '%more%' => '/cms/content/static/more')
+    ));
+
+El tipo ``form`` automáticamente genera las rutas para el contenido especificado y pasa las rutas al ayudante ``trans`` de *Twig* para sustituirlas en la etiqueta.
+
+Notas adicionales
+-----------------
+
+Para más información sobre el componente ``Routing`` del ``CMF`` de *Symfony*, por favor, consulta:
+
+- :doc:`../components/routing` para más información sobre la funcionalidad real de la implementación
+- :doc:`../bundles/routing-extra` para la integración del paquete ``Routing`` con *Symfony2*
+- La página del componente `Routing <http://symfony.com/doc/current/components/routing/introduction.html>`_ de *Symfony*

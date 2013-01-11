@@ -1,0 +1,291 @@
+``CreateBundle``
+================
+
+El `CreateBundle <https://github.com/symfony-cmf/CreateBundle>`_ integra a *Symfony 2* las bibliotecas ayudante :file:`create.js` y :file:`createphp`.
+
+:file:`create.js` es una comprensible interfaz de edición *web* para Sistemas de administración de contenido (*CMS*). Está diseñado para proporcionar un moderno gestor de contenido, totalmente basado en un entorno de navegadores HTML5. Creado para poder adaptarlo para trabajar en casi cualquier interfaz de administración de contenido.
+Ve http://createjs.org/
+
+``Createphp`` es una biblioteca *PHP* para ayudarte con anotaciones *RDF* en tus entidades/documentos.
+Ve la documentación sobre como trabaja en https://github.com/flack/createphp.
+
+.. index:: CreateBundle
+
+Dependencias
+------------
+
+Este paquete incluye :file:`create.js` (el cuál empaca todas sus dependencias como *jquery*, *vie*, *hallo*, *backbone*, etc.) como submódulos *git*. No olvides añadir el guión del controlador de ``composer`` a tu archivo :file:`composer.json` como se describe abajo.
+
+Las dependencias de *PHP* son manejadas por medio de ``composer``. Utilizamos ``createphp`` así como ``AsseticBundle``, ``FOSRestBundle`` y por inferencia también ``JmsSerializerBundle``. Asegúrate de crear una instancia de todos estos paquetes en tu nucleo y de configurar correctamente el ``assetic``.
+
+Instalando
+----------
+
+Este paquete se incluye mejor utilizando ``Composer``.
+
+Edita el archivo ``composer`` de tu proyecto añadiendo un nuevo requisito para ``symfony-cmf/create-bundle``.
+Luego, crea una sección de guiones o añádelo a una existente:
+
+
+.. code-block:: yaml
+
+    {
+        "scripts": {
+            "post-install-cmd": [
+                "Symfony\\Cmf\\Bundle\\SymfonyCmfCreateBundle\\Composer\\ScriptHandler::initSubmodules",
+                ...
+            ],
+            "post-update-cmd": [
+                "Symfony\\Cmf\\Bundle\\SymfonyCmfCreateBundle\\Composer\\ScriptHandler::initSubmodules",
+                ...
+            ]
+        }
+    }
+
+
+Añade este paquete (y sus dependencias, si aún no están) al núcleo de tu aplicación:
+
+.. code-block:: php
+
+    // application/ApplicationKernel.php
+    public function registerBundles()
+    {
+        return array(
+            // ...
+            new Symfony\Bundle\AsseticBundle\AsseticBundle(),
+            new JMS\SerializerBundle\JMSSerializerBundle($this),
+            new FOS\RestBundle\FOSRestBundle(),
+            new Symfony\Cmf\Bundle\SymfonyCmfCreateBundle\SymfonyCmfCreateBundle(),
+            // ...
+        );
+    }
+
+También necesitas configurar el ``FOSRestBundle`` para manejar *json*:
+
+
+.. code-block:: yaml
+
+    fos_rest:
+        view:
+            formats:
+                json: true
+
+Concepto
+--------
+
+``Createphp`` usa metadatos *RDF* sobre las clases de tu dominio, tal como *Doctrine*
+sabe cómo se almacenan los metadatos de un objeto en la base de datos. Los metadatos son modelados por el tipo de la clase y pueden provenir de cualquier fuente. ``Createphp`` proporciona controladores de metadatos que leen *XML*, arreglos *PHP* y uno que justo introspecciona objetos y crea metadatos no semánticos que serán suficientes para editar con :file:`create.js`.
+
+El ``RdfMapper`` se usa para traducir entre tu capa de almacenamiento y ``createphp``.
+Este es pasado al objeto ``dominio`` y al objeto metadatos pertinente.
+
+Con los metadatos y el ayudante de *Twig*, el contenido es dibujado con anotaciones *RDF*. :file:`create.js` es cargado y habilitado para editar las entidades. Guarda en la interfaz de administración las operaciones que ocurrieron en llamadas *ajax*.
+
+El controlador ``REST`` maneja esas llamadas *ajax*, y si quieres ser capaz de cargar imágenes, un controlador de imagen guarda las imágenes cargadas y devuelve la ubicación
+de la imagen.
+
+
+Configurando
+------------
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_create:
+            # cargando metadatos
+
+            # Lista de directorios para buscar metadatos
+            rdf_config_dirs:
+                - "%kernel.root_dir%/Resources/rdf-mappings"
+            # busca asociaciones en <Paquete>/Resources/rdf-mappings
+            # auto_mapping: true
+
+            # usa una clase diferente para el controlador REST
+            # rest_controller_class: FQN\Classname
+            # Habilita el modo de desarrollo 'hallo' (ve al final de este capítulo)
+            # use_coffee: false
+
+            # manejo de imagen
+            imagen:
+                model_class: ~
+                controller_class: ~
+
+            # rol para controlar el acceso para inclusión js, predefinido
+            # REST y controladores de imagen
+            # role: IS_AUTHENTICATED_ANONYMOUSLY
+
+            # Habilita el asignador PHPCR-ODM de Doctrine
+            phpcr_odm: true
+
+            # asociación de tipo rdf name => class nombre usado al añadir ítems a colecciones
+            map:
+                rdfname: FQN\Classname
+
+            # url para mejora semántica stanbol, de lo contrario la
+            # predeterminada es la instalación del demo
+            # stanbol_url: http://dev.iks-project.eu:8081
+
+            # fija la barra de edición Hallo en lo alto de la página
+            # fixed_toolbar: true
+
+            # los tipos RDF para elementos a modificar en texto plano
+            # plain_text_types: ['dcterms:title']
+
+El archivo javascript proporcionado configura :file:`create.js` y el editor «hallo». Activa algunos complementos como el editor de etiquetas para revisar colecciones de
+atributos ``skos:related``. Esperamos poder añadir algunas opciones de configuración para modificar la configuración de :file:`create.js` pero también puedes utilizar el archivo como una plantilla y hacer la propia si necesitas mayor personalización.
+
+
+Metadatos
++++++++++
+
+:file:`createphp` necesita información de metadatos para cada clase de tu modelo del dominio. Por omisión, ``crea paquete`` usa el controlador de metadatos *XML* y busca los metadatos en los paquetes habilitados en <Paquete>/Resources/rdf-mappings. Si utilizas un paquete que no tiene ninguna asignación ``RDF``, puedes especificar una lista de ``rdf_config_dirs`` que se analizará adicionalmente para buscar metadatos.
+
+Consulta la documentación de `createphp <https://github.com/flack/createphp>`_ para el formato de los metadatos *XML*.
+
+
+Controlando el acceso
++++++++++++++++++++++
+
+Si utilizas el controlador ``REST`` predefinido, todos pueden editar el contenido una vez activado el ``crea paquete``. Para restringir el acceso, especifica un rol para el paquete que no sea el predefinido
+``IS_AUTHENTICATED_ANONYMOUSLY``.
+Si especificas un rol diferente, :file:`create.js` sólo se cargará si el usuario tiene ese rol y el controlador ``REST`` (y el controlador de imagen si está habilitado) revisará el rol.
+
+Si necesitas un control de acceso más fino, busca en el método asignador ``isEditable``.
+Puedes extender el asignador a utilizar y sustituir ``isEditable`` para que responda si el objeto dominio que se le pasa es editable.
+
+
+Manejando imágenes
+++++++++++++++++++
+
+Activa el controlador de imágenes simplista con la configuración ``image > model_class | controller_class``. Este controlador de imagen sólo despacha imágenes existentes en el repositorio ``PHPCR-ODM`` y también las sirve en peticiones.
+
+Si necesitas un diferente tratamiento de imágenes, puedes sobrescribir ``image.model_class`` y/o ``image.controller_class``, o implementar un servicio personalizado con ``ImageController`` y sustituir el ``symfony_cmf_create.image.controller``.
+
+
+Asignación de peticiones a objetos
+++++++++++++++++++++++++++++++++++
+
+Por ahora, el paquete sólo proporciona un servicio para asociar al *PHPCR-ODM* de *Doctrine*. Activado al establecer ``phpcr_odm`` en ``true``. Si necesitas algo más, debes proporcionar un servicio ``symfony_cmf_create.object_mapper``. (Si necesitas un contenedor para el *ORM* de *Doctrine*, mira los asignadores de la biblioteca ``createphp`` y haz una petición de extracción en la biblioteca, y otra para exponer el *ORM* como asignador del servicio en el ``crea paquete``).
+
+Además, ten en cuenta que ``createphp`` apoyaría diferentes asignadores para diferentes tipos de ``RDF``.
+Si necesitas esto, escarva un poco en ``createphp`` y ``crea paquete`` y haz una petición de extracción para activar esa característica.
+
+Para poder crear nuevos objetos, es necesario proporcionar una asociación entre los tipos ``RDF`` y los nombres de clase. (Pendiente: ¿no podemos indexar todas las asignaciones y hacer esto automáticamente?)
+
+
+Enrutando
++++++++++
+
+Por último añade la ruta correspondiente a tu configuración:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        create:
+            resource: "@SymfonyCmfCreateBundle/Resources/config/routing/rest.xml"
+        create_image:
+            resource: "@SymfonyCmfCreateBundle/Resources/config/routing/image.xml"
+
+    .. code-block:: xml
+
+        <import resource="@SymfonyCmfCreateBundle/Resources/config/routing/rest.xml" type="rest" />
+        <import resource="@SymfonyCmfCreateBundle/Resources/config/routing/image.xml" type="rest" />
+
+
+Alternativas: Editor ``Aloha``
+++++++++++++++++++++++++++++++
+
+Opcional: El editor ``Aloha`` (:file:`create.js` viene con el editor ``hallo``, pero si lo prefieres, también puedes utilizar el ``aloha``)
+
+        Para usar el editor ``Aloha``, descarga los archivos aqui: https://github.com/alohaeditor/Aloha-Editor/downloads/
+
+        Descomprime el contenido del subdirectorio «aloha» en el archivo «zip» como un directorio en ``vendor/symfony-cmf/create-bundle/Symfony/CMF/Bundle/CreateBundle/vendor/aloha``
+
+        Asegúrate de tener un sólo directorio ``aloha`` con el ``js``, no ``aloha/aloha/...`` ---debes tener ``vendor/symfony-cmf/create-bundle/Symfony/CMF/Bundle/CreateBundle/vendor/aloha/aloha.js``
+
+
+Usando
+------
+
+Ajusta tu plantilla para cargar los archivos ``js`` del editor si la sesión actual tiene permitido editar el contenido.
+
+.. code-block:: jinja
+
+    {% render "symfony_cmf_create.jsloader.controller:includeJSFilesAction" %}
+
+Además, asegúrate de que ``assetic`` está reescribiendo rutas en tus archivos *css*, y luego incluye los archivos *css* base (y personalízalos con tu propio *css* cuando sea necesario) con:
+
+.. code-block:: jinja
+
+    {% include "SymfonyCmfCreateBundle::includecssfiles.html.twig" %}
+
+La otra cosa que tienes que hacer es proporcionar asignación ``RDF`` para las clases de tu modelo y ajusta tus plantillas para reproducir con ``createphp`` a modo de que :file:`create.js` sepa cual contenido es editable.
+
+Crea la asignación de metadatos *XML* en ``<Paquete>/Resources/rdf-mappings/`` o una ruta 
+a tu ``rdf_config_dirs`` configurado después del nombre completamente cualificado de tus clases del modelo sustituyendo ``\\`` con un punto (``.``), es decir, :file:`Symfony.Cmf.Bundle.SimpleCmsBundle.Document.MultilangPage.xml`.
+Para un ejemplo de asociación ve los archivos en el :file:`cmf-sandbox`. La documentación de referencia está en el `repositorio de la biblioteca createphp <https://github.com/flack/createphp>`_.
+
+Para dibujar tu modelo, usa la etiqueta ``createphp`` de *Twig*:
+
+.. code-block:: html+jinja
+
+    {% createphp page as="rdf" %}
+    {{ rdf|raw }}
+    {% endcreatephp %}
+
+O si necesitas más control sobre el *HTML* generado:
+
+.. code-block:: html+jinja
+
+    {% createphp page as="rdf" %}
+    <div {{ createphp_attributes(rdf) }}>
+        <h1 class="my-title" {{ createphp_attributes( rdf.title ) }}>{{ createphp_content( rdf.title ) }}</h1>
+        <div {{ createphp_attributes( rdf.body ) }}>{{ createphp_content( rdf.body ) }}</div>
+    </div>
+    {% endcreatephp %}
+
+
+Desarrollando el editor ``wysiwyg`` ``hallo``
+---------------------------------------------
+
+Puedes desarrollar el editor ``hallo`` dentro del ``Crea paquete``. De manera predefinida, se usa una versión minimizada del ``hallo`` empacada con ``Crea paquete``. Para desarrollar el código real, primero necesitas activar con ``checkout`` el repositorio ``hallo`` completo. Lo puedes hacer ejecutando la siguiente orden desde la línea de ordenes:
+
+.. code-block:: bash
+
+    app/console cmf:create:init-hallo-devel
+
+Luego, ajusta la opción ``symfony_cmf_create > use_coffee`` a ``true`` en el archivo :file:`config.yml`. Esto le dice al ``jsloader`` que incluya los archivos del guión ``coffee`` desde ``Resources/public/vendor/hallo/src`` con ``assetic``, en lugar del *javascript*  precompilado en :file:`Resources/public/vendor/create/deps/hallo-min.js`.
+Esto también significa que necesitas añadir una asociación para ``coffeescript`` en tu 
+configuración de ``assetic`` y necesitas tener instalado y configurado correctamente el `compilador de coffee <http://coffeescript.org/#installation>`_.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        assetic:
+            filters:
+                cssrewrite: ~
+                coffee:
+                    bin: %coffee.bin%
+                    node: %coffee.node%
+                    apply_to: %coffee.extension%
+
+        symfony_cmf_create:
+            # pónlo a true si  quieres desarrollar hallo y editar los archivos de coffee
+            use_coffee: true|false
+
+En el recinto de seguridad del ``cmf`` hacemos una pequeña trampa para no provocar la compilación del guión de ``coffee``.
+En el archivo :file:`config.yml` hacemos configurable la extensión de ``coffee``. Ahora si :file:`parameters.yml` pone ``coffee.extension`` a ``\.coffee`` el ``coffeescript`` es compilado y el compilador de ``coffee`` debe estar instalado. Si lo pusiste a cualquier otra cosa tal como ``\.nocoffee`` entonces no es necesario tener instalado el compilador de ``coffee``.
+
+Los valores predefinidos para los tres parámetros son:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        coffee.bin: /usr/local/bin/coffee
+        coffee.node: /usr/local/bin/node
+        coffee.extension: \.coffee

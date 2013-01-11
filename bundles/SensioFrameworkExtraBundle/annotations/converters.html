@@ -1,8 +1,6 @@
 
-<!DOCTYPE html>
-
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html> 
+<html lang="es">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
@@ -35,7 +33,7 @@
     
   <a href="../../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
   
-    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <a href="../../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
     <div class="social">
       <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
@@ -51,7 +49,6 @@
     </div>
     
 
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -108,13 +105,32 @@
 <span class="p">}</span>
 </pre></div>
 </div>
+<p>Para detectar qué convertidor está corrido en un parámetro se ejecuta el siguiente proceso :</p>
+<ul class="simple">
+<li>Si se eligió un convertidor explícitamente con <tt class="docutils literal"><span class="pre">&#64;ParamConverter(converter=&quot;nombre&quot;)</span></tt> se elige el convertidor con el nombre dado.</li>
+<li>De lo contrario se itera sobre todos los parámetros de convertidores registrados por prioridad.
+El método <tt class="docutils literal"><span class="pre">supports()</span></tt> es invocado para comprobar si un parámetro convertidor puede convertir la petición en el parámetro requerido. Si regresa <tt class="docutils literal"><span class="pre">true</span></tt> el parámetro <tt class="docutils literal"><span class="pre">converter</span></tt> es invocado.</li>
+</ul>
 </div>
 <div class="section" id="convertidores-integrados">
 <h2>Convertidores integrados<a class="headerlink" href="#convertidores-integrados" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>El paquete tiene un solo convertidor integrado, uno de <em>Doctrine</em>.</p>
+<p>El paquete tiene dos convertidor integrados, uno es el convertidor <em>Doctrine</em> y el otro``DateTime``.</p>
 <div class="section" id="convertidor-doctrine">
 <h3>Convertidor <em>Doctrine</em><a class="headerlink" href="#convertidor-doctrine" title="Enlazar permanentemente con este título">¶</a></h3>
-<p>De manera predeterminada, el convertidor de <em>Doctrine</em> utiliza el valor <em>predeterminado</em> del administrador de la entidad. Lo puedes configurar con la opción <tt class="docutils literal"><span class="pre">entity_manager</span></tt>:</p>
+<p>Nombre de convertidor: <tt class="docutils literal"><span class="pre">doctrine.orm</span></tt></p>
+<p>El convertidor de <em>Doctrine</em> intenta convertir los atributos de la petición a entidades
+de recuperadas de la base de datos por <em>Doctrine</em>. Hay dos distintos posibles enfoques:</p>
+<ul class="simple">
+<li>Recuperar el objeto por clave primaria</li>
+<li>Recuperar el objeto por uno o varios campos que contienen valores únicos en la base de datos.</li>
+</ul>
+<p>El siguiente algoritmo determina qué operación realizar.</p>
+<ul class="simple">
+<li>Si en la ruta está presente un argumento <tt class="docutils literal"><span class="pre">{id}</span></tt>, busca el objeto por clave primaria.</li>
+<li>Si se configura una opción <tt class="docutils literal"><span class="pre">'id'</span></tt> y el argumento ruta concuerda, busca el objeto por clave primaria.</li>
+<li>Si no aplican las reglas anteriores, intenta encontrar una entidad emparejando los argumentos de la ruta con los campos de la entidad. Puedes controlar este proceso configurando el argumento <tt class="docutils literal"><span class="pre">exclude</span></tt> o asignando un atributo al campo llamado <tt class="docutils literal"><span class="pre">mapping</span></tt>.</li>
+</ul>
+<p>De manera predeterminada, el convertidor de <em>Doctrine</em> utiliza el valor <em>predeterminado</em> del gestor de la entidad. Lo puedes configurar con la opción <tt class="docutils literal"><span class="pre">entity_manager</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Sensio\Bundle\FrameworkExtraBundle\Configuration\Route</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter</span><span class="p">;</span>
 
@@ -123,6 +139,73 @@
 <span class="sd"> * @ParamConverter(&quot;post&quot;, class=&quot;SensioBlogBundle:Post&quot;, options={&quot;entity_manager&quot; = &quot;foo&quot;})</span>
 <span class="sd"> */</span>
 <span class="k">public</span> <span class="k">function</span> <span class="nf">showAction</span><span class="p">(</span><span class="nx">Post</span> <span class="nv">$post</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Si el marcador de posición no tiene el mismo nombre como clave primaria, pasa la opción <tt class="docutils literal"><span class="pre">id</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="sd">/**</span>
+<span class="sd"> * @Route(&quot;/blog/{post_id}&quot;)</span>
+<span class="sd"> * @ParamConverter(&quot;post&quot;, class=&quot;SensioBlogBundle:Post&quot;, options={&quot;id&quot; = &quot;post_id&quot;})</span>
+<span class="sd"> */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">showAction</span><span class="p">(</span><span class="nx">Post</span> <span class="nv">$post</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Esto también te permite tener múltiples convertidores en una acción:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="sd">/**</span>
+<span class="sd"> * @Route(&quot;/blog/{id}/comments/{comment_id}&quot;)</span>
+<span class="sd"> * @ParamConverter(&quot;comment&quot;, class=&quot;SensioBlogBundle:Comment&quot;, options={&quot;id&quot; = &quot;comment_id&quot;})</span>
+<span class="sd"> */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">showAction</span><span class="p">(</span><span class="nx">Post</span> <span class="nv">$post</span><span class="p">,</span> <span class="nx">Comment</span> <span class="nv">$comment</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>En el ejemplo anterior, el argumento <tt class="docutils literal"><span class="pre">post</span></tt> es manejado automáticamente, pero el comentario está configurado con la anotación debido a que ambos no pueden seguir la convención predefinida.</p>
+<p>Si quieres emparejar una entidad usando múltiples campos usa <tt class="docutils literal"><span class="pre">mapping</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="sd">/**</span>
+<span class="sd"> * @Route(&quot;/blog/{date}/{slug}/comments/{comment_slug}&quot;)</span>
+<span class="sd"> * @ParamConverter(&quot;post&quot;, options={&quot;mapping&quot;: {&quot;date&quot;: &quot;date&quot;, &quot;slug&quot;: &quot;slug&quot;})</span>
+<span class="sd"> * @ParamConverter(&quot;comment&quot;, options={&quot;mapping&quot;: {&quot;comment_slug&quot;: &quot;slug&quot;})</span>
+<span class="sd"> */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">showAction</span><span class="p">(</span><span class="nx">Post</span> <span class="nv">$post</span><span class="p">,</span> <span class="nx">Comment</span> <span class="nv">$comment</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Si estás emparejando una entidad que utiliza varios campos, pero quieres excluir un
+argumento de la ruta para que forme parte de los criterios:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="sd">/**</span>
+<span class="sd"> * @Route(&quot;/blog/{date}/{slug}&quot;)</span>
+<span class="sd"> * @ParamConverter(&quot;post&quot;, options={&quot;exclude&quot;: [&quot;date&quot;]})</span>
+<span class="sd"> */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">showAction</span><span class="p">(</span><span class="nx">Post</span> <span class="nv">$post</span><span class="p">,</span> <span class="nx">\DateTime</span> <span class="nv">$date</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="convertidor-datetime">
+<h3>Convertidor <tt class="docutils literal"><span class="pre">DateTime</span></tt><a class="headerlink" href="#convertidor-datetime" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Nombre de convertidor: <tt class="docutils literal"><span class="pre">datetime</span></tt></p>
+<p>El convertidor <tt class="docutils literal"><span class="pre">datetime</span></tt> convierte cualquier ruta o atributo de petición a una instancia de <tt class="docutils literal"><span class="pre">datetime</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="sd">/**</span>
+<span class="sd"> * @Route(&quot;/blog/archive/{start}/{end}&quot;)</span>
+<span class="sd"> */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">archiveAction</span><span class="p">(</span><span class="nx">\DateTime</span> <span class="nv">$start</span><span class="p">,</span> <span class="nx">\DateTime</span> <span class="nv">$end</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Por omisión puede analizar cualquier formato de fecha aceptado por el constructor de <tt class="docutils literal"><span class="pre">DateTime</span></tt>. Puedes ser más estricto con la entrada dada a través de las opciones:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="sd">/**</span>
+<span class="sd"> * @Route(&quot;/blog/archive/{start}/{end}&quot;)</span>
+<span class="sd"> * @ParamConverter(&quot;start&quot;, options={&quot;format&quot;: &quot;Y-m-d&quot;})</span>
+<span class="sd"> * @ParamConverter(&quot;end&quot;, options={&quot;format&quot;: &quot;Y-m-d&quot;})</span>
+<span class="sd"> */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="nf">archiveAction</span><span class="p">(</span><span class="nx">\DateTime</span> <span class="nv">$start</span><span class="p">,</span> <span class="nx">\DateTime</span> <span class="nv">$end</span><span class="p">)</span>
 <span class="p">{</span>
 <span class="p">}</span>
 </pre></div>
@@ -153,6 +236,18 @@
 <li><tt class="docutils literal"><span class="pre">options</span></tt>: Un arreglo de opciones</li>
 </ul>
 <p>El método <tt class="docutils literal"><span class="pre">apply()</span></tt> se llama cuando una configuración es compatible. Basándonos en los atributos de la petición, debemos establecer un atributo llamado <tt class="docutils literal"><span class="pre">$configuration-&gt;getName()</span></tt>, que almacene un objeto de la clase <tt class="docutils literal"><span class="pre">$configuration-&gt;getClass()</span></tt>.</p>
+<p>Para registrar tu servicio convertidor tienes que añadir una etiqueta a tu servicio:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;my_converter&quot;</span> <span class="na">class=</span><span class="s">&quot;MyBundle/Request/ParamConverter/MyConverter&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;request.param_converter&quot;</span> <span class="na">priority=</span><span class="s">&quot;-2&quot;</span> <span class="na">converter=</span><span class="s">&quot;my_converter&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/service&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Puedes registrar un convertidor por prioridad, por nombre (atributo <tt class="docutils literal"><span class="pre">«converter»</span></tt>) o ambos. Si no especificas una prioridad o nombre el convertidor será añadido a la pila de convertidores con una prioridad de <cite>0</cite>. Para desactiva explícitamente la inscripción por prioridad tienes que ajustar la <tt class="docutils literal"><span class="pre">priority=&quot;false&quot;</span></tt> en la definición de tu etiqueta.</p>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
 <p class="last">Utiliza la clase <tt class="docutils literal"><span class="pre">DoctrineParamConverter</span></tt> como plantilla para tus propios convertidores.</p>
@@ -169,7 +264,6 @@
   <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
   
   <div style="width:740px;margin:10px auto;">
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -195,8 +289,8 @@
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 01, 2012.
-      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Actualizado por última vez en Dec 24, 2012.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
    <script type="text/javascript">

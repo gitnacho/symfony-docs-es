@@ -12,7 +12,7 @@ Rendimiento
 Utilizando una caché de código de bytes (p. ej. *APC*)
 ------------------------------------------------------
 
-Una de las mejores (y más fáciles) cosas que debes hacer para mejorar tu rendimiento es utilizar una "caché de código de bytes". La idea de una caché de código de bytes es eliminar la necesidad de constantemente tener que volver a compilar el código fuente *PHP*. Hay disponible una serie de `cachés de código de bytes`_, algunas de las cuales son de código abierto. Probablemente, la caché de código de bytes más utilizada sea `APC`_
+Una de las mejores (y más fáciles) cosas que debes hacer para mejorar el rendimiento es utilizar una «caché de código de bytes». La idea de una caché de código de bytes es eliminar la necesidad de constantemente tener que volver a compilar el código fuente *PHP*. Hay disponible una serie de `cachés de código de bytes`_, algunas de las cuales son de código abierto. Probablemente, la caché de código de bytes más utilizada sea `APC`_
 
 Usar una caché de código de bytes realmente no tiene ningún inconveniente, y *Symfony2* se ha diseñado para desempeñarse muy bien en este tipo de entorno.
 
@@ -30,30 +30,46 @@ Por ejemplo, para desactivar estos controles en *APC*, sólo tienes que añadir 
 .. index::
    single: Rendimiento; Autocargador
 
-Usa un autocargador con caché (p.e. ``ApcUniversalClassLoader``)
-----------------------------------------------------------------
+Usa la funcionalidad de asociación de clases de ``Composer``
+------------------------------------------------------------
 
-De manera predeterminada, la *edición estándar de Symfony2* utiliza el ``UniversalClassLoader`` del archivo `autoloader.php`_. Este autocargador es fácil de usar, ya que automáticamente encontrará cualquier nueva clase que hayas colocado en los directorios registrados.
+De manera predeterminada, la *edición estándar de Symfony2* utiliza el autocargador en el archivo `autoload.php`_. Este autocargador es fácil de usar, ya que automáticamente encontrará cualquier nueva clase que hayas colocado en los directorios registrados.
 
-Desafortunadamente, esto tiene un costo, puesto que el cargador itera en todos los espacios de nombres configurados para encontrar un archivo, haciendo llamadas a ``file_exists`` hasta que finalmente encuentra el archivo que está buscando.
+Desafortunadamente, esto tiene un costo, puesto que el cargador itera en todos los espacios de nombres configurados para encontrar un archivo, haciendo llamadas a ``file_exists`` hasta que finalmente encuentra el archivo que estás buscando.
 
-La solución más sencilla es que la caché memorice la ubicación de cada clase después de encontrarla por primera vez. *Symfony* incluye una clase cargadora ---``ApcUniversalClassLoader``--- que extiende al ``UniversalClassLoader`` y almacena la ubicación de las clases en *APC*.
+La solución más sencilla es decirle a ``Composer`` que construya un «mapa de clases» (es decir, un gran arreglo con la ubicación de todas las clases). Esto se puede hacer desde la línea de ordenes, y se podría convertir en parte de tu proceso de despliegue:
 
-Para utilizar este cargador de clases, sólo tienes que adaptar tu :file:`autoloader.php` como sigue:
+.. code-block:: bash
 
-.. code-block:: php
+    php composer.phar dump-autoload --optimize
 
-    // app/autoload.php
-    require __DIR__.'/../vendor/symfony/src/Symfony/Component/ClassLoader/ApcUniversalClassLoader.php';
+Internamente, esto construye el gran arreglo con el mapa de clases en ``vendor/composer/autoload_namespaces.php``.
 
-    use Symfony\Component\ClassLoader\ApcUniversalClassLoader;
+Memorizando en caché el autocargador con *APC*
+----------------------------------------------
 
-    $loader = new ApcUniversalClassLoader('some caching unique prefix');
+Otra solución es memorizar en caché la ubicación de cada clase después de localizarla
+por primera vez. *Symfony* viene con una clase ---:class:`Symfony\\Component\\ClassLoader\\ApcClassLoader`--- que hace eso exactamente. Para usarla, sólo adapta tu archivo del controlador frontal.
+Si estás utilizando la distribución estándar, este código ya debe estar disponible como comentarios en este archivo::
+
+    // app.php
+    // ...
+
+    $loader = require_once __DIR__.'/../app/bootstrap.php.cache';
+
+    // Usa APC para mejorar el rendimiento de la carga automática
+    // Cambia 'sf2' por el prefijo que desees a fin de evitar
+    // conflictos de clave con otra aplicación.
+    /*
+    $loader = new ApcClassLoader('sf2', $loader);
+    $loader->register(true);
+    */
+
     // ...
 
 .. note::
 
-    Al utilizar el cargador *APC* automático, si agregas nuevas clases, las encontrará automáticamente y todo funcionará igual que antes (es decir, no hay razón para "limpiar" la caché). Sin embargo, si cambias la ubicación de un determinado espacio de nombres o prefijo, tendrás que limpiar tu caché *APC*. De lo contrario, el cargador aún buscará en la ubicación anterior todas las clases dentro de ese espacio de nombres.
+    Al utilizar el cargador automático *APC*, si agregas nuevas clases, las encontrará automáticamente y todo funcionará igual que antes (es decir, no hay razón para «limpiar» la caché). Sin embargo, si cambias la ubicación de un determinado espacio de nombres o prefijo, tendrás que limpiar tu caché *APC*. De lo contrario, el cargador aún buscará en la ubicación anterior todas las clases dentro de ese espacio de nombres.
 
 .. index::
    single: Rendimiento; Archivos de arranque
@@ -73,14 +89,14 @@ Ten en cuenta que hay dos desventajas cuando utilizas un archivo de arranque:
 
 * En la depuración, será necesario colocar puntos de interrupción dentro del archivo de arranque.
 
-Si estás utilizando la *edición estándar de Symfony2*, los archivos de arranque se reconstruyen automáticamente después de actualizar las bibliotecas de proveedores a través de la orden ``php bin/vendors install``.
+Si estás utilizando la *edición estándar de Symfony2*, los archivos de arranque se reconstruyen automáticamente después de actualizar las bibliotecas de proveedores a través de la orden ``php composer.phar install``.
 
 Archivos de arranque y caché de código de bytes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Incluso cuando utilizas código de bytes en caché, el rendimiento mejorará cuando utilices un archivo de arranque ya que habrá menos archivos en los cuales supervisar los cambios. Por supuesto, si esta función está desactivada en la caché del código de bytes (por ejemplo, ``apc.stat = 0`` en *APC*), ya no hay una razón para utilizar un archivo de arranque.
+Incluso cuando utilizas código de bytes en caché, el rendimiento mejorará cuando utilices un archivo de arranque ya que habrá menos archivos en los cuales supervisar cambios. Por supuesto, si esta función está desactivada en la caché del código de bytes (por ejemplo, ``apc.stat = 0`` en *APC*), no existe una razón para utilizar un archivo de arranque.
 
 .. _`cachés de código de bytes`: http://en.wikipedia.org/wiki/List_of_PHP_accelerators
 .. _`APC`: http://www.php.net/manual/es/book.apc.php
-.. _`autoloader.php`: https://github.com/symfony/symfony-standard/blob/master/app/autoload.php
-.. _`archivo de arranque`: https://github.com/sensio/SensioDistributionBundle/blob/2.0/Resources/bin/build_bootstrap.php
+.. _`autoload.php`: https://github.com/symfony/symfony-standard/blob/master/app/autoload.php
+.. _`archivo de arranque`: https://github.com/sensio/SensioDistributionBundle/blob/master/Composer/ScriptHandler.php

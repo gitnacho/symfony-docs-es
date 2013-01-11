@@ -1,0 +1,219 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo generar URL y enviar mensajes de correo electrónico desde la consola &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Consola" href="index.html" />
+    <link rel="next" title="Cómo habilitar el registro cronológico en la consola de ordenes" href="logging.html" />
+    <link rel="prev" title="Cómo usar la consola" href="usage.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="logging.html" title="Cómo habilitar el registro cronológico en la consola de ordenes"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="usage.html" title="Cómo usar la consola"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Consola</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-generar-url-y-enviar-mensajes-de-correo-electronico-desde-la-consola">
+<span id="index-0"></span><h1>Cómo generar <em>URL</em> y enviar mensajes de correo electrónico desde la consola<a class="headerlink" href="#como-generar-url-y-enviar-mensajes-de-correo-electronico-desde-la-consola" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Desafortunadamente, el contexto de la línea de ordenes no sabe nada de tu servidor virtual o nombre de dominio. Esto significa que si generas <em>URL</em> absolutas dentro de una orden de consola, probablemente terminarás con algo inútil similar a <tt class="docutils literal"><span class="pre">http://localhost/foo/bar</span></tt>.</p>
+<p>Para solucionar este problema, necesitas configurar el «contexto de la petición», que es una caprichosa manera de decir que necesitas configurar el entorno para que sepa qué <em>URL</em> debe utilizar al generar direcciones <em>URL</em>.</p>
+<p>Hay dos maneras de configurar el contexto de la petición: a nivel de aplicación y por orden.</p>
+<div class="section" id="configurando-el-contexto-de-la-peticion-a-nivel-global">
+<h2>Configurando el contexto de la petición a nivel global<a class="headerlink" href="#configurando-el-contexto-de-la-peticion-a-nivel-global" title="Enlazar permanentemente con este título">¶</a></h2>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>Los parámetros <tt class="docutils literal"><span class="pre">host</span></tt> y <tt class="docutils literal"><span class="pre">scheme</span></tt> están disponibles a partir de <em>Symfony 2.1</em></p>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.2: </span>El parámetro <tt class="docutils literal"><span class="pre">base_url</span></tt> está disponible desde <em>Symfony 2.2</em></p>
+<p>Para configurar el contexto de la petición &#8212;el cual utiliza el generador de <em>URL</em>&#8212; puedes redefinir los parámetros que utiliza como valores predefinidos para cambiar el servidor (<tt class="docutils literal"><span class="pre">localhost</span></tt>) y esquema (<tt class="docutils literal"><span class="pre">http</span></tt>) predeterminado. A partir de <em>Symfony 2.2</em> también puedes configurar la ruta base siempre y cuando <em>Symfony</em> no se esté ejecutando en el directorio raíz.</p>
+<p>Ten en cuenta que esto no impacta directamente en las <em>URL</em> generadas a través de peticiones web normales, ya que se sustituyen los valores predeterminados.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/parameters.yml</span>
+<span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">router.request_context.host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">example.org</span>
+    <span class="l-Scalar-Plain">router.request_context.scheme</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">https</span>
+    <span class="l-Scalar-Plain">router.request_context.base_url</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">my/path</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/parameters.xml --&gt;</span>
+<span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+
+<span class="nt">&lt;container</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/dic/services&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;parameters&gt;</span>
+        <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;router.request_context.host&quot;</span><span class="nt">&gt;</span>example.org<span class="nt">&lt;/parameter&gt;</span>
+        <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;router.request_context.scheme&quot;</span><span class="nt">&gt;</span>https<span class="nt">&lt;/parameter&gt;</span>
+        <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;router.request_context.base_url&quot;</span><span class="nt">&gt;</span>my/path<span class="nt">&lt;/parameter&gt;</span>
+    <span class="nt">&lt;/parameters&gt;</span>
+<span class="nt">&lt;/container&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config_test.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;router.request_context.host&#39;</span><span class="p">,</span> <span class="s1">&#39;example.org&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;router.request_context.scheme&#39;</span><span class="p">,</span> <span class="s1">&#39;https&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;router.request_context.base_url&#39;</span><span class="p">,</span> <span class="s1">&#39;my/path&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="configurando-el-contexto-de-la-peticion-por-orden">
+<h2>Configurando el contexto de la petición por orden<a class="headerlink" href="#configurando-el-contexto-de-la-peticion-por-orden" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para cambiarlo sólo en una orden sencillamente puede recuperar el contexto del servicio de la petición y sustituir sus opciones:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Command/DemoCommand.php</span>
+
+<span class="c1">// ...</span>
+<span class="k">class</span> <span class="nc">DemoCommand</span> <span class="k">extends</span> <span class="nx">ContainerAwareCommand</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="k">function</span> <span class="nf">execute</span><span class="p">(</span><span class="nx">InputInterface</span> <span class="nv">$input</span><span class="p">,</span> <span class="nx">OutputInterface</span> <span class="nv">$output</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$context</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getContainer</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;router&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">getContext</span><span class="p">();</span>
+        <span class="nv">$context</span><span class="o">-&gt;</span><span class="na">setHost</span><span class="p">(</span><span class="s1">&#39;example.com&#39;</span><span class="p">);</span>
+        <span class="nv">$context</span><span class="o">-&gt;</span><span class="na">setScheme</span><span class="p">(</span><span class="s1">&#39;https&#39;</span><span class="p">);</span>
+        <span class="nv">$context</span><span class="o">-&gt;</span><span class="na">setBaseUrl</span><span class="p">(</span><span class="s1">&#39;my/path&#39;</span><span class="p">);</span>
+
+        <span class="c1">// ... tu código aquí</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="con-cola-de-memoria">
+<h2>Con cola de memoria<a class="headerlink" href="#con-cola-de-memoria" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El envío de mensajes de correo electrónico en una orden de consola funciona de la misma manera descrita en el artículo <a class="reference internal" href="../email/email.html"><em>Cómo enviar correo electrónico</em></a> del recetario, salvo que esta utiliza memoria de la cola de impresión.</p>
+<p>Cuando se utiliza memoria de la cola (consulta el <a class="reference internal" href="../email/spool.html"><em>Cómo formar en la cola mensajes de correo electrónico</em></a> del recetario para más información), debes tener en cuenta que debido a la forma en que <em>Symfony</em> se maneja de consola de ordenes, los mensajes de correo electrónico no se envían automáticamente. Debes tener cuidado de vaciar tú mismo la cola. Utiliza el siguiente código para enviar mensajes de correo electrónico dentro de tu orden de consola:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getContainer</span><span class="p">();</span>
+<span class="nv">$mailer</span> <span class="o">=</span> <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">);</span>
+<span class="nv">$spool</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="o">-&gt;</span><span class="na">getTransport</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getSpool</span><span class="p">();</span>
+<span class="nv">$transport</span> <span class="o">=</span> <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;swiftmailer.transport.real&#39;</span><span class="p">);</span>
+
+<span class="nv">$spool</span><span class="o">-&gt;</span><span class="na">flushQueue</span><span class="p">(</span><span class="nv">$transport</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Otra opción es crear un ambiente que sólo sea utilizado por esa orden de consola y utilizar un método diferente en la cola de impresión.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Sólo es necesario tener cuidado de la cola de impresión cuando se utiliza memoria de la cola de impresión.
+Si estás utilizando un archivo para la cola (o no utilizas la cola de impresión), no es necesario vaciar manualmente la cola dentro de la orden.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="logging.html" title="Cómo habilitar el registro cronológico en la consola de ordenes"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="usage.html" title="Cómo usar la consola"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" >Consola</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

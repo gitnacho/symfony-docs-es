@@ -1,0 +1,226 @@
+Anotaciones
+-----------
+
+``@Inject``
+~~~~~~~~~~~
+
+Esta marca una propiedad o parámetro para inyección::
+
+.. code-block:: php
+
+    <?php
+
+    use JMS\DiExtraBundle\Annotation\Inject;
+
+    class Controller
+    {
+        /**
+         * @Inject("security.context", required = false)
+         */
+        private $securityContext;
+        
+        /**
+         * @Inject("%kernel.cache_dir%")
+         */
+        private $cacheDir;
+        
+        /**
+         * @Inject
+         */
+        private $session;
+    }
+
+.. tip :: 
+
+    Si no especificas el servicio explícitamente, intentaremos deducirlo basándonos en el nombre de la propiedad o parámetro.
+
+``@InjectParams``
+~~~~~~~~~~~~~~~~~
+
+Esta marca los parámetros de un método para inyección::
+
+.. code-block:: php
+
+    <?php
+
+    use JMS\DiExtraBundle\Annotation\Inject;
+    use JMS\DiExtraBundle\Annotation\InjectParams;
+    use JMS\DiExtraBundle\Annotation\Service;
+
+    /**
+     * @Service
+     */
+    class Listener
+    {
+        /**
+         * @InjectParams({
+         *     "em" = @Inject("doctrine.entity_manager")
+         * })
+         */
+        public function __construct(EntityManager $em, Session $session)
+        {
+            // ...
+        }
+    }
+    
+Si no defines todos los parámetros en la asignación de parámetros, trataremos de adivinar cuáles servicios se deben inyectar basándonos en el nombre de los demás parámetros.
+
+``@Service``
+~~~~~~~~~~~~
+
+Marca una clase como un servicio::
+
+.. code-block:: php
+
+    <?php
+
+    use JMS\DiExtraBundle\Annotation\Service;
+
+    /**
+     * @Service("some.service.id", parent="another.service.id", public=false)
+     */
+    class Listener
+    {
+    }
+
+Si no defines explícitamente un identificador del servicio, entonces se generará uno predeterminado basado en el nombre completamente cualificado de la clase.
+
+``@Tag``
+~~~~~~~~
+
+Añade una etiqueta al servicio::
+
+.. code-block:: php
+
+    <?php
+
+    use JMS\DiExtraBundle\Annotation\Service;
+    use JMS\DiExtraBundle\Annotation\Tag;
+
+    /**
+     * @Service
+     * @Tag("doctrine.event_listener", attributes = {"event" = "postGenerateSchema", lazy=true})
+     */
+    class Listener
+    {
+        // ...
+    }
+
+``@Observe``
+~~~~~~~~~~~~
+
+Automáticamente registra un método como escucha de un determinado evento::
+
+.. code-block:: php
+
+    <?php
+
+    use JMS\DiExtraBundle\Annotation\Observe;
+    use JMS\DiExtraBundle\Annotation\Service;
+
+    /**
+     * @Service
+     */
+    class RequestListener
+    {
+        /**
+         * @Observe("kernel.request", priority = 255)
+         */
+        public function onKernelRequest()
+        {
+            // ...
+        }
+    }
+
+``@Validator``
+~~~~~~~~~~~~~~
+
+Automáticamente registra la clase como restricción de validación para el componente ``Validador``::
+
+.. code-block:: php
+
+    <?php
+
+    use JMS\DiExtraBundle\Annotation\Validator;
+    use Symfony\Component\Validator\Constraint;
+    use Symfony\Component\Validator\ConstraintValidator;
+    
+    /**
+     * @Validator("my_alias")
+     */
+    class MyValidator extends ConstraintValidator
+    {
+        // ...
+    }
+    
+    class MyConstraint extends Constraint
+    {
+        // ...
+        public function validatedBy()
+        {
+            return 'my_alias';
+        }
+    }
+
+La anotación ``@Validator`` además implica la anotación ``@Service``, si no la especificas explícitamente.
+Los alias que se pasan a la anotación ``@Validator`` deben coincidir con la cadena devuelta desde el método ``validatedBy`` de tu restricción.
+
+``@FormType``
+~~~~~~~~~~~~~
+
+Automáticamente registra la clase suministrada como un tipo ``form`` en el componente ``Form`` de *Symfony2*.
+
+.. code-block:: php
+
+    <?php
+    
+    use JMS\DiExtraBundle\Annotation\FormType;
+    use Symfony\Component\Form\AbstractType;
+    
+    /**
+     * @FormType
+     */
+    class MyFormType extends AbstractType
+    {
+        // ...
+        
+        public function getName()
+        {
+            return 'my_form';
+        }
+    }
+
+    // Controller.php
+    $form = $this->formFactory->create('my_form');
+    
+.. note :: 
+
+    ``@FormType`` implica ``@Service`` si no se definió explícitamente.
+    
+``@DoctrineListener``
+~~~~~~~~~~~~~~~~~~~~~
+
+Automáticamente registra la clase dada como escucha en el *ORM* de *Doctrine*:
+
+.. code-block:: php
+
+    <?php
+
+    use JMS\DiExtraBundle\Annotation\DoctrineListener;
+    
+    /**
+     * @DoctrineListener(
+     *     events = {"prePersist", "preUpdate"}, 
+     *     connection = "default", 
+     *     lazy = true, 
+     *     priority = 0,
+     * )
+    class MyListener
+    {
+        // ...
+    }
+
+.. note ::
+
+    ``@DoctrineListener`` implica ``@Service`` si no se definió explícitamente.    
+

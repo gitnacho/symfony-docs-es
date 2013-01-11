@@ -1,0 +1,124 @@
+.. index::
+    single: Ayudantes de consola; Ayudantes de diálogo
+
+Ayudantes de diálogo
+====================
+
+El clase :class:`Symfony\\Component\\Console\\Helper\\DialogHelper` proporciona
+funciones para solicitar más información al usuario. Estos se incluyen en el conjunto de ayudantes predefinido, el cual puedes obtener llamando al método :method:`Symfony\\Component\\Console\\Command\\Command::getHelperSet`::
+
+    $dialog = $this->getHelperSet()->get('dialog');
+
+Todos los métodos dentro de los ayudantes de diálogo tienen una clase :class:`Symfony\\Component\\Console\\Output\\OutputInterface` como primer argumento, la pregunta como segundo argumento y el valor predefinido como último argumento.
+
+Pidiendo confirmación al usuario
+--------------------------------
+
+Supón que quieres confirmar una acción antes de ejecutarla realmente. Añade lo siguiente a tu orden::
+
+    // ...
+    if (!$dialog->askConfirmation(
+            $output,
+            '<question>Continue with this action?</question>',
+            false
+        )) {
+        return;
+    }
+
+En este caso, se preguntará al usuario «¿Continúar con esta acción?», y regresará
+``true`` si el usuario respondió con ``y`` o ``false`` en cualquier otro caso. El tercer argumento de ``askConfirmation`` es el valor predeterminado que se devuelve si el usuario no introduce algo.
+
+Pidiendo información al usuario
+-------------------------------
+
+También puedes preguntar algó más complejo que una sencilla respuesta sí/no. Por ejemplo, si quieres saber un nombre de paquete, puedes añadir esto a tu orden::
+
+    // ...
+    $bundle = $dialog->ask(
+        $output,
+        'Please enter the name of the bundle',
+        'AcmeDemoBundle'
+    );
+
+Se pedirá al usuario «Por favor, introduce el nombre del paquete». El usuario escribe algún nombre, el cual será devuelto por el método ``ask``. Si lo deja vacío, el valor predefinido (``AcmeDemoBundle`` aquí) será regresado.
+
+Ocultando la respuesta del usuario
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2
+    El método ``askHiddenResponse`` se añadió en *Symfony 2.2*.
+
+También puedes hacer la pregunta y ocultar la respuesta. Esto es particularmente conveniente para contraseñas::
+
+    $dialog = $this->getHelperSet()->get('dialog');
+    $password = $dialog->askHiddenResponse(
+        $output,
+        'What is the database password?',
+        false
+    );
+
+.. caution::
+
+    Cuándo pides una respuesta oculta, *Symfony* utilizará o bien un binario, cambiará al modo ``stty`` o utilizará algún otro truco para esconder la respuesta. Si ninguno está disponible, se replegará y dejará la respuesta visible a no ser que pases ``false`` como tercer argumento tal cómo en el ejemplo anterior. En este caso, lanzará una excepción en tiempo de ejecución (``RuntimeException``).
+
+Validando la respuesta
+----------------------
+
+Incluso, puedes validar la respuesta. Por ejemplo, en el último fragmento de código solicitaste el nombre del paquete. Siguiendo las convenciones de nomenclatura de *Symfony2*, se tiene que sufijar con ``Bundle``. Puedes validar esto utilizando el método :method:`Symfony\\Component\\Console\\Helper\\DialogHelper::askAndValidate`::
+
+    // ...
+    $bundle = $dialog->askAndValidate(
+        $output,
+        'Please enter the name of the bundle',
+        function ($answer) {
+            if ('Bundle' !== substr($answer, -6)) {
+                throw new \RunTimeException(
+                    'The name of the bundle should be suffixed with \'Bundle\''
+                );
+            }
+        },
+        false,
+        'AcmeDemoBundle'
+    );
+
+Estos métodos tienen 2 nuevos argumentos, la firma completa es::
+
+    askAndValidate(
+        OutputInterface $output, 
+        string|array $question, 
+        callback $validator, 
+        integer $attempts = false, 
+        string $default = null
+    )
+
+El ``$validator`` es una retrollamada que maneja la validación. Este debe lanzar una excepción si hay algo incorrecto. El mensaje de excepción es mostrado en la consola, por lo tanto es una buena práctica poner alguna información útil en él.
+
+Puedes poner el número máximo de veces a preguntar en el argumento ``$attempts``.
+Si alcanzas este número máximo utilizas el valor predeterminado, el cual es dado en el último argumento. Utilizar ``false`` significa que la cantidad de intentos es infinita.
+El usuario será preguntado mientras proporcione una respuesta nula y sólo será capaz de proceder si su entrada es válida.
+
+Ocultando la respuesta del usuario
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2
+    El método ``askHiddenResponseAndValidate`` se añadió en *Symfony 2.2*.
+
+También puedes hacer una pregunta y validar una respuesta oculta::
+
+    $dialog = $this->getHelperSet()->get('dialog');
+
+    $validator = function ($value) {
+        if (trim($value) == '') {
+            throw new \Exception('The password can not be empty');
+        }
+    };
+
+    $password = $dialog->askHiddenResponseAndValidate(
+        $output,
+        'Please enter the name of the widget',
+        $validator,
+        20,
+        false
+    );
+
+Si quieres permitir que la respuesta sea visible si ---por alguna razón--- no se puede ocultar, pasa ``true`` como quinto argumento.

@@ -18,91 +18,132 @@ Cada parte se explica en la siguiente sección.
 
         # app/config/security.yml
         security:
-            access_denied_url: /foo/error403
-
-            always_authenticate_before_granting: false
+            access_denied_url:    ~ # Ejemplo: /foo/error403
 
             # la estrategia puede ser: none, migrate, invalidate
-            session_fixation_strategy: migrate
-
+            session_fixation_strategy:  migrate
+            hide_user_not_found:  true
+            always_authenticate_before_granting:  false
+            erase_credentials:    true
             access_decision_manager:
-                strategy: affirmative
-                allow_if_all_abstain: false
-                allow_if_equal_granted_denied: true
-
+                strategy:             affirmative
+                allow_if_all_abstain:  false
+                allow_if_equal_granted_denied:  true
             acl:
-                connection: default # any name configured in doctrine.dbal section
-                tables:
-                    class: acl_classes
-                    entry: acl_entries
-                    object_identity: acl_object_identities
-                    object_identity_ancestors: acl_object_identity_ancestors
-                    security_identity: acl_security_identities
+
+                # cualquier nombre configurado en la sección doctrine.dbal
+                connection:           ~
                 cache:
-                    id: service_id
-                    prefix: sf2_acl_
+                    id:                   ~
+                    prefix:               sf2_acl_
+                provider:             ~
+                tables:
+                    class:                acl_classes
+                    entry:                acl_entries
+                    object_identity:      acl_object_identities
+                    object_identity_ancestors:  acl_object_identity_ancestors
+                    security_identity:    acl_security_identities
                 voter:
-                    allow_if_object_identity_unavailable: true
+                    allow_if_object_identity_unavailable:  true
 
             encoders:
-                cualquiernombre:
-                    class: Acme\DemoBundle\Entity\User
-                Acme\DemoBundle\Entity\User: sha512
-                Acme\DemoBundle\Entity\User: plaintext
-                Acme\DemoBundle\Entity\User:
-                    algorithm: sha512
-                    encode_as_base64: true
-                    iterations: 5000
-                Acme\DemoBundle\Entity\User:
-                    id: my.custom.encoder.service.id
+                # Ejemplos:
+                Acme\DemoBundle\Entity\Usuario1: sha512
+                Acme\DemoBundle\Entity\Usuario2:
+                    algorithm:           sha512
+                    encode_as_base64:    true
+                    iterations:          5000
 
-            providers:
+                # codificador PBKDF2
+                # ve la nota sobre PBKDF2 abajo para detalles sobre seguridad y velocidad
+                Acme\Your\Class\Name:
+                    algorithm:            pbkdf2
+                    hash_algorithm:       sha512
+                    encode_as_base64:     true
+                    iterations:           1000
+
+                # Ejemplo opciones/valores por lo tanto un codificador personalizado se puede ver así
+                Acme\Tu\Nombre\De\Clase:
+                    algorithm:            ~
+                    ignore_case:          false
+                    encode_as_base64:     true
+                    iterations:           5000
+                    id:                   ~
+
+            providers:            # Requerido
+                # Ejemplos:
                 memory:
-                    name: memory
+                    name:                memory
                     users:
-                        foo: { password: foo, roles: ROLE_USER }
-                        bar: { password: bar, roles: [ROLE_USER, ROLE_ADMIN] }
+                        foo:
+                            password:            foo
+                            roles:               ROLE_USER
+                        bar:
+                            password:            bar
+                            roles:               [ROLE_USER, ROLE_ADMIN]
                 entity:
-                    entity: { class: SecurityBundle:User, property: username }
+                    entity:
+                        class:               SecurityBundle:User
+                        property:            username
 
-            factories:
-                MyFactory: "%kernel.root_dir%/../src/Acme/DemoBundle/Resources/config/security_factories.xml"
+                # Ejemplo de proveedor personalizado
+                un_proveedor_personalizado:
+                    id:                   ~
+                    chain:
+                        providers:            []
 
-            firewalls:
+            firewalls:            # Requerido
+                # Ejemplos:
                 cualquiernombre:
                     pattern: .*
                     request_matcher: un.id.de.servicio
                     access_denied_url: /foo/error403
                     access_denied_handler: un.id.de.servicio
                     entry_point: un.id.de.servicio
-                    provider: name
+                    provider: una_clave_de_arriba
                     context: name
                     stateless: false
                     x509:
-                        provider: name
+                        provider: una_clave_de_arriba
                     http_basic:
-                        provider: name
+                        provider: una_clave_de_arriba
                     http_digest:
-                        provider: name
+                        provider: una_clave_de_arriba
                     form_login:
+                        # aquí es dónde se presenta el formulario de acceso
                         check_path: /login_check
+
+                        # el usuario es redirigido aquí cuando necesita ingresar
                         login_path: /login
+
+                        # si es 'true', reenvía al usuario al formulario de acceso en lugar de redirigirlo
                         use_forward: false
+
+                        # opciones para redirigir en ingreso satisfactorio (lee más adelante)
                         always_use_default_target_path: false
-                        default_target_path: /
-                        target_path_parameter: _target_path
-                        use_referer: false
-                        failure_path: /foo
+                        default_target_path:            /
+                        target_path_parameter:          _target_path
+                        use_referer:                    false
+
+                        # opciones para redirigir en ingreso fallido (lee más adelante)
+                        failure_path:    /foo
                         failure_forward: false
+                        failure_path_parameter: _failure_path
                         failure_handler: un.id.de.servicio
-                        success_handler: un.id.de.servicio
+                        success_handler: some.service.id
+
+                        # nombres de campo para el nombre de usuario y contraseña
                         username_parameter: _username
                         password_parameter: _password
+
+                        # opciones del elemento csrf
                         csrf_parameter: _csrf_token
-                        intention: authenticate
-                        csrf_provider: my.csrf_provider.id
-                        post_only: true
-                        remember_me: false
+                        intention:      authenticate
+                        csrf_provider:  my.csrf_provider.id
+
+                        # por omisión, el método del formulario de acceso DEBE ser POST, no GET
+                        post_only:      true
+                        remember_me:    false
                     remember_me:
                         token_provider: name
                         key: someS3cretKey
@@ -125,26 +166,60 @@ Cada parte se explica en la siguiente sección.
                         success_handler: un.id.de.servicio
                     anonymous: ~
 
-            access_control:
-                -
-                    path: ^/foo
-                    host: mydomain.foo
-                    ip: ^/, roles: [ROLE_A, ROLE_B]
-                    requires_channel: https
+                # Valores y opciones predefinidos para algún cortafuegos
+                un_escucha_del_cortafuegos:
+                    pattern:              ~
+                    security:             true
+                    request_matcher:      ~
+                    access_denied_url:    ~
+                    access_denied_handler:  ~
+                    entry_point:          ~
+                    provider:             ~
+                    stateless:            false
+                    context:              ~
+                    logout:
+                        csrf_parameter:       _csrf_token
+                        csrf_provider:        ~
+                        intention:            logout
+                        path:                 /logout
+                        target:               /
+                        success_handler:      ~
+                        invalidate_session:   true
+                        delete_cookies:
 
+                            # Prototipo
+                            name:
+                                path:                 ~
+                                domain:               ~
+                        handlers:             []
+                    anonymous:
+                        key:                  4f954a0667e01
+                    switch_user:
+                        provider:             ~
+                        parameter:            _switch_user
+                        role:                 ROLE_ALLOWED_TO_SWITCH
+
+            access_control:
+                requires_channel:     ~
+
+                # usa el formato urldecoded
+                path:                 ~ # Ejemplo: ^/ruta al recurso/
+                host:                 ~
+                ip:                   ~
+                methods:              []
+                roles:                []
             role_hierarchy:
-                ROLE_SUPERADMIN: ROLE_ADMIN
-                ROLE_SUPERADMIN: 'ROLE_ADMIN, ROLE_USER'
-                ROLE_SUPERADMIN: [ROLE_ADMIN, ROLE_USER]
-                anything: { id: ROLE_SUPERADMIN, value: 'ROLE_USER, ROLE_ADMIN' }
-                anything: { id: ROLE_SUPERADMIN, value: [ROLE_USER, ROLE_ADMIN] }
+                ROLE_ADMIN:      [ROLE_ORGANIZER, ROLE_USER]
+                ROLE_SUPERADMIN: [ROLE_ADMIN]
 
 .. _reference-security-firewall-form-login:
 
 Configurando el formulario de acceso
 ------------------------------------
 
-Cuando usas el escucha de autenticación ``form_login`` bajo un cortafuegos, hay varias opciones comunes para experimentar en la configuración del "formulario de acceso":
+Cuando usas el escucha de autenticación ``form_login`` bajo un cortafuegos, hay varias opciones comunes para experimentar en la configuración del «formulario de acceso»:
+
+Para más información, consulta :doc:`/cookbook/security/form_login`.
 
 Procesando el formulario de acceso
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -156,7 +231,7 @@ Procesando el formulario de acceso
 
 *   ``check_path`` (tipo: ``string``, predefinido: ``/login_check``)
     Esta es la *URL* en la cual se debe presentar el formulario de inicio de sesión. El cortafuegos intercepta cualquier petición (sólo las peticiones *POST*, por omisión) a esta *URL* y procesa las credenciales presentadas.
-    
+
     Asegúrate de que esta dirección está cubierta por el cortafuegos principal (es decir, no crees un servidor de seguridad independiente sólo para la *URL* ``check_path``).
 
 *   ``use_forward`` (tipo: ``Boolean``, predefinido: ``false``)
@@ -178,3 +253,15 @@ Redirigiendo después del inicio de sesión
 * ``default_target_path`` (tipo: ``string``, predefinido: ``/``)
 * ``target_path_parameter`` (tipo: ``string``, predefinido: ``_target_path``)
 * ``use_referer`` (tipo: ``Boolean``, predefinido: ``false``)
+
+Usando el codificador ``PBKDF2``: seguridad y velocidad
+-------------------------------------------------------
+
+El codificador `PBKDF2`_ proporciona seguridad criptográfica de alto nivel, tal como la recomendada por el Instituto Nacional de Estándares y Tecnología (NIST por *«National Institute of Standards and Technology»*).
+
+Pero usando ``PBKDF2`` también garantizas un aviso: Usándolo (con un número de iteraciones alto) ralentiza el proceso. Por lo que, ``PBKDF2`` se tendría que utilizar con precaución y muchísimo cuidado.
+
+Una buena configuración está alrededor al menos 1000 iteraciones y ``sha512``
+para el algoritmo de codificación.
+
+.. _`PBKDF2`: http://en.wikipedia.org/wiki/PBKDF2

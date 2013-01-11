@@ -1,0 +1,48 @@
+.. index::
+   single: Console; Aplicación de una sola orden
+
+Cómo construir una aplicación que sea de una sola orden
+=======================================================
+
+Cuándo construyes una herramienta para la línea de ordenes, posiblemente no necesites proporcionar varias órdenes.
+En tal caso, tener que pasar el nombre de orden cada vez es tedioso. Afortunadamente, es posible evadir esta necesidad extendiendo la ``application``::
+
+    namespace Acme\Tool;
+
+    use Symfony\Component\Console\Application;
+    use Symfony\Component\Console\Input\InputInterface;
+
+    class MyApplication extends Application
+    {
+        /**
+         * Obtiene el nombre de la orden basándose en la entrada.
+         *
+         * @param InputInterface $input The input interface
+         *
+         * @return string The command name
+         */
+        protected function getCommandName(InputInterface $input)
+        {
+            // Esto debería regresar el nombre de tu orden.
+            return 'my_command';
+        }
+
+        /**
+         * Obtiene las ordenes predefinidas que siempre tendrían que estar disponibles.
+         *
+         * @return array An array of default Command instances
+         */
+        protected function getDefaultCommands()
+        {
+            // mantiene las ordenes predefinidas del núcleo
+            // para que tengan el HelpCommand cuál es utilizado cuándo
+            // se usa la opción --help
+            $defaultCommands = parent::getDefaultCommands();
+
+            $defaultCommands[] = new MyCommand();
+
+            return $defaultCommands;
+        }
+    }
+
+Cuándo llames a tu guión de consola, entonces la orden `MyCommand` siempre será utilizada, sin tener que pasar su nombre.

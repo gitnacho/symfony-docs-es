@@ -1,0 +1,113 @@
+.. index::
+   single: Serializer
+   single: Componentes; Serializer
+
+El componente ``Serializer``
+============================
+
+   El componente ``Serializer`` se pretende sea utilizado para convertir objetos a un formato específico (*XML*, *JSON*, *Yaml*, ...) y a la inversa.
+
+Para ello, el componente ``Serializer`` sigue el siguiente sencillo esquema.
+
+.. image:: /images/components/serializer/serializer_workflow.png
+
+Como puedes ver en la imagen anterior, se utiliza un arreglo como un hombre en
+el medio. De este modo, los codificadores sólo tratarán convirtiendo **formatos** específicos en **arreglos** y viceversa. Del mismo modo, los normalizadores tratarán cambiando **objetos** específicos en **arreglos** y viceversa.
+
+La serialización es un tema complicado, y a pesar de que este componente no puede trabajar en todos los casos, puede ser una útil herramienta mientras desarrollas herramientas para serializar y deserializar tus objetos.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/Serializer);
+* :doc:`Install it via Composer </components/using_components>` (``symfony/serializer`` on `Packagist`_).
+
+Usando
+------
+
+Utilizar el componente ``Serializer`` es realmente sencillo. Sólo necesitas instalar la clase :class:`Symfony\\Component\\Serializer\\Serializer` especificando qué codificadores y normalizadores van a estar disponibles::
+
+    use Symfony\Component\Serializer\Serializer;
+    use Symfony\Component\Serializer\Encoder\XmlEncoder;
+    use Symfony\Component\Serializer\Encoder\JsonEncoder;
+    use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
+
+    $encoders = array(new XmlEncoder(), new JsonEncoder());
+    $normalizers = array(new GetSetMethodNormalizer());
+
+    $serializer = new Serializer($normalizers, $encoders);
+
+Serializando un objeto
+~~~~~~~~~~~~~~~~~~~~~~
+
+Por el bien de este ejemplo, supongamos que la siguiente clase ya existe en tu proyecto::
+
+    namespace Acme;
+
+    class Person
+    {
+        private $age;
+        private $name;
+
+        // Captadores
+        public function getName()
+        {
+            return $this->name;
+        }
+
+        public function getAge()
+        {
+            return $this->age;
+        }
+
+        // Definidores
+        public function setName($name)
+        {
+            $this->name = $name;
+        }
+
+        public function setAge($age)
+        {
+            $this->age = $age;
+        }
+    }
+
+Ahora, si queremos serializar este objeto a *JSON*, sólo necesitamos utilizar el servicio ``Serializer`` creado anteriormente::
+
+    $person = new Acme\Person();
+    $person->setName('foo');
+    $person->setAge(99);
+
+    $serializer->serialize($person, 'json'); // Produce: {"name":"foo","age":99}
+
+El primer argumento del método :method:`Symfony\\Component\\Serializer\\Serializer::serialize` es el objeto a serializar y el segundo suele escoger el codificador apropiado, en este caso :class:`Symfony\\Component\\Serializer\\Encoder\\JsonEncoder`.
+
+Deserializando un Objeto
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ahora veremos cómo hacer exactamente lo opuesto. Esta vez, la información de la clase ``Personas`` estaría codificada en formato *XML*::
+
+    $data = <<<EOF
+    <person>
+        <name>foo</name>
+        <age>99</age>
+    </person>
+    EOF;
+
+    $person = $serializer->deserialize($data,'Acme\Person','xml');
+
+En este caso, el método :method:`Symfony\\Component\\Serializer\\Serializer::deserialize` necesita tres argumentos:
+
+1. La información a descodificar
+2. El nombre de la clase a la que esta información será descodificada
+3. El codificador a utilizar para convertir esa información a un arreglo
+
+``JMSSerializationBundle``
+--------------------------
+
+Existe un popular paquete de terceros, `JMSSerializationBundle`_ y extiende (y a veces reemplaza) la funcionalidad de serialización. Este incluye la habilidad de configurar cómo se tendrían que serializar/deserializar tus objetos vía anotaciones (así como *YML*, *XML* y *PHP*), integrándolos con el *ORM* de *Doctrine*, y manejando otros casos complejos (p.e. referencias circulares).
+
+.. _`JMSSerializationBundle`: https://github.com/schmittjoh/JMSSerializerBundle
+.. _`Packagist`: https://packagist.org/packages/symfony/serializer

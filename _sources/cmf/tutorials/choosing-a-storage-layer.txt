@@ -1,0 +1,85 @@
+Eligiendo una capa de almacenamiento
+====================================
+
+Cuándo construyes un *CMS*, sin duda, la elección para la capa de almacenamiento es una de las decisiones clave a tomar. Tienes que considerar muchos factores, la buena noticia es que con todos los componentes y paquetes en el ``CMF`` nos preocupamos en proporcionar los puntos de extensión necesarios para garantizar que contamos con una **capa de almacenamiento que sigue siendo agnóstica para el CMF**.
+
+El objetivo de esta guía es explicar las consideraciones y por qué sugerimos `PHPCR <http://phpcr.github.com>`_  y `PHPCR-ODM <http://www.doctrine-project.org/projects/phpcr-odm.html>`_ como la base ideal para un *CMS*. Sin embargo, todos los componentes y paquetes se pueden integrar con otras soluciones con un muy pequeño esfuerzo.
+
+.. index:: PHPCR, ODM, ORM
+
+Requisitos para la capa de almacenamiento de un  *CMS*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Al nivel más fundamental de un *CMS* está el almacenamiento, por lo tanto el primer requisito de un *CMS* es que debe proporcionar los medios para almacenar contenido con diferentes propiedades.
+
+Un *CMS* tiene muy diferentes necesidades de almacenamiento que por ejemplo un sistema para procesar órdenes.
+Aun así observa que es enteramente posible y de hecho así se pretende que la iniciativa del ``CMF`` habilite a los desarrolladores para combinar el ``CMF`` con un sistema para procesar órdenes. Así por ejemplo, uno podría crear una solución de compra utilizando el ``CMF`` para almacenar el catalogo de productos, mientras utilizas otro sistema para mantener el inventario, datos del cliente y pedidos. Esto da lugar al segundo requisito, *un CMS debe proporcionar los medios para referenciar el contenido*, almacenando ambos dentro del *CMS*, pero también en otros sistemas.
+
+El contenido real en un *CMS* tiende a estar organizado en una estructura de árbol, imitando un sistema de archivos. Ten en cuenta que los autores de contenido podrían querer utilizar diferentes estructuras para organizar el contenido y para organizar otros aspectos como el menú y el enrutado.
+Esto nos lleva al tercer requisito, *un CMS debe proporcionar los medios para representar el contenido como una estructura de árbol*.
+Además, un cuarto requisito es que *un CMS debería permitir mantener varias estructuras de árbol independientes*.
+
+En general, los datos dentro de un *CMS* tienden a no estar estructurados. Si bien, varias páginas dentro del *CMS* podrían ser muy similares, hay una buena posibilidad de que habría muchas permutaciones que necesitarían diferentes campos extra, por lo tanto *un CMS no tiene que aplicar un esquema singular al contenido*.
+Dicho esto, a fin de mantener mejor la estructura y contenido de las capas de la interfaz de usuario que genéricamente permiten la visualización de elementos de contenido, es importante ser capaz de expresar reglas opcionales que se deben seguir y que también pueden ayudar a anexar significado semántico adicional. Así que *un CMS debe proporcionar los medios para opcionalmente definir elementos del esquema de contenido*.
+
+Este requisito en realidad también está relacionado a otra necesidad, en que un *CMS* debe facilitar a los autores de contenido la preparación de una serie de cambios en un entorno de ensayo que luego se tiene que enviar al sitio vivo en un solo paso. Esto significa que es otro requisito en que es necesario que *un CMS debe apoyar el movimiento y exportación de contenido entre estructuras de árbol independientes*.
+Ten en cuenta que la exportación puede ser útil también para las copias de seguridad.
+
+Al realizar cambios en ella sin embargo también sería útil poder versionar los conjuntos cambiados, de manera que permanezcan disponibles para fines históricos, pero también para poder revertirlos cuando sea necesario. Por lo tanto, el siguiente requisito es que un *CMS debería proporcionar la habilidad de versionar el contenido*.
+
+Puesto que vivimos en un mundo globalizado, los sitios web deben ofrecer contenido en múltiples idiomas abarcando diferentes regiones. No obstante no todas las piezas del contenido se deben traducir y eventualmente sólo algunas se deberían traducir, pero hasta entonces se le debe presentar al usuario el contenido en uno de los idiomas disponibles, por lo que *un CMS debería proporcionar la capacidad de almacenar el contenido en diferentes idiomas, con opcionales reglas alternativas*.
+
+Puesto que generalmente un *CMS* tiende a almacenar una creciente cantidad de contenido será necesario proporcionar alguna forma para que los usuarios busquen contenido, incluso, cuando el usuario sólo tiene una muy difusa idea sobre el contenido que está buscando, dando lugar al requisito de que *un CMS debe proporcionar completa capacidad de búsqueda de texto*, idealmente, aprovechando tanto la estructura del árbol de contenido como el esquema de datos.
+
+Otra necesidad popular es limitar la lectura y/o escritura de contenido a usuarios o grupos específicos. Idealmente, esta solución también se podría integrar con la estructura de árbol. Por lo que debería ser útil que *un CMS ofreciera funciones para definir el control de acceso que aproveche la estructura de árbol para gestionar rápidamente el acceso a subárboles completos*.
+
+Por último, no todos los pasos del proceso de creación de contenido los llevará a cabo la misma persona.
+De hecho, puede haber múltiples pasos, todos los cuales no los debería llevar a cabo una sola persona. En cambio algunos de los pasos incluso los podría ejecutar una máquina. Así, por ejemplo un fotógrafo puede cargar una nueva imagen, un autor de contenido puede adjuntar la foto a algún texto, entonces el sistema automáticamente genera miniaturas y optimiza la interpretación en la *web*, y finalmente, un editor decide sobre la publicación final. Por lo tanto *un CMS debe proporcionar la capacidad para ayudar en la gestión del flujo de trabajo*.
+
+Resumen
+-------
+
+Aquí tienes un resumen de los requisitos anteriores. Ten en cuenta que algunos de los requisitos tienen un *debe*, mientras otros sólo tienen un *debería*. Evidentemente dependiendo de tu caso de uso podrías priorizar las características de manera diferente:
+
+* Un *CMS* debe proporcionar un medio para almacenar contenido con diferentes propiedades
+* Un *CMS* debe proporcionar un medio para referirse al contenido
+* Un *CMS* debe proporcionar un medio para representar el contenido como una estructura de árbol
+* Un *CMS* debe proporcionar completa capacidad de búsqueda de texto
+* Un *CMS* no debería aplicar un esquema singular para el contenido
+* Un *CMS* debe proporcionar los medios para opcionalmente definir un esquema para elementos del contenido
+* Un *CMS* debería permitir mantener varias estructuras de árbol independientes
+* Un *CMS* debería ser compatible con el movimiento y exportación de contenido entre estructuras de árbol independientes
+* Un *CMS* debería proporcionar la habilidad para tener contenido versionado
+* Un *CMS* debería proporcionar la habilidad de almacenar contenido en diferentes idiomas, con opcionales reglas alternativas
+* Un *CMS* debe proporcionar la capacidad para definir controles de acceso
+* Un *CMS* debería proporcionar la capacidad para asistir en la administración de los flujos de trabajo
+
+*RDBMS*
+~~~~~~~
+
+Viendo los requisitos anteriores se pone de manifiesto que fuera de la caja un *RDBMS* es el instrumento adecuado para hacer frente a las necesidades de un *CMS*. Los *RDBMS* nunca tuvieron la intención de almacenar estructuras de árbol de contenido no estructurado. Realmente el único requisito que cubre el *RDBMS* de la lista anterior es la capacidad de almacenar contenido, alguna manera para hacer referencia al contenido, mantener múltiples estructuras de contenido independientes y un nivel básico de control de acceso y disparadores.
+
+Este no es un defecto del *RDBMS* en el sentido de que fueron diseñados simplemente para un caso de uso diferente: la capacidad de almacenar, manipular y agregar datos estructurados. Esto las hace ideales para el almacenamiento de inventarios y pedidos.
+
+Lo cual no quiere decir que es imposible construir un sistema en lo alto de un *RDBMS* que se ocupe de algunos o incluso la totalidad de los temas anteriores. Algunos *RDBMS* nativamente soportan consultas recursivas, lo cual puede ser útil para recuperar las estructuras de árbol. Incluso si falta tal soporte nativo, hay algoritmos como camino materializado y conjuntos anidados que pueden permitir un eficiente almacenamiento y recuperación de estructuras de árbol para diferentes casos de uso.
+
+El punto es, sin embargo, que se requieren estos algoritmos y código en lo alto de un *RDBMS* que también se vinculen a la lógica de negocio con un determinado *RDBMS* y/o algoritmo, aunque algunos de ellos se pueden abstraer. Así que de nuevo usando un *ORM* podrías crear un sistema para gestionar las estructuras de árbol con diferentes algoritmos que impidan la unión de la lógica de negocio del *CMS* a un algoritmo particular.
+
+Sin embargo hay que decir una vez más, que todos los paquetes y componentes del ``CMF`` se han desarrollado para aceptar cualquier *API* de almacenamiento persistente y damos la bienvenida a las contribuciones para agregar implementaciones para otros sistemas de almacenamiento. Así, por ejemplo actualmente ``RoutingExtraBundle`` sólo ofrece clases de documento para el *ODM* de *PHPCR*, pero las interfaces definidas en el componente de enrutado son de almacenamiento agnóstico y aceptaríamos una contribución para añadir soporte al *ORM* de *Doctrine*.
+
+*PHPCR*
+~~~~~~~
+
+Esencialmente *PHPCR* es un conjunto de interfaces para abordar la mayoría de los requisitos de la lista anterior.
+Esto significa que *PHPCR* es totalmente independiente del almacenamiento en el sentido de que es posible realmente poner cualquier solución de persistencia detrás de *PHPCR*. Así pues, en la misma forma que un *ORM* puede soportar diferentes algoritmos de almacenamiento de árbol a través de algún complemento, *PHPCR* tiene como objetivo proporcionar una *API* para relajar completamente las necesidades del *CMS*, por lo tanto separando limpiamente toda la lógica del negocio de tu *CMS* a causa de la elección de persistencia. Como asunto natural, la única de las características anteriores no soportada nativamente por *PHPCR* es el apoyo para las traducciones.
+
+Gracias a la disponibilidad de varias implementaciones de *PHPCR* que apoyan diversos tipos de opciones de persistencia, la creación de un *CMS* en lo alto de *PHPCR* significa que los usuarios finales tienen la capacidad de escoger y elegir lo que funciona mejor para ellos, sus recursos, su experiencia y sus necesidades de escalabilidad.
+
+Así que para los casos de uso más simples por ejemplo está una solución basada en el *DBAL* de *Doctrine* ofrecida por la implementación *PHPCR* de `Jackalope <https://github.com/jackalope/jackalope>`_ que puede utilizar el *RDBMS* de *SQLite* que viene con *PHP*. En el otro extremo del espectro ``Jackalope`` también es compatible con `Jackrabbit <http://jackrabbit.apache.org>`_ el cual apoya las agrupaciones y puede manejar eficientemente los datos en cientos de gigabytes. De manera predeterminada ``Jackrabbit`` simplemente utiliza el sistema de archivos para la persistencia, pero también puede utilizar un *RDBMS*. Sin embargo, futuras versiones apoyarán a *MongoDB* y otras soluciones *NoSQL* como *CouchDB* o *Cassandra* es totalmente posible. Una vez más, el cambio de la solución de persistencia no requerirá cambios en el código puesto que la lógica de negocio sólo va unida a las interfaces *PHPCR*.
+
+Por favor ve :doc:`installing-configuring-doctrine-phpcr-odm` para más detalles sobre las implementaciones *PHPCR* disponibles y sus requisitos y la forma de configurar *Symfony2* con una de ellas.
+
+*ODM* de *PHPCR*
+~~~~~~~~~~~~~~~~
+
+Cuando mencione arriba utilizar *PHPCR* no significa renunciar a un *RDBMS*. En muchas maneras, puedes considerar a *PHPCR* una solución *ORM* especializada para *CMS*. No obstante, mientras *PHPCR* trabaja con los así llamados *nodos*, en un *ORM* las personas esperan ser capaces de asignar instancias de clase a una capa de persistencia. Esto, exactamente es lo que proporciona el *ODM* de *PHPCR*. Sigue las mismas clases de interfaz del *ORM* de *Doctrine* al mismo tiempo que expone todas las capacidades adicionales de *PHPCR*, como los árboles y el versionado. Por otra parte, también ofrece soporte nativo para traducciones, que cubren la única omisión del *PHPCR* de la lista de requisitos para una solución de almacenamiento de un *CMS* mencionada anteriormente.

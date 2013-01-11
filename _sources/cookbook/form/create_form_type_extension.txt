@@ -1,0 +1,274 @@
+.. index::
+   single: Formulario; Extendiendo el tipo Form
+
+Cómo crear una extensión del tipo «Form»
+========================================
+
+Los :doc:`Tipos de campo de formulario personalizados <create_custom_field_type>` son buenos cuando necesitas tipos de campo con un propósito específico, tal como un selector de género, o una entrada de *RFC* (en méxico, Registro Federal de Causantes o *VAT* en los paises europeos).
+
+Pero a veces, en realidad no necesitas añadir nuevos tipos de campos ---deseas
+agregar características en lo alto de tipos existentes---. Aquí es donde entran en juego la extensiones del tipo «Form».
+
+Las extensiones del tipo «Form» tienen 2 casos de uso principales:
+
+#. ¿Quieres añadir una **característica genérica a varios tipos** (por ejemplo, añadir un texto de «ayuda» a cada tipo de campo);
+#. ¿Quieres añadir una **característica específica a un solo tipo** (tal como la adición de una característica «download» al tipo de campo «file»).
+
+En ambos casos, puede ser posible lograr tu objetivo personalizando la representación del formulario, o con tipos de campos de formulario personalizados. Pero usar extensiones del tipo «Form» puede ser más limpio (al limitar la cantidad de lógica del negocio en plantillas) y más flexible (puedes agregar varias extensiones de tipo a un solo tipo «form»).
+
+Las extensiones del tipo «Form» pueden conseguir la mayoría de los tipos de campos personalizados que puedes hacer, pero en vez de ser los tipos de campo propios, **estos se conectan a los tipos existentes**.
+
+Imagina que administras una entidad ``Media``, y que cada medio se asocia a un archivo. Tu formulaio ``Media`` utiliza un tipo de archivo, pero cuando editas la entidad,
+te gustaría ver su imagen dibujada automáticamente junto a la entrada de archivo.
+
+Por supuesto, lo podrías hacer personalizando la representación de este en una
+plantilla. Pero las extensiones de tipo de campo te permiten hacer esto de una manera mucho más agradable.
+
+Definiendo la extensión del tipo «Form»
+---------------------------------------
+
+Tu primera tarea será crear la clase de la extensión del tipo «Form». La llamarás ``ImageTypeExtension``. Por norma gemeral, las extensiones de «form» viven en el directorio ``Form\Extension`` de uno de tus paquetes.
+
+Al crear una extensión del tipo «form», puedes implementar la interfaz :class:`Symfony\\Component\\Form\\FormTypeExtensionInterface` o extender la clase :class:`Symfony\\Component\\Form\\AbstractTypeExtension`. En la mayoría de los casos, es más fácil extender la clase abstracta::
+
+    // src/Acme/DemoBundle/Form/Extension/ImageTypeExtension.php
+    namespace Acme\DemoBundle\Form\Extension;
+
+    use Symfony\Component\Form\AbstractTypeExtension;
+
+    class ImageTypeExtension extends AbstractTypeExtension
+    {
+        /**
+         * Devuelve el nombre del tipo que será extendido.
+         *
+         * @return string The name of the type being extended
+         */
+        public function getExtendedType()
+        {
+            return 'file';
+        }
+    }
+
+El único  método que **necesitas** implementar es la función ``getExtendedType``.
+Esta se usa para indicar el nombre del tipo «form» que será extendido
+por tu extensión.
+
+.. tip::
+
+    El valor que regresas en el método ``getExtendedType`` corresponde al valor devuelto por el método ``getName`` en la clase del tipo «form» que deseas extender.
+
+Además de la función ``getExtendedType``, probablemente quieras sustituir uno de los siguientes métodos:
+
+* ``buildForm()``
+
+* ``buildView()``
+
+* ``setDefaultOptions()``
+
+* ``finishView()``
+
+Para más información sobre que hacen estos métodos, puedes referirte al artículo
+:doc:`Creando tipos de campo personalizados </cookbook/form/create_custom_field_type>` en el recetario.
+
+Registrando como servicio tu extensión del tipo «Form»
+------------------------------------------------------
+
+El siguiente paso es dar a conocer tu extensión a *Symfony*. Todo lo que tienes que hacer es declararla como un servicio utilizando la etiqueta ``form.type_extension``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            acme_demo_bundle.image_type_extension:
+                class: Acme\DemoBundle\Form\Extension\ImageTypeExtension
+                tags:
+                        - { name: form.type_extension, alias: file }
+
+    .. code-block:: xml
+
+        <service id="acme_demo_bundle.image_type_extension" class="Acme\DemoBundle\Form\Extension\ImageTypeExtension">
+            <tag name="form.type_extension" alias="file" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('acme_demo_bundle.image_type_extension', 'Acme\DemoBundle\Form\Extension\ImageTypeExtension')
+            ->addTag('form.type_extension', array('alias' => 'file'));
+
+La clave ``alias`` de la etiqueta es el tipo de campo al que esta extensión se debe aplicar. En tu caso, cuando quieras extender el tipo de campo ``file``, utilizarás ``file`` como un alias.
+
+Añadiendo lógica del negocio a la extensión
+-------------------------------------------
+
+El objetivo de tu extensión es mostrar bonitas imágenes junto a las entradas de archivo (cuándo el modelo subyacente contenga imágenes). Para ese propósito, supón que utilizas un enfoque similar al descrito en artículo
+:doc:`Cómo manejar archivos subidos con Doctrine </cookbook/doctrine/file_uploads>`:
+Tienes un modelo de Medios con una propiedad ``file`` (correspondiente al campo de archivo en el formulario) y una propiedad ``path`` (correspondiente a la ruta de la imagen en la base de datos)::
+
+    // src/Acme/DemoBundle/Entity/Media.php
+    namespace Acme\DemoBundle\Entity;
+
+    use Symfony\Component\Validator\Constraints as Assert;
+
+    class Media
+    {
+        // ...
+
+        /**
+         * @var string The path - typically stored in the database
+         */
+        private $path;
+
+        /**
+         * @var \Symfony\Component\HttpFoundation\File\UploadedFile
+         * @Assert\File(maxSize="2M")
+         */
+        public $file;
+
+        // ...
+
+        /**
+         * Obtiene la url de la imagen
+         *
+         * @return null|string
+         */
+        public function getWebPath()
+        {
+            // ... $webPath comienza la url completa de la imagen, para utilizarla en plantillas
+
+            return $webPath;
+        }
+    }
+
+Tu clase de la extensión del tipo «form» deberá hacer dos cosas para extender
+el tipo ``file`` de «form»:
+
+#. Sustituye el método ``setDefaultOptions`` con el fin de añadir una opción ``image_path``;
+#. Sustituye los métodos ``buildForm`` y ``buildView`` para pasar la *URL* de la imagen a la vista.
+
+La lógica es la siguiente: cuándo añades un campo de tipo ``file`` al formulario, serás capaz de especificar una nueva opción: ``image_path``. Esta opción dirá al campo ``file`` cómo conseguir la *URL* real de la imagen para mostrarla en la vista::
+
+    // src/Acme/DemoBundle/Form/Extension/ImageTypeExtension.php
+    namespace Acme\DemoBundle\Form\Extension;
+
+    use Symfony\Component\Form\AbstractTypeExtension;
+    use Symfony\Component\Form\FormView;
+    use Symfony\Component\Form\FormInterface;
+    use Symfony\Component\Form\Util\PropertyPath;
+    use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+
+    class ImageTypeExtension extends AbstractTypeExtension
+    {
+        /**
+         * Devuelve el nombre del tipo que será extendido.
+         *
+         * @return string The name of the type being extended
+         */
+        public function getExtendedType()
+        {
+            return 'file';
+        }
+
+        /**
+         * Añade la opción image_path
+         *
+         * @param \Symfony\Component\OptionsResolver\OptionsResolverInterface $resolver
+         */
+        public function setDefaultOptions(OptionsResolverInterface $resolver)
+        {
+            $resolver->setOptional(array('image_path'));
+        }
+
+        /**
+         * Pase la URL de la imagen a la vista
+         *
+         * @param \Symfony\Component\Form\FormView $view
+         * @param \Symfony\Component\Form\FormInterface $form
+         * @param array $options
+         */
+        public function buildView(FormView $view, FormInterface $form, array $options)
+        {
+            if (array_key_exists('image_path', $options)) {
+                $parentData = $form->getParent()->getData();
+
+                if (null !== $parentData) {
+                    $propertyPath = new PropertyPath($options['image_path']);
+                    $imageUrl = $propertyPath->getValue($parentData);
+                } else {
+                     $imageUrl = null;
+                }
+
+                // configura una variable "image_url" que debe estar disponible al dibujar este campo
+                $view->set('image_url', $imageUrl);
+            }
+        }
+
+    }
+
+Sustituye el elemento gráfico del fragmento de plantilla
+--------------------------------------------------------
+
+Cada tipo de campo es dibujado por un fragmento de plantilla. Estos fragmentos de plantilla se pueden sustituir para personalizar la forma de dibujarlo. Para más información, puedes referirte al artículo :ref:`cookbook-form-customization-form-themes`.
+
+En tu clase de la extensión, añadiste una nueva variable (``image_url``), pero
+todavía necesitas aprovechar en tus plantillas esta nueva variable.
+Específicamente, necesitas sustituir el bloque ``file_widget``:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        {# src/Acme/DemoBundle/Resources/views/Form/fields.html.twig #}
+        {% extends 'form_div_layout.html.twig' %}
+
+        {% block file_widget %}
+            {% spaceless %}
+
+            {{ block('form_widget') }}
+            {% if image_url is not null %}
+                <img src="{{ asset(image_url) }}"/>
+            {% endif %}
+
+            {% endspaceless %}
+        {% endblock %}
+
+    .. code-block:: html+php
+
+        <!-- src/Acme/DemoBundle/Resources/views/Form/file_widget.html.php -->
+        <?php echo $view['form']->widget($form) ?>
+        <?php if (null !== $image_url): ?>
+            <img src="<?php echo $view['assets']->getUrl($image_url) ?>"/>
+        <?php endif ?>
+
+.. note::
+
+    Necesitarás cambiar tu archivo «config» o especificar explícitamente cómo quieres tematizar tu formulario a fin de que *Symfony* utilice tu bloque redefinido. Ve :ref:`cookbook-form-customization-form-themes` para más información.
+
+Usando la extensión del tipo «Form»
+-----------------------------------
+
+De ahora en adelante, cuándo añadas un campo de tipo ``file`` a tu formulario, puedes especificar una opción ``image_path`` que será la imagen a mostrar junto al campo de archivo. Por ejemplo::
+
+    // src/Acme/DemoBundle/Form/Type/MediaType.php
+    namespace Acme\DemoBundle\Form\Type;
+
+    use Symfony\Component\Form\AbstractType;
+    use Symfony\Component\Form\FormBuilderInterface;
+
+    class MediaType extends AbstractType
+    {
+        public function buildForm(FormBuilderInterface $builder, array $options)
+        {
+            $builder
+                ->add('name', 'text')
+                ->add('file', 'file', array('image_path' => 'webPath'));
+        }
+
+        public function getName()
+        {
+            return 'media';
+        }
+    }
+
+Cuándo muestres el formulario, si el modelo subyacente ya fue asociado con una imagen, la verás junto a la entrada de archivo.

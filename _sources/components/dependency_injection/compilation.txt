@@ -1,13 +1,233 @@
+.. index::
+   single: Inyección de dependencia; Compilación
+
 Compilando el contenedor
 ========================
 
-El contenedor de servicios se puede compilar por varios motivos. Estas razones incluyen la comprobación de posibles problemas, tales como referencias circulares y el transporte más eficiente de contenedores usando la resolución de parámetros y la remoción de servicios no utilizados.
+El contenedor de servicios se puede compilar por varios motivos. Estas razones incluyen la comprobación de posibles problemas, tal como referencias circulares y volver más eficiente al contenedor usando la resolución de parámetros y remoción de servicios no utilizados.
 
 Se compila ejecutando::
 
     $container->compile();
 
 El método de compilación utiliza "\ ``Compiler Passes``\ " para la compilación. El componente *Inyección de dependencias* viene con varios pases que se registran automáticamente para la compilación. Por ejemplo, la clase :class:`Symfony\\Component\\DependencyInjection\\Compiler\\CheckDefinitionValidityPass` comprueba varios potenciales problemas relacionados con las definiciones que se han establecido en el contenedor. Después de este y varios otros pases que comprueban la validez del contenedor, se utilizan pases adicionales del compilador para optimizar la configuración antes de almacenarla en caché. Por ejemplo, se quitan los servicios privados y abstractos, y se resuelven los alias.
+
+.. _components-dependency-injection-extension:
+
+Gestionando la configuración con extensiones
+--------------------------------------------
+
+Así como cargar la configuración directamente en el contenedor como se muestra en :doc:`/components/dependency_injection/introduction`, la puedes gestionar registrando extensiones en el contenedor. El primer paso en el proceso de compilación es cargar en el contenedor la configuración de cualquier clase registrada en la extensión. A diferencia de la configuración cargada directamente, esta sólo se procesa cuándo el contenedor es compilado. Si tu aplicación es modular entonces las extensiones dejan que cada módulo registre y gestione su propio servicio de configuración.
+
+Las extensiones deben implementar la :class:`Symfony\\Component\\DependencyInjection\\Extension\\ExtensionInterface` y las puedes registrar en el contenedor con::
+
+    $container->registerExtension($extension);
+
+El trabajo principal de la extensión se realiza en el método ``load``. En el método ``load`` puedes cargar la configuración desde uno o más archivos de configuración, así como manipular las definiciones del contenedor utilizando los métodos indicados en :doc:`/components/dependency_injection/definitions`.
+
+Al método ``load`` se le pasa un nuevo contenedor para configurarlo, el cual posteriormente se fusiona en el contenedor con el que se haya registrado. Esto te permite tener varias extensiones para gestionar las definiciones del contenedor de forma independiente.
+Las extensiones no agregan configuración a los contenedores cuando se añaden, pero se procesan cuando se llama al método ``compile`` del contenedor.
+
+Una muy sencilla extensión puede justo cargar al contenedor archivos de configuración::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+    use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
+    use Symfony\Component\Config\FileLocator;
+
+    class AcmeDemoExtension implements ExtensionInterface
+    {
+        public function load(array $configs, ContainerBuilder $container)
+        {
+            $loader = new XmlFileLoader(
+                $container,
+                new FileLocator(__DIR__.'/../Resources/config')
+            );
+            $loader->load('services.xml');
+        }
+
+        // ...
+    }
+
+Esto no mejora mucho comparado a cargar el archivo directamente al construir el contenedor global. Justo deja los archivos para ser divididos entre módulos/paquetes. Para poder afectar la configuración de un módulo desde archivos de configuración externos al módulo/paquete es necesario hacer configurable una aplicación compleja. Esto se puede hacer especificando se carguen secciones de archivos de configuración directamente al contenedor cuando son para una extensión en particular. Estas secciones en la configuración no serán procesadas directamente por el contenedor sino por la extensión pertinente.
+
+La extensión debe especificar un método ``getAlias`` para implementar la interfaz::
+
+    // ...
+
+    class AcmeDemoExtension implements ExtensionInterface
+    {
+        // ...
+
+        public function getAlias()
+        {
+            return 'acme_demo';
+        }
+    }
+
+Para archivos de configuración *YAML* especificar el alias para la extensión como clave significará que aquellos valores se pasan al método ``load`` de la extensión:
+
+.. code-block:: yaml
+
+    # ...
+    acme_demo:
+        foo: fooValue
+        bar: barValue
+
+Si este archivo se carga en la configuración entonces los valores en él sólo son
+procesados cuándo el contenedor es compilado en el punto que se cargan las extensiones::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\Config\FileLocator;
+    use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+
+    $container = new ContainerBuilder();
+    $loader = new YamlFileLoader($container, new FileLocator(__DIR__));
+    $loader->load('config.yml');
+
+    $container->registerExtension(new AcmeDemoExtension);
+    // ...
+    $container->compile();
+
+Los valores de esas secciones de los archivos de configuración son pasados en el primer
+argumento del método ``load`` de la extensión::
+
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        $foo = $configs[0]['foo']; //fooValue
+        $bar = $configs[0]['bar']; //barValue
+    }
+
+El argumento ``$configs`` es un arreglo conteniendo cada diferente archivo de configuración que se carga en el contenedor. Sólo estás cargando un único archivo de configuración en el ejemplo anterior pero todavía será en un arreglo. El arreglo se verá como este::
+
+    array(
+        array(
+            'foo' => 'fooValue',
+            'bar' => 'barValue',
+        )
+    )
+
+Si bien puedes gestionar manualmente la fusión de diferentes archivos, es mucho mejor
+utilizar el :doc:`componente Config </components/config/introduction>` para combinar
+y validar los valores de configuración. Usando el procesamiento de configuración podrías acceder a los valores de configuración de la siguiente manera::
+
+    use Symfony\Component\Config\Definition\Processor;
+    // ...
+
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        $configuration = new Configuration();
+        $processor = new Processor();
+        $config = $processor->processConfiguration($configuration, $configs);
+
+        $foo = $config['foo']; //fooValue
+        $bar = $config['bar']; //barValue
+
+        // ...
+    }
+
+Aun faltan dos métodos que debes implementar. Uno para regresar el espacio de nombres *XML* de modo que las partes pertinentes de un archivo de configuración *XML* es pasado a la extensión. El otro para especificar la ruta a los archivos *XSD* base para validar la configuración *XML*::
+
+    public function getXsdValidationBasePath()
+    {
+        return __DIR__.'/../Resources/config/';
+    }
+
+    public function getNamespace()
+    {
+        return 'http://www.ejemplo.com/symfony/schema/';
+    }
+
+.. note::
+
+    La validación *XSD* es opcional, regresando ``false`` desde el método ``getXsdValidationBasePath`` lo inhabilitará.
+
+La versión *XML* de la configuración entonces se parecería a esta:
+
+.. code-block:: xml
+
+    <?xml version="1.0" ?>
+    <container xmlns="http://symfony.com/schema/dic/services"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:acme_demo="http://www.example.com/symfony/schema/"
+        xsi:schemaLocation="http://www.example.com/symfony/schema/ http://www.example.com/symfony/schema/hello-1.0.xsd">
+
+        <acme_demo:config>
+            <acme_demo:foo>fooValue</acme_hello:foo>
+            <acme_demo:bar>barValue</acme_demo:bar>
+        </acme_demo:config>
+
+    </container>
+
+.. note::
+
+    En la plataforma *Symfony2* completa hay una clase ``Extensión`` base que implementa estos métodos así como un acceso directo al método para procesar la configuración. Consulta :doc:`/cookbook/bundles/extension` para más detalles.
+
+El valor de configuración procesado ahora se puede añadir como parámetro del contenedor como si estuviera enumerado en una sección ``parameters`` del archivo de configuración pero con el beneficio adicional de fusionar y validar múltiples archivos de configuración::
+
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        $configuration = new Configuration();
+        $processor = new Processor();
+        $config = $processor->processConfiguration($configuration, $configs);
+
+        $container->setParameter('acme_demo.FOO', $config['foo']);
+
+        // ...
+    }
+
+Puedes proveer requisitos de configuración más complejos para las clases en la extensión. Por ejemplo, puedes elegir cargar un archivo de configuración de un servicio principal pero también cargar uno secundario sólo si se ajusta un determinado parámetro::
+
+    public function load(array $configs, ContainerBuilder $container)
+    {
+        $configuration = new Configuration();
+        $processor = new Processor();
+        $config = $processor->processConfiguration($configuration, $configs);
+
+        $loader = new XmlFileLoader(
+            $container,
+            new FileLocator(__DIR__.'/../Resources/config')
+        );
+        $loader->load('services.xml');
+
+        if ($config['advanced']) {
+            $loader->load('advanced.xml');
+        }
+    }
+
+.. note::
+
+    Si necesitas manipular la configuración cargada por una extensión, entonces no lo puedes hacer desde otra extensión, ya que esta utiliza un contenedor nuevo.
+    En su lugar, debes utilizar un pase del compilador que trabaje con el contenedor completo después de haber procesado las extensiones.
+
+.. _components-dependency-injection-compiler-passes:
+
+Añadiendo al principio la configuración pasada a la extensión
+-------------------------------------------------------------
+
+.. versionadded:: 2.2
+    La habilidad para añadir al principio la configuración de un paquete es nueva en *Symfony 2.2*.
+
+Una extensión puede añadir al principio la configuración de cualquier paquete antes de invocar al método ``load()`` implementando la clase :class:`Symfony\\Component\\DependencyInjection\\Compiler\\PrependExtensionInterface`::
+
+    use Symfony\Component\DependencyInjection\Compiler\PrependExtensionInterface;
+    // ...
+
+    class AcmeDemoExtension implements ExtensionInterface, PrependExtensionInterface
+    {
+        // ...
+
+        public function prepend()
+        {
+            // ...
+
+            $container->prependExtensionConfig($name, $config);
+
+            // ...
+        }
+    }
+
+Para más detalles, ve :doc:`/cookbook/bundles/prepend_extension`, la cual es específica a la plataforma *Symfony2*, pero contiene más detalles sobre esta característica.
 
 Creando un pase del compilador
 ------------------------------
@@ -21,7 +241,7 @@ El pase del compilador debe tener el método ``process`` que se pasa al contened
     {
         public function process(ContainerBuilder $container)
         {
-           //--
+           // ...
         }
     }
 
@@ -37,6 +257,10 @@ Necesitas registrar tu pase personalizado del compilador en el contenedor. El m�
 
     $container = new ContainerBuilder();
     $container->addCompilerPass(new CustomCompilerPass);
+
+.. note::
+
+    Los pases del compilador son registrados de manera diferente si estás usando la pila completa de la plataforma, ve :doc:`/cookbook/service_container/compiler_passes` para más detalles.
 
 Controlando el orden de los pases
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,27 +278,15 @@ Puedes utilizar las siguientes constantes como segundo argumento al registrar un
 Por ejemplo, para correr tu pase personalizado después de quitar el pase predeterminado tienes que ejecutar::
 
     use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 
     $container = new ContainerBuilder();
-    $container->addCompilerPass(new CustomCompilerPass, PassConfig::TYPE_AFTER_REMOVING);
+    $container->addCompilerPass(
+        new CustomCompilerPass,
+        PassConfig::TYPE_AFTER_REMOVING
+    );
 
-
-Gestionando la configuración con extensiones
---------------------------------------------
-
-Así como cargar la configuración directamente en el contenedor como se muestra en :doc:`/components/dependency_injection/introduction`, la puedes gestionar registrando extensiones en el contenedor. Las extensiones deben implementar la :class:`Symfony\\Component\\DependencyInjection\\Extension\\ExtensionInterface` y las puedes registrar en el contenedor con::
-
-    $container->registerExtension($extension);
-
-El trabajo principal de la extensión se realiza en el método ``load``. En el método ``load`` puedes cargar la configuración desde uno o más archivos de configuración, así como manipular las definiciones del contenedor utilizando los métodos indicados en :doc:`/components/dependency_injection/definitions`. 
-
-Al método ``load`` se le pasa un nuevo contenedor para configurarlo, el cual posteriormente se fusiona en el contenedor con el que se haya registrado. Esto te permite tener varias extensiones para gestionar las definiciones del contenedor de forma independiente.
-Las extensiones no agregan configuración a los contenedores cuando se añaden, pero se procesan cuando se llama al método ``compile`` del contenedor.
-
-.. note::
- 
-    Si necesitas manipular la configuración cargada por una extensión, entonces no lo puedes hacer desde otra extensión, ya que esta utiliza un contenedor nuevo.
-    En su lugar, debes utilizar un pase del compilador que trabaje con el contenedor completo después de haber procesado las extensiones. 
+.. _components-dependency-injection-dumping:
 
 Vertiendo la configuración para mejorar el rendimiento
 ------------------------------------------------------
@@ -82,29 +294,23 @@ Vertiendo la configuración para mejorar el rendimiento
 Puede ser mucho más fácil entender el uso de los archivos de configuración para gestionar el contenedor de servicios que usar *PHP* una vez que hay una gran cantidad de servicios. Esta facilidad tiene un costo, aunque cuando se trata de rendimiento, puesto que los archivos de configuración se tienen que analizar y la configuración de *PHP* construida desde ellos. El proceso de compilación hace más eficiente al contenedor pero toma tiempo su ejecución. Puedes tener lo mejor de ambos mundos aunque usando archivos de configuración y, luego vertiendo y almacenando en caché la configuración resultante. El ``PhpDumper`` fácilmente vierte el contenedor compilado::
 
     use Symfony\Component\DependencyInjection\ContainerBuilder;
-    use Symfony\Component\Config\FileLocator;
-    use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
-    use Symfony\Component\DependencyInjection\Dumper\PhpDumper
-
-    $container = new ContainerBuilder();
-    $loader = new XmlFileLoader($container, new FileLocator(__DIR__));
-    $loader->load('services.xml');
+    use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 
     $file = __DIR__ .'/cache/container.php';
 
     if (file_exists($file)) {
         require_once $file;
-        $container = new ProjectServiceContiner();
+        $container = new ProjectServiceContainer();
     } else {
         $container = new ContainerBuilder();
-        //--
+        // ...
         $container->compile();
 
         $dumper = new PhpDumper($container);
         file_put_contents($file, $dumper->dump());
     }
 
-``ProjectServiceContiner`` es el nombre predefinido dado a la clase contenedora vertida, lo puedes cambiar con la opción ``class`` cuando lo viertes::
+``ProjectServiceContainer`` es el nombre predeterminado aplicado a la clase vertida en el contenedor, aun así, lo puedes cambiar con la opción ``class`` cuándo lo viertes::
 
     // ...
     $file = __DIR__ .'/cache/container.php';
@@ -114,18 +320,24 @@ Puede ser mucho más fácil entender el uso de los archivos de configuración pa
         $container = new MyCachedContainer();
     } else {
         $container = new ContainerBuilder();
-        //--
+        // ...
         $container->compile();
 
         $dumper = new PhpDumper($container);
-        file_put_contents($file, $dumper->dump(array('class' => 'MyCachedContainer')));
+        file_put_contents(
+            $file,
+            $dumper->dump(array('class' => 'MyCachedContainer'))
+        );
     }
 
-Ahora obtendrás la velocidad del contenedor *PHP* configurado con ---los fáciles de usar--- archivos de configuración. En el ejemplo anterior tendrás que borrar los archivos del contenedor memorizados en caché cada vez que hagas algún cambio. Añadir una comprobación por una variable que determina si estás en modo de depuración te permite mantener la velocidad del contenedor memorizado en caché en la producción, sino consiguiendo una actualización de la configuración, mientras desarrollas tu aplicación::
+Ahora obtendrás la velocidad del contenedor *PHP* configurado con ---los fáciles de usar--- archivos de configuración. Además verter el contenedor de este modo optimiza aún más la manera en que son creados los servicios por el contenedor.
+
+En el ejemplo anterior tendrás que borrar los archivos del contenedor memorizados en caché cada vez que hagas algún cambio. Añadir una comprobación por una variable que determina si estás en modo de depuración te permite mantener la velocidad del contenedor memorizado en caché en producción, sino consiguiendo una actualización de la configuración, mientras desarrollas tu aplicación::
 
     // ...
 
-    // establece $isDebug basándose en algo de tu proyecto
+    // basándose en algo de tu proyecto
+    $isDebug = ...;
 
     $file = __DIR__ .'/cache/container.php';
 
@@ -134,12 +346,49 @@ Ahora obtendrás la velocidad del contenedor *PHP* configurado con ---los fácil
         $container = new MyCachedContainer();
     } else {
         $container = new ContainerBuilder();
-        //--
+        // ...
         $container->compile();
 
-        if(!$isDebug) 
+        if (!$isDebug) {
             $dumper = new PhpDumper($container);
-            file_put_contents($file, $dumper->dump(array('class' => 'MyCachedContainer')));
+            file_put_contents(
+                $file,
+                $dumper->dump(array('class' => 'MyCachedContainer'))
+            );
         }
     }
 
+Esto se podría mejorar aún más únicamente recompilando el contenedor en modo de depuración cuándo se han hecho cambios a su configuración en lugar de en cada petición. Esto se puede hacer memorizando en caché los archivos de recurso usados para configurar el contenedor de la manera descrita en «:doc:`/components/config/caching`» en la documentación de configuración del componente.
+
+No necesitas preocuparte de cuál archivo memorizar en caché puesto que el constructor del contenedor mantiene la pista de todos los recursos utilizados para configurarlo, no solo los archivos de configuración sino las clases de extensión y pases del compilador también. Esto significa que cualquier cambio a cualquiera de estos archivos invalidará la caché y provocará la reconstrucción del contenedor. Sólo necesitas preguntar el contenedor por estos recursos y utilizarlos como metadatos para la caché::
+
+    // ...
+
+    // basándose en algo de tu proyecto
+    $isDebug = ...;
+
+    $file = __DIR__ .'/cache/container.php';
+    $containerConfigCache = new ConfigCache($file, $isDebug);
+
+    if (!$containerConfigCache->isFresh()) {
+        $containerBuilder = new ContainerBuilder();
+        // ...
+        $containerBuilder->compile();
+
+        $dumper = new PhpDumper($containerBuilder);
+        $containerConfigCache->write(
+            $dumper->dump(array('class' => 'MyCachedContainer')),
+            $containerBuilder->getResources()
+        );
+    }
+
+    require_once $file;
+    $container = new MyCachedContainer();
+
+Ahora la caché vertida al contenedor se utiliza independientemente de si el modo de depuración está activo o no.
+La diferencia es que el ``ConfigCache`` está puesto en modo para depurar con su segundo
+argumento del constructor. Cuándo la caché no está en modo de depuración siempre se utilizará el contenedor memorizado en caché, si existe. En modo de depuración, un archivo de metadatos adicional se escribe con la marca de tiempo de todos los archivos de recursos. Entonces, estos se comprueban para ver si los archivos han cambiado, si están en caché se consideran viejos.
+
+.. note::
+
+    En la pila completa de la plataforma se tiene cuidado por ti de la compilación y almacenamiento en caché del contenedor.

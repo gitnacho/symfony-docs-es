@@ -1,0 +1,597 @@
+Usando ``BlockBundle`` y ``ContentBundle`` con *PHPCR*
+======================================================
+
+El objetivo de esta guía es demostrar cómo puedes utilizar el ``CMF`` :doc:`../bundles/block`  y :doc:`../bundles/content` como componentes independientes, y mostrarte cómo complementan al *PHPCR*.
+
+Esta guía demuestra el uso más sencillo posible, para instalarlo y ejecutarlo
+rápidamente. Una vez que estés familiarizado con lo básico, la documentación en profundidad de ambos paquetes te
+ayudará a adaptar estos ejemplos básicos para servir casos de uso más avanzados.
+
+Empezarás utilizando únicamente el ``BlockBundle``, con bloques de contenido enlazados directamente al *PHPCR*.
+Luego, verás una introducción al ``ContentBundle`` para mostrarte cómo puedes representar contenido en las páginas con bloques.
+
+.. note::
+
+    A pesar de que no es un requisito utilizar ``BlockBundle`` o ``ContentBundle``, esta guía también usa `DoctrineFixturesBundle <http://gitnacho.github.com/symfony-docs-es/bundles/DoctrineFixturesBundle/index.html>`_.
+    Esto es porque este proporciona una manera fácil de cargar algún contenido de prueba.
+
+
+Requisitos previos
+------------------
+
+- `Instalando Symfony2 <http://gitnacho.github.com/symfony-docs-es/book/installation.html>`_ (2.1.x)
+- :doc:`installing-configuring-doctrine-phpcr-odm`
+
+.. note::
+
+    Esta guía está basada en la utilización de *PHPCR-ODM* instalado con ``Jackalope``, *DBAL* de *Doctrine* y una base de datos *MySQL*. Debería ser fácil adaptarlo para trabajar con una de las otras opciones *PHPCR* documentadas en :doc:`installing-configuring-doctrine-phpcr-odm`.
+
+
+Creando y configurando la base de datos
+---------------------------------------
+
+Puedes utilizar una base de datos existente, o crear una ahora para ayudarte a seguir esta guía. Para una nueva base de datos, ejecuta estas órdenes en *MySQL*:
+
+.. code-block:: sql
+
+    CREATE DATABASE symfony DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+    CREATE USER 'symfony'@'localhost' IDENTIFIED BY 'UseABetterPassword';
+    GRANT ALL ON symfony.* TO 'symfony'@'localhost';
+
+Tu archivo :file:`parameters.yml` necesita emparejar lo anterior, por ejemplo:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/parameters.yml
+        parameters:
+            database_driver:   pdo_mysql
+            database_host:     localhost
+            database_port:     ~
+            database_name:     symfony
+            database_user:     symfony
+            database_password: UseABetterPassword
+
+
+Configurando el componente *PHPCR* de *Doctrine*
+------------------------------------------------
+
+.. note::
+
+    Si seguiste la guía :doc:`installing-configuring-doctrine-phpcr-odm`, puedes saltarte esta sección.
+
+Necesitas instalar los componentes del *PHPCR-ODM*. Añade los siguiente a tu archivo :file:`composer.json`:
+
+.. code-block:: javascript
+
+    "require": {
+        ...
+        "jackalope/jackalope-jackrabbit": "1.0.*",
+        "jackalope/jackalope-doctrine-dbal": "dev-master",
+        "doctrine/phpcr-bundle": "1.0.*",
+        "doctrine/phpcr-odm": "1.0.*"
+    }
+
+Para instalar lo anterior, ejecuta:
+
+.. code-block:: bash
+
+    php composer.phar update
+
+En tu archivo :file:`config.yml`, añade la siguiente configuración para ``doctrine_phpcr``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine_phpcr:
+            session:
+                backend:
+                    type: doctrinedbal
+                    connection: doctrine.dbal.default_connection
+                workspace: default
+            odm:
+                auto_mapping: true
+
+Añade la siguiente línea al método ``registerBundles()`` en el archivo :file:`AppKernel.php`:
+
+.. code-block:: php
+
+    // app/AppKernel.php
+
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+            new Doctrine\Bundle\PHPCRBundle\DoctrinePHPCRBundle(),
+        );
+
+        // ...
+    }
+
+Añade la siguiente línea a tu archivo :file:`autoload.php`, inmediatamente después de la
+última línea ``AnnotationRegistry::registerFile``:
+
+.. code-block:: php
+
+    // app/autoload.php
+
+    // ...
+ AnnotationRegistry::registerFile(__DIR__.'/../vendor/doctrine/phpcr-odm/lib/Doctrine/ODM/PHPCR/Mapping/Annotations/DoctrineAnnotations.php');
+    // ...
+
+Crea el esquema de la base de datos y registra el tipo de nodo *PHPCR* usando las siguientes órdenes de consola:
+
+.. code-block:: bash
+
+    php app/console doctrine:phpcr:init:dbal
+    php app/console doctrine:phpcr:register-system-node-types
+
+Ahora deberías tener una serie de tablas en tu base de datos *MySQL* con el prefijo ``phpcr_``.
+
+
+Instala los componentes necesarios del ``CMF`` de *Symfony*
+-----------------------------------------------------------
+
+Añade lo siguiente al archivo :file:`composer.json`:
+
+.. code-block:: javascript
+
+    "require": {
+        ...
+        "symfony-cmf/block-bundle": "dev-master"
+    }
+
+Para instalar las dependencias anteriores, ejecuta:
+
+.. code-block:: bash
+
+    php composer.phar update
+
+Añade las siguientes líneas al archivo :file:`AppKernel.php`:
+
+.. code-block:: php
+
+    // app/AppKernel.php
+
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+            new Sonata\BlockBundle\SonataBlockBundle(),
+            new Symfony\Cmf\Bundle\BlockBundle\SymfonyCmfBlockBundle(),
+        );
+
+        // ...
+    }
+
+``SonataBlockBundle`` es una dependencia del ``BlockBundle`` de ``CMF`` y necesitas configurarlas. Añade lo siguiente a tu archivo :file:`config.yml`:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        sonata_block:
+            default_contexts: [cms]
+
+
+Instala ``DoctrineFixturesBundle``
+----------------------------------
+
+.. note::
+
+    Como mencioné al inicio, este no es un requisito para ``BlockBundle`` o ``ContentBundle``; No obstante, es una buena manera de manejar contenido predefinido o de ejemplo.
+
+Añade lo siguiente al archivo :file:`composer.json`:
+
+.. code-block:: javascript
+
+    "require": {
+        ...
+        "doctrine/doctrine-fixtures-bundle": "dev-master"
+    }
+
+Para instalar las dependencias anteriores, ejecuta:
+
+.. code-block:: bash
+
+    php composer.phar update
+
+Añade la siguiente línea al método ``registerBundles()`` en el archivo :file:`AppKernel.php`:
+
+.. code-block:: php
+
+    // app/AppKernel.php
+
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+            new Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle(),
+        );
+
+        // ...
+    }
+
+
+Cargando accesorios
+-------------------
+
+Basándote en la `documentación de DoctrineFixturesBundle <http://gitnacho.github.com/symfony-docs-es/bundles/DoctrineFixturesBundle/index.html>`_, necesitarás crear una clase ``fixtures``.
+
+Para empezar, crea un directorio ``DataFixtures`` dentro de tu propio paquete (p. ej. ``«MainBundle»``), y dentro, crea un directorio llamado ``PHPCR``. Si quieres seguir los ejemplos de más adelante, el ``DoctrineFixturesBundle`` cargará automáticamente las clases ``fixtures`` colocadas allí.
+
+En el cargador de ``accesorios``, un ejemplo de la creación de un bloque de contenido podría tener esta apariencia:
+
+.. code-block:: php
+
+    $myBlock = new SimpleBlock();
+    $myBlock->setParentDocument($parentPage);
+    $myBlock->setName('sidebarBlock');
+    $myBlock->setTitle('My first block');
+    $myBlock->setContent('Hello block world!');
+
+    $documentManager->persist($myBlock);
+
+Aún así, lo anterior en sí mismo no será suficiente, porque no hay ninguna página padre (``$parentPage``) con la cual enlazar los bloques. Hay varias posibles opciones que puedes utilizar como el padre:
+
+- Enlaza los bloques directamente al documento raíz (no mostrado)
+- Crea un documento del paquete *PHPCR* (mostrado abajo usando el tipo de documento ``Genérico``)
+- Crea un documento del ``ContentBundle`` del ``CMF`` (mostrado abajo utilizando el tipo de documento ``StaticContent``)
+
+
+Usando el *PHPCR*
+-----------------
+
+Para almacenar un bloque directamente en el *PHPCR* del ``CMF``, crea la siguiente clase dentro de tu directorio ``DataFixtures/PHPCR``:
+
+.. code-block:: html+php
+
+    <?php
+    // src/Acme/MainBundle/DataFixtures/PHPCR/LoadBlockWithPhpcrParent.php
+    namespace Acme\MainBundle\DataFixtures\ORM;
+
+    use Doctrine\Common\DataFixtures\AbstractFixture;
+    use Doctrine\Common\Persistence\ObjectManager;
+    use Doctrine\ODM\PHPCR\Document\Generic;
+    use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+    use Symfony\Component\DependencyInjection\ContainerInterface;
+    use Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock;
+
+    class LoadBlockWithPhpcrParent extends AbstractFixture implements ContainerAwareInterface
+    {
+        public function load(ObjectManager $manager)
+        {
+            // obtiene el documento raíz desde el PHPCR
+            $rootDocument = $manager->find(null, '/');
+
+            // Crea un documento PHPCR genérico bajo la raíz, para usarlo
+            // como el tipo de categoría para los bloques
+            $document = new Generic();
+            $document->setParent($rootDocument);
+            $document->setNodename('blocks');
+            $manager->persist($document);
+
+            // Crea un nuevo SimpleBlock (ve
+            // http://gitnacho.github.com/symfony-doc-es/cmf/bundles/block.html#block-types)
+            $myBlock = new SimpleBlock();
+            $myBlock->setParentDocument($document);
+            $myBlock->setName('testBlock');
+            $myBlock->setTitle('CMF BlockBundle only');
+            $myBlock->setContent('Block from CMF BlockBundle, parent from the PHPCR (Generic document).');
+            $manager->persist($myBlock);
+
+            // Confirma los cambios de $document y $block a la base de datos
+            $manager->flush();
+        }
+
+        public function setContainer(ContainerInterface $container = null)
+        {
+            $this->container = $container;
+        }
+    }
+
+Esta clase carga un bloque de contenido de ejemplo que utiliza el ``BlockBundle`` de ``CMF`` (sin necesitar ningún otro paquete del ``CMF``). Para asegurar el bloque tienes un padre en el repositorio, el cargador también crea un documento ``Genérico`` llamado ``'blocks'`` dentro del *PHPCR*.
+
+Ahora, carga los accesorios usando la consola:
+
+.. code-block:: bash
+
+    php app/console doctrine:phpcr:fixtures:load
+
+El contenido en tu base de datos ahora se tendría que ver algo así:
+
+
+.. code-block:: sql
+
+    SELECT path, parent, local_name FROM phpcr_nodes;
+
++-------------------+---------+------------+
+| path              | parent  | local_name |
++===================+=========+============+
+| /                 |         |            |
++-------------------+---------+------------+
+| /blocks           | /       | blocks     |
++-------------------+---------+------------+
+| /blocks/testBlock |/ blocks | testBlock  |
++-------------------+---------+------------+
+
+
+Usando el ``ContentBundle`` del ``CMF``
+---------------------------------------
+
+Sigue este ejemplo para utilizar ambos componentes ``Block`` y ``Content``.
+
+El paquete ``ContentBundle`` también requiere del ``RoutingExtraBundle``, así que para ahorrar tiempo puedes instalar ambos.
+Añade lo siguiente al archivo :file:`composer.json`:
+
+.. code-block:: javascript
+
+    "require": {
+        ...
+        "symfony-cmf/content-bundle": "dev-master",
+        "symfony-cmf/routing-extra-bundle": "dev-master"
+    }
+
+Instala todo de la manera habitual:
+
+.. code-block:: bash
+
+    php composer.phar update
+
+Añade la siguiente línea al archivo :file:`AppKernel.php`:
+
+.. code-block:: php
+
+    // app/AppKernel.php
+
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+            new Symfony\Cmf\Bundle\ContentBundle\SymfonyCmfContentBundle(),
+        );
+
+        // ...
+    }
+
+Ahora deberías tener todo lo necesario para cargar una página de contenido con un bloque de ejemplo, así que crea la clase ``LoadBlockWithCmfParent.php``:
+
+.. code-block:: html+php
+
+    <?php
+    // src/Acme/Bundle/MainBundle/DataFixtures/PHPCR/LoadBlockWithCmfParent.php
+    namespace Acme\MainBundle\DataFixtures\ORM;
+
+    use Doctrine\Common\DataFixtures\AbstractFixture;
+    use Doctrine\Common\Persistence\ObjectManager;
+    use Symfony\Component\DependencyInjection\ContainerAwareInterface;
+    use Symfony\Component\DependencyInjection\ContainerInterface;
+    use PHPCR\Util\NodeHelper;
+    use Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock;
+    use Symfony\Cmf\Bundle\ContentBundle\Document\StaticContent;
+
+    class LoadBlockWithCmfParent extends AbstractFixture implements ContainerAwareInterface
+    {
+        public function load(ObjectManager $manager)
+        {
+            // Obtiene el nombre de la ruta base a utilizar en la configuración
+            $session = $manager->getPhpcrSession();
+            $basepath = $this->container->getParameter('symfony_cmf_content.static_basepath');
+
+            // Crea la ruta en el repositorio
+            NodeHelper::createPath($session, $basepath);
+
+            // Crea un nuevo documento que utiliza StaticContent de ContentBundle del CMF
+            $document = new StaticContent();
+            $document->setPath($basepath . '/blocks');
+            $manager->persist($document);
+
+            // Crea un nuevo SimpleBlock (ve
+            // http://gitnacho.github.com/symfony-doc-es/cmf/bundles/block.html#block-types)
+            $myBlock = new SimpleBlock();
+            $myBlock->setParentDocument($document);
+            $myBlock->setName('testBlock');
+            $myBlock->setTitle('CMF BlockBundle and ContentBundle');
+            $myBlock->setContent('Block from CMF BlockBundle, parent from CMF ContentBundle (StaticContent).');
+            $manager->persist($myBlock);
+
+            // Confirma los cambios de $document y $block a la base de datos
+            $manager->flush();
+        }
+
+        public function setContainer(ContainerInterface $container = null)
+        {
+            $this->container = $container;
+        }
+    }
+
+Esta clase crea una página de contenido de ejemplo que utiliza el ``ContentBundle`` del ``CMF``. Luego, carga el bloque de ejemplo como antes, usando la nueva página de contenido como su padre.
+
+De manera predeterminada, la ruta base para el contenido es :file:`/cms/content/static`. Para mostrar cómo lo puedes configurar a cualquier ruta, añade la siguiente entrada opcional a tu archivo :file:`config.yml`:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_content:
+            static_basepath: /content
+
+Ahora deberías poder cargar los accesorios anteriores:
+
+.. code-block:: bash
+
+    php app/console doctrine:phpcr:fixtures:load
+
+Todo va sobre ruedas, el contenido en tu base de datos se tendría que ver algo así (si también seguiste el ejemplo ``LoadBlockWithPhpcrParent``, todavía deberías tener dos entradas ``/blocks`` también):
+
+.. code-block:: sql
+
+    SELECT path, parent, local_name FROM phpcr_nodes;
+
++---------------------------+-----------------+------------+
+| path                      | parent          | local_name |
++===========================+=================+============+
+| /                         |                 |            |
++---------------------------+-----------------+------------+
+| /content                  | /               | content    |
++---------------------------+-----------------+------------+
+| /content/blocks           | /content        | blocks     |
++---------------------------+-----------------+------------+
+| /content/blocks/testBlock | /content/blocks | testBlock  |
++---------------------------+-----------------+------------+
+
+
+Dibujando los bloques
+---------------------
+
+Esto lo maneja el ``BlockBundle`` de ``Sonata``. ``sonata_block_render`` ya está registrado como extensión de *Twig* al incluir ``SonataBlockBundle`` en el archivo :file:`AppKernel.php`. Por lo tanto, puedes dibujar cualquier bloque dentro de cualquier plantilla simplemente refiriéndote a su ruta.
+
+El siguiente código muestra el resultado de ambas instancias de los bloques ``testBlock`` de los ejemplos anteriores.
+Si sólo seguiste uno de los ejemplos, asegúrate de incluir únicamente ese bloque:
+
+.. code-block:: text
+
+    {# src/Acme/Bundle/MainBundle/resources/views/Default/index.html.twig #}
+
+    {# Incluye esto si seguiste el ejemplo BlockBundle con PHPCR #}
+    {{ sonata_block_render({
+        'name': '/blocks/testBlock'
+    }) }}
+
+    {# incluye esto si seguiste el ejemplo BlockBundle con ContentBundle #}
+    {{ sonata_block_render({
+        'name': '/content/blocks/testBlock'
+    }) }}
+
+Ahora tu página ``index`` debería mostrar lo siguiente (suponiendo que seguiste ambos ejemplos):
+
+.. code-block:: text
+
+    CMF BlockBundle only
+    Block from CMF BlockBundle, parent from the PHPCR (Generic document).
+
+    CMF BlockBundle and ContentBundle
+    Block from CMF BlockBundle, parent from CMF ContentBundle (StaticContent).
+
+
+Siguientes pasos
+----------------
+
+Ahora deberías estar listo para usar en tu aplicación el ``BlockBundle`` y/o el ``ContentBundle``, o para explorar los otros paquetes disponibles en el ``CMF``.
+
+- Ve la documentación de los paquetes :doc:`../bundles/block` y :doc:`../bundles/content` para aprender usos más avanzados de estos paquetes - para ver una manera mejor de cargar accesorios, mira los `accesorios en el recinto de seguridad del CMF <https://github.com/symfony-cmf/cmf-sandbox/tree/master/src/Sandbox/MainBundle/DataFixtures/PHPCR>`_
+- Dale un vistazo a la `guía PHPCR <https://github.com/phpcr/phpcr-docs/blob/master/tutorial/Tutorial.md>`_ para entender mejor el repositorio de contenido subyacente
+
+
+Solucionando problemas
+----------------------
+
+Si tienes problemas, posiblemente sea más fácil empezar con una instalación de *Symfony2* fresca. También puedes probar ejecutando y modificando el código en el ejemplo externo del `recinto de seguridad del bloque del CMF <https://github.com/fazy/cmf-block-sandbox>`_.
+
+**Configuración de Doctrine**
+
+Si empezaste con la distribución estándar de *Symfony2* (versión 2.1.x), ya deberías tener correctamente configurado tu archivo :file:`config.yml`. Si no, inténtalo usando la siguiente sección:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine:
+            dbal:
+                driver:   "%database_driver%"
+                host:     "%database_host%"
+                port:     "%database_port%"
+                dbname:   "%database_name%"
+                user:     "%database_user%"
+                password: "%database_password%"
+                charset:  UTF8
+            orm:
+                auto_generate_proxy_classes: "%kernel.debug%"
+                auto_mapping: true
+
+**"Ninguna orden definida" al cargar accesorios**
+
+.. code-block:: text
+
+    [InvalidArgumentException]
+    No hay ninguna orden definida en el espacio de nombres ``doctrine:phpcr:fixtures``.
+
+Asegúrate de que tu archivo :file:`AppKernel.php` contiene las siguientes líneas:
+
+.. code-block:: php
+
+    new Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle(),
+    new Doctrine\Bundle\PHPCRBundle\DoctrinePHPCRBundle(),
+
+**"No configuraste una sesión"**
+
+.. code-block:: text
+
+    [InvalidArgumentException]
+    No configuraste una sesión para los gestores de documento
+
+Asegúrate de que tienes lo siguiente en tu archivo :file:`app/config.yml`:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        doctrine_phpcr:
+            session:
+                backend:
+                    type: doctrinedbal
+                    connection: doctrine.dbal.default_connection
+                workspace: default
+            odm:
+                auto_mapping: true
+
+**"La anotación no existe"**
+
+.. code-block:: text
+
+    [Doctrine\Common\Annotations\AnnotationException]
+    [Error semántico] La anotación «@Doctrine\ODM\PHPCR\Mapping\Annotations\Document» en la clase «Doctrine\ODM\PHPCR\Document\Generic» no existe, o no se puede cargar automáticamente.
+
+Asegúrate de añadir esta línea a tu archivo :file:`app/autoload.php` (inmediatamente después de la línea ``AnnotationRegistry::registerLoader``):
+
+.. code-block:: php
+
+    AnnotationRegistry::registerFile(__DIR__.'/../vendor/doctrine/phpcr-odm/lib/Doctrine/ODM/PHPCR/Mapping/Annotations/DoctrineAnnotations.php');
+
+**no se encuentra la clase SimpleBlock**
+
+.. code-block:: text
+
+    [Doctrine\Common\Persistence\Mapping\MappingException]
+    La clase 'Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock' no se encuentra en la cadena de espacios de nombres configurada Doctrine\ODM\PHPCR\Document, Sonata\UserBundle\Document, FOS\UserBundle\Document
+
+Asegúrate de que está instalado el ``BlockBundle`` del ``CMF`` y de que se carga en el archivo :file:`app/AppKernel.php`:
+
+.. code-block:: php
+
+    new Symfony\Cmf\Bundle\BlockBundle\SymfonyCmfBlockBundle(),
+
+**No se encuentra la RouteAwareInterface**
+
+.. code-block:: text
+
+    Error fatal: No se encuentra la interfaz 'Symfony\Cmf\Component\Routing\RouteAwareInterface' en /var/www/your-site/vendor/symfony-cmf/content-bundle/Symfony/Cmf/Bundle/ContentBundle/Document/StaticContent.php en la línea 15
+
+Si estás utilizando el ``ContentBundle``, asegúrate de instalar el ``RoutingExtraBundle``, también:
+
+.. code-block:: javascript
+
+    // composer.json
+    "symfony-cmf/routing-extra-bundle": "dev-master"
+
+...e instala:
+
+.. code-block:: bash
+
+    php composer.phar update

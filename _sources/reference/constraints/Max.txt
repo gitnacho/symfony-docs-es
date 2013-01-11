@@ -1,6 +1,10 @@
 ``Max``
 =======
 
+.. caution::
+
+    La restricción ``max`` está depreciada desde la versión 2.1 y será eliminada en *Symfony 2.3*. En su lugar usa :doc:`/reference/constraints/Range` con la opción ``max``.
+
 Valida que un número dado es *menor* que un número máximo.
 
 +----------------+--------------------------------------------------------------------+
@@ -33,6 +37,8 @@ Para verificar que el campo ``edad`` de una clase no es superior a ``50``, puede
     .. code-block:: php-annotations
 
         // src/Acme/EventBundle/Entity/Participant.php
+        namespace Acme\EventBundle\Entity;
+
         use Symfony\Component\Validator\Constraints as Assert;
 
         class Participant
@@ -41,6 +47,37 @@ Para verificar que el campo ``edad`` de una clase no es superior a ``50``, puede
              * @Assert\Max(limit = 50, message = "You must be 50 or under to enter.")
              */
              protected $age;
+        }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/EventBundle/Resources/config/validation.yml -->
+        <class name="Acme\EventBundle\Entity\Participant">
+            <property name="age">
+                <constraint name="Max">
+                    <option name="limit">50</option>
+                    <option name="message">You must be 50 or under to enter.</option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php
+
+        // src/Acme/EventBundle/Entity/Participant.php
+        namespace Acme\EventBundle\Entity;
+
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Participant
+        {
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('age', new Assert\Max(array(
+                    'limit'   => 50,
+                    'message' => "You must be 50 or under to enter.",
+                )));
+            }
         }
 
 Opciones
@@ -65,6 +102,4 @@ El mensaje que se mostrará si el valor subyacente es mayor que la opción `limi
 
 **tipo**: ``string`` **predefinido**: ``This value should be a valid number`` (``Este valor debe ser un número válido``)
 
-El mensaje que se mostrará si el valor subyacente no es un número (por medio de la función `is_numeric`_ de *PHP*).
-
-.. _`is_numeric`: http://www.php.net/manual/es/function.is-numeric.php
+El mensaje que se mostrará si el valor subyacente no es un número (por medio de la función :phpfunction:`is_numeric` de *PHP*).

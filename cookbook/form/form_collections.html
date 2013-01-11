@@ -1,8 +1,6 @@
 
-<!DOCTYPE html>
-
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html> 
+<html lang="es">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
@@ -35,7 +33,7 @@
     
   <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
   
-    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
     <div class="social">
       <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
@@ -51,7 +49,6 @@
     </div>
     
 
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -82,10 +79,10 @@
 <p>En este artículo, aprenderás cómo crear un formulario que integra una colección de muchos otros formularios. Esto podría ser útil, por ejemplo, si tienes una clase <tt class="docutils literal"><span class="pre">Tarea</span></tt> y quieres crear/editar/eliminar muchos objetos <tt class="docutils literal"><span class="pre">Etiqueta</span></tt> relacionados con esa <tt class="docutils literal"><span class="pre">Tarea</span></tt>, justo dentro del mismo formulario.</p>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
-<p>En este artículo, vamos a suponer vagamente que estás utilizando <em>Doctrine</em> como almacén de base de datos. Pero si no estás usando <em>Doctrine</em> (por ejemplo, <em>Propel</em> o simplemente una conexión directa a la base de datos), es casi lo mismo. Sólo hay unas cuantas partes de esta guía que realmente se preocupan de la &#8220;persistencia&#8221;.</p>
-<p class="last">Si utilizas <em>Doctrine</em>, tendrás que añadir los metadatos de <em>Doctrine</em>, incluyendo las etiquetas <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt> en la propiedad <tt class="docutils literal"><span class="pre">etiquetas</span></tt> de la <tt class="docutils literal"><span class="pre">Tarea</span></tt>.</p>
+<p>En este artículo, vagamente asume que estás utilizando <em>Doctrine</em> como almacén de base de datos. Pero si no estás usando <em>Doctrine</em> (por ejemplo, <em>Propel</em> o simplemente una conexión directa a la base de datos), es casi lo mismo. Sólo hay unas cuantas partes de esta guía que realmente se preocupan de la «persistencia».</p>
+<p class="last">Si <em>estás</em> utilizando <em>Doctrine</em>, tienes que añadir los metadatos de <em>Doctrine</em>, incluyendo el asociación <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt> en la definición de asignación en la propiedad <tt class="docutils literal"><span class="pre">tags</span></tt> de la Tarea.</p>
 </div>
-<p>Vamos a empezar por ahí: Supongamos que cada <tt class="docutils literal"><span class="pre">Tarea</span></tt> pertenece a múltiples objetos <tt class="docutils literal"><span class="pre">Etiquetas</span></tt>. Empecemos creando una sencilla clase <tt class="docutils literal"><span class="pre">Tarea</span></tt>:</p>
+<p>Vamos a empezar por ahí: Supongamos que cada <tt class="docutils literal"><span class="pre">Tarea</span></tt> pertenece a múltiples objetos <tt class="docutils literal"><span class="pre">Tags</span></tt>. Empieza creando una sencilla clase <tt class="docutils literal"><span class="pre">Tarea</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Entity/Task.php</span>
 <span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Entity</span><span class="p">;</span>
 
@@ -147,20 +144,21 @@
 <span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Form\Type</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\OptionsResolver\OptionsResolverInterface</span><span class="p">;</span>
 
 <span class="k">class</span> <span class="nc">TagType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
 <span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setDefaultOptions</span><span class="p">(</span><span class="nx">OptionsResolverInterface</span> <span class="nv">$resolver</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+        <span class="nv">$resolver</span><span class="o">-&gt;</span><span class="na">setDefaults</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
             <span class="s1">&#39;data_class&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\TaskBundle\Entity\Tag&#39;</span><span class="p">,</span>
-        <span class="p">);</span>
+        <span class="p">));</span>
     <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
@@ -170,28 +168,29 @@
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Con esto, tenemos suficiente para reproducir una forma de etiqueta por sí misma. Pero debido a que el objetivo final es permitir que las etiquetas de una <tt class="docutils literal"><span class="pre">Tarea</span></tt> sean modificadas directamente dentro del formulario de la tarea en sí mismo, crea un formulario para la clase <tt class="docutils literal"><span class="pre">Tarea</span></tt>.</p>
-<p>Ten en cuenta que integramos una colección de formularios <tt class="docutils literal"><span class="pre">TagType</span></tt> usando el tipo de campo <a class="reference internal" href="../../reference/forms/types/collection.html"><em>collection</em></a>:</p>
+<p>Con esto, tienes suficiente para que una etiqueta de formulario se dibuje por sí misma. Pero debido a que el objetivo final es permitir que las etiquetas de una <tt class="docutils literal"><span class="pre">Tarea</span></tt> sean modificadas directamente dentro del formulario de la tarea en sí mismo, crea un formulario para la clase <tt class="docutils literal"><span class="pre">Tarea</span></tt>.</p>
+<p>Ten en cuenta que integraste una colección de formularios <tt class="docutils literal"><span class="pre">TagType</span></tt> usando el tipo de campo <a class="reference internal" href="../../reference/forms/types/collection.html"><em>collection</em></a>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/Type/TaskType.php</span>
 <span class="k">namespace</span> <span class="nx">Acme\TaskBundle\Form\Type</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\OptionsResolver\OptionsResolverInterface</span><span class="p">;</span>
 
 <span class="k">class</span> <span class="nc">TaskType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
 <span class="p">{</span>
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">);</span>
 
         <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;tags&#39;</span><span class="p">,</span> <span class="s1">&#39;collection&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">TagType</span><span class="p">()));</span>
     <span class="p">}</span>
 
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">getDefaultOptions</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setDefaultOptions</span><span class="p">(</span><span class="nx">OptionsResolverInterface</span> <span class="nv">$resolver</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+        <span class="nv">$resolver</span><span class="o">-&gt;</span><span class="na">setDefaults</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
             <span class="s1">&#39;data_class&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\TaskBundle\Entity\Task&#39;</span><span class="p">,</span>
-        <span class="p">);</span>
+        <span class="p">));</span>
     <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
@@ -225,13 +224,13 @@
         <span class="nv">$tag2</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Tag</span><span class="p">();</span>
         <span class="nv">$tag2</span><span class="o">-&gt;</span><span class="na">name</span> <span class="o">=</span> <span class="s1">&#39;tag2&#39;</span><span class="p">;</span>
         <span class="nv">$task</span><span class="o">-&gt;</span><span class="na">getTags</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="nv">$tag2</span><span class="p">);</span>
-        <span class="c1">// fin de código ficticio</span>
+        <span class="c1">// termina el código maniquí</span>
 
         <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createForm</span><span class="p">(</span><span class="k">new</span> <span class="nx">TaskType</span><span class="p">(),</span> <span class="nv">$task</span><span class="p">);</span>
 
         <span class="c1">// procesa el formulario en POST</span>
-        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;POST&#39;</span> <span class="o">===</span> <span class="nv">$request</span><span class="o">-&gt;</span><span class="na">getMethod</span><span class="p">())</span> <span class="p">{</span>
-            <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">bindRequest</span><span class="p">(</span><span class="nv">$request</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$request</span><span class="o">-&gt;</span><span class="na">isMethod</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">bind</span><span class="p">(</span><span class="nv">$request</span><span class="p">);</span>
             <span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
                 <span class="c1">// posiblemente hagas algún procesamiento del formulario,</span>
                 <span class="c1">// tal como guardar los objetos Task y Tag</span>
@@ -249,6 +248,7 @@
 <div class="configuration-block">
 <ul class="simple">
 <li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/TaskBundle/Resources/views/Task/new.html.twig #}</span>
+
 <span class="c">{# ... #}</span>
 
 <span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;...&quot;</span> <span class="na">method=</span><span class="s">&quot;POST&quot;</span> <span class="cp">{{</span> <span class="nv">form_enctype</span><span class="o">(</span><span class="nv">form</span><span class="o">)</span> <span class="cp">}}</span><span class="nt">&gt;</span>
@@ -270,6 +270,7 @@
 </div>
 </li>
 <li><em>PHP</em><div class="highlight-html+php"><pre>&lt;!-- src/Acme/TaskBundle/Resources/views/Task/new.html.php --&gt;
+
 &lt;!-- ... --&gt;
 
 &lt;form action="..." method="POST" ...&gt;
@@ -293,21 +294,24 @@
 <p>Hasta el momento, esto funciona muy bien, pero aún no te permite agregar dinámicamente nuevas etiquetas o eliminar existentes. Por lo tanto, durante la edición de etiquetas existentes funcionará bien, tu usuario en realidad no puede añadir ninguna nueva etiqueta, todavía.</p>
 <div class="admonition caution">
 <p class="first admonition-title">Prudencia</p>
-<p>En esta entrada, integramos una sola colección, pero no estás limitado a esto. También puedes integrar colecciones anidadas con tantos niveles descendientes como quieras. Pero si utilizas <em>XDebug</em> en tu configuración de desarrollo, puedes recibir un error <tt class="docutils literal"><span class="pre">La</span> <span class="pre">función</span> <span class="pre">alcanzó</span> <span class="pre">el</span> <span class="pre">máximo</span> <span class="pre">nivel</span> <span class="pre">de</span> <span class="pre">anidamiento</span> <span class="pre">de</span> <span class="pre">'100',</span> <span class="pre">¡abortando!</span></tt>.
+<p>En esta entrada, integraste una sola colección, pero de ninguna manera estás limitado a esto. También puedes integrar colecciones anidadas con tantos niveles descendientes como quieras. Pero si utilizas <em>XDebug</em> en tu configuración de desarrollo, puedes recibir un error <tt class="docutils literal"><span class="pre">La</span> <span class="pre">función</span> <span class="pre">alcanzó</span> <span class="pre">el</span> <span class="pre">máximo</span> <span class="pre">nivel</span> <span class="pre">de</span> <span class="pre">anidamiento</span> <span class="pre">de</span> <span class="pre">«100»,</span> <span class="pre">¡abortando!</span></tt>.
 Esto se debe a la opción <tt class="docutils literal"><span class="pre">xdebug.max_nesting_level</span></tt> de <em>PHP</em>, que por omisión es de <tt class="docutils literal"><span class="pre">100</span></tt>.</p>
 <p class="last">Esta directiva limita la recursividad a 100 llamadas que pueden no ser suficientes para reproducir el formulario en la plantilla si pintas todo el formulario de una vez (por ejemplo, <tt class="docutils literal"><span class="pre">form_widget(form)</span></tt>). Para solucionar este problema puedes redefinir esta directiva a un valor más alto (ya sea a través de un archivo <tt class="docutils literal"><span class="pre">ini</span></tt> de <em>PHP</em> o por medio de <tt class="docutils literal"><a class="reference external" href="http://php.net/manual/en/function.ini-set.php" title="ini_set"><span class="pre">ini_set</span></a></tt>, por ejemplo, en <tt class="docutils literal"><span class="pre">app/autoload.php</span></tt>) o pintar cada campo del formulario a mano usando <tt class="docutils literal"><span class="pre">form_row</span></tt>.</p>
 </div>
 <div class="section" id="permitiendo-nuevas-etiquetas-con-prototype">
-<span id="cookbook-form-collections-new-prototype"></span><h2>Permitiendo &#8220;nuevas&#8221; etiquetas con &#8220;prototype&#8221;<a class="headerlink" href="#permitiendo-nuevas-etiquetas-con-prototype" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Permitir al usuario añadir nuevas etiquetas dinámicamente significa que necesitarás usar algo de <em>JavaScript</em>. Anteriormente, añadimos dos etiquetas a nuestro formulario en el controlador.
-Ahora, tenemos que dejar que el usuario añada tantas etiquetas de formulario como necesite directamente en el navegador.
+<span id="cookbook-form-collections-new-prototype"></span><h2>Permitiendo «nuevas» etiquetas con «prototype»<a class="headerlink" href="#permitiendo-nuevas-etiquetas-con-prototype" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Permitir al usuario añadir nuevas etiquetas dinámicamente significa que necesitarás usar algo de <em>JavaScript</em>. Anteriormente añadiste dos etiquetas a tu formulario en el controlador.
+Ahora, para permitir al usuario añadir tantas etiquetas de formulario como necesite directamente en el navegador.
 Esto se hará a través de un poco de <em>JavaScript</em>.</p>
-<p>Lo primero que tenemos que hacer es darle a conocer a la colección del formulario que va a recibir una cantidad desconocida de etiquetas. Hasta ahora, hemos añadido dos etiquetas y el tipo de formulario espera recibir exactamente dos, de lo contrario será lanzado un error:
-<tt class="docutils literal"><span class="pre">Este</span> <span class="pre">formulario</span> <span class="pre">no</span> <span class="pre">debe</span> <span class="pre">contener</span> <span class="pre">campos</span> <span class="pre">adicionales</span></tt>. Para que esto sea flexible, añade la opción <tt class="docutils literal"><span class="pre">allow_add</span></tt> a nuestro campo colección:</p>
+<p>Lo primero que tienes que hacer es darle a conocer la colección del formulario que va a recibir una cantidad desconocida de etiquetas. Hasta ahora, añadiste dos etiquetas y el tipo de formulario espera recibir exactamente dos, de lo contrario lanzará un error:
+<tt class="docutils literal"><span class="pre">Este</span> <span class="pre">formulario</span> <span class="pre">no</span> <span class="pre">debe</span> <span class="pre">contener</span> <span class="pre">campos</span> <span class="pre">adicionales</span></tt>. Para que esto sea flexible, añade la opción <tt class="docutils literal"><span class="pre">allow_add</span></tt> a tu campo colección:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/Type/TaskType.php</span>
+
 <span class="c1">// ...</span>
 
-<span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">);</span>
 
@@ -319,17 +323,17 @@ Esto se hará a través de un poco de <em>JavaScript</em>.</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Ten en cuenta que también hemos añadido <tt class="docutils literal"><span class="pre">'by_reference'</span> <span class="pre">=&gt;</span> <span class="pre">false</span></tt>. Normalmente, la plataforma de formularios modificaría las etiquetas en un objeto <tt class="docutils literal"><span class="pre">Tarea</span></tt>  <em>sin</em> llamar en realidad a <tt class="docutils literal"><span class="pre">setTags</span></tt>. Al configurar <a class="reference internal" href="../../reference/forms/types/collection.html#reference-form-types-by-reference"><em>by_reference</em></a> a <tt class="docutils literal"><span class="pre">false</span></tt>, llamará a <tt class="docutils literal"><span class="pre">setTags</span></tt>. Esto, como verás, será muy importante más adelante.</p>
-<p>Además de decirle al campo que acepte cualquier número de objetos presentados, <tt class="docutils literal"><span class="pre">allow_add</span></tt> también pone a tu disposición una variable &#8220;prototipo&#8221;. Este &#8220;prototipo&#8221; es como una &#8220;plantilla&#8221; que contiene todo el código <em>HTML</em> necesario para poder pintar cualquier nueva <tt class="docutils literal"><span class="pre">etiqueta</span></tt> del formulario. Para ello, haz el siguiente cambio en tu plantilla:</p>
+<p>Ten en cuenta que también se añadió <tt class="docutils literal"><span class="pre">'by_reference'</span> <span class="pre">=&gt;</span> <span class="pre">false</span></tt>. Normalmente, la plataforma de formularios modificaría las etiquetas en un objeto <tt class="docutils literal"><span class="pre">Tarea</span></tt>  <em>sin</em> llamar en realidad a <tt class="docutils literal"><span class="pre">setTags</span></tt>. Al configurar <a class="reference internal" href="../../reference/forms/types/collection.html#reference-form-types-by-reference"><em>by_reference</em></a> a <tt class="docutils literal"><span class="pre">false</span></tt>, llamará a <tt class="docutils literal"><span class="pre">setTags</span></tt>. Esto, como verás, será muy importante más adelante.</p>
+<p>Además de decirle al campo que acepte cualquier número de objetos presentados, <tt class="docutils literal"><span class="pre">allow_add</span></tt> también pone a tu disposición una variable «prototipo». Este «prototipo» es como una «plantilla» que contiene todo el código <em>HTML</em> necesario para poder pintar cualquier nueva <tt class="docutils literal"><span class="pre">etiqueta</span></tt> del formulario. Para ello, haz el siguiente cambio en tu plantilla:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">&quot;tags&quot;</span> <span class="na">data-prototype=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">form_widget</span><span class="o">(</span><span class="nv">form.tags.get</span><span class="o">(</span><span class="s1">&#39;prototype&#39;</span><span class="o">))</span> <span class="o">|</span> <span class="nf">e</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">&quot;tags&quot;</span> <span class="na">data-prototype=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">form_widget</span><span class="o">(</span><span class="nv">form.tags.vars.prototype</span><span class="o">)|</span><span class="nf">e</span> <span class="cp">}}</span><span class="s">&quot;</span><span class="nt">&gt;</span>
     ...
 <span class="nt">&lt;/ul&gt;</span>
 </pre></div>
 </div>
 </li>
-<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">&quot;tags&quot;</span> <span class="na">data-prototype=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">escape</span><span class="p">(</span><span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">row</span><span class="p">(</span><span class="nv">$form</span><span class="p">[</span><span class="s1">&#39;tags&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;prototype&#39;</span><span class="p">)))</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;</span>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">&quot;tags&quot;</span> <span class="na">data-prototype=</span><span class="s">&quot;</span><span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">escape</span><span class="p">(</span><span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">row</span><span class="p">(</span><span class="nv">$form</span><span class="p">[</span><span class="s1">&#39;tags&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">vars</span><span class="p">[</span><span class="s1">&#39;prototype&#39;</span><span class="p">]))</span> <span class="cp">?&gt;</span><span class="s">&quot;</span><span class="nt">&gt;</span>
     ...
 <span class="nt">&lt;/ul&gt;</span>
 </pre></div>
@@ -343,20 +347,20 @@ Esto se hará a través de un poco de <em>JavaScript</em>.</p>
 </div>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
-<p>El <tt class="docutils literal"><span class="pre">form.tags.get('prototype')</span></tt> es el elemento formulario que se ve y se siente igual que los elementos <tt class="docutils literal"><span class="pre">form_widget(tag)</span></tt> individuales dentro de nuestro bucle <tt class="docutils literal"><span class="pre">for</span></tt>.
-Esto significa que allí puedes llamar a <tt class="docutils literal"><span class="pre">form_widget</span></tt>, <tt class="docutils literal"><span class="pre">form_row</span></tt>, o <tt class="docutils literal"><span class="pre">form_label</span></tt>. Incluso puedes optar por pintar sólo uno de tus campos (por ejemplo, el campo <tt class="docutils literal"><span class="pre">nombre</span></tt>):</p>
-<div class="last highlight-html+jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">form_widget</span><span class="o">(</span><span class="nv">form.tags.get</span><span class="o">(</span><span class="s1">&#39;prototype&#39;</span><span class="o">)</span><span class="nv">.name</span><span class="o">)</span> <span class="o">|</span> <span class="nf">e</span> <span class="cp">}}</span>
+<p>El <tt class="docutils literal"><span class="pre">form.tags.vars.prototype</span></tt> es el elemento de un formulario que se ve y siente como los elementos <tt class="docutils literal"><span class="pre">form_widget(etiqueta)</span></tt> individuales dentro de tu bucle <tt class="docutils literal"><span class="pre">for</span></tt>.
+Esto significa que allí puedes llamar a <tt class="docutils literal"><span class="pre">form_widget</span></tt>, <tt class="docutils literal"><span class="pre">form_row</span></tt>, o <tt class="docutils literal"><span class="pre">form_label</span></tt>. Incluso, puedes optar por pintar sólo uno de tus campos (por ejemplo, el campo <tt class="docutils literal"><span class="pre">nombre</span></tt>):</p>
+<div class="last highlight-html+jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">form_widget</span><span class="o">(</span><span class="nv">form.tags.vars.prototype.name</span><span class="o">)|</span><span class="nf">e</span> <span class="cp">}}</span>
 </pre></div>
 </div>
 </div>
 <p>En la página producida, el resultado será muy parecido a este:</p>
-<div class="highlight-html"><div class="highlight"><pre><span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">&quot;tags&quot;</span> <span class="na">data-prototype=</span><span class="s">&quot;&amp;lt;div&amp;gt;&amp;lt;label class=&amp;quot; required&amp;quot;&amp;gt;$$name$$&amp;lt;/label&amp;gt;&amp;lt;div id=&amp;quot;task_tags_$$name$$&amp;quot;&amp;gt;&amp;lt;div&amp;gt;&amp;lt;label for=&amp;quot;task_tags_$$name$$_name&amp;quot; class=&amp;quot; required&amp;quot;&amp;gt;Name&amp;lt;/label&amp;gt;&amp;lt;input type=&amp;quot;text&amp;quot; id=&amp;quot;task_tags_$$name$$_name&amp;quot; name=&amp;quot;task[tags][$$name$$][name]&amp;quot; required=&amp;quot;required&amp;quot; maxlength=&amp;quot;255&amp;quot; /&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&quot;</span><span class="nt">&gt;</span>
+<div class="highlight-html"><div class="highlight"><pre><span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">&quot;tags&quot;</span> <span class="na">data-prototype=</span><span class="s">&quot;&amp;lt;div&amp;gt;&amp;lt;label class=&amp;quot; required&amp;quot;&amp;gt;__name__&amp;lt;/label&amp;gt;&amp;lt;div id=&amp;quot;task_tags___name__&amp;quot;&amp;gt;&amp;lt;div&amp;gt;&amp;lt;label for=&amp;quot;task_tags___name___name&amp;quot; class=&amp;quot; required&amp;quot;&amp;gt;Name&amp;lt;/label&amp;gt;&amp;lt;input type=&amp;quot;text&amp;quot; id=&amp;quot;task_tags___name___name&amp;quot; name=&amp;quot;task[tags][__name__][name]&amp;quot; required=&amp;quot;required&amp;quot; maxlength=&amp;quot;255&amp;quot; /&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;/div&amp;gt;&quot;</span><span class="nt">&gt;</span>
 </pre></div>
 </div>
-<p>El objetivo de esta sección es usar <em>JavaScript</em> para leer este atributo y agregar dinámicamente nuevas etiquetas al formulario cuando el usuario haga clic en un enlace &#8220;Agregar una etiqueta&#8221;.
-Para simplificar las cosas, vamos a usar <em>jQuery</em> que, se supone, lo has incluido en algún lugar de tu página.</p>
-<p>Agrega una etiqueta <tt class="docutils literal"><span class="pre">script</span></tt> en algún lugar de tu página para que podamos empezar a escribir algo de <em>JavaScript</em>.</p>
-<p>En primer lugar, añade un enlace a la parte inferior de la lista de <tt class="docutils literal"><span class="pre">&quot;tags&quot;</span></tt> a través de <em>JavaScript</em>. En segundo lugar, vincula el evento <tt class="docutils literal"><span class="pre">&quot;click&quot;</span></tt> de ese enlace para que podamos añadir una nueva etiqueta al formulario (con <tt class="docutils literal"><span class="pre">addTagForm</span></tt> tal como se muestra a continuación):</p>
+<p>El objetivo de esta sección es usar <em>JavaScript</em> para leer este atributo y agregar dinámicamente nuevas etiquetas al formulario cuando el usuario haga clic en un enlace «Agregar una etiqueta».
+Para simplificar las cosas, este ejemplo usa <em>jQuery</em> y supone que lo has incluido en algún lugar de tu página.</p>
+<p>Añade un elemento <tt class="docutils literal"><span class="pre">&lt;script&gt;</span></tt> en algún lugar de tu página para que puedas empezar escribir algún <em>JavaScript</em>.</p>
+<p>En primer lugar, añade un enlace a la parte inferior de la lista de <tt class="docutils literal"><span class="pre">«tags»</span></tt> a través de <em>JavaScript</em>. En segundo lugar, vincula el evento <tt class="docutils literal"><span class="pre">click</span></tt> de ese enlace para que puedas añadir una nueva etiqueta al formulario (con <tt class="docutils literal"><span class="pre">addTagForm</span></tt> tal como se muestra a continuación):</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span class="c1">// Obtiene el div que contiene la colección de etiquetas</span>
 <span class="kd">var</span> <span class="nx">collectionHolder</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;ul.tags&#39;</span><span class="p">);</span>
 
@@ -378,36 +382,46 @@ Para simplificar las cosas, vamos a usar <em>jQuery</em> que, se supone, lo has 
 <span class="p">});</span>
 </pre></div>
 </div>
-<p>El trabajo de la función <tt class="docutils literal"><span class="pre">addTagForm</span></tt> será el de utilizar el atributo <tt class="docutils literal"><span class="pre">data-prototype</span></tt> para agregar dinámicamente un nuevo formulario cuando se haga clic en ese enlace. El <em>HTML</em> del <tt class="docutils literal"><span class="pre">data-prototype</span></tt> contiene el elemento <tt class="docutils literal"><span class="pre">input</span></tt> de la etiqueta <tt class="docutils literal"><span class="pre">text</span></tt> con el nombre de <tt class="docutils literal"><span class="pre">task[tags][$$name$$][name]</span></tt> y el identificador de <tt class="docutils literal"><span class="pre">task_tags_$$name$$_name</span></tt>. El <tt class="docutils literal"><span class="pre">$$name</span></tt> es una especie de &#8220;comodín&#8221;, que vamos a sustituir con un número incremental único (por ejemplo, <tt class="docutils literal"><span class="pre">task[tags][3][name]</span></tt>).</p>
+<p>El trabajo de la función <tt class="docutils literal"><span class="pre">addTagForm</span></tt> será el de utilizar el atributo <tt class="docutils literal"><span class="pre">data-prototype</span></tt> para agregar dinámicamente un nuevo formulario cuando se haga clic en ese enlace. El <em>HTML</em> del <tt class="docutils literal"><span class="pre">data-prototype</span></tt> contiene el elemento <tt class="docutils literal"><span class="pre">input</span></tt> de la etiqueta <tt class="docutils literal"><span class="pre">text</span></tt> con el nombre de <tt class="docutils literal"><span class="pre">task[tags][__name__][nombre]</span> <span class="pre">``y</span> <span class="pre">el</span> <span class="pre">identificador</span> <span class="pre">de</span> <span class="pre">``task_tags___name___name</span></tt>. El <tt class="docutils literal"><span class="pre">__name__</span></tt> es una especie de «comodín», que vamos a sustituir con un número incremental único (por ejemplo, <tt class="docutils literal"><span class="pre">task[tags][3][name]</span></tt>).</p>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>El marcador de posición cambió de nombre de <tt class="docutils literal"><span class="pre">$$name$$</span></tt> a <tt class="docutils literal"><span class="pre">__name__</span></tt> en <em>Symfony 2.1</em></p>
 <p>El código real necesario para hacer que todo esto trabaje puede variar un poco, pero aquí está un ejemplo:</p>
 <div class="highlight-javascript"><pre>function addTagForm(collectionHolder, $newLinkLi) {
-    // Obtiene el data-prototype que explicamos anteriormente
+    // Obtiene el data-prototype explicado anteriormente
     var prototype = collectionHolder.attr('data-prototype');
 
-    // Sustituye "$$name$$" en el HTML del prototipo
-    // en lugar de ser un número basado en la longitud de la colección actual.
-    var newForm = prototype.replace(/\$\$name\$\$/g, collectionHolder.children().length);
+    // cuenta las entradas actuales en el formulario (p. ej. 2),
+    // lo usa como el nuevo índice (p. ej. 2)
+    var newIndex = collectionHolder.find(':input').length;
+
+    // Reemplaza el '__name__' en el prototipo HTML para que
+    // en su lugar sea un número basado en cuántos elementos hay
+    var newForm = prototype.replace(/__name__/g, newIndex);
 
     // Muestra el formulario en la página en un elemento li,
-    \\ antes del enlace "Agregar una etiqueta"
+    \\ antes del enlace 'Agregar una etiqueta'
     var $newFormLi = $('&lt;li&gt;&lt;/li&gt;').append(newForm);
     $newLinkLi.before($newFormLi);
 }</pre>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
-<p class="last">Es mejor separar tu <em>JavaScript</em> en archivos <em>JavaScript</em> reales que escribirlo en el interior del <em>HTML</em> como lo estamos haciendo aquí.</p>
+<p class="last">Es mejor separar tu <em>JavaScript</em> en archivos <em>JavaScript</em> reales que escribirlo dentro del <em>HTML</em> como se está haciendo aquí.</p>
 </div>
-<p>Ahora, cada vez que un usuario hace clic en el enlace <tt class="docutils literal"><span class="pre">Agregar</span> <span class="pre">una</span> <span class="pre">etiqueta</span></tt>, aparece un nuevo subformulario en la página. Cuando enviamos, alguna nueva etiqueta al formulario se convertirá en nuevos objetos <tt class="docutils literal"><span class="pre">Etiqueta</span></tt> y se añadirán a la propiedad <tt class="docutils literal"><span class="pre">etiquetas</span></tt> del objeto <tt class="docutils literal"><span class="pre">Tarea</span></tt>.</p>
+<p>Ahora, cada vez que un usuario haga clic en el enlace <tt class="docutils literal"><span class="pre">Agregar</span> <span class="pre">una</span> <span class="pre">etiqueta</span></tt>, aparecerá un nuevo subformulario en la página. Cuando envíes el formulario, cualquier nueva etiqueta del formulario se convertirá en nuevos objetos <tt class="docutils literal"><span class="pre">Etiqueta</span></tt> y se añadirá a la propiedad <tt class="docutils literal"><span class="pre">etiquetas</span></tt> del objeto <tt class="docutils literal"><span class="pre">Tarea</span></tt>.</p>
 <div class="sidebar">
-<p class="first sidebar-title">Doctrine: Las relaciona en cascada y guarda el lado &#8220;Inverso&#8221;</p>
+<p class="first sidebar-title">Doctrine: Las relaciona en cascada y guarda el lado «Inverso»</p>
 <p>Para obtener las nuevas etiquetas para guardar en <em>Doctrine</em>, debes tener en cuenta un par de cosas más. En primer lugar, a menos que iteres sobre todos los nuevos objetos <tt class="docutils literal"><span class="pre">etiqueta</span></tt> y llames a <tt class="docutils literal"><span class="pre">$em-&gt;persist($tag)</span></tt> en cada una, recibirás un error de <em>Doctrine</em>:</p>
 <blockquote>
-<div>Una nueva entidad se encontró a través de la relación <tt class="docutils literal"><span class="pre">Acme\TaskBundle\Entity\Task#tags</span></tt> que no se ha configurado para persistir en las operaciones en cascada de la entidad...</div></blockquote>
-<p>Para solucionar este problema, puedes optar por persistir el objeto en la operación &#8220;cascada&#8221; automáticamente desde el objeto <tt class="docutils literal"><span class="pre">Task</span></tt> a cualquier etiqueta relacionada. Para ello, agrega la opción <tt class="docutils literal"><span class="pre">cascade</span></tt> a tus metadatos <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt>:</p>
+<div>Una nueva entidad se encontrará a través de la relación <tt class="docutils literal"><span class="pre">Acme\TaskBundle\Entity\Task#tags</span></tt> que no se ha configurado para persistirse en las operaciones en cascada de la entidad...</div></blockquote>
+<p>Para solucionar este problema, puedes optar por persistir automáticamente el objeto en la operación en «cascada» desde el objeto <tt class="docutils literal"><span class="pre">Task</span></tt> a cualquier etiqueta relacionada. Para ello, agrega la opción <tt class="docutils literal"><span class="pre">cascade</span></tt> a tus metadatos <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt>:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>Annotations</em><div class="highlight-php-annotations"><div class="highlight"><pre><span class="sd">/**</span>
+<li><em>Annotations</em><div class="highlight-php-annotations"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Entity/Task.php</span>
+
+<span class="c1">// ...</span>
+
+<span class="sd">/**</span>
 <span class="sd"> * @ORM\ManyToMany(targetEntity=&quot;Tag&quot;, cascade={&quot;persist&quot;})</span>
 <span class="sd"> */</span>
 <span class="k">protected</span> <span class="nv">$tags</span><span class="p">;</span>
@@ -427,10 +441,11 @@ Para simplificar las cosas, vamos a usar <em>jQuery</em> que, se supone, lo has 
 </li>
 </ul>
 </div>
-<p>Se trata del segundo problema potencial con el <a class="reference external" href="http://docs.doctrine-project.org/en/latest/reference/unitofwork-associations.html">Lado propietario y lado inverso</a> de las relaciones de <em>Doctrine</em>. En este ejemplo, si el lado &#8220;propietario&#8221; de la relación es la <tt class="docutils literal"><span class="pre">Tarea</span></tt>, entonces la persistencia no tendrá ningún problema puesto que las etiquetas se añaden correctamente a la tarea. Sin embargo, si el lado propietario es <tt class="docutils literal"><span class="pre">&quot;Tag&quot;</span></tt>, entonces tendrás que trabajar un poco más para asegurarte de modificar el lado correcto de la relación.</p>
-<p>El truco está en asegurarte de establecer una única <tt class="docutils literal"><span class="pre">&quot;Tarea&quot;</span></tt> en cada <tt class="docutils literal"><span class="pre">&quot;Etiqueta&quot;</span></tt>.
-Una forma fácil de hacerlo es añadir un poco de lógica adicional a <tt class="docutils literal"><span class="pre">setTags()</span></tt>, que es llamado por la plataforma de formularios desde que establece <a class="reference internal" href="../../reference/forms/types/collection.html#reference-form-types-by-reference"><em>by_reference</em></a> en <tt class="docutils literal"><span class="pre">false</span></tt>:</p>
+<p>El segundo problema potencial trata con el <a class="reference external" href="http://docs.doctrine-project.org/en/latest/reference/unitofwork-associations.html">Lado propietario y lado inverso</a> de las relaciones de <em>Doctrine</em>. En este ejemplo, si el lado «propietario» de la relación es la <tt class="docutils literal"><span class="pre">Tarea</span></tt>, entonces la persistencia no tendrá ningún problema puesto que las etiquetas se añaden correctamente a la tarea. Sin embargo, si el lado propietario es <tt class="docutils literal"><span class="pre">«Tag»</span></tt>, entonces tendrás que trabajar un poco más para asegurarte de modificar el lado correcto de la relación.</p>
+<p>El truco está en asegurarte de establecer una única <tt class="docutils literal"><span class="pre">«Tarea»</span></tt> en cada <tt class="docutils literal"><span class="pre">«Etiqueta»</span></tt>.
+Una forma fácil de hacerlo es añadir un poco de lógica adicional a <tt class="docutils literal"><span class="pre">setTags()</span></tt>, que es llamado por la infraestructura del formulario debido a que establece <a class="reference internal" href="../../reference/forms/types/collection.html#reference-form-types-by-reference"><em>by_reference</em></a> a <tt class="docutils literal"><span class="pre">false</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Entity/Task.php</span>
+
 <span class="c1">// ...</span>
 
 <span class="k">public</span> <span class="k">function</span> <span class="nf">setTags</span><span class="p">(</span><span class="nx">ArrayCollection</span> <span class="nv">$tags</span><span class="p">)</span>
@@ -445,6 +460,7 @@ Una forma fácil de hacerlo es añadir un poco de lógica adicional a <tt class=
 </div>
 <p>En <tt class="docutils literal"><span class="pre">Tag</span></tt>, solo asegúrate de tener un método <tt class="docutils literal"><span class="pre">addTask</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Entity/Tag.php</span>
+
 <span class="c1">// ...</span>
 
 <span class="k">public</span> <span class="k">function</span> <span class="nf">addTask</span><span class="p">(</span><span class="nx">Task</span> <span class="nv">$task</span><span class="p">)</span>
@@ -464,9 +480,11 @@ Una forma fácil de hacerlo es añadir un poco de lógica adicional a <tt class=
 La solución es similar a permitir la adición de etiquetas.</p>
 <p>Comienza agregando la opción <tt class="docutils literal"><span class="pre">allow_delete</span></tt> en el <tt class="docutils literal"><span class="pre">Tipo</span></tt> del formulario:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Form/Type/TaskType.php</span>
-<span class="c1">// ...</span>
 
-<span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilder</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+<span class="c1">// ...</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">);</span>
 
@@ -479,12 +497,12 @@ La solución es similar a permitir la adición de etiquetas.</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<div class="section" id="modificaciones-en-las-plantillas">
-<h3>Modificaciones en las plantillas<a class="headerlink" href="#modificaciones-en-las-plantillas" title="Enlazar permanentemente con este título">¶</a></h3>
-<p>La opción <tt class="docutils literal"><span class="pre">allow_delete</span></tt> tiene una consecuencia: si un elemento de una colección no se envía en la presentación, los datos relacionados se quitan de la colección en el servidor. La solución es pues, eliminar el elemento del <em>DOM</em> del formulario.</p>
-<p>En primer lugar, añade un enlace &#8220;eliminar esta etiqueta&#8221; a cada etiqueta del formulario:</p>
+<div class="section" id="modificaciones-en-plantillas">
+<h3>Modificaciones en plantillas<a class="headerlink" href="#modificaciones-en-plantillas" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La opción <tt class="docutils literal"><span class="pre">allow_delete</span></tt> tiene una consecuencia: si un elemento de una colección no se envía en la presentación, los datos relacionados se quitan de la colección en el servidor. La solución a esto es eliminar el elemento del <em>DOM</em> del formulario.</p>
+<p>En primer lugar, añade un enlace «eliminar esta etiqueta» a cada etiqueta del formulario:</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span class="nx">jQuery</span><span class="p">(</span><span class="nb">document</span><span class="p">).</span><span class="nx">ready</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-    <span class="c1">// Añade un enlace para borrar todas las etiquetas existentes</span>
+    <span class="c1">// Añade un enlace para eliminar todas las etiquetas existentes</span>
     <span class="c1">// en elementos li del formulario</span>
     <span class="nx">collectionHolder</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="s1">&#39;li&#39;</span><span class="p">).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
         <span class="nx">addTagFormDeleteLink</span><span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">));</span>
@@ -496,7 +514,7 @@ La solución es similar a permitir la adición de etiquetas.</p>
 <span class="kd">function</span> <span class="nx">addTagForm</span><span class="p">()</span> <span class="p">{</span>
     <span class="c1">// ...</span>
 
-    <span class="c1">// Añade un enlace borrar al nuevo formulario</span>
+    <span class="c1">// Añade un enlace eliminar el nuevo formulario</span>
     <span class="nx">addTagFormDeleteLink</span><span class="p">(</span><span class="nx">$newFormLi</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
@@ -521,27 +539,32 @@ La solución es similar a permitir la adición de etiquetas.</p>
 <p class="first sidebar-title">Doctrine: Garantizando la persistencia en la base de datos</p>
 <p>Al retirar objetos de esta manera, posiblemente necesites hacer un poco más de trabajo para asegurarte de que la relación entre la tarea y la etiqueta retirada se elimina correctamente.</p>
 <p>En <em>Doctrine</em>, tienes dos lados de la relación: el lado propietario y el lado inverso. Normalmente, en este caso, tendrás una relación <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt> y las etiquetas eliminadas desaparecerán y persistirán correctamente (añadiendo nuevas etiquetas también funciona sin esfuerzo).</p>
-<p>Pero si tienes una relación <tt class="docutils literal"><span class="pre">UnoAMuchos</span></tt> o una <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt> con un <tt class="docutils literal"><span class="pre">mappedBy</span></tt> en la entidad (significa que la <tt class="docutils literal"><span class="pre">Tarea</span></tt> es el lado &#8220;inverso&#8221;), tendrás que hacer más trabajo para eliminar las etiquetas persistidas correctamente.</p>
-<p>En este caso, puedes modificar el controlador para eliminar la relación en las etiquetas eliminadas. Esto supone que tienes algún <tt class="docutils literal"><span class="pre">editAction</span></tt>, que se encarga de &#8220;actualizar&#8221; tu <tt class="docutils literal"><span class="pre">Tarea</span></tt>:</p>
+<p>Pero si tienes una relación <tt class="docutils literal"><span class="pre">UnoAMuchos</span></tt> o una <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt> con un <tt class="docutils literal"><span class="pre">mappedBy</span></tt> en la entidad (significa que la <tt class="docutils literal"><span class="pre">Tarea</span></tt> es el lado «inverso»), tendrás que hacer más trabajo para eliminar las etiquetas persistidas correctamente.</p>
+<p>En este caso, puedes modificar el controlador para eliminar la relación en las etiquetas eliminadas. Esto supone que tienes algún <tt class="docutils literal"><span class="pre">editAction</span></tt>, que se encarga de «actualizar» tu <tt class="docutils literal"><span class="pre">Tarea</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/TaskBundle/Controller/TaskController.php</span>
+
 <span class="c1">// ...</span>
 
 <span class="k">public</span> <span class="k">function</span> <span class="nf">editAction</span><span class="p">(</span><span class="nv">$id</span><span class="p">,</span> <span class="nx">Request</span> <span class="nv">$request</span><span class="p">)</span>
 <span class="p">{</span>
-    <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">();</span>
+    <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getManager</span><span class="p">();</span>
     <span class="nv">$task</span> <span class="o">=</span> <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">getRepository</span><span class="p">(</span><span class="s1">&#39;AcmeTaskBundle:Task&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">find</span><span class="p">(</span><span class="nv">$id</span><span class="p">);</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$task</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">throw</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createNotFoundException</span><span class="p">(</span><span class="s1">&#39;No task found for is &#39;</span><span class="o">.</span><span class="nv">$id</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="c1">// Se crea una matriz de los objetos etiqueta actuales en la base de datos</span>
-    <span class="k">foreach</span> <span class="p">(</span><span class="nv">$task</span><span class="o">-&gt;</span><span class="na">getTags</span><span class="p">()</span> <span class="k">as</span> <span class="nv">$tag</span><span class="p">)</span> <span class="nv">$originalTags</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$tag</span><span class="p">;</span>
+    <span class="nv">$originalTags</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+
+    <span class="c1">// Crea un arreglo del los objetos &#39;Tag&#39; actualmente en la base de datos</span>
+    <span class="k">foreach</span> <span class="p">(</span><span class="nv">$task</span><span class="o">-&gt;</span><span class="na">getTags</span><span class="p">()</span> <span class="k">as</span> <span class="nv">$tag</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nv">$originalTags</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$tag</span><span class="p">;</span>
+    <span class="p">}</span>
 
     <span class="nv">$editForm</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createForm</span><span class="p">(</span><span class="k">new</span> <span class="nx">TaskType</span><span class="p">(),</span> <span class="nv">$task</span><span class="p">);</span>
 
-       <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;POST&#39;</span> <span class="o">===</span> <span class="nv">$request</span><span class="o">-&gt;</span><span class="na">getMethod</span><span class="p">())</span> <span class="p">{</span>
-        <span class="nv">$editForm</span><span class="o">-&gt;</span><span class="na">bindRequest</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">());</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$request</span><span class="o">-&gt;</span><span class="na">isMethod</span><span class="p">(</span><span class="s1">&#39;POST&#39;</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nv">$editForm</span><span class="o">-&gt;</span><span class="na">bind</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">());</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="nv">$editForm</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
 
@@ -582,7 +605,7 @@ La solución es similar a permitir la adición de etiquetas.</p>
 </pre></div>
 </div>
 <p class="last">Como puedes ver, agregar y quitar elementos correctamente puede ser complicado.
-A menos que tengas una relación <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt> donde la <tt class="docutils literal"><span class="pre">Tarea</span></tt> sea el lado &#8220;propietario&#8221;, tendrás que hacer trabajo extra para asegurarte de que la relación se actualiza correctamente (si vas a añadir nuevas etiquetas o eliminar etiquetas existentes) en cada objeto <tt class="docutils literal"><span class="pre">Etiqueta</span></tt> en sí.</p>
+A menos que tengas una relación <tt class="docutils literal"><span class="pre">MuchosAMuchos</span></tt> donde la <tt class="docutils literal"><span class="pre">Tarea</span></tt> sea el lado «propietario», tendrás que hacer trabajo extra para asegurarte de que la relación se actualiza correctamente (si vas a añadir nuevas etiquetas o eliminar etiquetas existentes) en cada objeto <tt class="docutils literal"><span class="pre">Etiqueta</span></tt> en sí.</p>
 </div>
 </div>
 </div>
@@ -597,7 +620,6 @@ A menos que tengas una relación <tt class="docutils literal"><span class="pre">
   <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
   
   <div style="width:740px;margin:10px auto;">
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -623,8 +645,8 @@ A menos que tengas una relación <tt class="docutils literal"><span class="pre">
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 14, 2012.
-      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
    <script type="text/javascript">

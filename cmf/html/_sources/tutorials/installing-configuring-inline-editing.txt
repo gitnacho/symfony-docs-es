@@ -1,0 +1,93 @@
+Instalando y configurando la edición en línea
+=============================================
+
+El objetivo de esta guía es instalar y configurar el apoyo para la edición en línea.
+
+.. note::
+
+    Para que trabaje el ``CMF`` se requiere de *Symfony 2.1* (actualmente maestro).
+
+Este proporciona una solución fácil de integrar con `VIE.js <http://viejs.org>`_ y `create.js <http://createjs.org>`_ para proporcionar edición en línea basada en la salida de `RDFa <http://rdfa.info>`_.
+
+Para más información ---por ahora--- ve la documentación del `CreateBundle <https://github.com/symfony-cmf/CreateBundle>`_
+
+.. index:: VIE.js, CreateBundle, FOSRestBundle, JMSSerializerBundle, RDFa, create.js, hallo.js
+
+Instalando
+----------
+
+Descarga los paquetes
+~~~~~~~~~~~~~~~~~~~~~
+
+Añade lo siguiente a tu archivo :file:`composer.json`:
+
+.. code-block:: javascript
+
+    "require": {
+        ...
+        "symfony-cmf/create-bundle": "1.0.*"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "Symfony\\Cmf\\Bundle\\CreateBundle\\Composer\\ScriptHandler::initSubmodules",
+            ...
+        ],
+        "post-update-cmd": [
+            "Symfony\\Cmf\\Bundle\\CreateBundle\\Composer\\ScriptHandler::initSubmodules",
+            ...
+        ]
+    },
+
+Y luego ejecuta:
+
+.. code-block:: bash
+
+    php composer.phar update symfony-cmf/create-bundle
+
+Iniciando los paquetes
+~~~~~~~~~~~~~~~~~~~~~~
+
+Luego, inicia los paquetes en el archivo :file:`app/AppKernel.php` añadiéndolos al método ``registerBundles``:
+
+.. code-block:: php
+
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+
+            new Symfony\Cmf\Bundle\CreateBundle\SymfonyCmfCreateBundle(),
+            new FOS\RestBundle\FOSRestBundle(),
+            new JMS\SerializerBundle\JMSSerializerBundle($this),
+        );
+        // ...
+    }
+
+Configurando
+------------
+
+El siguiente paso es configurar los paquetes.
+
+Configuración básica, añade lo siguiente a la configuración de tu aplicación:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_create:
+            phpcr_odm: true
+            map:
+                '<http://rdfs.org/sioc/ns#Post>': 'Symfony\Cmf\Bundle\MultilangContentBundle\Document\MultilangStaticContent'
+            image:
+                model_class: Symfony\Cmf\Bundle\CreateBundle\Document\Image
+                controller_class: Symfony\Cmf\Bundle\CreateBundle\Controller\PHPCRImageController
+
+Si tienes tus propios documentos, agregalos a la asignación y coloca la asignación ``RDFa`` en ``Resources/rdf-mappings`` ya sea dentro del directorio ``app`` o dentro de algún paquete.
+El nombre de archivo es el nombre de clase completamente cualificado que incluye el espacio de nombres sustituyendo la barra inversa ``\`` con un punto ``(.)``.
+
+
+Referencia
+----------
+
+Ve el :doc:`../bundles/create`

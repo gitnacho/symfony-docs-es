@@ -1,98 +1,23 @@
-Utilizando transformadores de datos
-===================================
+.. index::
+   single: Formulario; Transformadores de datos
 
-A menudo te encontrarás con la necesidad de transformar los datos que el usuario introdujo en un formulario a algo
-más para usarlo en tu programa. Lo podrías hacer fácilmente a mano en tu controlador, pero, ¿qué pasa si quieres utilizar este formulario específico en sitios diferentes?
+Cómo usar transformadores de datos
+==================================
 
-Digamos que tienes una relación uno a uno entre una ``Tarea`` y una ``Incidencia``, por ejemplo, una ``Tarea`` opcionalmente está vinculada a una ``Incidencia``. Añadir un cuadro de lista con todas las posibles ``Incidencias`` finalmente te puede conducir a una lista realmente larga en la cual es imposible encontrar algo. En su lugar mejor querrás añadir un cuadro de texto, en el cual el usuario sencillamente puede introducir el número de la incidencia. En el controlador puedes convertir este número de incidencia en una tarea real, y finalmente añadir errores al formulario si no se encuentra, pero por supuesto que esto naturalmente no es limpio.
+A menudo te encontrarás con la necesidad de transformar en alguna otra cosa los datos que el usuario introdujo en un formulario para usarlos en tu programa. Lo podrías hacer fácilmente a mano en tu controlador, pero, ¿qué pasa si quieres utilizar ese formulario específico en diferentes sitios?
 
-Sería mejor si esta incidencia se buscara y convirtiera automáticamente a un objeto ``Incidencia``, para usarla en tu acción. Aquí es donde entran en juego los Transformadores de datos.
+Digamos que tienes una relación uno a uno entre una ``Tarea`` y una ``Incidencia``, por ejemplo, una ``Tarea`` opcionalmente está vinculada a una ``Incidencia``. Añadir un cuadro de lista con todas las posibles ``Incidencias`` finalmente te puede conducir a una lista realmente larga en la cual es imposible encontrar algo. En su lugar mejor querrás añadir un cuadro de texto, en el cual el usuario sencillamente puede introducir el número de la incidencia.
 
-Primero, crea un tipo de formulario personalizado que tenga adjunto un Transformador de datos, el cual regresa la ``Incidencia`` por número: El tipo selector de incidencia. Finalmente este sencillamente será un campo de texto, cuando configuremos el padre para que sea un campo de ``texto``, en el cual se introducirá el número de incidencia. El campo mostrará un error si no existe el número introducido:
+Podrías intentar hacer esto en tu controlador, pero no es la mejor solución.
+Sería mejor si esta incidencia se buscara y convirtiera automáticamente a un objeto ``Incidencia``, para usarla en tu acción.
+Aquí es donde entran en juego los Transformadores de datos.
 
-.. code-block:: php
+Creando el transformador
+------------------------
 
-    // src/Acme/TaskBundle/Form/Type/IssueSelectorType.php
-    namespace Acme\TaskBundle\Form\Type;
-
-    use Symfony\Component\Form\AbstractType;
-    use Symfony\Component\Form\FormBuilder;
-    use Acme\TaskBundle\Form\DataTransformer\IssueToNumberTransformer;
-    use Doctrine\Common\Persistence\ObjectManager;
-
-    class IssueSelectorType extends AbstractType
-    {
-        /**
-         * @var ObjectManager
-         */
-        private $om;
-
-        /**
-         * @param ObjectManager $om
-         */
-        public function __construct(ObjectManager $om)
-        {
-            $this->om = $om;
-        }
-
-        public function buildForm(FormBuilder $builder, array $options)
-        {
-            $transformer = new IssueToNumberTransformer($this->om);
-            $builder->appendClientTransformer($transformer);
-        }
-
-        public function getDefaultOptions(array $options)
-        {
-            return array(
-                'invalid_message' => 'The selected issue does not exist',
-            );
-        }
-
-        public function getParent(array $options)
-        {
-            return 'text';
-        }
-
-        public function getName()
-        {
-            return 'issue_selector';
-        }
-    }
-
-.. tip::
-
-    También puedes usar transformadores sin crear un nuevo tipo de formulario personalizado llamando a ``appendClientTransformer`` en cualquier constructor de campo:
-
-.. code-block:: php
-
-        use Acme\TaskBundle\Form\DataTransformer\IssueToNumberTransformer;
-
-        class TaskType extends AbstractType
-        {
-            public function buildForm(FormBuilder $builder, array $options)
-            {
-                // ...
-
-                // este asume que el gestor de la entidad se pasó como una opción
-                $entityManager = $options['em'];
-                $transformer = new IssueToNumberTransformer($entityManager);
-
-                // usa un campo de texto normal, pero transforma el texto en un objeto incidencia
-                $builder
-                    ->add('issue', 'text')
-                    ->appendClientTransformer($transformer)
-                ;
-            }
-
-            // ...
-        }
-
-Luego, creamos el transformador de datos, el cual lleva a cabo la conversión real:
-
-.. code-block:: php
+En primer lugar, crea una clase ``IssueToNumberTransformer`` --- esta clase será la responsable de la conversión hacia y desde el número de incidencia y el objeto ``Incidencia``::
 
     // src/Acme/TaskBundle/Form/DataTransformer/IssueToNumberTransformer.php
-
     namespace Acme\TaskBundle\Form\DataTransformer;
 
     use Symfony\Component\Form\DataTransformerInterface;
@@ -116,7 +41,7 @@ Luego, creamos el transformador de datos, el cual lleva a cabo la conversión re
         }
 
         /**
-         * Transforma un objeto (issue) a una cadena (number).
+         * Transforma un objeto (``issue``) a una cadena (``number``).
          *
          * @param  Issue|null $issue
          * @return string
@@ -131,7 +56,7 @@ Luego, creamos el transformador de datos, el cual lleva a cabo la conversión re
         }
 
         /**
-         * Transforma una cadena (number) a un objeto (issue).
+         * Transforma una cadena (``number``) a un objeto (``issue``).
          *
          * @param  string $number
          * @return Issue|null
@@ -159,7 +84,182 @@ Luego, creamos el transformador de datos, el cual lleva a cabo la conversión re
         }
     }
 
-Finalmente, debido a que hemos decidido crear un tipo de formulario personalizado que usa el transformador de datos, registramos el ``Tipo`` en el contenedor de servicios, a modo de poder inyectar el gestor de la entidad automáticamente:
+.. tip::
+
+    Si quieres crear una nueva incidencia al introducir un número desconocido, puedes crear una nueva instancia en lugar de lanzar una ``TransformationFailedException``.
+
+Usando el transformador
+-----------------------
+
+Ahora que ya tienes incorporado el transformador, solamente lo tienes que añadir a tu campo ``incidencia`` en algún formulario.
+
+    También puedes utilizar transformadores sin necesidad de crear un nuevo tipo de formulario personalizado llamando a ``addModelTransformer`` (o a ``addViewTransformer`` --- consulta la sección `Transformadores de modelo y vista`_) en cualquier campo del constructor::
+
+        use Symfony\Component\Form\FormBuilderInterface;
+        use Acme\TaskBundle\Form\DataTransformer\IssueToNumberTransformer;
+
+        class TaskType extends AbstractType
+        {
+            public function buildForm(FormBuilderInterface $builder, array $options)
+            {
+                // ...
+
+                // este asume que el gestor de la entidad se pasó como una
+                // opción
+                $entityManager = $options['em'];
+                $transformer = new IssueToNumberTransformer($entityManager);
+
+                // agrega un campo de texto normal, pero le añade tu transformador
+                $builder->add(
+                    $builder->create('issue', 'text')
+                        ->addModelTransformer($transformer)
+                );
+            }
+
+            public function setDefaultOptions(OptionsResolverInterface $resolver)
+            {
+                $resolver->setDefaults(array(
+                    'data_class' => 'Acme\TaskBundle\Entity\Task',
+                ));
+
+                $resolver->setRequired(array(
+                    'em',
+                ));
+
+                $resolver->setAllowedTypes(array(
+                    'em' => 'Doctrine\Common\Persistence\ObjectManager',
+                ));
+
+                // ...
+            }
+
+            // ...
+        }
+
+Este ejemplo requiere que pases como una opción el gestor de la entidad al crear el formulario. Más tarde, aprenderás cómo puedes crear un tipo de campo ``incidencia`` personalizado para evitar la necesidad de hacer esto en tu controlador::
+
+    $taskForm = $this->createForm(new TaskType(), $task, array(
+        'em' => $this->getDoctrine()->getEntityManager(),
+    ));
+
+¡Estupendo, ya está! El usuario será capaz de introducir un número de incidencia en el campo de texto y se transformará en un objeto ``Incidencia``. Esto significa que, después de vincularlo satisfactoriamente, la infraestructura del formulario pasa un objeto ``Incidencia`` real a ``Task::setIssue()`` en vez de el número de incidencia.
+
+Si no encuentra la incidencia, creará un error en el formulario para ese campo y puedes controlar su mensaje de error con la opción ``invalid_message`` del campo.
+
+.. caution::
+
+    Ten en cuenta que al añadir un transformador necesitas usar una sintaxis un poco más complicada cuando agregas el campo. Lo siguiente es **incorrecto**, debido a que puedes aplicar el transformador a todo el formulario, en lugar de sólo a este campo::
+
+        // ESTE ESTÁ MAL - LA TRANSFORMACIÓN SE APLICARÁ AL
+        // FORMULARIO COMPLETO
+        // ve el código correcto en el ejemplo anterior
+        $builder->add('issue', 'text')
+            ->addModelTransformer($transformer);
+
+Transformadores de modelo y vista
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.1
+    Los nombres y métodos de los transformadores cambiaron en *Symfony 2.1*.
+    ``prependNormTransformer`` se convirtió en ``addModelTransformer`` y ``appendClientTransformer`` cambió a ``addViewTransformer``.
+
+En el ejemplo anterior, el transformador se utilizó como un transformador del ``«modelo»``.
+De hecho, hay dos diferentes tipos de transformadores y tres diferentes tipos de datos subyacentes.
+
+.. image:: /images/cookbook/form/DataTransformersTypes.png
+   :align: center
+
+En cualquier formulario, los 3 diferentes tipos de datos son los siguientes:
+
+1) **Datos del modelo** --- Estos son los datos en el formato que se utiliza en tu aplicación (por ejemplo, un objeto ``Insidencia``). Si llamas a ``Form::getData`` o ``Form::setData``, estás tratando con los datos del «modelo».
+
+2) **Datos normales** --- Esta es una versión normalizada de los datos, y suelen ser los mismos datos que los de tu "modelo" (aunque no en nuestro ejemplo). Comúnmente no se utiliza directamente.
+
+3) **Datos de la vista** --- Este es el formato que se utiliza para rellenar los campos del formulario en sí. También es el formato en el que el usuario enviará los datos. Cuando llamas a ``Form::bind($datos)``, los ``$datos`` están en el formato de la  «vista».
+
+Los 2 diferentes tipos de transformadores te ayudan a convertir hacia y desde cada uno de estos tipos de datos:
+
+**transformadores del modelo**:
+    --- ``transform``: "datos del modelo" => "datos normales"
+    --- ``reverseTransform``: "datos normales" => "datos del modelo"
+
+**Transformadores de la vista**:
+    --- ``transform``: "datos normales" => "datos de la vista"
+    --- ``reverseTransform``: "datos de la vista" => "datos normales"
+
+¿Qué transformador necesitas? depende de tu situación.
+
+Para utilizar el transformador de la vista, llama a ``addViewTransformer``.
+
+¿Así que por qué uso el modelo transformador?
+---------------------------------------------
+
+En este ejemplo, el campo es un campo ``text``, y un campo de texto siempre se espera que sea un sencillo, formato escalar en los formatos ``norm`` y ``view``. Por esta razón, el transformador más adecuado fue el transformador del «modelo» (que se convierte a/desde el formato *normal* --- cadena a número --- al formato del *modelo* --- emisión de objeto).
+
+La diferencia entre los transformadores es sutil y siempre se debe pensar en lo que deben ser realmente los datos «normales» para un campo. Por ejemplo, los datos «normales» de un campo ``text`` son una cadena, pero es un objeto ``DateTime`` para un campo ``date``.
+
+Usando transformadores en un tipo de campo personalizado
+--------------------------------------------------------
+
+En el ejemplo anterior, aplicaste el transformador a un campo ``text`` normal.
+Esto fue fácil, pero tiene dos inconvenientes:
+
+1) Necesitas recordar siempre que debes aplicar el transformador cuando vas a añadir un campo de número de incidencia.
+
+2) Tienes que preocuparte de pasarlo en la opción ``em`` cada vez que creas un formulario que utiliza el transformador.
+
+Debido a esto, puedes optar por :doc:`crear un tipo de campo personalizado </cookbook/form/create_custom_field_type>`.
+En primer lugar, crea la clase del tipo de campo personalizado::
+
+    // src/Acme/TaskBundle/Form/Type/IssueSelectorType.php
+    namespace Acme\TaskBundle\Form\Type;
+
+    use Symfony\Component\Form\AbstractType;
+    use Symfony\Component\Form\FormBuilderInterface;
+    use Acme\TaskBundle\Form\DataTransformer\IssueToNumberTransformer;
+    use Doctrine\Common\Persistence\ObjectManager;
+    use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+
+    class IssueSelectorType extends AbstractType
+    {
+        /**
+         * @var ObjectManager
+         */
+        private $om;
+
+        /**
+         * @param ObjectManager $om
+         */
+        public function __construct(ObjectManager $om)
+        {
+            $this->om = $om;
+        }
+
+        public function buildForm(FormBuilderInterface $builder, array $options)
+        {
+            $transformer = new IssueToNumberTransformer($this->om);
+            $builder->addModelTransformer($transformer);
+        }
+
+        public function setDefaultOptions(OptionsResolverInterface $resolver)
+        {
+            $resolver->setDefaults(array(
+                'invalid_message' => 'The selected issue does not exist',
+            ));
+        }
+
+        public function getParent()
+        {
+            return 'text';
+        }
+
+        public function getName()
+        {
+            return 'issue_selector';
+        }
+    }
+
+A continuación, registra el tipo como un servicio y etiquétalo con ``form.type``, para que sea reconocido como un tipo de campo personalizado:
 
 .. configuration-block::
 
@@ -179,26 +279,22 @@ Finalmente, debido a que hemos decidido crear un tipo de formulario personalizad
             <tag name="form.type" alias="issue_selector" />
         </service>
 
-Ahora puedes añadir el tipo a tu formulario por su alias de la siguiente manera:
-
-.. code-block:: php
+Ahora, cada vez que necesites utilizar tu tipo de campo ``issue_selector`` especial, es muy fácil::
 
     // src/Acme/TaskBundle/Form/Type/TaskType.php
-
     namespace Acme\TaskBundle\Form\Type;
 
     use Symfony\Component\Form\AbstractType;
-    use Symfony\Component\Form\FormBuilder;
+    use Symfony\Component\Form\FormBuilderInterface;
 
     class TaskType extends AbstractType
     {
-        public function buildForm(FormBuilder $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options)
         {
             $builder
                 ->add('task')
                 ->add('dueDate', null, array('widget' => 'single_text'));
-                ->add('issue', 'issue_selector')
-            ;
+                ->add('issue', 'issue_selector');
         }
 
         public function getName()
@@ -207,6 +303,3 @@ Ahora puedes añadir el tipo a tu formulario por su alias de la siguiente manera
         }
     }
 
-Ahora es muy fácil en cualquier sitio aleatorio en tu aplicación utilizar este tipo selector para elegir una incidencia por número. Ninguna lógica se tiene que añadir a tu Controlador en absoluto.
-
-Si quieres crear una nueva incidencia cuándo se introduzca un número desconocido, puedes crear una nueva instancia en lugar de lanzar una ``TransformationFailedException``, e incluso persistirla en tu gestor de la entidad si la tarea no tiene opciones en cascada para esa ``incidencia``.

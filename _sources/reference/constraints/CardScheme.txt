@@ -1,0 +1,115 @@
+``CardScheme``
+==============
+
+.. versionadded:: 2.2
+    La validación ``CardScheme`` es nueva en *Symfony 2.2*.
+
+Esta restricción garantiza que un número de tarjeta de crédito es válido para una determinada compañía de tarjetas de crédito. La puedes usar para validar el número antes de intentar iniciar un pago a través de una pasarela de pago.
+
++----------------+--------------------------------------------------------------------------+
+| Aplica a       | :ref:`propiedad o método <validation-property-target>`                   |
++----------------+--------------------------------------------------------------------------+
+| Opciones       | - `schemes`_                                                             |
+|                | - `message`_                                                             |
++----------------+--------------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Validator\\Constraints\\CardScheme`          |
++----------------+--------------------------------------------------------------------------+
+| Validador      | :class:`Symfony\\Component\\Validator\\Constraints\\CardSchemeValidator` |
++----------------+--------------------------------------------------------------------------+
+
+Uso básico
+----------
+
+Para utilizar el validador ``CardScheme``, sencillamente aplícalo a una propiedad o método en un objeto que contenga un número de tarjeta de crédito.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/SubscriptionBundle/Resources/config/validation.yml
+        Acme\SubscriptionBundle\Entity\Transaction:
+            properties:
+                cardNumber:
+                    - CardScheme:
+                        schemes: [VISA]
+                        message: El número de tu tarjeta de crédito no es válido.
+
+    .. code-block:: xml
+
+        <!-- src/Acme/SubscriptionBundle/Resources/config/validation.xml -->
+        <class name="Acme\SubscriptionBundle\Entity\Transaction">
+            <property name="cardNumber">
+                <constraint name="CardScheme">
+                    <option name="schemes">
+                        <value>VISA</value>
+                    </option>
+                    <option name="message">El número de tu tarjeta de crédito no es válido.</option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php-annotations
+
+        // src/Acme/SubscriptionBundle/Entity/Transaction.php
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Transaction
+        {
+            /**
+             * @Assert\CardScheme(schemes = {"VISA"}, message = "El número de tu tarjeta de crédito no es válido.")
+             */
+            protected $cardNumber;
+        }
+
+    .. code-block:: php
+
+        // src/Acme/SubscriptionBundle/Entity/Transaction.php
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints\CardScheme;
+
+        class Transaction
+        {
+            protected $cardNumber;
+
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('cardSchema', new CardScheme(array(
+                    'schemes' => array(
+                        'VISA'
+                    ),
+                    'message' => 'El número de tu tarjeta de crédito no es válido.',
+                )));
+            }
+        }
+
+Opciones disponibles
+--------------------
+
+``schemes``
+-----------
+
+**tipo**: ``array`` [:ref:`opción predeterminada <validation-default-option>`]
+
+Esta opción es requerida y representa el nombre del esquema del número utilizado para validar el número de tarjeta de crédito. Los valores válidos son los siguientes:
+
+* ``AMEX``
+* ``CHINA_UNIONPAY``
+* ``DINERS``
+* ``DISCOVER``
+* ``INSTAPAYMENT``
+* ``JCB``
+* ``LASER``
+* ``MAESTRO``
+* ``MASTERCARD``
+* ``VISA``
+
+Para más información sobre los esquemas utilizados, ve `Wikipedia: Número de identificación del emisor (IIN por «Issuer identification number»)`_.
+
+``message``
+~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``Unsupported card type or invalid card number`` (``Tipo de tarjeta no compatible o número de tarjeta nulo``)
+
+El mensaje mostrado cuándo el valor no pasa la comprobación del ``CardScheme``.
+
+.. _`Wikipedia: Número de identificación del emisor (IIN por «Issuer identification number»)`: http://en.wikipedia.org/wiki/Bank_card_number#Issuer_identification_number_.28IIN.29

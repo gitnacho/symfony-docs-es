@@ -1,0 +1,181 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Eligiendo una capa de almacenamiento &mdash; Symblog</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="top" title="Symblog" href="../index.html" />
+    <link rel="next" title="Instalando y configurando Doctrine y PHPCR-ODM" href="installing-configuring-doctrine-phpcr-odm.html" />
+    <link rel="prev" title="Instalando y configurando el núcleo del CMF" href="installing-cmf-core.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="installing-configuring-doctrine-phpcr-odm.html" title="Instalando y configurando Doctrine y PHPCR-ODM"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="installing-cmf-core.html" title="Instalando y configurando el núcleo del CMF"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">Symblog</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="eligiendo-una-capa-de-almacenamiento">
+<h1>Eligiendo una capa de almacenamiento<a class="headerlink" href="#eligiendo-una-capa-de-almacenamiento" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Cuándo construyes un <em>CMS</em>, sin duda, la elección para la capa de almacenamiento es una de las decisiones clave a tomar. Tienes que considerar muchos factores, la buena noticia es que con todos los componentes y paquetes en el <tt class="docutils literal"><span class="pre">CMF</span></tt> nos preocupamos en proporcionar los puntos de extensión necesarios para garantizar que contamos con una <strong>capa de almacenamiento que sigue siendo agnóstica para el CMF</strong>.</p>
+<p>El objetivo de esta guía es explicar las consideraciones y por qué sugerimos <a class="reference external" href="http://phpcr.github.com">PHPCR</a>  y <a class="reference external" href="http://www.doctrine-project.org/projects/phpcr-odm.html">PHPCR-ODM</a> como la base ideal para un <em>CMS</em>. Sin embargo, todos los componentes y paquetes se pueden integrar con otras soluciones con un muy pequeño esfuerzo.</p>
+<div class="section" id="requisitos-para-la-capa-de-almacenamiento-de-un-cms">
+<span id="index-0"></span><h2>Requisitos para la capa de almacenamiento de un  <em>CMS</em><a class="headerlink" href="#requisitos-para-la-capa-de-almacenamiento-de-un-cms" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Al nivel más fundamental de un <em>CMS</em> está el almacenamiento, por lo tanto el primer requisito de un <em>CMS</em> es que debe proporcionar los medios para almacenar contenido con diferentes propiedades.</p>
+<p>Un <em>CMS</em> tiene muy diferentes necesidades de almacenamiento que por ejemplo un sistema para procesar órdenes.
+Aun así observa que es enteramente posible y de hecho así se pretende que la iniciativa del <tt class="docutils literal"><span class="pre">CMF</span></tt> habilite a los desarrolladores para combinar el <tt class="docutils literal"><span class="pre">CMF</span></tt> con un sistema para procesar órdenes. Así por ejemplo, uno podría crear una solución de compra utilizando el <tt class="docutils literal"><span class="pre">CMF</span></tt> para almacenar el catalogo de productos, mientras utilizas otro sistema para mantener el inventario, datos del cliente y pedidos. Esto da lugar al segundo requisito, <em>un CMS debe proporcionar los medios para referenciar el contenido</em>, almacenando ambos dentro del <em>CMS</em>, pero también en otros sistemas.</p>
+<p>El contenido real en un <em>CMS</em> tiende a estar organizado en una estructura de árbol, imitando un sistema de archivos. Ten en cuenta que los autores de contenido podrían querer utilizar diferentes estructuras para organizar el contenido y para organizar otros aspectos como el menú y el enrutado.
+Esto nos lleva al tercer requisito, <em>un CMS debe proporcionar los medios para representar el contenido como una estructura de árbol</em>.
+Además, un cuarto requisito es que <em>un CMS debería permitir mantener varias estructuras de árbol independientes</em>.</p>
+<p>En general, los datos dentro de un <em>CMS</em> tienden a no estar estructurados. Si bien, varias páginas dentro del <em>CMS</em> podrían ser muy similares, hay una buena posibilidad de que habría muchas permutaciones que necesitarían diferentes campos extra, por lo tanto <em>un CMS no tiene que aplicar un esquema singular al contenido</em>.
+Dicho esto, a fin de mantener mejor la estructura y contenido de las capas de la interfaz de usuario que genéricamente permiten la visualización de elementos de contenido, es importante ser capaz de expresar reglas opcionales que se deben seguir y que también pueden ayudar a anexar significado semántico adicional. Así que <em>un CMS debe proporcionar los medios para opcionalmente definir elementos del esquema de contenido</em>.</p>
+<p>Este requisito en realidad también está relacionado a otra necesidad, en que un <em>CMS</em> debe facilitar a los autores de contenido la preparación de una serie de cambios en un entorno de ensayo que luego se tiene que enviar al sitio vivo en un solo paso. Esto significa que es otro requisito en que es necesario que <em>un CMS debe apoyar el movimiento y exportación de contenido entre estructuras de árbol independientes</em>.
+Ten en cuenta que la exportación puede ser útil también para las copias de seguridad.</p>
+<p>Al realizar cambios en ella sin embargo también sería útil poder versionar los conjuntos cambiados, de manera que permanezcan disponibles para fines históricos, pero también para poder revertirlos cuando sea necesario. Por lo tanto, el siguiente requisito es que un <em>CMS debería proporcionar la habilidad de versionar el contenido</em>.</p>
+<p>Puesto que vivimos en un mundo globalizado, los sitios web deben ofrecer contenido en múltiples idiomas abarcando diferentes regiones. No obstante no todas las piezas del contenido se deben traducir y eventualmente sólo algunas se deberían traducir, pero hasta entonces se le debe presentar al usuario el contenido en uno de los idiomas disponibles, por lo que <em>un CMS debería proporcionar la capacidad de almacenar el contenido en diferentes idiomas, con opcionales reglas alternativas</em>.</p>
+<p>Puesto que generalmente un <em>CMS</em> tiende a almacenar una creciente cantidad de contenido será necesario proporcionar alguna forma para que los usuarios busquen contenido, incluso, cuando el usuario sólo tiene una muy difusa idea sobre el contenido que está buscando, dando lugar al requisito de que <em>un CMS debe proporcionar completa capacidad de búsqueda de texto</em>, idealmente, aprovechando tanto la estructura del árbol de contenido como el esquema de datos.</p>
+<p>Otra necesidad popular es limitar la lectura y/o escritura de contenido a usuarios o grupos específicos. Idealmente, esta solución también se podría integrar con la estructura de árbol. Por lo que debería ser útil que <em>un CMS ofreciera funciones para definir el control de acceso que aproveche la estructura de árbol para gestionar rápidamente el acceso a subárboles completos</em>.</p>
+<p>Por último, no todos los pasos del proceso de creación de contenido los llevará a cabo la misma persona.
+De hecho, puede haber múltiples pasos, todos los cuales no los debería llevar a cabo una sola persona. En cambio algunos de los pasos incluso los podría ejecutar una máquina. Así, por ejemplo un fotógrafo puede cargar una nueva imagen, un autor de contenido puede adjuntar la foto a algún texto, entonces el sistema automáticamente genera miniaturas y optimiza la interpretación en la <em>web</em>, y finalmente, un editor decide sobre la publicación final. Por lo tanto <em>un CMS debe proporcionar la capacidad para ayudar en la gestión del flujo de trabajo</em>.</p>
+<div class="section" id="resumen">
+<h3>Resumen<a class="headerlink" href="#resumen" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Aquí tienes un resumen de los requisitos anteriores. Ten en cuenta que algunos de los requisitos tienen un <em>debe</em>, mientras otros sólo tienen un <em>debería</em>. Evidentemente dependiendo de tu caso de uso podrías priorizar las características de manera diferente:</p>
+<ul class="simple">
+<li>Un <em>CMS</em> debe proporcionar un medio para almacenar contenido con diferentes propiedades</li>
+<li>Un <em>CMS</em> debe proporcionar un medio para referirse al contenido</li>
+<li>Un <em>CMS</em> debe proporcionar un medio para representar el contenido como una estructura de árbol</li>
+<li>Un <em>CMS</em> debe proporcionar completa capacidad de búsqueda de texto</li>
+<li>Un <em>CMS</em> no debería aplicar un esquema singular para el contenido</li>
+<li>Un <em>CMS</em> debe proporcionar los medios para opcionalmente definir un esquema para elementos del contenido</li>
+<li>Un <em>CMS</em> debería permitir mantener varias estructuras de árbol independientes</li>
+<li>Un <em>CMS</em> debería ser compatible con el movimiento y exportación de contenido entre estructuras de árbol independientes</li>
+<li>Un <em>CMS</em> debería proporcionar la habilidad para tener contenido versionado</li>
+<li>Un <em>CMS</em> debería proporcionar la habilidad de almacenar contenido en diferentes idiomas, con opcionales reglas alternativas</li>
+<li>Un <em>CMS</em> debe proporcionar la capacidad para definir controles de acceso</li>
+<li>Un <em>CMS</em> debería proporcionar la capacidad para asistir en la administración de los flujos de trabajo</li>
+</ul>
+</div>
+</div>
+<div class="section" id="rdbms">
+<h2><em>RDBMS</em><a class="headerlink" href="#rdbms" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Viendo los requisitos anteriores se pone de manifiesto que fuera de la caja un <em>RDBMS</em> es el instrumento adecuado para hacer frente a las necesidades de un <em>CMS</em>. Los <em>RDBMS</em> nunca tuvieron la intención de almacenar estructuras de árbol de contenido no estructurado. Realmente el único requisito que cubre el <em>RDBMS</em> de la lista anterior es la capacidad de almacenar contenido, alguna manera para hacer referencia al contenido, mantener múltiples estructuras de contenido independientes y un nivel básico de control de acceso y disparadores.</p>
+<p>Este no es un defecto del <em>RDBMS</em> en el sentido de que fueron diseñados simplemente para un caso de uso diferente: la capacidad de almacenar, manipular y agregar datos estructurados. Esto las hace ideales para el almacenamiento de inventarios y pedidos.</p>
+<p>Lo cual no quiere decir que es imposible construir un sistema en lo alto de un <em>RDBMS</em> que se ocupe de algunos o incluso la totalidad de los temas anteriores. Algunos <em>RDBMS</em> nativamente soportan consultas recursivas, lo cual puede ser útil para recuperar las estructuras de árbol. Incluso si falta tal soporte nativo, hay algoritmos como camino materializado y conjuntos anidados que pueden permitir un eficiente almacenamiento y recuperación de estructuras de árbol para diferentes casos de uso.</p>
+<p>El punto es, sin embargo, que se requieren estos algoritmos y código en lo alto de un <em>RDBMS</em> que también se vinculen a la lógica de negocio con un determinado <em>RDBMS</em> y/o algoritmo, aunque algunos de ellos se pueden abstraer. Así que de nuevo usando un <em>ORM</em> podrías crear un sistema para gestionar las estructuras de árbol con diferentes algoritmos que impidan la unión de la lógica de negocio del <em>CMS</em> a un algoritmo particular.</p>
+<p>Sin embargo hay que decir una vez más, que todos los paquetes y componentes del <tt class="docutils literal"><span class="pre">CMF</span></tt> se han desarrollado para aceptar cualquier <em>API</em> de almacenamiento persistente y damos la bienvenida a las contribuciones para agregar implementaciones para otros sistemas de almacenamiento. Así, por ejemplo actualmente <tt class="docutils literal"><span class="pre">RoutingExtraBundle</span></tt> sólo ofrece clases de documento para el <em>ODM</em> de <em>PHPCR</em>, pero las interfaces definidas en el componente de enrutado son de almacenamiento agnóstico y aceptaríamos una contribución para añadir soporte al <em>ORM</em> de <em>Doctrine</em>.</p>
+</div>
+<div class="section" id="id1">
+<h2><em>PHPCR</em><a class="headerlink" href="#id1" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Esencialmente <em>PHPCR</em> es un conjunto de interfaces para abordar la mayoría de los requisitos de la lista anterior.
+Esto significa que <em>PHPCR</em> es totalmente independiente del almacenamiento en el sentido de que es posible realmente poner cualquier solución de persistencia detrás de <em>PHPCR</em>. Así pues, en la misma forma que un <em>ORM</em> puede soportar diferentes algoritmos de almacenamiento de árbol a través de algún complemento, <em>PHPCR</em> tiene como objetivo proporcionar una <em>API</em> para relajar completamente las necesidades del <em>CMS</em>, por lo tanto separando limpiamente toda la lógica del negocio de tu <em>CMS</em> a causa de la elección de persistencia. Como asunto natural, la única de las características anteriores no soportada nativamente por <em>PHPCR</em> es el apoyo para las traducciones.</p>
+<p>Gracias a la disponibilidad de varias implementaciones de <em>PHPCR</em> que apoyan diversos tipos de opciones de persistencia, la creación de un <em>CMS</em> en lo alto de <em>PHPCR</em> significa que los usuarios finales tienen la capacidad de escoger y elegir lo que funciona mejor para ellos, sus recursos, su experiencia y sus necesidades de escalabilidad.</p>
+<p>Así que para los casos de uso más simples por ejemplo está una solución basada en el <em>DBAL</em> de <em>Doctrine</em> ofrecida por la implementación <em>PHPCR</em> de <a class="reference external" href="https://github.com/jackalope/jackalope">Jackalope</a> que puede utilizar el <em>RDBMS</em> de <em>SQLite</em> que viene con <em>PHP</em>. En el otro extremo del espectro <tt class="docutils literal"><span class="pre">Jackalope</span></tt> también es compatible con <a class="reference external" href="http://jackrabbit.apache.org">Jackrabbit</a> el cual apoya las agrupaciones y puede manejar eficientemente los datos en cientos de gigabytes. De manera predeterminada <tt class="docutils literal"><span class="pre">Jackrabbit</span></tt> simplemente utiliza el sistema de archivos para la persistencia, pero también puede utilizar un <em>RDBMS</em>. Sin embargo, futuras versiones apoyarán a <em>MongoDB</em> y otras soluciones <em>NoSQL</em> como <em>CouchDB</em> o <em>Cassandra</em> es totalmente posible. Una vez más, el cambio de la solución de persistencia no requerirá cambios en el código puesto que la lógica de negocio sólo va unida a las interfaces <em>PHPCR</em>.</p>
+<p>Por favor ve <a class="reference internal" href="installing-configuring-doctrine-phpcr-odm.html"><em>Instalando y configurando Doctrine y PHPCR-ODM</em></a> para más detalles sobre las implementaciones <em>PHPCR</em> disponibles y sus requisitos y la forma de configurar <em>Symfony2</em> con una de ellas.</p>
+</div>
+<div class="section" id="odm-de-phpcr">
+<h2><em>ODM</em> de <em>PHPCR</em><a class="headerlink" href="#odm-de-phpcr" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuando mencione arriba utilizar <em>PHPCR</em> no significa renunciar a un <em>RDBMS</em>. En muchas maneras, puedes considerar a <em>PHPCR</em> una solución <em>ORM</em> especializada para <em>CMS</em>. No obstante, mientras <em>PHPCR</em> trabaja con los así llamados <em>nodos</em>, en un <em>ORM</em> las personas esperan ser capaces de asignar instancias de clase a una capa de persistencia. Esto, exactamente es lo que proporciona el <em>ODM</em> de <em>PHPCR</em>. Sigue las mismas clases de interfaz del <em>ORM</em> de <em>Doctrine</em> al mismo tiempo que expone todas las capacidades adicionales de <em>PHPCR</em>, como los árboles y el versionado. Por otra parte, también ofrece soporte nativo para traducciones, que cubren la única omisión del <em>PHPCR</em> de la lista de requisitos para una solución de almacenamiento de un <em>CMS</em> mencionada anteriormente.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Contenidos</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Eligiendo una capa de almacenamiento</a><ul>
+<li><a class="reference internal" href="#requisitos-para-la-capa-de-almacenamiento-de-un-cms">Requisitos para la capa de almacenamiento de un  <em>CMS</em></a><ul>
+<li><a class="reference internal" href="#resumen">Resumen</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rdbms"><em>RDBMS</em></a></li>
+<li><a class="reference internal" href="#id1"><em>PHPCR</em></a></li>
+<li><a class="reference internal" href="#odm-de-phpcr"><em>ODM</em> de <em>PHPCR</em></a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Tema anterior</h4>
+  <p class="topless"><a href="installing-cmf-core.html"
+                        title="Capítulo anterior">Instalando y configurando el núcleo del <tt class="docutils literal docutils literal"><span class="pre">CMF</span></tt></a></p>
+  <h4>Próximo tema</h4>
+  <p class="topless"><a href="installing-configuring-doctrine-phpcr-odm.html"
+                        title="Próximo capítulo">Instalando y configurando <em>Doctrine</em> y <em>PHPCR-ODM</em></a></p>
+<div id="searchbox" style="display: none">
+  <h3>Búsqueda rápida</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Ir a" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="installing-configuring-doctrine-phpcr-odm.html" title="Instalando y configurando Doctrine y PHPCR-ODM"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="installing-cmf-core.html" title="Instalando y configurando el núcleo del CMF"
+             >anterior</a> |</li>
+        <li><a href="../index.html">Symblog</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Comunidad CMF de Symfony Traducido al español por Nacho Pacheco.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

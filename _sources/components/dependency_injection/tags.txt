@@ -7,7 +7,7 @@ Trabajando con servicios etiquetados
 Las etiquetas son una cadena genérica (junto con algunas opciones) que puedes aplicar a cualquier servicio. Por sí mismas, las etiquetas en realidad no hacen la funcionalidad de tu servicio en modo alguno. Pero si quieres, puedes pedir al constructor del contenedor que consiga una lista de todos los servicios que estén etiquetados con alguna etiqueta específica. Esto es útil en los pases del compilador donde puedes encontrar estos servicios y usarlos o
 modificarlos de alguna manera específica.
 
-Por ejemplo, si estás usando Swift Mailer te puedes imaginar que quieres implementar una "cadena de transporte", que es una colección de clases que implementan ``\Swift_Transport``. Usando la cadena, querrá que Swift Mailer pruebe varias maneras de transportar el mensaje hasta que una lo consiga.
+Por ejemplo, si estás usando Swift Mailer te puedes imaginar que quieres implementar una «cadena de transporte», que es una colección de clases que implementan ``\Swift_Transport``. Usando la cadena, querrá que Swift Mailer pruebe varias maneras de transportar el mensaje hasta que una lo consiga.
 
 En primer lugar, define la clase ``TransportChain``::
 
@@ -37,7 +37,7 @@ Entonces, define la cadena como un servicio:
 
         services:
             acme_mailer.transport_chain:
-                class: %acme_mailer.transport_chain.class%
+                class: "%acme_mailer.transport_chain.class%"
 
     .. code-block:: xml
 
@@ -60,8 +60,8 @@ Entonces, define la cadena como un servicio:
 Definiendo servicios con una etiqueta personalizada
 ---------------------------------------------------
 
-Ahora queremos que varias de las clases ``\Swift_Transport`` para ejecutarse y añadirse a la cadena automáticamente usando el método ``addTransport()``.
-Como ejemplo podemos añadir los siguientes transportes como los servicios de:
+Ahora, posiblemente quieras que varias de las clases ``\Swift_Transport`` sean creadas y añadidas automáticamente a la cadena usando el método ``addTransport()``.
+Como ejemplo, puedes añadir los siguientes transportes como servicios:
 
 .. configuration-block::
 
@@ -102,7 +102,7 @@ Como ejemplo podemos añadir los siguientes transportes como los servicios de:
         $definitionSendmail->addTag('acme_mailer.transport');
         $container->setDefinition('acme_mailer.transport.sendmail', $definitionSendmail);
 
-Ten en cuenta que a cada uno se le dio una etiqueta llamada ``acme_mailer.transport``. Esta es la etiqueta personalizada que utilizarás en tu pase del compilador. El pase del compilador es lo que da algún "significado" a la etiqueta.
+Ten en cuenta que a cada uno se le dio una etiqueta llamada ``acme_mailer.transport``. Esta es la etiqueta personalizada que utilizarás en tu pase del compilador. El pase del compilador es lo que da algún «significado» a la etiqueta.
 
 Crear un ``CompilerPass``
 -------------------------
@@ -117,14 +117,22 @@ Tu pase del compilador ahora puede pedir al contenedor cualquier servicio con la
     {
         public function process(ContainerBuilder $container)
         {
-            if (false === $container->hasDefinition('acme_mailer.transport_chain')) {
+            if (!$container->hasDefinition('acme_mailer.transport_chain')) {
                 return;
             }
 
-            $definition = $container->getDefinition('acme_mailer.transport_chain');
+            $definition = $container->getDefinition(
+                'acme_mailer.transport_chain'
+            );
 
-            foreach ($container->findTaggedServiceIds('acme_mailer.transport') as $id => $attributes) {
-                $definition->addMethodCall('addTransport', array(new Reference($id)));
+            $taggedServices = $container->findTaggedServiceIds(
+                'acme_mailer.transport'
+            );
+            foreach ($taggedServices as $id => $attributes) {
+                $definition->addMethodCall(
+                    'addTransport',
+                    array(new Reference($id))
+                );
             }
         }
     }
@@ -141,3 +149,106 @@ También necesitas registrar el pase en el contenedor, entonces se ejecutará al
 
     $container = new ContainerBuilder();
     $container->addCompilerPass(new TransportCompilerPass);
+
+.. note::
+
+    Los pases del compilador son registrados de manera diferente si estás usando la pila completa de la plataforma. Ve :doc:`/cookbook/service_container/compiler_passes` para más detalles.
+
+Añadiendo atributos adicionales en etiquetas
+--------------------------------------------
+
+Algunas veces necesitarás información adicional acerca de cada servicio que se ha marcado con tu etiqueta.
+Por ejemplo, posiblemente quieras agregar un alias a cada ``TransportChain``.
+
+Para empezar, cambia la clase ``TransportChain``::
+
+    class TransportChain
+    {
+        private $transports;
+
+        public function __construct()
+        {
+            $this->transports = array();
+        }
+
+        public function addTransport(\Swift_Transport $transport, $alias)
+        {
+            $this->transports[$alias] = $transport;
+        }
+
+        public function getTransport($alias)
+        {
+            if (array_key_exists($alias, $this->transports)) {
+               return $this->transports[$alias];
+            }
+            else {
+               return;
+            }
+        }
+    }
+
+Como puedes ver, cuando se llama a ``addTransport``, no sólo necesita un objeto ``Swift_Transport``, sino también una cadena con el alias del transporte. Por lo tanto, ¿cómo podemos permitir que cada servicio etiquetado como transporte también suministre un alias?
+
+Para responder a esto, cambia la declaración del servicio:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            acme_mailer.transport.smtp:
+                class: \Swift_SmtpTransport
+                arguments:
+                    - %mailer_host%
+                tags:
+                    -  { name: acme_mailer.transport, alias: foo }
+            acme_mailer.transport.sendmail:
+                class: \Swift_SendmailTransport
+                tags:
+                    -  { name: acme_mailer.transport, alias: bar }
+
+
+    .. code-block:: xml
+
+        <service id="acme_mailer.transport.smtp" class="\Swift_SmtpTransport">
+            <argument>%mailer_host%</argument>
+            <tag name="acme_mailer.transport" alias="foo" />
+        </service>
+
+        <service id="acme_mailer.transport.sendmail" class="\Swift_SendmailTransport">
+            <tag name="acme_mailer.transport" alias="bar" />
+        </service>
+
+Ten en cuenta que agregaste una clave genérica ``alias`` a la etiqueta. Para utilizarla efectivamente, actualiza el compilador::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+    use Symfony\Component\DependencyInjection\Reference;
+
+    class TransportCompilerPass implements CompilerPassInterface
+    {
+        public function process(ContainerBuilder $container)
+        {
+            if (!$container->hasDefinition('acme_mailer.transport_chain')) {
+                return;
+            }
+
+            $definition = $container->getDefinition(
+                'acme_mailer.transport_chain'
+            );
+
+            $taggedServices = $container->findTaggedServiceIds(
+                'acme_mailer.transport'
+            );
+            foreach ($taggedServices as $id => $tagAttributes) {
+                foreach ($tagAttributes as $attributes) {
+                    $definition->addMethodCall(
+                        'addTransport',
+                        array(new Reference($id), $attributes["alias"])
+                    );
+                }
+            }
+        }
+    }
+
+La parte más complicada es la variable ``$attributes``. Debido a que puedes utilizar la misma etiqueta muchas veces en el mismo servicio (por ejemplo, en teoría, podrías etiquetar el mismo servicio 5 veces con la etiqueta ``acme_mailer.transport``), ``$attributes`` es un arreglo con información de la etiqueta de cada una de las etiquetas en ese servicio.

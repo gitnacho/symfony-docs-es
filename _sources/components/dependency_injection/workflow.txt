@@ -1,0 +1,40 @@
+.. index::
+   single: Inyección de dependencia; Flujo de trabajo;
+
+Construyendo el flujo de trabajo del contenedor
+===============================================
+
+En las páginas anteriores de esta sección, ha habido muy poco que decir acerca de donde se deben ubicar los diversos archivos y clases. Esto es porque eso depende de la aplicación, biblioteca o plataforma en la que deseas utilizar el contenedor. En cuanto a la forma de configurar el contenedor y construirlo en la pila completa de la plataforma, *Symfony2* te ayudará a ver cómo encaja todo esto junto, si estás utilizando la pila completa de la plataforma o buscando cómo utilizar el contenedor de servicios en otra aplicación.
+
+La pila completa de la plataforma usa el componente ``HttpKernel`` para manejar la carga de la configuración del contenedor de servicios desde la aplicación y paquetes, y también se encarga de su compilación y almacenamiento en caché. Incluso si no estás usando el ``HttpKernel``, debería darte una idea de una forma de organizar la configuración en una aplicación modular.
+
+Trabajando con contenedores en caché
+------------------------------------
+
+Antes de construrlo, el núcleo comprueba si existe una versión en caché del contenedor. El ``HttpKernel`` tiene un ajuste de depuración y si este es falso, se utiliza la versión en caché si existe. Si ``debug`` es verdadero, entonces el núcleo :doc:`comprueba si la configuración es fresca </components/config/caching>` y si lo es, utiliza la versión en caché del contenedor. Si no, entonces el contenedor es construido a partir de la configuración a nivel de la aplicación y la configuración de los paquetes de extensión.
+
+Revisa :ref:`Volcando la configuración por rendimiento <components-dependency-injection-dumping>` para más detalles.
+
+Configurando a nivel de la aplicación
+-------------------------------------
+
+La configuración a nivel de la aplicación se carga desde el directorio ``app/chonfig``. Se cargan varios archivos, mismos que luego se fusionan al procesar las extensiones. Esto permite una diferente configuración para diferentes entornos, por ejemplo, ``dev``, ``prod``.
+
+Estos archivos contienen los parámetros y servicios que se cargan directamente en el contenedor de acuerdo a :ref:`Configurando el contenedor con archivos de configuración <components-dependency-injection-loading-config>`.
+También contienen configuración que es procesada por extensiones de acuerdo con :ref:`Gestionando la configuración con extensiones <components-dependency-injection-extension>`.
+Estos se consideran configuración del paquete, ya que cada paquete contiene la extensión de una clase.
+
+Configuración a nivel de paquete con las extensiones
+----------------------------------------------------
+
+Por convención, cada paquete contiene la extensión de una clase que se encuentra en directorio ``DependencyInjection`` del paquete. Éstas son registradas con el ``ContainerBuilder`` al arrancar el núcleo. Cuando el ``ContainerBuilder`` es :doc:`compilado </components/dependency_injection/compilation>`, la configuración a nivel de la aplicación correspondiente a la extensión del paquete se pasa a la extensión que también suele cargar sus propios archivos de configuración, típicamente desde el directorio ``Resources/config``. La configuración a nivel de la aplicación normalmente es procesada con un :doc: `objeto Configuration </components/config/definition>` también almacenado en el directorio ``DependencyInjection`` del paquete.
+
+Pases del compilador para permitir la interacción entre paquetes
+----------------------------------------------------------------
+
+Los :ref:`pases del compilador <components-dependency-injection-compiler-passes>` se utilizan para permitir la interacción entre los diferentes paquetes, ya que estos no pueden afectar a la configuración de las demás clases de la extensión. Uno de sus principales usos es el procesamiento de servicios etiquetados, lo cual permite a los paquetes registrar servicios captados por otros paquetes, tal como registradores de *Monolog*, extensiones *Twig* y Colectores de datos para el generador de perfiles web. Se suele colocar los pases del compilador en el directorio ``DependencyInjection/Compiler``.
+
+Compilación y almacenamiento en caché
+-------------------------------------
+
+Después de cargar el proceso de compilación los servicios de configuración, extensiones y pases del compilador, se vuelcan para que la memoria caché se pueda utilizar la próxima vez. La versión vertida se utiliza durante las posteriores peticiones, ya que es más eficiente.

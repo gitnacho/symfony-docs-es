@@ -13,23 +13,23 @@ Pero cuando tu sitio crezca, la sobrecarga general se puede convertir en un prob
 La memoria caché en hombros de gigantes
 ---------------------------------------
 
-La manera más efectiva para mejorar el rendimiento de una aplicación es memorizar en caché la salida completa de una página y luego eludir por completo la aplicación en cada petición posterior. Por supuesto, esto no siempre es posible para los sitios web altamente dinámicos, ¿o no? En este capítulo, te mostraremos cómo funciona el sistema de caché *Symfony2* y por qué pensamos que este es el mejor enfoque posible.
+La manera más efectiva para mejorar el rendimiento de una aplicación es memorizar en caché la salida completa de una página y luego eludir por completo la aplicación en cada petición posterior. Por supuesto, esto no siempre es posible para los sitios web altamente dinámicos, ¿o no? En este capítulo, te mostraremos cómo funciona el sistema de caché *Symfony2* y por qué este es el mejor enfoque posible.
 
-El sistema de cache *Symfony2* es diferente porque se basa en la simplicidad y el poder de la caché *HTTP* tal como está definido en la :term:`especificación HTTP`.
+El sistema de cache *Symfony2* es diferente porque se basa en la simplicidad y el poder de la caché *HTTP* tal como está definida en la :term:`especificación HTTP`.
 En lugar de reinventar una metodología de memoria caché, *Symfony2* adopta la norma que define la comunicación básica en la Web. Una vez que comprendas los principios fundamentales de los modelos de caducidad y validación de la memoria caché *HTTP*, estarás listo para dominar el sistema de caché *Symfony2*.
 
-Para efectos de aprender cómo guardar en caché con *Symfony2*, vamos a cubrir el tema en cuatro pasos:
+Para efectos de aprender cómo guardar en caché con *Symfony2*, abordaremos el tema en cuatro pasos:
 
-* **Paso 1**: Una :ref:`pasarela de caché <gateway-caches>`, o delegado inverso, es una capa independiente situada frente a tu aplicación. La caché del delegado inverso responde a medida que son devueltas desde tu aplicación y responde a peticiones con respuestas de la caché antes de que lleguen a tu aplicación. *Symfony2* proporciona su propio delegado inverso, pero puedes utilizar cualquier delegado inverso.
+#. Una :ref:`pasarela de caché <gateway-caches>`, o delegado inverso (``«proxy»``), es una capa independiente situada frente a tu aplicación. La caché del delegado inverso responde a medida que son devueltas desde tu aplicación y contesta a peticiones con respuestas de la caché antes de que lleguen a tu aplicación. *Symfony2* proporciona su propio delegado inverso, pero puedes utilizar cualquier delegado inverso.
 
-* **Paso 2**: :ref:`cache HTTP <http-cache-introduction>` las cabeceras se utilizan para comunicarse con la pasarela de caché y cualquier otra caché entre la aplicación y el cliente. *Symfony2* proporciona parámetros predeterminados y una potente interfaz para interactuar con las cabeceras de caché.
+#. Las cabeceras de :ref:`cache HTTP <http-cache-introduction>` se utilizan para comunicarse con la pasarela de caché y cualquier otra caché entre tu aplicación y el cliente. *Symfony2* proporciona parámetros predeterminados y una potente interfaz para interactuar con las cabeceras de caché.
 
-* **Paso 3**: *HTTP* :ref:`caducidad y validación <http-expiration-validation>` son los dos modelos utilizados para determinar si el contenido memorizado en caché es *fresco* (se puede reutilizar de la memoria caché) u *obsoleto* (lo debe regenerar la aplicación).
+#. La :ref:`caducidad y validación <http-expiration-validation>` *HTTP* son los dos modelos utilizados para determinar si el contenido memorizado en caché es *fresco* (se puede reutilizar de la memoria caché) u *obsoleto* (lo debe regenerar la aplicación).
 
-* **Paso 4**: :ref:`Inclusión del borde lateral <edge-side-includes>` (Edge Side Includes -*ESI*) permite que la caché *HTTP* utilice fragmentos de la página en caché (incluso fragmentos anidados) independientemente.
-  Con *ESI*, incluso puedes guardar en caché una página entera durante 60 minutos, pero una barra lateral integrada sólo por 5 minutos.
+#. :ref:`Inclusión del borde lateral <edge-side-includes>` (*Edge Side Includes -ESI*) permite que la caché *HTTP* utilice fragmentos de la página en caché (incluso fragmentos anidados) independientemente.
+   Con *ESI*, incluso puedes guardar en caché una página entera durante 60 minutos, pero una barra lateral integrada sólo por 5 minutos.
 
-Dado que la memoria caché *HTTP* no es exclusiva de *Symfony*, ya existen muchos artículos sobre el tema. Si eres nuevo para la memoria caché *HTTP*, te *recomendamos* el artículo de Ryan Tomayko `Things Caches Do`_. Otro recurso en profundidad es la `Guía de caché`_ de Mark Nottingham.
+Dado que la memoria caché *HTTP* no es exclusiva de *Symfony*, ya existen muchos artículos sobre el tema. Si eres novato en el tema de la memoria caché *HTTP*, te *recomendamos* el artículo de Ryan Tomayko `Things Caches Do`_. Otro recurso que aborda el tema es la `Guía de caché`_ de Mark Nottingham.
 
 .. index::
    single: Caché; Delegado
@@ -43,9 +43,9 @@ Memoria caché con pasarela de caché
 
 Cuándo memorizar caché con *HTTP*, la *caché* está separada de tu aplicación por completo y se sitúa entre tu aplicación y el cliente haciendo la petición.
 
-El trabajo de la caché es aceptar las peticiones del cliente y pasarlas de nuevo a tu aplicación. La memoria caché también recibirá las respuestas devueltas por tu aplicación y las remitirá al cliente. La caché es el "geniecillo" de la comunicación petición-respuesta entre el cliente y tu aplicación.
+El trabajo de la caché es aceptar las peticiones del cliente y pasarlas de nuevo a tu aplicación. La memoria caché también recibirá las respuestas devueltas por tu aplicación y las remitirá al cliente. La caché es el «geniecillo» de la comunicación petición-respuesta entre el cliente y tu aplicación.
 
-En el camino, la memoria caché almacena cada respuesta que se considere "cacheable" (consulta :ref:`http-cache-introduction`). Si de nuevo se solicita el mismo recurso, la memoria caché envía la respuesta memorizada en caché al cliente, eludiendo tu aplicación por completo.
+De paso, la memoria caché almacena cada respuesta que se considere «almacenable en caché» (consulta :ref:`http-cache-introduction`). Si de nuevo se solicita el mismo recurso, la memoria caché envía la respuesta memorizada en caché al cliente, eludiendo tu aplicación por completo.
 
 Este tipo de caché se conoce como pasarela de caché *HTTP* y existen muchas como `Varnish`_, `Squid en modo delegado inverso`_ y el delegado inverso de *Symfony2*.
 
@@ -57,12 +57,12 @@ Tipos de Caché
 
 Sin embargo, una pasarela de caché no es el único tipo de caché. De hecho, las cabeceras de caché *HTTP* enviadas por tu aplicación son consumidas e interpretadas por un máximo de tres diferentes tipos de caché:
 
-* *Caché de navegadores*: Cada navegador viene con su propia caché local que es realmente útil para cuando pulsas "atrás" o en imágenes y otros activos.
-  La caché del navegador es una caché *privada*, los recursos memorizados en caché no se comparten con nadie más.
+* *Caché de navegadores*: Cada navegador viene con su propia caché local, lo cual es realmente útil para cuando pulsas «atrás» o para imágenes y otros activos.
+  La caché del navegador es una caché *privada*, los recursos memorizados en caché no se comparten con nadie más;
 
-* *Delegados de caché*: Un delegado de memoria caché *compartida* es aquel en el cual muchas personas pueden estar detrás de uno solo. Por lo general instalada por las grandes corporaciones y proveedores de Internet para reducir latencia y tráfico de red.
+* *Delegados de caché*: Un delegado de caché *compartida* es aquel en el cual muchas personas pueden estar detrás de uno solo. Por lo general instalado por las grandes corporaciones y proveedores de Internet para reducir latencia y tráfico de red;
 
-* *Pasarela de caché*: Al igual que un delegado, también es una memoria caché *compartida* pero en el lado del servidor. Instalada por los administradores de red, esta tiene sitios web más escalables, confiables y prácticos.
+* *Pasarela de caché*: Al igual que un delegado, también es una caché *compartida* pero en el lado del servidor. Instalada por los administradores de red, esta tiene sitios web más escalables, confiables y prácticos.
 
 .. tip::
 
@@ -72,7 +72,7 @@ Sin embargo, una pasarela de caché no es el único tipo de caché. De hecho, la
 
     La importancia de la caché *privada* frente a la *compartida* será más evidente a medida que hablemos de las respuestas en la memoria caché con contenido que es específico para un solo usuario (por ejemplo, información de cuenta).
 
-Cada respuesta de tu aplicación probablemente vaya a través de uno o los dos primeros tipos de caché. Estas cachés están fuera de tu control, pero siguen las instrucciones de caché *HTTP* establecidas en la respuesta.
+Cada respuesta de tu aplicación probablemente vaya a través de uno o los dos primeros tipos de caché. Estas cachés están fuera de tu control, pero siguen las instrucciones de la caché *HTTP* establecidas en la respuesta.
 
 .. index::
    single: Caché; Delegado inverso de Symfony2
@@ -82,12 +82,11 @@ Cada respuesta de tu aplicación probablemente vaya a través de uno o los dos p
 Delegado inverso de *Symfony2*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*Symfony2* viene con un delegado inverso de caché (también conocido como pasarela de caché) escrito en *PHP*. Que al activarla, inmediatamente puede memorizar en caché respuestas de tu aplicación. La instalación es muy fácil. Cada nueva aplicación *Symfony2* viene con una caché preconfigurada en el núcleo (``AppCache``) que envuelve al predeterminado (``AppKernel``). La memoria caché del núcleo *es* el delegado inverso.
+*Symfony2* viene con un delegado inverso de caché (también conocido como pasarela de caché) escrito en *PHP*. Que al activarla, inmediatamente puede memorizar en caché respuestas de tu aplicación. La instalación es muy fácil. Cada nueva aplicación *Symfony2* viene con una caché preconfigurada en el núcleo (``AppCache``) que envuelve al predeterminado (``AppKernel``). El núcleo de la memoria caché *es* el delegado inverso.
 
 Para habilitar la memoria caché, modifica el código de un controlador frontal para utilizar la caché del núcleo::
 
     // web/app.php
-
     require_once __DIR__.'/../app/bootstrap.php.cache';
     require_once __DIR__.'/../app/AppKernel.php';
     require_once __DIR__.'/../app/AppCache.php';
@@ -98,9 +97,12 @@ Para habilitar la memoria caché, modifica el código de un controlador frontal 
     $kernel->loadClassCache();
     // envuelve el AppKernel predeterminado con un AppCache
     $kernel = new AppCache($kernel);
-    $kernel->handle(Request::createFromGlobals())->send();
+    $request = Request::createFromGlobals();
+    $response = $kernel->handle($request);
+    $response->send();
+    $kernel->terminate($request, $response);
 
-La memoria caché del núcleo actúa de inmediato como un delegado inverso ---memorizando en caché las respuestas de tu aplicación y devolviéndolas al cliente.
+La memoria caché del núcleo actúa de inmediato como un delegado inverso ---memorizando en caché las respuestas de tu aplicación y devolviéndolas al cliente---.
 
 .. tip::
 
@@ -108,10 +110,9 @@ La memoria caché del núcleo actúa de inmediato como un delegado inverso ---me
 
         error_log($kernel->getLog());
 
-El objeto ``AppCache`` tiene una configuración predeterminada sensible, pero la puedes afinar por medio de un conjunto de opciones que puedes configurar sustituyendo el método ``getOptions()``::
+El objeto ``AppCache`` tiene una sensible configuración predeterminada, pero la puedes afinar por medio de un conjunto de opciones que puedes configurar sustituyendo el método :method:`Symfony\\Bundle\\FrameworkBundle\\HttpCache\\HttpCache::getOptions`::
 
     // app/AppCache.php
-
     use Symfony\Bundle\FrameworkBundle\HttpCache\HttpCache;
 
     class AppCache extends HttpCache
@@ -138,10 +139,10 @@ Aquí está una lista de las principales opciones:
 
 * ``default_ttl``: El número de segundos que una entrada de caché se debe considerar nueva cuando no hay información fresca proporcionada explícitamente en una respuesta. Las cabeceras explícitas ``Cache-Control`` o ``Expires`` sustituyen este valor (predeterminado: ``0``);
 
-* ``private_headers``: Conjunto de cabeceras de la petición que desencadenan el comportamiento ``Cache-Control`` "privado" en las respuestas en que la respuesta explícitamente no es ``pública`` o ``privada`` vía una directiva ``Cache-Control``.
+* ``private_headers``: Conjunto de cabeceras de la petición que desencadenan el comportamiento ``Cache-Control`` «privado» en las respuestas en que no son clasificadas explícitamente como ``públicas`` o ``privadas`` vía una directiva ``Cache-Control``.
   (default: ``Authorization`` y :dfn:`cookie`);
 
-* ``allow_reload``: Especifica si el cliente puede forzar una recarga desde caché incluyendo una directiva ``Cache-Control`` ``"no-cache"`` en la petición. Selecciona ``true`` para cumplir con la RFC 2616 (por omisión: ``false``);
+* ``allow_reload``: Especifica si el cliente puede forzar una recarga desde caché incluyendo una directiva ``Cache-Control`` «``no-cache``» en la petición. Selecciona ``true`` para cumplir con la RFC 2616 (por omisión: ``false``);
 
 * ``allow_revalidate``: Especifica si el cliente puede forzar una revalidación de caché incluyendo una directiva ``Cache-Control`` ``max-age = 0`` en la petición. Ponla en ``true`` para cumplir con la RFC 2616 (por omisión: false);
 
@@ -153,9 +154,9 @@ Si ``debug`` es ``true``, *Symfony2* automáticamente agrega una cabecera ``X-Sy
 
 .. sidebar:: Cambiando de un delegado inverso a otro
 
-    El delegado inverso de *Symfony2* es una gran herramienta a utilizar en el desarrollo de tu sitio web o al desplegar tu web en un servidor compartido donde no puedes instalar nada más allá que código *PHP*. Pero está escrito en *PHP*, no puede ser tan rápido como un delegado escrito en C. Es por eso que recomendamos -de ser posible- usar *Varnish* o *Squid* en tus servidores de producción. La buena nueva es que el cambio de un servidor delegado a otro es fácil y transparente, sin modificar el código necesario en tu aplicación. Comienza fácilmente con el delegado inverso de *Symfony2* y actualiza a *Varnish* cuando aumente el tráfico.
+    El delegado inverso de *Symfony2* es una gran herramienta a utilizar en el desarrollo de tu sitio web o al desplegar tu web en un servidor compartido donde no puedes instalar nada más allá que código *PHP*. Pero está escrito en *PHP*, y por lo tanto no puede ser tan rápido como un delegado escrito en *C*. Es por eso que recomendamos ---de ser posible--- usar *Varnish* o *Squid* en tus servidores de producción. La buena nueva es que el cambio de un servidor delegado a otro es fácil y transparente, sin modificar el código necesario en tu aplicación. Comienza fácilmente con el delegado inverso de *Symfony2* y actualiza a *Varnish* cuando aumente el tráfico.
 
-    Para más información sobre el uso de *Varnish* con *Symfony2*, consulta el capítulo :doc:`Cómo usar Varnish </cookbook/cache/varnish>` del recetario.
+    Para más información sobre el uso de *Varnish* con *Symfony2*, consulta el capítulo :doc:`Cómo usar Varnish </cookbook/cache/varnish>` en el recetario.
 
 .. note::
 
@@ -173,9 +174,9 @@ Para aprovechar las ventajas de las capas de memoria caché disponibles, tu apli
 
 .. tip::
 
-    Ten en cuenta que *"HTTP"* no es más que el lenguaje (un lenguaje de texto simple) que los clientes web (navegadores, por ejemplo) y los servidores web utilizan para comunicarse entre sí. Cuando hablamos de la memoria caché *HTTP*, estamos hablando de la parte de ese lenguaje que permite a los clientes y servidores intercambiar información relacionada con la memoria caché.
+    Ten en cuenta que *HTTP* no es más que el lenguaje (un lenguaje de texto simple) que los clientes web (navegadores, por ejemplo) y los servidores web utilizan para comunicarse entre sí. Cuando hablamos de la memoria caché *HTTP*, estamos hablando de la parte de ese lenguaje que permite a los clientes y servidores intercambiar información relacionada con la memoria caché.
 
-*HTTP* especifica cuatro cabeceras de caché para respuestas en las que estamos interesados:
+*HTTP* especifica cuatro cabeceras de caché para respuestas en las que estamos interesados aquí:
 
 * ``Cache-Control``
 * ``Expires``
@@ -201,9 +202,9 @@ La cabecera ``Cache-Control`` es la única que no contiene una, sino varias piez
 
      Cache-Control: max-age=3600, must-revalidate
 
-*Symfony* proporciona una abstracción de la cabecera ``Cache-Control`` para hacer más manejable su creación:
+*Symfony* proporciona una abstracción de la cabecera ``Cache-Control`` para hacer más manejable su creación::
 
-.. code-block:: php
+    // ...
 
     $response = new Response();
 
@@ -221,7 +222,7 @@ La cabecera ``Cache-Control`` es la única que no contiene una, sino varias piez
 Respuestas públicas frente a privadas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Ambas, la pasarela de caché y el delegado de caché, son considerados como cachés "compartidas" debido a que el contenido memorizado en caché lo comparten más de un usuario. Si cada vez equivocadamente una memoria caché compartida almacena una respuesta específica al usuario, posteriormente la puede devolver a cualquier cantidad de usuarios diferentes. ¡Imagina si la información de tu cuenta se memoriza en caché y luego la regresa a todos los usuarios posteriores que soliciten la página de su cuenta!
+Ambas, la pasarela de caché y el delegado de caché, son considerados como cachés «compartidas» debido a que el contenido memorizado en caché se comparte con más de un usuario. Si cada vez equivocadamente una memoria caché compartida almacena una respuesta específica al usuario, posteriormente la puede devolver a cualquier cantidad de usuarios diferentes. ¡Imagina si la información de tu cuenta se memoriza en caché y luego la regresa a todos los usuarios posteriores que soliciten la página de su cuenta!
 
 Para manejar esta situación, cada respuesta se puede fijar para que sea pública o privada:
 
@@ -237,17 +238,17 @@ Por omisión, *Symfony* conservadoramente fija cada respuesta para que sea priva
 Métodos seguros
 ~~~~~~~~~~~~~~~
 
-La memoria caché *HTTP* sólo funciona para métodos *HTTP* "seguros" (como *GET* y *HEAD*). Estar seguro significa que nunca cambia de estado la aplicación en el servidor al servir la petición (por supuesto puedes registrar información, datos de la caché, etc.)
+La memoria caché *HTTP* sólo funciona para métodos *HTTP* «seguros» (como *GET* y *HEAD*). Estar seguro significa que nunca cambia de estado la aplicación en el servidor al servir la petición (por supuesto puedes registrar información, datos de la caché, etc.)
 Esto tiene dos consecuencias muy razonables:
 
-* *Nunca* debes cambiar el estado de tu aplicación al responder a una petición *GET* o *HEAD*. Incluso si no utilizas una pasarela caché, la presencia del delegado de caché significa que alguna petición *GET* o *HEAD* puede o no llegar a tu servidor.
+* *Nunca* debes cambiar el estado de tu aplicación al responder a una petición *GET* o *HEAD*. Incluso si no utilizas una pasarela caché, la presencia del delegado de caché significa que alguna petición *GET* o *HEAD* puede o no llegar a tu servidor;
 
-* No supongas que hay métodos *PUT*, *POST* o DELETE en caché. Estos métodos están diseñados para utilizarse al mutar el estado de tu aplicación (por ejemplo, borrar una entrada de *blog*). La memoria caché debe impedir que determinadas peticiones toquen y muten tu aplicación.
+* No esperes que haya métodos *PUT*, *POST* o *DELETE* en caché. Estos métodos están diseñados para utilizarse al mutar el estado de tu aplicación (por ejemplo, borrar una entrada de *blog*). La memoria caché debe impedir que determinadas peticiones toquen y muten tu aplicación.
 
 Reglas de caché y valores predeterminados
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*HTTP* 1.1 por omisión, permite a cualquiera memorizar en caché a menos que haya una cabecera ``Cache-Control`` explícita. En la práctica, la mayoría de cachés no hacen nada cuando solicitan una ``galleta``, una cabecera de autorización, utilizar un método no seguro (es decir, *PUT*, *POST*, DELETE), o cuando las respuestas tienen código de redirección de estado.
+*HTTP* 1.1 por omisión, permite memorizar en caché cualquier cosa a menos que haya una cabecera ``Cache-Control`` explícita. En la práctica, la mayoría de las cachés no hacen nada cuando las peticiones tienen una ``galleta``, una cabecera de autorización, utilizan un método no seguro (es decir, *PUT*, *POST*, *DELETE*), o cuando las respuestas tienen código de redirección de estado.
 
 *Symfony2* automáticamente establece una sensible y conservadora cabecera ``Cache-Control`` cuando esta no está definida por el desarrollador, siguiendo estas reglas:
 
@@ -264,19 +265,19 @@ Caducidad y validación *HTTP*
 
 La especificación *HTTP* define dos modelos de memoria caché:
 
-* Con el `modelo de caducidad`_, sólo tienes que especificar el tiempo en que la respuesta se debe considerar "fresca" incluyendo una cabecera ``Cache-Control`` y/o una ``Expires``. Las cachés que entienden de expiración no harán la misma petición hasta que la versión en caché llegue a su fecha de caducidad y se convierta en "obsoleta".
+* Con el `modelo de caducidad`_, sólo tienes que especificar el tiempo en que la respuesta se debe considerar «fresca» incluyendo una cabecera ``Cache-Control`` y/o una ``Expires``. Las cachés que entienden de expiración no harán la misma petición hasta que la versión en caché alcance el límite de caducidad y se vuelva «obsoleta»;
 
 * Cuando las páginas realmente son dinámicas (es decir, su representación cambia con mucha frecuencia), a menudo es necesario el `modelo de validación`_. Con este modelo, la memoria caché memoriza la respuesta, pero, pregunta al servidor en cada petición si la respuesta memorizada sigue siendo válida. La aplicación utiliza un identificador de respuesta único (la cabecera ``Etag``) y/o una marca de tiempo (la cabecera ``Last-Modified``) para comprobar si la página ha cambiado desde su memorización en caché.
 
-El objetivo de ambos modelos es nunca generar la misma respuesta en dos ocasiones dependiendo de una caché para almacenar y devolver respuestas ``"fresco"``.
+El objetivo de ambos modelos es nunca generar la misma respuesta en dos ocasiones dependiendo de una caché para almacenar y devolver respuestas «``frescas``».
 
 .. sidebar:: Leyendo la especificación *HTTP*
 
-    La especificación *HTTP* define un lenguaje sencillo pero potente en el cual clientes y servidores se pueden comunicar. Como desarrollador web, el modelo petición-respuesta de la especificación domina nuestro trabajo. Lamentablemente, el documento de la especificación real ---`RFC 2616`_--- puede ser difícil de leer.
+    La especificación *HTTP* define un sencillo pero potente lenguaje con el cual clientes y servidores se pueden comunicar. Como desarrollador *web*, el modelo petición-respuesta de la especificación domina tu trabajo. Lamentablemente, el documento de la especificación real ---`RFC 2616`_--- puede ser difícil de leer.
 
     Hay un esfuerzo en curso (`HTTP Bis`_) para reescribir la RFC 2616. Este no describe una nueva versión de *HTTP*, sino sobre todo aclara la especificación *HTTP* original. La organización también se ha mejorado ya que la especificación se divide en siete partes; todo lo relacionado con la caché *HTTP* se puede encontrar en dos partes dedicadas (`P4 - Petición condicional`_ y `P6 - Caché: Navegador y caché intermedia`_).
 
-    Como desarrollador web, te invitamos a leer la especificación. Su claridad y poder ---incluso más de diez años después de su creación--- tiene un valor incalculable. No te desanimes por la apariencia de la especificación ---su contenido es mucho más bello que la cubierta.
+    Como desarrollador web, estás invitado a leer la especificación. Su claridad y poder ---incluso más de diez años después de su creación--- tiene un valor incalculable. No te desanimes por la apariencia de la especificación ---su contenido es mucho más bello que la cubierta---.
 
 .. index::
    single: Caché; Caducidad HTTP
@@ -295,14 +296,16 @@ El modelo de caducidad se puede lograr usando una de dos, casi idénticas, cabec
 Caducidad con la cabecera ``Expires``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-De acuerdo con la especificación *HTTP* "el campo de la cabecera ``Expires`` da la fecha/hora después de la cual se considera que la respuesta es vieja". La cabecera ``Expires`` se puede establecer con el método ``setExpires()`` de la ``Respuesta``. Esta necesita una instancia de ``DateTime`` como argumento::
+De acuerdo con la especificación *HTTP* «el campo de la cabecera ``Expires`` da la fecha/hora después de la cual se considera que la respuesta es vieja». La cabecera ``Expires`` se puede establecer con el método ``setExpires()`` de la ``Respuesta``. Esta necesita una instancia de ``DateTime`` como argumento::
 
     $fecha = new DateTime();
     $date->modify('+600 seconds');
 
     $response->setExpires($date);
 
-El resultado de la cabecera *HTTP* se verá así::
+La cabecera *HTTP* resultante se ve de la siguiente manera:
+
+.. code-block:: text
 
     Expires: Thu, 01 Mar 2011 16:00:00 GMT
 
@@ -310,8 +313,8 @@ El resultado de la cabecera *HTTP* se verá así::
 
     El método ``setExpires()`` automáticamente convierte la fecha a la zona horaria GMT como lo requiere la especificación.
 
-Ten en cuanta que en las versiones de *HTTP* anteriores a la 1.1 el servidor origen no estaba obligado a enviar la cabecera ``Date``. En consecuencia, la memoria caché (por ejemplo el navegador) podría
-necesitar de contar en su reloj local para evaluar la cabecera ``Expires`` tomando el cálculo de la vida vulnerable para desviaciones del reloj. Otra limitación de la cabecera ``Expires`` es que la especificación establece que "Los servidores HTTP/1.1 no deben enviar fechas de ``Expires`` de más de un año en el futuro".
+Ten en cuenta que en las versiones de *HTTP* anteriores a la 1.1 el servidor origen no estaba obligado a enviar la cabecera ``Date``. En consecuencia, la memoria caché (por ejemplo el navegador) podría
+necesitar de contar en su reloj local para evaluar la cabecera ``Expires`` tomando el cálculo de la vida vulnerable para desviaciones del reloj. Otra limitación de la cabecera ``Expires`` es que la especificación establece que «Los servidores HTTP/1.1 no deben enviar fechas de más de un año en el futuro en ``Expires``».
 
 .. index::
    single: Caché; Cabecera Cache-Control
@@ -329,7 +332,9 @@ Debido a las limitaciones de la cabecera ``Expires``, la mayor parte del tiempo,
     // Lo mismo que la anterior pero sólo para cachés compartidas
     $response->setSharedMaxAge(600);
 
-La cabecera ``Cache-Control`` debería tener el siguiente formato (el cual puede tener directivas adicionales)::
+La cabecera ``Cache-Control`` debería tener el siguiente formato (esta puede tener directivas adicionales):
+
+.. code-block:: text
 
     Cache-Control: max-age=600, s-maxage=600
 
@@ -347,7 +352,7 @@ Bajo este modelo, sobre todo ahorras ancho de banda ya que la representación no
 
 .. tip::
 
-    El código de estado 304 significa "No Modificado". Es importante porque este código de estado *no* tiene el contenido real solicitado.
+    El código de estado 304 significa «No Modificado». Es importante porque este código de estado *no* tiene el contenido real solicitado.
     En cambio, la respuesta simplemente es un ligero conjunto de instrucciones que indican a la caché que se debe utilizar la versión almacenada.
 
 Al igual que con la caducidad, hay dos diferentes cabeceras *HTTP* que puedes utilizar para implementar el modelo de validación: ``Etag`` y ``Last-Modified``.
@@ -359,25 +364,26 @@ Al igual que con la caducidad, hay dos diferentes cabeceras *HTTP* que puedes ut
 Validando con la cabecera ``ETag``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-La cabecera ``ETag`` es una cabecera de cadena (llamada "entidad-etiqueta") que identifica unívocamente una representación del recurso destino. Este es generado completamente y establecido por tu aplicación de modo que puedes decir, por ejemplo, si el recurso memorizado ``/sobre`` está al día con el que tu aplicación iba a devolver. Una ``ETag`` es como una huella digital y se utiliza para comparar rápidamente si dos versiones diferentes de un recurso son equivalentes. Como las huellas digitales, cada ``ETag`` debe ser única en todas las representaciones de un mismo recurso.
+La cabecera ``ETag`` es una cabecera de cadena (llamada «entidad-etiqueta») que identifica unívocamente una representación del recurso destino. Este es generado completamente y establecido por tu aplicación de modo que puedes decir, por ejemplo, si el recurso memorizado ``/sobre`` está al día con el que tu aplicación iba a devolver. Una ``ETag`` es como una huella digital y se utiliza para comparar rápidamente si dos versiones diferentes de un recurso son equivalentes. Como las huellas digitales, cada ``ETag`` debe ser única en todas las representaciones de un mismo recurso.
 
-Vamos a caminar a través de una aplicación sencilla que genera el ``ETag`` como el ``md5`` del contenido::
+Para ver una sencilla implementación, genera la ``ETag`` como el ``md5`` del contenido::
 
     public function indexAction()
     {
         $response = $this->render('MyBundle:Main:index.html.twig');
         $response->setETag(md5($response->getContent()));
+        $response->setPublic(); // verifica que la respuesta es púbica/susceptible de guardar en caché
         $response->isNotModified($this->getRequest());
 
         return $response;
     }
 
-El método ``Response::isNotModified()`` compara la ``ETag`` enviada en la ``Petición`` con la enviada en la ``Respuesta``. Si ambas coinciden, el método establece automáticamente el código de estado de la ``Respuesta`` a 304.
+El método :method:`Symfony\\Component\\HttpFoundation\\Response::isNotModified` compara la ``ETag`` enviada en la ``Petición`` con la configurada en la ``Respuesta``. Si ambas coinciden, el método automáticamente establece el código de estado de la ``Respuesta`` a 304.
 
 Este algoritmo es bastante simple y muy genérico, pero es necesario crear la ``Respuesta`` completa antes de ser capaz de calcular la ``ETag``, lo cual es subóptimo.
 En otras palabras, esta ahorra ancho de banda, pero no ciclos de la *CPU*.
 
-En la sección :ref:`optimizing-cache-validation`, vamos a mostrar cómo puedes utilizar la validación de manera más inteligente para determinar la validez de una caché sin hacer tanto trabajo.
+En la sección :ref:`optimizing-cache-validation`, te mostraré cómo puedes utilizar la validación de manera más inteligente para determinar la validez de una caché sin hacer tanto trabajo.
 
 .. tip::
 
@@ -390,7 +396,7 @@ En la sección :ref:`optimizing-cache-validation`, vamos a mostrar cómo puedes 
 Validando con la cabecera ``Last-Modified``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-La cabecera ``Last-Modified`` es la segunda forma de validación. De acuerdo con la especificación *HTTP*, "El campo de la cabecera ``Last-Modified`` indica la fecha y hora en que el servidor origen considera que la representación fue modificada por última vez". En otras palabras, la aplicación decide si o no el contenido memorizado se ha actualizado en función de si es o no ha sido actualizado desde que la respuesta entró en caché.
+La cabecera ``Last-Modified`` es la segunda forma de validación. De acuerdo con la especificación *HTTP*, «El campo de la cabecera ``Last-Modified`` indica la fecha y hora en que el servidor origen considera que la representación fue modificada por última vez». En otras palabras, la aplicación decide si o no el contenido memorizado se ha actualizado en función de sí o no se ha actualizado desde que la respuesta entró en caché.
 
 Por ejemplo, puedes utilizar la última fecha de actualización de todos los objetos necesarios para calcular la representación del recurso como valor para el valor de la cabecera ``Last-Modified``::
 
@@ -404,12 +410,19 @@ Por ejemplo, puedes utilizar la última fecha de actualización de todos los obj
         $date = $authorDate > $articleDate ? $authorDate : $articleDate;
 
         $response->setLastModified($date);
-        $response->isNotModified($this->getRequest());
+        // Ajusta la respuesta como pública. De lo contrario será privada por omisión.
+        $response->setPublic();
+
+        if ($response->isNotModified($this->getRequest())) {
+            return $response;
+        }
+
+        // ... hace más trabajo para poblar la respuesta  con el contenido completo
 
         return $response;
     }
 
-El método ``Response::isNotModified()`` compara la cabecera ``If-Modified-Since`` enviada por la petición con la cabecera ``Last-Modified`` situada en la respuesta. Si son equivalentes, la ``Respuesta`` establecerá un código de estado 304.
+El método :method:`Symfony\\Component\\HttpFoundation\\Response::isNotModified` compara la cabecera ``If-Modified-Since`` enviada por la petición con la cabecera ``Last-Modified`` configurada en la respuesta. Si son equivalentes, la ``Respuesta`` establecerá un código de estado 304.
 
 .. note::
 
@@ -434,12 +447,15 @@ Dicho de otra manera, cuanto menos hagas en tu aplicación para devolver una res
         // o el valor de Last-Modified (basado en la petición,
         // los datos se recuperan de una base de datos o un par
         // clave-valor guardado, por ejemplo)
-        $article = // ...
+        $article = ...;
 
         // crea una respuesta con una cabecera ETag y/o Last-Modified
         $response = new Response();
         $response->setETag($article->computeETag());
         $response->setLastModified($article->getPublishedAt());
+
+        // Ajusta la respuesta como pública. De lo contrario será privada por omisión.
+        $response->setPublic();
 
         // verifica que la respuesta no se ha modificado para la petición dada
         if ($response->isNotModified($this->getRequest())) {
@@ -447,7 +463,7 @@ Dicho de otra manera, cuanto menos hagas en tu aplicación para devolver una res
             return $response;
         } else {
             // aquí haz algo más - como recuperar más datos
-            $comments = // ...
+            $comments = ...;
 
             // o reproduce una plantilla con la $response que acabas de iniciar
             return $this->render(
@@ -468,12 +484,14 @@ Cuando la ``Respuesta`` no es modificada, el ``isNotModified()`` automáticament
 Variando la respuesta
 ~~~~~~~~~~~~~~~~~~~~~
 
-Hasta ahora, hemos supuesto que cada *URI* tiene exactamente una representación del recurso destino. De forma predeterminada, la caché *HTTP* se memoriza usando la *URI* del recurso como la clave de caché. Si dos personas solicitan la misma *URI* de un recurso memorizable, la segunda persona recibirá la versión en caché.
+Hasta ahora, asumiste que cada *URI* tiene exactamente una representación del recurso destino. De forma predeterminada, la caché *HTTP* se memoriza usando la *URI* del recurso como la clave de la caché. Si dos personas solicitan la misma *URI* de un recurso memorizable, la segunda persona recibirá la versión en caché.
 
-A veces esto no es suficiente y diferentes versiones de la misma *URI* necesitan memorizarse en caché basándose en uno o más valores de las cabeceras de la petición. Por ejemplo, si comprimes las páginas cuando el cliente lo permite, cualquier *URI* tiene dos representaciones:
+A veces esto no es suficiente y se necesita memorizar en caché diferentes versiones de la misma *URI* basándose en uno o más valores de las cabeceras de la petición. Por ejemplo, si comprimes las páginas cuando el cliente lo permite, cualquier *URI* tiene dos representaciones:
 una cuando el cliente es compatible con la compresión, y otra cuando no. Esta determinación se hace por el valor de la cabecera ``Accept-Encoding`` de la petición.
 
-En este caso, necesitamos que la memoria almacene una versión comprimida y otra sin comprimir de la respuesta para la *URI* particular y devolverlas basándose en el valor de la cabecera ``Accept-Encoding``. Esto se hace usando la cabecera ``Vary`` de la respuesta, la cual es una lista separada por comas de diferentes cabeceras cuyos valores lanzan una representación diferente de los recursos solicitados::
+En este caso, necesitas que la memoria almacene una versión comprimida y otra sin comprimir de la respuesta para la *URI* particular y devolverlas basándose en el valor de la cabecera ``Accept-Encoding``. Esto se hace usando la cabecera ``Vary`` de la respuesta, la cual es una lista separada por comas de diferentes cabeceras cuyos valores lanzan una diferente representación de los recursos solicitados:
+
+.. code-block:: text
 
     Vary: Accept-Encoding, User-Agent
 
@@ -511,7 +529,7 @@ La clase ``Respuesta`` proporciona muchos métodos más relacionados con la cach
     // Fuerza a la respuesta a devolver una adecuada respuesta 304 sin contenido
     $response->setNotModified();
 
-Además, puedes configurar muchas de las cabeceras *HTTP* relacionadas con la caché a través del método ``setCache()``::
+Adicionalmente, puedes configurar muchas de las cabeceras *HTTP* relacionadas con la caché a través del único método :method:`Symfony\\Component\\HttpFoundation\\Response::setCache`::
 
     // Establece la configuración de caché en una llamada
     $response->setCache(array(
@@ -532,22 +550,23 @@ Además, puedes configurar muchas de las cabeceras *HTTP* relacionadas con la ca
 Usando inclusión del borde lateral
 ----------------------------------
 
-Las pasarelas de caché son una excelente forma de hacer que tu sitio web tenga un mejor desempeño. Pero tienen una limitación: sólo podrán memorizar páginas enteras. Si no puedes memorizar todas las páginas o si partes de una página tienen "más" elementos dinámicos, se te acabó la suerte. Afortunadamente, *Symfony2* ofrece una solución para estos casos, basada ​​en una tecnología llamada `ESI`_, o Inclusión de bordes laterales (Edge Side Includes). Akamaï escribió esta especificación hace casi 10 años, y esta permite que partes específicas de una página tengan una estrategia de memorización diferente a la de la página principal.
+Las pasarelas de caché son una excelente forma de hacer que tu sitio web tenga un mejor desempeño. Pero tienen una limitación: sólo pueden memorizar páginas enteras. Si no puedes memorizar todas las páginas o si partes de una página tienen «más» elementos dinámicos, se te acabó la suerte. Afortunadamente, *Symfony2* ofrece una solución para estos casos, basada ​​en una tecnología llamada `ESI`_, o Inclusión de bordes laterales («``Edge Side Includes``»). Akamaï escribió esta especificación hace casi 10 años, y esta permite que partes específicas de una página tengan una estrategia de memorización diferente a la de la página principal.
 
 La especificación *ESI* describe las etiquetas que puedes incrustar en tus páginas para comunicarte con la pasarela de caché. *Symfony2* sólo implementa una etiqueta, ``include``, ya que es la única útil fuera del contexto de Akamaï:
 
 .. code-block:: html
 
+    <!DOCTYPE html>
         <html>
             <body>
-            Some content
+            <!-- ... algún contenido -->
 
             <!-- Aquí incluye el contenido de otra página -->
             <esi:include src="http://..." />
 
-            More content
+            <!-- ... más contenido -->
         </body>
-        </html>
+    </html>
 
 .. note::
 
@@ -588,20 +607,21 @@ Primero, para usar *ESI*, asegúrate de activarlo en la configuración de tu apl
             'esi'    => array('enabled' => true),
         ));
 
-Ahora, supongamos que tenemos una página que es relativamente estable, a excepción de un teletipo de noticias en la parte inferior del contenido. Con *ESI*, podemos memorizar el teletipo de noticias independiente del resto de la página.
+Ahora, supongamos que tenemos una página que es relativamente estática, salvo por un teletipo de noticias en la parte inferior del contenido. Con *ESI*, puedes memorizar el teletipo de noticias independientemente del resto de la página.
 
 .. code-block:: php
 
     public function indexAction()
     {
         $response = $this->render('MyBundle:MyController:index.html.twig');
+        // Pone el tiempo compartido máximo - el cual además marca la respuesta como pública
         $response->setSharedMaxAge(600);
 
         return $response;
     }
 
-En este ejemplo, hemos dado a la caché de la página completa un tiempo de vida de diez minutos.
-En seguida, vamos a incluir el teletipo de noticias en la plantilla incorporando una acción.
+En este ejemplo, la caché de la página completa tiene un tiempo de vida de diez minutos.
+En seguida, incluirás el teletipo de noticias en la plantilla incorporando una acción.
 Esto se hace a través del ayudante ``render`` (Consulta :ref:`templating-embedding-controller` para más detalles).
 
 Como el contenido integrado viene de otra página (o controlador en este caso), *Symfony2* utiliza el ayudante ``render`` estándar para configurar las etiquetas *ESI*:
@@ -610,13 +630,37 @@ Como el contenido integrado viene de otra página (o controlador en este caso), 
 
     .. code-block:: jinja
 
-        {% render '...:news' with {}, {'standalone': true} %}
+        {% render url('latest_news', { 'max': 5 }), {'standalone': true} %}
 
     .. code-block:: php
 
-        <?php echo $view['actions']->render('...:noticias', array(), array('standalone' => true)) ?>
+        <?php echo $view['actions']->render(
+            $view['router']->generate('latest_news', array('max' => 5), true),
+            array('standalone' => true)
+        ) ?>
 
-Al establecer ``standalone`` a ``true``, le dices a *Symfony2* que la acción se debe reproducir como una etiqueta *ESI*. Tal vez te preguntes por qué querría usar un ayudante en vez de escribir la etiqueta *ESI* en si misma. Eso es porque usar un ayudante hace que tu aplicación trabaje, incluso si no hay pasarela caché instalada. Vamos a ver cómo funciona.
+.. include:: /book/_security-2012-6431.rst.inc
+
+La etiqueta ``render`` toma la *URL* absoluta a la acción integrada. Esto significa que necesitas definir una nueva ruta al controlador que estás incorporando:
+
+.. code-block:: yaml
+
+    # app/config/routing.yml
+    latest_news:
+        pattern:      /esi/latest-news/{max}
+        defaults:     { _controller: AcmeNewsBundle:News:news }
+        requirements: { max: \d+ }
+
+.. caution::
+
+    A menos que quieras que esta *URL* sea accesible al mundo exterior, deberías utilizar el cortafuegos de *Symfony* para protegerla (permitindo el acceso al rango *IP* de tu delegado inverso). Consulta la sección :ref:`Protegiendo por IP <book-security-securing-ip>` del :doc:`Capítulo de seguridad </book/security>` para más información sobre cómo hacer esto.
+
+.. tip::
+
+    La mejor práctica es montar todas tus *URL* *ESI* bajo un solo prefijo de tu elección (p. ej. ``/esi``). Esto tiene dos principales ventajas. Primero, facilita la administración de direcciones *URL* *ESI* puesto que fácilmente puedes identificar las rutas utilizadas por *ESI*.
+    Segundo, alivia la gestión de seguridad debido a que al proteger todas las *URL* que empiezan con el mismo prefijo es más fácil asegurar cada *URL* individual. Ve la nota anterior para más detalles sobre proteger direcciones *URL* *ESI*.
+
+Al configurar ``standalone`` a ``true`` en la etiqueta ``render`` de *Twig*, le dices a *Symfony2* que la acción se debería procesar como una etiqueta *ESI*. Te podrías estar preguntando por qué querrías utilizar un ayudante en vez de sólo escribir la etiqueta *ESI* directamente. Esto es porque utilizar un ayudante hace que tu aplicación trabaje incluso si no hay instalada ninguna pasarela caché.
 
 Cuando ``standalone`` es ``false`` (predeterminado), *Symfony2* combina el contenido de la página incluida en la principal antes de enviar la respuesta al cliente. Pero cuando ``standalone`` es ``true``, *y* si *Symfony2* detecta que está hablando con una pasarela caché compatible con *ESI*, genera una etiqueta ``include`` *ESI*. Pero si no hay una pasarela caché o si no es compatible con *ESI*, *Symfony2* termina fusionando el contenido de las páginas incluidas en la principal como lo habría hecho si ``standalone`` se hubiera establecido en ``false``.
 
@@ -628,7 +672,7 @@ La acción integrada ahora puede especificar sus propias reglas de caché, total
 
 .. code-block:: php
 
-    public function newsAction()
+    public function newsAction($max)
     {
       // ...
 
@@ -636,43 +680,6 @@ La acción integrada ahora puede especificar sus propias reglas de caché, total
     }
 
 Con *ESI*, la caché de la página completa será válida durante 600 segundos, pero la caché del componente de noticias sólo dura 60 segundos.
-
-Un requisito de *ESI*, sin embargo, es que la acción incrustada sea accesible a través de una *URL* para que la pasarela caché se pueda buscar independientemente del resto de la página. Por supuesto, una acción no se puede acceder a través de una *URL* a menos que haya una ruta que apunte a la misma. *Symfony2* se encarga de esto a través de una ruta genérica y un controlador. Para que la etiqueta *ESI* ``include`` funcione correctamente, debes definir la ruta ``_internal``:
-
-.. configuration-block::
-
-    .. code-block:: yaml
-
-        # app/config/routing.yml
-        _internal:
-            resource: "@FrameworkBundle/Resources/config/routing/internal.xml"
-            prefix:   /_internal
-
-    .. code-block:: xml
-
-        <!-- app/config/routing.xml -->
-        <?xml version="1.0" encoding="UTF-8" ?>
-
-        <routes xmlns="http://symfony.com/schema/routing"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
-
-            <import resource="@FrameworkBundle/Resources/config/routing/internal.xml" prefix="/_internal" />
-        </routes>
-
-    .. code-block:: php
-
-        // app/config/routing.php
-        use Symfony\Component\Routing\RouteCollection;
-        use Symfony\Component\Routing\Route;
-
-        $collection->addCollection($loader->import('@FrameworkBundle/Resources/config/routing/internal.xml', '/_internal'));
-
-        return $collection;
-
-.. tip::
-
-    Puesto que esta ruta permite que todas las acciones se accedan a través de una *URL*, posiblemente desees protegerla usando el cortafuegos de *Symfony2* (permitiendo acceder al rango *IP* del delegado inverso). Consulta la sección :ref:`Protegiendo por IP <book-security-securing-ip>` del :doc:`Capítulo de seguridad </book/security>` para más información de cómo hacer esto.
 
 Una gran ventaja de esta estrategia de memoria caché es que puedes hacer tu aplicación tan dinámica como sea necesario y al mismo tiempo, tocar la aplicación lo menos posible.
 
@@ -694,7 +701,7 @@ El ayudante ``render`` es compatible con otras dos útiles opciones:
 Invalidando la caché
 --------------------
 
-    "Sólo hay dos cosas difíciles en Ciencias de la Computación: Invalidación de caché y nombrar cosas" --Phil Karlton
+    «Sólo hay dos cosas difíciles en Ciencias de la Computación: Invalidación de caché y nombrar cosas» --Phil Karlton
 
 Nunca debería ser necesario invalidar los datos memorizados en caché porque la invalidación ya se tiene en cuenta de forma nativa en los modelos de caché *HTTP*. Si utilizas la validación, por definición, no será necesario invalidar ninguna cosa; y si utilizas la caducidad y necesitas invalidar un recurso, significa que estableciste la fecha de caducidad muy adelante en el futuro.
 
@@ -704,10 +711,11 @@ Nunca debería ser necesario invalidar los datos memorizados en caché porque la
 
 En realidad, todos los delegados inversas proporcionan una manera de purgar datos almacenados en caché, pero lo debes evitar tanto como sea posible. La forma más habitual es purgar la caché de una *URL* dada solicitándola con el método especial ``PURGE`` de *HTTP*.
 
-Aquí está cómo puedes configurar la caché del delegado inverso de *Symfony2* para apoyar al método ``PURGE`` de *HTTP*::
+Aquí está cómo puedes configurar la caché del delegado inverso de *Symfony2* para apoyar el método ``PURGE`` de *HTTP*::
 
     // app/AppCache.php
 
+    // ...
     use Symfony\Bundle\FrameworkBundle\HttpCache\HttpCache;
 
     class AppCache extends HttpCache
@@ -745,7 +753,7 @@ Aprende más en el recetario
 
 .. _`Things Caches Do`: http://tomayko.com/writings/things-caches-do
 .. _`Guía de caché`: http://www.mnot.net/cache_docs/
-.. _`Varnish`: http://www.varnish-cache.org/
+.. _`Varnish`: https://www.varnish-cache.org/
 .. _`Squid en modo delegado inverso`: http://wiki.squid-cache.org/SquidFaq/ReverseProxy
 .. _`modelo de caducidad`: http://tools.ietf.org/html/rfc2616#section-13.2
 .. _`modelo de validación`: http://tools.ietf.org/html/rfc2616#section-13.3

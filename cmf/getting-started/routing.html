@@ -1,0 +1,341 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>El sistema de enrutado del CMF de Symfony &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Documentación del CMF de Symfony" href="../index.html" />
+    <link rel="next" title="Instalando y configurando el núcleo del CMF" href="../tutorials/installing-cmf-core.html" />
+    <link rel="prev" title="Información general" href="overview.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../tutorials/installing-cmf-core.html" title="Instalando y configurando el núcleo del CMF"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Información general"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="el-sistema-de-enrutado-del-cmf-de-symfony">
+<h1>El sistema de enrutado del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em><a class="headerlink" href="#el-sistema-de-enrutado-del-cmf-de-symfony" title="Enlazar permanentemente con este título">¶</a></h1>
+<div class="section" id="concepto">
+<h2>Concepto<a class="headerlink" href="#concepto" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="por-que-un-nuevo-mecanismo-de-enrutado">
+<h3>¿Por qué un nuevo mecanismo de enrutado?<a class="headerlink" href="#por-que-un-nuevo-mecanismo-de-enrutado" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Los <em>CMS</em> son sitios altamente dinámicos, donde la mayoría del contenido lo gestionan los administradores en lugar de los desarrolladores. El número de páginas disponibles fácilmente puede alcanzar miles, lo cual normalmente es multiplicado por el número de traducciones disponibles. Mejor accesibilidad y prácticas <em>SEO</em>, así como preferencias de usuario dictan que direcciones <em>URL</em> deberían ser definibles por los gestores de contenido.</p>
+<p>El mecanismo de enrutado predefinido de <em>Symfony2</em>, con enfoque de archivos de configuración, no es la mejor solución para este problema, puesto que no es apropiado para manejar rutas dinámicas definidas por el usuario, ni escalan bien para un gran número de rutas.</p>
+</div>
+<div class="section" id="la-solucion">
+<h3>La solución<a class="headerlink" href="#la-solucion" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Para afrontar estos problemas, se desarrolló un nuevo sistema de enrutado, este tiene en cuenta las necesidades típicas de enrutado de un <em>CMS</em>:</p>
+<ul class="simple">
+<li><em>URL</em> definidas por el usuario.</li>
+<li>Multisitio.</li>
+<li>Multilingüe.</li>
+<li>Estructura estilo árbol para facilitar la administración.</li>
+<li>Contenido, Menú y separación de <tt class="docutils literal"><span class="pre">Rutas</span></tt> para flexibilidad adicional.</li>
+</ul>
+<p>Con estos requisitos en mente, fue desarrollado el componente <tt class="docutils literal"><span class="pre">Routing</span></tt> del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em>.</p>
+</div>
+</div>
+<div class="section" id="la-chainrouter">
+<h2>La <tt class="docutils literal"><span class="pre">ChainRouter</span></tt><a class="headerlink" href="#la-chainrouter" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>En el núcleo del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em> el componente de enrutado es la <tt class="docutils literal"><span class="pre">ChainRouter</span></tt>.
+Esta se utiliza como sustituta para el sistema de enrutado predefinido de <em>Symfony2</em> y, como tal, es responsable de determinar cuál <tt class="docutils literal"><span class="pre">Controlador</span></tt> manejará cada <tt class="docutils literal"><span class="pre">petición</span></tt>.</p>
+<p>La <tt class="docutils literal"><span class="pre">ChainRouter</span></tt> trabaja aceptando un conjunto priorizado de implementaciones de estrategias de enrutado, <a class="reference external" href="http://api.symfony.com/2.1/Symfony/Component/Routing/RouterInterface.html">RouterInterface</a>, generalmente conocidos como <tt class="docutils literal"><span class="pre">«Enrutadores»</span></tt>. Los enrutadores son los responsables de emparejar una petición entrante con un <tt class="docutils literal"><span class="pre">Controlador</span></tt> real, y para hacerlo, la <tt class="docutils literal"><span class="pre">ChainRouter</span></tt> itera sobre los <tt class="docutils literal"><span class="pre">Enrutadores</span></tt> configurados de acuerdo a su prioridad establecida:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">symfony_cmf_routing_extra</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">chain</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">routers_by_id</span><span class="p-Indicator">:</span>
+            <span class="c1"># activa el DynamicRouter con alta prioridad para redefinir</span>
+            <span class="c1"># el enrutador configurado con contenido</span>
+            <span class="l-Scalar-Plain">symfony_cmf_routing_extra.dynamic_router</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">200</span>
+
+            <span class="c1"># habilita el enrutador predefinido de symfony</span>
+            <span class="c1"># con baja prioridad</span>
+            <span class="l-Scalar-Plain">router.default</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">100</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>También puedes cargar <tt class="docutils literal"><span class="pre">Enrutadores</span></tt> utilizando servicios etiquetados, usando la etiqueta <cite>router</cite> y una <cite>priority</cite> opcional. Mientras más alta prioridad, más temprano será consultado tu enrutador para emparejar la ruta. Si no especificas la prioridad, tu enrutador vendrá al último. Si hay varios enrutadores con la misma prioridad, el orden entre ellos es indeterminado. El servicio etiquetado se verá como este:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre>services:
+    my_namespace.my_router:
+        class: %my_namespace.my_router_class%
+        tags:
+                - { name: router, priority: 300 }</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;my_namespace.my_router&quot;</span> <span class="na">class=</span><span class="s">&quot;%my_namespace.my_router_class%&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;router&quot;</span> <span class="na">priority=</span><span class="s">&quot;300&quot;</span> <span class="nt">/&gt;</span>
+    ..
+<span class="nt">&lt;/service&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>El sistema de enrutado del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em> añade un nuevo <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt>, el cual complementa el <tt class="docutils literal"><span class="pre">Router</span></tt> predefinido de <em>Symfony2</em>.</p>
+</div>
+<div class="section" id="el-enrutador-predefinido-de-symfony2">
+<h2>El enrutador predefinido de <em>Symfony2</em><a class="headerlink" href="#el-enrutador-predefinido-de-symfony2" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A pesar de que reemplaza el mecanismo de enrutado predefinido, el <tt class="docutils literal"><span class="pre">Routing</span></tt> del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em> te permite seguir utilizando el sistema existente. De hecho, el enrutado predefinido está habilitado por omisión, así que puedes seguir utilizando las rutas que declaraste en tus archivos de configuración, o como fueron declaradas por otros paquetes.</p>
+</div>
+<div class="section" id="el-dynamicrouter">
+<h2>El <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt><a class="headerlink" href="#el-dynamicrouter" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Este enrutador puede cargar instancias de <tt class="docutils literal"><span class="pre">Ruta</span></tt> dinámicamente desde un determinado proveedor. Luego usa un proceso para emparejar la petición entrante a una <tt class="docutils literal"><span class="pre">Ruta</span></tt> específica, la cual en turno suele determinar a qué <tt class="docutils literal"><span class="pre">Controlador</span></tt> enviar la petición.</p>
+<p>La configuración predefinida del paquete declara que el <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> está inhabilitado
+por omisión. Para activarlo, sólo añade lo siguiente a tu archivo de configuración:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">symfony_cmf_routing_extra</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">dynamic</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">enabled</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Esta es la configuración mínima requirida para cargar el <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> como servicio, esta lo capacita para realizar cualquier enrutamiento. De hecho, cuándo exploras las páginas predefinidas que vienen con la <em>EE</em> del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em>, el <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> es el que empareja tus peticiones con los Controladores y Plantillas.</p>
+<div class="section" id="consiguiendo-la-ruta">
+<h3>Consiguiendo la <tt class="docutils literal"><span class="pre">Ruta</span></tt><a class="headerlink" href="#consiguiendo-la-ruta" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Puedes configurar el proveedor a usar para adaptarlo a las necesidades de cada implementación, y debe implementar la <tt class="docutils literal"><span class="pre">RouteProviderInterface</span></tt>. Como parte de este paquete, se proporciona una implementación para el <a class="reference external" href="https://github.com/doctrine/phpcr-odm">PHPCR-ODM</a>, pero fácilmente puedes crear una propia, puesto que el <tt class="docutils literal"><span class="pre">Enrutador</span></tt> es de almacenamiento agnóstico. El proveedor predefinido carga la ruta como el camino en la petición y todas las rutas padre permiten que algunos segmentos de la ruta sean parámetros.</p>
+<p>Para información más detallada sobre esta implementación y cómo la puedes personalizar o extender, consulta el <a class="reference internal" href="../bundles/routing-extra.html"><em>RoutingExtraBundle</em></a>.</p>
+<p>El <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> es capaz de emparejar la petición entrante con un objeto <tt class="docutils literal"><span class="pre">Ruta</span></tt> del proveedor subyacente. Los detalles sobre cómo se lleva a cabo el proceso de emparejamiento se pueden encontrar en <a class="reference internal" href="../components/routing.html"><em>El componente Routing</em></a>.</p>
+</div>
+<div class="section" id="consiguiendo-el-controlador-y-la-plantilla">
+<h3>Consiguiendo el controlador y la plantilla<a class="headerlink" href="#consiguiendo-el-controlador-y-la-plantilla" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Una <tt class="docutils literal"><span class="pre">Ruta</span></tt> necesita especificar cuál <tt class="docutils literal"><span class="pre">Controlador</span></tt> debería manejar una <tt class="docutils literal"><span class="pre">Petición</span></tt> específica.
+El <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> utiliza uno de varios métodos posibles para determinarlo (por orden de precedencia):</p>
+<ul class="simple">
+<li>Explicito: El documento <tt class="docutils literal"><span class="pre">Ruta</span></tt> en sí mismo puede almacenar explícitamente el <tt class="docutils literal"><span class="pre">Controlador</span></tt> declarado como destino especificando el valor  de <tt class="docutils literal"><span class="pre">'_controller'</span></tt> en <tt class="docutils literal"><span class="pre">getRouteDefaults()</span></tt>.</li>
+<li>Por alias: La <tt class="docutils literal"><span class="pre">Ruta</span></tt> regresa un valor <tt class="docutils literal"><span class="pre">'type'</span></tt> en <tt class="docutils literal"><span class="pre">getRouteDefaults()</span></tt>, el cual luego se empareja contra la configuración proporcionada en el archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt></li>
+<li>Por clase: Requiere que la instancia de la <tt class="docutils literal"><span class="pre">Ruta</span></tt> implemente la <tt class="docutils literal"><span class="pre">RouteObjectInterface</span></tt> y <tt class="docutils literal"><span class="pre">getRouteContent()</span></tt> regrese un objeto. El tipo de la clase devuelta luego se empareja contra la configuración proporcionada en el archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt>.</li>
+<li>Predefinido: Si está configurado, utilizará un controlador predefinido.</li>
+</ul>
+<p>Aparte de esto, el <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> también es capaz de especificar dinámicamente qué plantilla será utilizada, de manera similar a la utilizada para determinar el <tt class="docutils literal"><span class="pre">controlador</span></tt> (por orden de precedencia):</p>
+<ul class="simple">
+<li>Explicito: El documento <tt class="docutils literal"><span class="pre">Ruta</span></tt> almacenado en sí mismo puede declarar explícitamente la plantilla destino en <tt class="docutils literal"><span class="pre">getRouteDefaults()</span></tt>.</li>
+<li>Por clase: Requiere que la instancia de la <tt class="docutils literal"><span class="pre">Ruta</span></tt> implemente la <tt class="docutils literal"><span class="pre">RouteObjectInterface</span></tt> y <tt class="docutils literal"><span class="pre">getRouteContent()</span></tt> regrese un objeto. El tipo de la clase devuelta luego se empareja contra la configuración proporcionada en el archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt>.</li>
+</ul>
+<p>Aquí tienes un ejemplo sobre cómo configurar las opciones mencionadas anteriormente:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">symfony_cmf_routing_extra</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">dynamic</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">generic_controller</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">symfony_cmf_content.controller:indexAction</span>
+        <span class="l-Scalar-Plain">controllers_by_alias</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">editablestatic</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">sandbox_main.controller:indexAction</span>
+        <span class="l-Scalar-Plain">controllers_by_class</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">Symfony\Cmf\Bundle\ContentBundle\Document\StaticContent</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">symfony_cmf_content.controller::indexAction</span>
+        <span class="l-Scalar-Plain">templates_by_class</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">Symfony\Cmf\Bundle\ContentBundle\Document\StaticContent</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">SymfonyCmfContentBundle:StaticContent:index.html.twig</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Ten en cuenta que <tt class="docutils literal"><span class="pre">enabled:</span> <span class="pre">true</span></tt> ya no está presente. Este únicamente se requiere si no proporcionas otro parámetro de configuración. El enrutador es habilitado automáticamente tan pronto como añadas cualquiera otra configuración a la opción <tt class="docutils literal"><span class="pre">dynamic</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Internamente, el componente <tt class="docutils literal"><span class="pre">Routing</span></tt> asocia estas opciones de configuración a varias instancias de la <tt class="docutils literal"><span class="pre">RouteEnhancerInterface</span></tt>. El alcance real de estos potenciadores es mucho mayor, y puedes encontrar más información sobre ellos en la página <a class="reference internal" href="../components/routing.html"><em>El componente Routing</em></a> de la documentación.</p>
+</div>
+</div>
+</div>
+<div class="section" id="enlazando-una-ruta-con-una-instancia-del-modelo">
+<h2>Enlazando una <tt class="docutils literal"><span class="pre">Ruta</span></tt> con una instancia del modelo<a class="headerlink" href="#enlazando-una-ruta-con-una-instancia-del-modelo" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Dependiendo de la lógica de tu aplicación, una <em>URL</em> solicitada puede tener una instancia
+del modelo asociado en la base de datos. Estas <tt class="docutils literal"><span class="pre">Rutas</span></tt> pueden implementar la <tt class="docutils literal"><span class="pre">RouteObjectInterface</span></tt>, y opcionalmente regresar una instancia del modelo, esta automáticamente será pasada al <tt class="docutils literal"><span class="pre">Controlador</span></tt> como la variable <tt class="docutils literal"><span class="pre">$contentDocument</span></tt>, si la declaras como parámetro.</p>
+<p>Ten en cuenta que una <tt class="docutils literal"><span class="pre">Ruta</span></tt> puede implementar la interfaz mencionada anteriormente pero todavía no regresar ninguna instancia del modelo, en cuyo caso ningún objeto asociado será proporcionado.</p>
+<p>Además, las <tt class="docutils literal"><span class="pre">Rutas</span></tt> que implementen esta interfaz también pueden tener un nombre de <tt class="docutils literal"><span class="pre">Ruta</span></tt> personalizado, en vez del predefinido compatible con el núcleo de <em>Symfony</em>, y pueden contener
+cualquier carácter. Esto te permite, por ejemplo, poner una ruta como el nombre de la ruta.</p>
+</div>
+<div class="section" id="redirecciones">
+<h2>Redirecciones<a class="headerlink" href="#redirecciones" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes construir redirecciones implementando la <tt class="docutils literal"><span class="pre">RedirectRouteInterface</span></tt>.
+Si estás utilizando el proveedor de ruta <tt class="docutils literal"><span class="pre">PHPCR-ODM</span></tt> predefinido, uno listo para usar la implementación es proporcionado en el <tt class="docutils literal"><span class="pre">Documento</span></tt> <tt class="docutils literal"><span class="pre">RedirectRoute</span></tt>. Este puede redirigir o bien a una <em>URI</em> absoluta, a una <tt class="docutils literal"><span class="pre">Ruta</span></tt> nombrada que puede generar cualquier <tt class="docutils literal"><span class="pre">Enrutador</span></tt> en la cadena o a otro objeto <tt class="docutils literal"><span class="pre">Ruta</span></tt> conocido por el proveedor de rutas. La redirección real es manejada por un <tt class="docutils literal"><span class="pre">Controlador</span></tt> específico, el cual puedes configurar como gustes:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">symfony_cmf_routing_extra</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">controllers_by_class</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">Symfony\Cmf\Component\Routing\RedirectRouteInterface</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">symfony_cmf_routing_extra.redirect_controller:redirectAction</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">La configuración real para esta asociación existe como un servicio, no como parte de un archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt>. Como se explicó antes, puedes utilizar cualquier enfoque.</p>
+</div>
+</div>
+<div class="section" id="generando-url">
+<h2>Generando <em>URL</em><a class="headerlink" href="#generando-url" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El componente de enrutado del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em> utiliza los componentes predefinidos de <em>Symfony2</em> para manejar la generación de rutas, así que puedes utilizar los métodos predefinidos para generar tus <em>url</em>, con unas cuantas posibilidades añadidas:</p>
+<ul class="simple">
+<li>Pasa o bien una implementación de la <tt class="docutils literal"><span class="pre">RouteObjectInterface</span></tt> o una <tt class="docutils literal"><span class="pre">RouteAwareInterface</span></tt> como el parámetro <tt class="docutils literal"><span class="pre">name</span></tt></li>
+<li>O suministra una implementación de la <tt class="docutils literal"><span class="pre">ContentRepositoryInterface</span></tt> y el <tt class="docutils literal"><span class="pre">id</span></tt> de la instancia del modelo como el parámetro <tt class="docutils literal"><span class="pre">content_id</span></tt></li>
+</ul>
+</div>
+<div class="section" id="integrando-con-sonataadmin">
+<h2>Integrando con <em>SonataAdmin</em><a class="headerlink" href="#integrando-con-sonataadmin" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si en la sección <tt class="docutils literal"><span class="pre">require</span></tt> del archivo <tt class="file docutils literal"><span class="pre">composer.json</span></tt> añades el <tt class="docutils literal"><span class="pre">sonata-project/doctrine-phpcr-admin-bundle</span></tt>, los documentos de ruta serán expuestos en el <tt class="docutils literal"><span class="pre">SonataDoctrinePhpcrAdminBundle</span></tt>.
+Para instrucciones sobre cómo configurar este paquete ve <a class="reference internal" href="../bundles/doctrine_phpcr_admin.html"><em>SonataDoctrinePhpcrAdminBundle</em></a>.</p>
+<p>De manera predefinida, <tt class="docutils literal"><span class="pre">use_sonata_admin</span></tt> se pone automáticamente basándose en si <tt class="docutils literal"><span class="pre">SonataDoctrinePhpcrAdminBundle</span></tt> está disponible pero lo puedes desactivar explícitamente si no tienes habilitado sonata, o activarlo explícitamente para conseguir un error si sonata se vuelve inasequible.</p>
+<p>Tienes un par de opciones de configuración para la administración. El <tt class="docutils literal"><span class="pre">content_basepath</span></tt> apunta a la raíz de tus documentos de contenido.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">symfony_cmf_routing_extra</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">use_sonata_admin</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">auto</span> <span class="c1"># usa true/false para forzar el uso / no uso de</span>
+                           <span class="c1"># la administración de sonata</span>
+    <span class="l-Scalar-Plain">content_basepath</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">~</span> <span class="c1"># usado con la administración de sonata para</span>
+                        <span class="c1"># manejar el contenido, por omisión a</span>
+                        <span class="c1"># symfony_cmf_core.content_basepath</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="terminos-del-tipo-form">
+<h2>Términos del tipo <tt class="docutils literal"><span class="pre">Form</span></tt><a class="headerlink" href="#terminos-del-tipo-form" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El paquete define un tipo <tt class="docutils literal"><span class="pre">form</span></tt> que puedes utilizar para la clásica casilla de verificación «aceptar términos» donde  colocas las <em>url</em> en la etiqueta. Simplemente especifica <tt class="docutils literal"><span class="pre">symfony_cmf_routing_extra_terms_form_type</span></tt> como el nombre del tipo <tt class="docutils literal"><span class="pre">form</span></tt> y especifica una etiqueta y un arreglo con <tt class="docutils literal"><span class="pre">content_ids</span></tt> en las opciones</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;terms&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;symfony_cmf_routing_extra_terms_form_type&#39;</span><span class="p">,</span>
+           <span class="k">array</span><span class="p">(</span><span class="s1">&#39;label&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;I have seen the &lt;a href=&quot;%team%&quot;&gt;Team&lt;/a&gt; and &lt;a href=&quot;%more%&quot;&gt;More&lt;/a&gt; pages ...&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;content_ids&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%team%&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;/cms/content/static/team&#39;</span><span class="p">,</span>
+                                        <span class="s1">&#39;%more%&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;/cms/content/static/more&#39;</span><span class="p">)</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+<p>El tipo <tt class="docutils literal"><span class="pre">form</span></tt> automáticamente genera las rutas para el contenido especificado y pasa las rutas al ayudante <tt class="docutils literal"><span class="pre">trans</span></tt> de <em>Twig</em> para sustituirlas en la etiqueta.</p>
+</div>
+<div class="section" id="notas-adicionales">
+<h2>Notas adicionales<a class="headerlink" href="#notas-adicionales" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para más información sobre el componente <tt class="docutils literal"><span class="pre">Routing</span></tt> del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em>, por favor, consulta:</p>
+<ul class="simple">
+<li><a class="reference internal" href="../components/routing.html"><em>El componente Routing</em></a> para más información sobre la funcionalidad real de la implementación</li>
+<li><a class="reference internal" href="../bundles/routing-extra.html"><em>RoutingExtraBundle</em></a> para la integración del paquete <tt class="docutils literal"><span class="pre">Routing</span></tt> con <em>Symfony2</em></li>
+<li>La página del componente <a class="reference external" href="http://symfony.com/doc/current/components/routing/introduction.html">Routing</a> de <em>Symfony</em></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../tutorials/installing-cmf-core.html" title="Instalando y configurando el núcleo del CMF"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="overview.html" title="Información general"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

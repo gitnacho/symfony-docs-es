@@ -1,0 +1,55 @@
+Método de seguridad para autorización
+-------------------------------------
+
+Los métodos de seguridad permiten controlar el acceso con más detalle del que tiene para ofrecer *Symfony2*. 
+
+Generalmente puedes salvaguardar todos los métodos públicos, protegidos que no son estáticos, y no son finales. Los métodos privados no se pueden asegurar. También puedes añadir metadatos para métodos abstractos, o interfaces que entonces serán aplicados automáticamente a sus implementaciones concretas.
+
+Control de acceso vía configuración ``DI``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Puedes especificar **expresiones** para el control de acceso en la configuración ``DI``:
+
+.. code-block:: yaml
+
+    # config.yml
+    jms_security_extra:
+        method_access_control:
+            ':loginAction$': 'isAnonymous()'
+            'AcmeFooBundle:.*:deleteAction': 'hasRole("ROLE_ADMIN")'
+            '^MyNamespace\MyService::foo$': 'hasPermission(#user, "VIEW")' 
+
+El patrón es una expresión regular que distingue entre mayúsculas y minúsculas emparejada contra dos notaciones.
+Se utiliza la primer coincidencia.
+
+En primer lugar, tu patrón se compara con la notación de controladores que no son servicios. 
+Obviamente, esto sólo se hace si tu clase en realidad es un controlador, por ejemplo, ``AcmeFooBundle:Add:new`` para un controlador llamado ``AddController`` y un método denominado ``NewAction`` en un subespacio de nombres ``Controller`` de un paquete llamado ``AcmeFooBundle``. 
+
+Por último, tu patrón se empareja contra la concatenación del nombre de clase, y el nombre del método que está invocando, por ejemplo, ``Mi\Completamente\Cualificado\NombreClase::miNombreMetodo``.
+
+.. Note::
+
+    Si quisieras asegurar controladores que no son servicios, en su lugar deberías usar el ``JMSDiExtraBundle``.
+
+Control de acceso vía anotaciones
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Si quisieras asegurar un servicio con ``anotaciones``, necesitas habilitar la configuración de ``annotation`` para ese servicio:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+    
+        services:
+            foo:
+                class: Bar
+                tags: [ { name: "security.secure_service" } ]
+
+    .. code-block:: xml
+
+        <service id="foo" class="Bar">
+            <tag name="security.secure_service"/>
+        </service>
+        
+
+En caso que quieras configurar todos los  servicios vía ``anotaciones``, también puedes poner ``secure_all_services`` a ``true``. Entonces, no necesitas añadir una etiqueta a cada servicio.

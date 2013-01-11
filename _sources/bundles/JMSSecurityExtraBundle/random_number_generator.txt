@@ -1,0 +1,60 @@
+Generador de números aleatorios seguros
+---------------------------------------
+
+.. versionadded:: 1.2
+    Se añadió el generador de números aleatorios seguros.
+
+Introducción
+------------
+
+En casi todas las aplicaciones, necesitas generar números aleatorios que un posible atacante no pueda adivinar. Desafortunadamente, *PHP* no proporciona la capacidad para hacerlo de forma consistente en todas las plataformas. 
+
+Este paquete viene con varias implementaciones de proveedores de semillas, y se elige el mejor proveedor posible, dependiendo de tu configuración de *PHP*.
+
+Configurando
+------------
+
+Puedes activar el servicio ``"security.secure_random"`` con la siguiente configuración:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        jms_security_extra:
+            util:
+                secure_random: ~
+
+    .. code-block:: xml
+
+        <jms-security-extra>
+            <util>
+                <secure-random />
+            </util>
+        </jms-security-extra>
+
+También asegúrate de ejecutar ``php app/console doctrine:scheme:update``, o crea una migración equivalente para importar la tabla ``seed``.
+
+Usándolo
+--------
+
+El generador se activa con el ``id`` de servicio  ``security.secure_random``.
+
+.. code-block:: php
+
+    <?php
+
+    $generator = $this->container->get('security.secure_random');
+    $bytes = $generator->nextBytes(16); // número aleatorio de 128-bit
+
+``$bytes`` en el ejemplo anterior contiene datos binarios. Luego puedes convertir estos datos a un formato que puedas imprimir utilizando una de estas funciones:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    $base64Encoded = base64_encode($bytes); // número en base 64
+    $hexEncoded = bin2hex($bytes); // número en base 16
+    $decEncoded = bindec($bytes); // número en base 10

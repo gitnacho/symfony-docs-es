@@ -59,22 +59,21 @@ La ruta es simple:
 
         return $collection;
 
-El patrón definido por la ruta ``blog_show`` actúa como ``/blog/*`` dónde al comodín se le da el nombre de ``ficha``. Para la *URL* ``/blog/my-blog-post``, la variable ``ficha`` obtiene un valor de ``my-blog-post``, que está disponible para usarla en el controlador (sigue leyendo).
+El patrón definido por la ruta ``blog_show`` actúa como ``/blog/*``, dónde al comodín se le da el nombre de ``slug``. Para la *URL* ``/blog/my-blog-post``, la variable ``slug`` obtiene un valor de ``my-blog-post``, que está disponible para usarlo en el controlador (sigue leyendo).
 
-El parámetro ``_controller`` es una clave especial que le dice a *Symfony* qué controlador se debe ejecutar cuando una *URL* coincide con esta ruta. La cadena ``_controller`` se conoce como el :ref:`nombre lógico <controller-string-syntax>`. Esta sigue un patrón que apunta hacia una clase *PHP* y un método:
-
-.. code-block:: php
+El parámetro ``_controller`` es una clave especial que le dice a *Symfony* qué controlador se debe ejecutar cuando una *URL* coincida con esta ruta. La cadena ``_controller`` se conoce como el :ref:`nombre lógico <controller-string-syntax>`. Esta sigue un patrón que apunta a una clase y método *PHP* específicos::
 
     // src/Acme/BlogBundle/Controller/BlogController.php
-
     namespace Acme\BlogBundle\Controller;
+
     use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 
     class BlogController extends Controller
     {
         public function showAction($slug)
         {
-            $blog = // usa la variable $slug para consultar la base de datos
+            // usa la variable $slug para consultar la base de datos
+            $blog = ...;
 
             return $this->render('AcmeBlogBundle:Blog:show.html.twig', array(
                 'blog' => $blog,
@@ -84,7 +83,7 @@ El parámetro ``_controller`` es una clave especial que le dice a *Symfony* qué
 
 ¡Enhorabuena! Acabas de crear tu primera ruta y la conectaste a un controlador. Ahora, cuando visites ``/blog/my-post``, el controlador ``showAction`` será ejecutado y la variable ``$slug`` será igual a ``my-post``.
 
-Este es el objetivo del enrutador de *Symfony2*: asignar la *URL* de una petición a un controlador. De paso, aprenderás todo tipo de trucos que incluso facilitan la asignación de *URL* complejas. 
+Este es el objetivo del enrutador de *Symfony2*: asignar la *URL* de una petición a un controlador. De paso, aprenderás todo tipo de trucos que incluso facilitan la asignación de *URL* complejas.
 
 .. index::
    single: Enrutando; Bajo el capó
@@ -93,7 +92,7 @@ Enrutando: Bajo el capó
 ------------------------
 
 
-Cuando se hace una petición a tu aplicación, esta contiene una dirección al "recurso" exacto que solicitó el cliente. Esta dirección se conoce como *URL* (o *URI*), y podría ser ``/contact``, ``/blog/read-me``, o cualquier otra cosa. Tomemos la siguiente petición *HTTP*, por ejemplo:
+Cuando se hace una petición a tu aplicación, esta contiene una dirección al «recurso» exacto que solicitó el cliente. Esta dirección se conoce como *URL* (o *URI*), y podría ser ``/contact``, ``/blog/read-me``, o cualquier otra cosa. Tomemos la siguiente petición *HTTP*, por ejemplo:
 
 .. code-block:: text
 
@@ -150,7 +149,8 @@ Creando rutas
 
 .. tip::
 
-    A pesar de que todas las rutas se cargan desde un solo archivo, es práctica común incluir recursos de enrutado adicionales desde el interior del archivo. Consulta la sección :ref:`routing-include-external-resources` para más información.
+    A pesar de que todas las rutas se cargan desde un solo archivo, es práctica común incluir recursos de enrutado adicionales. Para ello, sólo indica en el archivo de configuración de enrutado principal cuáles archivos externos se tendrían que incluir.
+    Consulta la sección :ref:`routing-include-external-resources` para más información.
 
 Configuración básica de rutas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -200,7 +200,7 @@ Esta ruta coincide con la página de inicio (``/``) y la asigna al controlador d
 Enrutando con marcadores de posición
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Por supuesto, el sistema de enrutado es compatible con rutas mucho más interesantes. Muchas rutas contienen uno o más "comodines" llamados marcadores de posición:
+Por supuesto, el sistema de enrutado es compatible con rutas mucho más interesantes. Muchas rutas contienen uno o más «comodines» llamados marcadores de posición:
 
 .. configuration-block::
 
@@ -362,6 +362,10 @@ Agregando ``page`` a la clave ``defaults``, el marcador de posición ``{page}`` 
 +---------+--------------+
 | /blog/2 | {page} = 2   |
 +---------+--------------+
+
+.. tip::
+
+    Las rutas con parámetros opcionales al final no coincidirán con peticiones con una barra inclinada final (es decir, ``/blog/`` no coincidirá, en cambio ``/blog`` concordará).
 
 .. index::
    single: Enrutando; Requisitos
@@ -611,6 +615,14 @@ A pesar de que estas dos rutas tienen patrones idénticos (``/contact``), la pri
 
 Al igual que los otros requisitos, el requisito ``_method`` se analiza como una expresión regular. Para hacer coincidir peticiones *GET* *o* *POST*, puedes utilizar *GET|POST*.
 
+Añadiendo el patrón «nombre del servidor» o *hostname*
+------------------------------------------------------
+
+.. versionadded:: 2.2
+    La compatibilidad para reconocer el patrón «nombre del servidor» o *hostname* se añadió en *Symfony 2.2*
+
+Además, puedes emparejar en el nombre del servidor *HTTP* de la petición entrante. Para más información, consulta el :doc:`/components/routing/hostname_pattern` en la documentación del componente *Routing*.
+
 .. index::
    single: Enrutando; Ejemplo avanzado
    single: Enrutando; parámetro _format
@@ -668,7 +680,7 @@ En este punto, tienes todo lo necesario para crear una poderosa estructura de en
 
         return $collection;
 
-Como hemos visto, esta ruta sólo coincide si la porción ``{_locale}`` de la *URL* es o bien "\ ``en``\ " o "\ ``fr``\ " y si ``{year}`` es un número. Esta ruta también muestra cómo puedes utilizar un punto entre los marcadores de posición en lugar de una barra inclinada. Las *URL* que coinciden con esta ruta podrían ser:
+Como hemos visto, esta ruta sólo coincide si la porción ``{_locale}`` de la *URL* es o bien «``en``» o «``fr``» y si ``{year}`` es un número. Esta ruta también muestra cómo puedes utilizar un punto entre los marcadores de posición en lugar de una barra inclinada. Las *URL* que coinciden con esta ruta se podrían ver como las siguientes:
 
 * ``/articles/en/2010/my-post``
 * ``/articles/fr/2010/my-post.rss``
@@ -678,19 +690,28 @@ Como hemos visto, esta ruta sólo coincide si la porción ``{_locale}`` de la *U
 .. sidebar:: El parámetro especial de enrutado ``_format``
 
     Este ejemplo también resalta el parámetro especial de enrutado ``_format``.
-    Cuando se utiliza este parámetro, el valor coincidente se convierte en el "formato de la petición" del objeto ``Petición``. En última instancia, el formato de la petición se usa para cosas tales como establecer el ``Content-Type`` de la respuesta (por ejemplo, un formato de petición ``json`` se traduce en un ``Content-Type`` de ``application/json``).
+    Cuando se utiliza este parámetro, el valor coincidente se convierte en el «formato de la petición» del objeto ``Petición``. En última instancia, el formato de la petición se usa para cosas tales como establecer el ``Content-Type`` de la respuesta (por ejemplo, un formato de petición ``json`` se traduce en un ``Content-Type`` de ``application/json``).
     Este también se puede usar en el controlador para reproducir una plantilla diferente por cada valor de ``_format``. El parámetro ``_format`` es una forma muy poderosa para reproducir el mismo contenido en distintos formatos.
+
+.. note::
+
+    A veces quieres hacer configurables globalmente ciertas partes de tus rutas.
+    *Symfony 2.1* te proporciona una manera de hacer esto aprovechando los parámetros del contenedor de servicios. Lee más sobre esto en «:doc:`/cookbook/routing/service_container_parameters`».
 
 Parámetros de enrutado especiales
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Como hemos visto, cada parámetro de enrutado o valor predeterminado finalmente está disponible como un argumento en el método controlador. Adicionalmente, hay tres parámetros que son especiales: cada uno añade una única pieza de funcionalidad a tu aplicación:
+Como has visto, cada parámetro de enrutado o valor predeterminado finalmente está disponible como un argumento en el método controlador. Adicionalmente, hay tres parámetros que son especiales: cada uno añade una única pieza de funcionalidad a tu aplicación:
 
 * ``_controller``: Como hemos visto, este parámetro se utiliza para determinar qué controlador se ejecuta cuando la ruta concuerda;
 
 * ``_format``: Se utiliza para establecer el formato de la petición (:ref:`Leer más <book-routing-format-param>`);
 
-* ``_locale``: Se utiliza para establecer la configuración regional en la sesión, (:ref:`lee más  <book-translation-locale-url>`);
+* ``_locale``: Se utiliza para establecer la configuración regional en la petición (:ref:`Leer más  <book-translation-locale-url>`);
+
+.. tip::
+
+    Si utilizas el parámetro ``_locale`` en una ruta, ese valor también se almacenará en la sesión para las subsecuentes peticiones lo cual evita guardar la misma región.
 
 .. index::
    single: Enrutando; Controladores
@@ -713,15 +734,13 @@ Por ejemplo, un valor ``_controller`` de ``AcmeBlogBundle:Blog:show`` significa:
 | AcmeBlogBundle | BlogController       | showAction      |
 +----------------+----------------------+-----------------+
 
-El controlador podría tener este aspecto:
-
-.. code-block:: php
+El controlador podría tener este aspecto::
 
     // src/Acme/BlogBundle/Controller/BlogController.php
-
     namespace Acme\BlogBundle\Controller;
+
     use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-    
+
     class BlogController extends Controller
     {
         public function showAction($slug)
@@ -743,19 +762,17 @@ Pero si sigues algunas simples convenciones, el nombre lógico es más conciso y
 Parámetros de ruta y argumentos del controlador
 -----------------------------------------------
 
-Los parámetros de ruta (por ejemplo, ``{slug}``) son especialmente importantes porque cada uno se pone a disposición como argumento para el método controlador:
-
-.. code-block:: php
+Los parámetros de ruta (por ejemplo, ``{slug}``) son especialmente importantes porque cada uno se pone a disposición como argumento para el método controlador::
 
     public function showAction($slug)
     {
       // ...
     }
 
-En realidad, toda la colección ``defaults`` se combina con los valores del parámetro para formar una sola matriz. Cada clave de esa matriz está disponible como un argumento en el controlador.
+En realidad, toda la colección ``defaults`` se combina con los valores del parámetro para formar un solo arreglo. Cada clave de ese arreglo está disponible como un argumento en el controlador.
 
-En otras palabras, por cada argumento de tu método controlador, *Symfony* busca un parámetro de ruta de ese nombre y asigna su valor a ese argumento.
-En el ejemplo avanzado anterior, cualquier combinación (en cualquier orden) de las siguientes variables se podría utilizar como argumentos para el método ``showAction()``:
+En otras palabras, por cada argumento de tu método controlador, *Symfony* busca un parámetro de ruta con ese nombre y asigna su valor a ese argumento.
+En el ejemplo avanzado anterior, podrías utilizar cualquier combinación (en cualquier orden) de las siguientes variables como argumentos para el método ``showAction()``:
 
 * ``$_locale``
 * ``$year``
@@ -777,7 +794,7 @@ Dado que los marcadores de posición y los valores de la colección ``defaults``
 Incluyendo recursos de enrutado externos
 ----------------------------------------
 
-Todas las rutas se cargan a través de un único archivo de configuración ---usualmente ``app/config/routing.yml`` (consulta `Creando rutas`_ más arriba). Por lo general, sin embargo, deseas cargar rutas para otros lugares, como un archivo de enrutado que vive dentro de un paquete. Esto se puede hacer "importando" ese archivo:
+Todas las rutas se cargan a través de un único archivo de configuración ---usualmente ``app/config/routing.yml`` (consulta `Creando rutas`_ más arriba). Por lo general, sin embargo, deseas cargar rutas para otros lugares, como un archivo de enrutado que vive dentro de un paquete. Esto se puede hacer «importando» ese archivo:
 
 .. configuration-block::
 
@@ -857,7 +874,7 @@ Las rutas de este archivo se analizan y cargan en la misma forma que el archivo 
 Prefijando rutas importadas
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-También puedes optar por proporcionar un "prefijo" para las rutas importadas. Por ejemplo, supongamos que deseas que la ruta ``acme_hello`` tenga un patrón final de ``/admin/hello/{name}`` en lugar de simplemente ``/hello/{name}``:
+También puedes optar por proporcionar un «prefijo» para las rutas importadas. Por ejemplo, supongamos que deseas que la ruta ``acme_hello`` tenga un patrón final de ``/admin/hello/{name}`` en lugar de simplemente ``/hello/{name}``:
 
 .. configuration-block::
 
@@ -892,6 +909,18 @@ También puedes optar por proporcionar un "prefijo" para las rutas importadas. P
 
 La cadena ``/admin`` ahora se antepondrá al patrón de cada ruta cargada desde el nuevo recurso enrutado.
 
+.. tip::
+
+    Además puedes definir rutas usando anotaciones. Consulta la documentación del :doc:`FrameworkExtraBundle </bundles/SensioFrameworkExtraBundle/annotations/routing>` para ver cómo hacerlo.
+
+Añadiendo el patrón nombre del servidor a rutas importadas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2
+    La compatibilidad para reconocer el patrón «nombre del servidor» o *hostname* se añadió en *Symfony 2.2*
+
+Puedes poner un patrón nombre del servidor en rutas importadas. Para más información, ve :ref:`component-routing-hostname-imported`.
+
 .. index::
    single: Enrutando; Depurando
 
@@ -902,7 +931,7 @@ Si bien agregar y personalizar rutas, es útil para poder visualizar y obtener i
 
 .. code-block:: bash
 
-    php app/console router:debug
+    $ php app/console router:debug
 
 Esta orden imprimirá una útil lista de *todas* las rutas configuradas en tu aplicación:
 
@@ -919,7 +948,17 @@ También puedes obtener información muy específica de una sola ruta incluyendo
 
 .. code-block:: bash
 
-    php app/console router:debug article_show
+    $ php app/console router:debug article_show
+
+.. versionadded:: 2.1
+    La orden ``router:match`` se añadió en *Symfony 2.1*
+
+Puedes comprobar cuál ruta ---si alguna--- coincide con una trayectoria usando la orden de consola ``router:match``:
+
+.. code-block:: bash
+
+    $ php app/console router:match /articles/en/2012/article.rss
+    Route "article_show" matches
 
 .. index::
    single: Enrutando; Generando URL
@@ -930,22 +969,26 @@ Generando *URL*
 El sistema de enrutado también se debe utilizar para generar *URL*. En realidad, el enrutado es un sistema bidireccional: asignando la *URL* a un controlador+parámetros y la ruta+parámetros a una *URL*. Los métodos :method:`Symfony\\Component\\Routing\\Router::match` y :method:`Symfony\\Component\\Routing\\Router::generate` de este sistema bidireccional. Tomando la ruta ``blog_show`` del ejemplo anterior::
 
     $params = $router->match('/blog/my-blog-post');
-    // array('slug' => 'my-blog-post', '_controller' => 'AcmeBlogBundle:Blog:show')
+    // array(
+    //     'slug' => 'my-blog-post',
+    //     '_controller' => 'AcmeBlogBundle:Blog:show',
+    // )
 
     $uri = $router->generate('blog_show', array('slug' => 'my-blog-post'));
     // /blog/my-blog-post
 
-Para generar una *URL*, debes especificar el nombre de la ruta (por ejemplo, ``blog_show``) y cualquier comodín (por ejemplo, ``slug = my-blog-post``) utilizado en el patrón para esa ruta. Con esta información, puedes generar fácilmente cualquier *URL*:
-
-.. code-block:: php
+Para generar una *URL*, debes especificar el nombre de la ruta (por ejemplo, ``blog_show``) y cualquier comodín (por ejemplo, ``slug = my-blog-post``) utilizado en el patrón para esa ruta. Con esta información, puedes generar fácilmente cualquier *URL*::
 
     class MainController extends Controller
     {
         public function showAction($slug)
         {
-          // ...
+            // ...
 
-          $url = $this->get('router')->generate('blog_show', array('slug' => 'my-blog-post'));
+            $url = $this->get('router')->generate(
+                'blog_show',
+                array('slug' => 'my-blog-post')
+            );
         }
     }
 
@@ -955,10 +998,13 @@ En una sección posterior, aprenderás cómo generar *URL* desde el interior de 
 
     Si la interfaz de tu aplicación utiliza peticiones *AJAX*, posiblemente desees poder generar las direcciones *URL* en *JavaScript* basándote en tu configuración de enrutado.
     Usando el `FOSJsRoutingBundle`_, puedes hacer eso exactamente:
-    
+
     .. code-block:: javascript
 
-        var url = Routing.generate('blog_show', { "slug": 'my-blog-post'});
+        var url = Routing.generate(
+            'blog_show',
+            {"slug": 'my-blog-post'}
+        );
 
     Para más información, consulta la documentación del paquete.
 
@@ -968,22 +1014,16 @@ En una sección posterior, aprenderás cómo generar *URL* desde el interior de 
 Generando *URL* absolutas
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-De forma predeterminada, el enrutador va a generar *URL* relativas (por ejemplo ``/blog``). Para generar una *URL* absoluta, sólo tienes que pasar ``true`` como tercer argumento del método ``generate()``:
-
-.. code-block:: php
+De forma predeterminada, el enrutador va a generar *URL* relativas (por ejemplo ``/blog``). Para generar una *URL* absoluta, sólo tienes que pasar ``true`` como tercer argumento del método ``generate()``::
 
     $router->generate('blog_show', array('slug' => 'my-blog-post'), true);
     // http://www.example.com/blog/my-blog-post
 
 .. note::
 
-    El servidor que utiliza al generar una *URL* absoluta es el anfitrión del objeto ``Petición`` actual. Este, de forma automática, lo detecta basándose en la información del servidor proporcionada por *PHP*. Al generar direcciones *URL* absolutas para archivos desde la línea de ordenes, tendrás que configurar manualmente el servidor que desees en el objeto ``Petición``:
+    El servidor utilizado al generar una *URL* absoluta es el anfitrión del objeto ``Petición`` actual. Este se detercta automática basándose en la información del servidor suministrada por *PHP*. Al generar direcciones *URL* absolutas para archivos ejecutables desde la línea de ordenes, debes configurar manualmente el servidor que desees en el objeto ``RequestContext``::
 
-    ..
-    
-    .. code-block:: php
-
-        $request->headers->set('HOST', 'www.example.com');
+        $router->getContext()->setHost('www.example.com');
 
 .. index::
    single: Enrutando; Generando URL en plantillas
@@ -991,7 +1031,7 @@ De forma predeterminada, el enrutador va a generar *URL* relativas (por ejemplo 
 Generando *URL* con cadena de consulta
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-El método ``generate`` toma una matriz de valores comodín para generar la *URI*.
+El método ``generate`` toma un arreglo de valores comodín para generar la *URI*.
 Pero si pasas adicionales, se añadirán a la *URI* como cadena de consulta::
 
     $router->generate('blog', array('page' => 2, 'category' => 'Symfony'));
@@ -1006,7 +1046,7 @@ El lugar más común para generar una *URL* es dentro de una plantilla cuando cr
 
     .. code-block:: html+jinja
 
-        <a href="{{ path('blog_show', { 'slug': 'my-blog-post' }) }}">
+        <a href="{{ path('blog_show', {'slug': 'my-blog-post'}) }}">
           Read this blog post.
             </a>
 
@@ -1022,7 +1062,7 @@ También puedes generar *URL* absolutas.
 
     .. code-block:: html+jinja
 
-        <a href="{{ url('blog_show', { 'slug': 'my-blog-post' }) }}">
+        <a href="{{ url('blog_show', {'slug': 'my-blog-post'}) }}">
           Read this blog post.
             </a>
 

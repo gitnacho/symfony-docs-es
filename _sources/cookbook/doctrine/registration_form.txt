@@ -1,0 +1,268 @@
+.. index::
+   single: Doctrine; Sencillo formulario de registro
+   single: Formulario; Sencillo formulario de registro
+
+Cómo implementar un sencillo formulario de registro
+===================================================
+
+Algunos formularios tienen campos adicionales cuyos valores no se necesita almacenar en la base de datos. Por ejemplo, posiblemente quieras crear un formulario de inscripción con unos cuantos campos adicionales (como un campo de casilla de verificación "términos aceptados") e integrar en el formulario lo que realmente almacena la información de la cuenta.
+
+El sencillo modelo de usuario
+-----------------------------
+
+Tienes una sencilla entidad ``Usuario`` asignada a la base de datos::
+
+    // src/Acme/AccountBundle/Entity/User.php
+    namespace Acme\AccountBundle\Entity;
+
+    use Doctrine\ORM\Mapping as ORM;
+    use Symfony\Component\Validator\Constraints as Assert;
+    use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+
+    /**
+     * @ORM\Entity
+     * @UniqueEntity(fields="email", message="Email already taken")
+     */
+    class User
+    {
+        /**
+         * @ORM\Id
+         * @ORM\Column(type="integer")
+         * @ORM\GeneratedValue(strategy="AUTO")
+         */
+        protected $id;
+
+        /**
+         * @ORM\Column(type="string", length=255)
+         * @Assert\NotBlank()
+         * @Assert\Email()
+         */
+        protected $email;
+
+        /**
+         * @ORM\Column(type="string", length=255)
+         * @Assert\NotBlank()
+         */
+        protected $plainPassword;
+
+        public function getId()
+        {
+            return $this->id;
+        }
+
+        public function getEmail()
+        {
+            return $this->email;
+        }
+
+        public function setEmail($email)
+        {
+            $this->email = $email;
+        }
+
+        public function getPlainPassword()
+        {
+            return $this->plainPassword;
+        }
+
+        public function setPlainPassword($password)
+        {
+            $this->plainPassword = $password;
+        }
+    }
+
+Esta entidad ``Usuario`` contiene tres campos y dos de ellos (``email`` y ``plainPassword``) se deben mostrar en el formulario. La propiedad ``email`` debe ser única en la base de datos, esto se consigue añadiendo esta validación en la parte superior de la clase.
+
+.. note::
+
+    Si deseas integrar este ``Usuario`` en el sistema de seguridad, necesitas implementar la entidad :ref:`UserInterface <book-security-user-entity>` del componente de seguridad.
+
+Creando un formulario para el modelo
+------------------------------------
+
+A continuación, crea el formulario para el modelo ``Usuario``::
+
+    // src/Acme/AccountBundle/Form/Type/UserType.php
+    namespace Acme\AccountBundle\Form\Type;
+
+    use Symfony\Component\Form\AbstractType;
+    use Symfony\Component\Form\FormBuilderInterface;
+    use Symfony\Component\OptionsResolver\OptionsResolverInterface;
+
+    class UserType extends AbstractType
+    {
+        public function buildForm(FormBuilderInterface $builder, array $options)
+        {
+            $builder->add('email', 'email');
+            $builder->add('plainPassword', 'repeated', array(
+               'first_name' => 'password',
+               'second_name' => 'confirm',
+               'type' => 'password',
+            ));
+        }
+
+        public function setDefaultOptions(OptionsResolverInterface $resolver)
+        {
+            $resolver->setDefaults(array(
+                'data_class' => 'Acme\AccountBundle\Entity\User'
+            ));
+        }
+
+        public function getName()
+        {
+            return 'user';
+        }
+    }
+
+Sólo hay dos campos: ``email`` y ``plainPassword`` (repetido para confirmar la contraseña introducida). La opción ``data_class`` le dice al formulario el nombre de la clase datos (es decir, la entidad ``usuario``).
+
+.. tip::
+
+    Para explorar más cosas sobre el componente ``formulario``, consulta :doc:`/book/forms` en el libro.
+
+Incorporando el formulario del usuario en un formulario de inscripción
+----------------------------------------------------------------------
+
+El formulario que vamos a usar para la página de registro no es el mismo que el
+formulario para simplemente modificar al ``usuario`` (es decir, ``UserType``). El formulario de inscripción contendrá otros campos, como "Acepto los términos", cuyo valor no se almacena en la base de datos.
+
+Comienza creando una simple clase que represente la "inscripción"::
+
+    // src/Acme/AccountBundle/Form/Model/Registration.php
+    namespace Acme\AccountBundle\Form\Model;
+
+    use Symfony\Component\Validator\Constraints as Assert;
+
+    use Acme\AccountBundle\Entity\User;
+
+    class Registration
+    {
+        /**
+         * @Assert\Type(type="Acme\AccountBundle\Entity\User")
+         * @Assert\Valid()
+         */
+        protected $user;
+
+        /**
+         * @Assert\NotBlank()
+         * @Assert\True()
+         */
+        protected $termsAccepted;
+
+        public function setUser(User $user)
+        {
+            $this->user = $user;
+        }
+
+        public function getUser()
+        {
+            return $this->user;
+        }
+
+        public function getTermsAccepted()
+        {
+            return $this->termsAccepted;
+        }
+
+        public function setTermsAccepted($termsAccepted)
+        {
+            $this->termsAccepted = (Boolean) $termsAccepted;
+        }
+    }
+
+Luego, crea el formulario para este modelo ``Registration``::
+
+    // src/Acme/AccountBundle/Form/Type/RegistrationType.php
+    namespace Acme\AccountBundle\Form\Type;
+
+    use Symfony\Component\Form\AbstractType;
+    use Symfony\Component\Form\FormBuilderInterface;
+
+    class RegistrationType extends AbstractType
+    {
+        public function buildForm(FormBuilderInterface $builder, array $options)
+        {
+            $builder->add('user', new UserType());
+            $builder->add(
+                'terms',
+                'checkbox',
+                array('property_path' => 'termsAccepted')
+            );
+        }
+
+        public function getName()
+        {
+            return 'registration';
+        }
+    }
+
+No es necesario utilizar el método especial para incorporar el formulario ``UserType``.
+Un formulario es un campo, también --- así que lo puedes agregar como cualquier otro campo, con la expectativa de que la propiedad ``Registration.user`` mantendrá una instancia de la clase ``usuario``.
+
+Manejando el envío del formulario
+---------------------------------
+
+Después, necesitas un controlador para manejar el formulario. Comienza creando un simple controlador para mostrar el formulario de inscripción::
+
+    // src/Acme/AccountBundle/Controller/AccountController.php
+    namespace Acme\AccountBundle\Controller;
+
+    use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+    use Symfony\Component\HttpFoundation\Response;
+
+    use Acme\AccountBundle\Form\Type\RegistrationType;
+    use Acme\AccountBundle\Form\Model\Registration;
+
+    class AccountController extends Controller
+    {
+        public function registerAction()
+        {
+            $form = $this->createForm(
+                new RegistrationType(),
+                new Registration()
+            );
+
+            return $this->render(
+                'AcmeAccountBundle:Account:register.html.twig',
+                array('form' => $form->createView())
+            );
+        }
+    }
+
+y su plantilla:
+
+.. code-block:: html+jinja
+
+    {# src/Acme/AccountBundle/Resources/views/Account/register.html.twig #}
+    <form action="{{ path('create')}}" method="post" {{ form_enctype(form) }}>
+        {{ form_widget(form) }}
+
+        <input type="submit" />
+    </form>
+
+Finalmente, crea el controlador que maneja el envío del formulario.  Esto llevará a cabo la validación y guardará los datos en la base de datos::
+
+    public function createAction()
+    {
+        $em = $this->getDoctrine()->getEntityManager();
+
+        $form = $this->createForm(new RegistrationType(), new Registration());
+
+        $form->bind($this->getRequest());
+
+        if ($form->isValid()) {
+            $registration = $form->getData();
+
+            $em->persist($registration->getUser());
+            $em->flush();
+
+            return $this->redirect(...);
+        }
+
+        return $this->render(
+            'AcmeAccountBundle:Account:register.html.twig',
+            array('form' => $form->createView())
+        );
+    }
+
+¡Eso es todo! Tu formulario ahora valida, y te permite guardar en la base de datos el objeto ``Usuario``. La casilla de verificación adicional ``términos `` en la  clase ``Registration`` del modelo se utiliza durante la validación, pero en realidad no se utiliza más tarde, cuando se guarda al usuario en la base de datos.

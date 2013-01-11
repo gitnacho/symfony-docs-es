@@ -25,8 +25,7 @@ Para hacerlo más corto, los métodos ``get`` y ``set`` para cada uno se han rem
 .. code-block:: php
 
     // src/Acme/UserBundle/Entity/User.php
-
-        namespace Acme\UsuarioBundle\Entity;
+    namespace Acme\UserBundle\Entity;
 
     use Doctrine\ORM\Mapping as ORM;
     use Symfony\Component\Security\Core\User\UserInterface;
@@ -37,7 +36,7 @@ Para hacerlo más corto, los métodos ``get`` y ``set`` para cada uno se han rem
      * @ORM\Table(name="acme_users")
      * @ORM\Entity(repositoryClass="Acme\UserBundle\Entity\UserRepository")
      */
-    class User implements UserInterface
+    class User implements UserInterface, \Serializable
     {
         /**
          * @ORM\Column(type="integer")
@@ -117,32 +116,64 @@ Para hacerlo más corto, los métodos ``get`` y ``set`` para cada uno se han rem
         }
 
         /**
-         * @inheritDoc
+         * @see \Serializable::serialize()
          */
-        public function equals(UserInterface $user)
+        public function serialize()
         {
-            return $this->username === $user->getUsername();
+            return serialize(array(
+                $this->id,
+            ));
+        }
+
+        /**
+         * @see \Serializable::unserialize()
+         */
+        public function unserialize($serialized)
+        {
+            list (
+                $this->id,
+            ) = unserialize($serialized);
         }
     }
 
-Para utilizar una instancia de la clase ``AcmeUserBundle:User`` en la capa de seguridad de *Symfony*, la clase entidad debe implementar la :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.  Esta interfaz obliga a la clase a implementar los siguientes seis métodos:
+Para utilizar una instancia de la clase ``AcmeUserBundle:User`` en la capa de seguridad de *Symfony*, la clase entidad debe implementar la :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.  Esta interfaz obliga a la clase a implementar los siguientes cinco métodos:
 
-* ``getUsername()``
-* ``getSalt()``
-* ``getPassword()``
-* ``getRoles()``
+* ``getRoles()``,
+* ``getPassword()``,
+* ``getSalt()``,
+* ``getUsername()``,
 * ``eraseCredentials()``
-* ``equals()``
 
 Para más detalles sobre cada uno de ellos, consulta la :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.
 
-Para hacerlo simple, el método ``equals()`` simplemente compara el campo ``username`` pero también es posible hacer más comprobaciones en función de la complejidad de tu modelo de datos. Por otro lado, el método ``eraseCredentials()`` permanece vacío ya que no nos interesa en esta guía.
+.. versionadded:: 2.1
+    En *Symfony* 2.1, se removió el método ``equals`` de la ``UserInterface``.
+    Si necesitas sustituir la implementación predeterminada de la lógica de comparación, implementa la nueva interfaz :class:`Symfony\\Component\\Security\\Core\\User\\EquatableInterface` e implementa el método ``isEqualTo``.
+
+.. code-block:: php
+
+    // src/Acme/UserBundle/Entity/User.php
+
+        namespace Acme\UsuarioBundle\Entity;
+
+    use Symfony\Component\Security\Core\User\EquatableInterface;
+
+    // ...
+
+    public function isEqualTo(UserInterface $user)
+    {
+        return $this->username === $user->getUsername();
+    }
+
+.. note::
+
+    La interfaz :phpclass:`Serializable` y sus métodos ``serialize`` y ``unserialize`` se añadieron para permitir serializar la clase ``Usuario`` a la sesión. Esto puede o no ser necesario dependiendo de tu configuración, pero probablemente sea una buena idea. Sólo necesitas serializar el ``id``, porque el método :method:`Symfony\\Bridge\\Doctrine\\Security\\User\\EntityUserProvider::refreshUser` vuelve a cargar el usuario en cada petición usando el ``id``.
 
 A continuación se muestra una exportación de mi tabla ``User`` de *MySQL*. Para obtener más información sobre cómo crear registros de usuario y codificar su contraseña, consulta :ref:`book-security-encoding-user-password`.
 
-.. code-block:: text
+.. code-block:: bash
 
-    mysql> select * from user;
+    $ mysql> select * from user;
     +----+----------+----------------------------------+------------------------------------------+--------------------+-----------+
     | id | username | salt                             | password                                 | email              | is_active |
     +----+----------+----------------------------------+------------------------------------------+--------------------+-----------+
@@ -162,14 +193,13 @@ Autenticando a alguien contra una base de datos
 
 Autenticar a un usuario de *Doctrine* contra la base de datos con la capa de seguridad de *Symfony* es un trozo del pastel. Todo reside en la configuración de la :doc:`SecurityBundle</reference/configuration/security>` almacenada en el archivo ``app/config/security.yml``.
 
-A continuación se muestra un ejemplo de configuración donde el usuario podrá ingresar su nombre de usuario y contraseña a través de la autenticación *HTTP* básica. Esa información luego se cotejará con los registros de la entidad usuario en la base de datos:
+A continuación se muestra un ejemplo de configuración donde el usuario podrá ingresar su nombre de usuario y contraseña a través de la autenticación *HTTP* básica. Esa información luego se cotejará con los registros de la entidad Usuario en la base de datos:
 
 .. configuration-block::
 
     .. code-block:: yaml
 
         # app/config/security.yml
-
         security:
             encoders:
                 Acme\UserBundle\Entity\User:
@@ -198,10 +228,10 @@ La sección ``encoders`` asocia el codificador de contraseña ``sha1`` a la clas
 La sección  ``proveedores`` define un proveedor de usuario ``administradores``. A proveedor de usuario es una "fuente" de donde se cargan los usuarios durante la autenticación.
 En este caso, la palabra clave ``entidad`` significa que *Symfony* utilizará la entidad proveedor de usuarios de *Doctrine* para cargar los objetos entidad de usuario desde la base de datos usando el campo único ``username``. En otras palabras, esto le dice a *Symfony* cómo buscar al usuario en la base de datos antes de comprobar la validez de la contraseña.
 
-Este código y configuración funciona, pero no es suficiente para asegurar la aplicación para usuarios **activos**. A partir de ahora, todavía se pueden autenticar con ``maxime``. la siguiente sección explica cómo prohibir a usuarios no activos.
+Este código y configuración funciona, pero no es suficiente para asegurar la aplicación para usuarios **activos**. A partir de ahora, todavía puedes autenticar con ``maxime``. La siguiente sección explica cómo negar el acceso a usuarios no activos.
 
-Prohibiendo a usuarios no activos
----------------------------------
+Denegando acceso a usuarios no activos
+--------------------------------------
 
 La forma más fácil de excluir a los usuarios inactivos es implementar la interfaz :class:`Symfony\\Component\\Security\\Core\\User\\AdvancedUserInterface` que se encarga de comprobar el estado de la cuenta del usuario.
 La :class:`Symfony\\Component\\Security\\Core\\User\\AdvancedUserInterface` extiende la interfaz :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`, por lo que sólo hay que cambiar a la nueva interfaz en la clase de la entidad ``AcmeUserBundle:User`` para beneficiarse del comportamiento de autenticación simple y avanzado.
@@ -218,16 +248,15 @@ Para este ejemplo, los tres primeros métodos devolverán ``true`` mientras que 
 .. code-block:: php
 
     // src/Acme/UserBundle/Entity/User.php
-
-    namespace Acme\Bundle\UserBundle\Entity;
+    namespace Acme\UserBundle\Entity;
 
     // ...
     use Symfony\Component\Security\Core\User\AdvancedUserInterface;
 
-    // ...
     class User implements AdvancedUserInterface
     {
         // ...
+
         public function isAccountNonExpired()
         {
                 return true;
@@ -249,10 +278,10 @@ Para este ejemplo, los tres primeros métodos devolverán ``true`` mientras que 
         }
     }
 
-Si tratamos de autenticar a un ``maxime``, el acceso está prohibido, puesto que el usuario no tiene una cuenta activa. La siguiente sesión se centrará en cómo escribir un proveedor de entidad personalizado para autenticar a un usuario con su nombre de usuario o dirección de correo electrónico.
+Si tratas de autenticarte como ``maxime``, el acceso ahora está prohibido, puesto que el usuario no tiene una cuenta activa. La siguiente sesión se enfocará en cómo escribir un proveedor de entidad personalizado para autenticar a un usuario con su nombre de usuario o dirección de correo electrónico.
 
-Autenticando a una persona con un proveedor de entidad personalizado
---------------------------------------------------------------------
+Autenticando a alguien con un proveedor de entidad personalizado
+----------------------------------------------------------------
 
 El siguiente paso es permitir a un usuario que se autentique con su nombre de usuario o su
 dirección de correo electrónico, puesto que ambos son únicos en la base de datos. Desafortunadamente, el proveedor de entidad nativo sólo puede manejar una sola propiedad al buscar al usuario en
@@ -264,8 +293,7 @@ La buena noticia es que un objeto repositorio de *Doctrine* puede actuar como un
 El siguiente código muestra la implementación de la :class:`Symfony\\Component\\Security\\Core\\User\\UserProviderInterface` en la clase ``UserRepository``::
 
     // src/Acme/UserBundle/Entity/UserRepository.php
-
-        namespace Acme\UsuarioBundle\Entity;
+    namespace Acme\UserBundle\Entity;
 
     use Symfony\Component\Security\Core\User\UserInterface;
     use Symfony\Component\Security\Core\User\UserProviderInterface;
@@ -304,7 +332,7 @@ El siguiente código muestra la implementación de la :class:`Symfony\\Component
                 throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $class));
             }
 
-            return $this->loadUserByUsername($user->getUsername());
+            return $this->find($user->getId());
         }
 
         public function supportsClass($class)
@@ -332,7 +360,7 @@ De esta manera, la capa de seguridad utilizará una instancia del :dfn:`UserRepo
 Gestionando roles en la base de datos
 -------------------------------------
 
-El final de esta guía se centra en cómo almacenar y recuperar una lista de roles desde la base de datos. Como se mencionó anteriormente, cuando se carga el usuario, su método ``getRoles()`` devuelve la matriz de roles de seguridad que se deben asignar al usuario. Puedes cargar estos datos desde cualquier lugar --- una lista de palabras codificada para todos los usuarios (por ejemplo, ``array('ROLE_USER')``), una propiedad ``array`` de *Doctrine* llamada ``roles``, o por medio de una relación de *Doctrine*, como vamos a aprender en esta sección.
+El final de esta guía se centra en cómo almacenar y recuperar una lista de roles desde la base de datos. Como se mencionó anteriormente, cuando se carga el usuario, su método ``getRoles()`` devuelve el arreglo de roles de seguridad que se deben asignar al usuario. Puedes cargar estos datos desde cualquier lugar ---una lista de palabras codificadas para todos los usuarios (p. ej. ``array('ROLE_USER')``), una propiedad ``array`` de *Doctrine* llamada ``roles``, o por medio de una relación de *Doctrine*, como aprenderás en esta sección.
 
 .. caution::
 
@@ -342,13 +370,12 @@ El final de esta guía se centra en cómo almacenar y recuperar una lista de rol
 En este ejemplo, la clase de la entidad ``AcmeUserBundle:User`` define una relación muchos-a-muchos con una clase entidad ``AcmeUserBundle:Group``. Un usuario puede estar relacionado con varios grupos y un grupo puede estar compuesto por uno o más usuarios. Puesto que un grupo también es un rol, el método ``getRoles()`` anterior ahora devuelve la lista de los grupos relacionados::
 
     // src/Acme/UserBundle/Entity/User.php
-
-    namespace Acme\Bundle\UserBundle\Entity;
+    namespace Acme\UserBundle\Entity;
 
     use Doctrine\Common\Collections\ArrayCollection;
-
     // ...
-    class User implements AdvancedUserInterface
+
+    class User implements AdvancedUserInterface, \Serializable
     {
         /**
          * @ORM\ManyToMany(targetEntity="Group", inversedBy="users")
@@ -367,11 +394,32 @@ En este ejemplo, la clase de la entidad ``AcmeUserBundle:User`` define una relac
         {
             return $this->groups->toArray();
         }
+
+        /**
+         * @see \Serializable::serialize()
+         */
+        public function serialize()
+        {
+            return serialize(array(
+                $this->id,
+            ));
+        }
+
+        /**
+         * @see \Serializable::unserialize()
+         */
+        public function unserialize($serialized)
+        {
+            list (
+                $this->id,
+            ) = unserialize($serialized);
+        }
     }
 
 La clase de la entidad ``AcmeUserBundle:Group`` define tres campos de tabla (``id``, ``username`` y ``role``). El campo único ``role`` contiene el nombre del rol utilizado por la capa de seguridad de *Symfony* para proteger partes de la aplicación. Lo más importante a resaltar es que la clase de la entidad ``AcmeUserBundle:Group`` implementa la :class:`Symfony\\Component\\Security\\Core\\Role\\RoleInterface` que te obliga a tener un método ``getRole()``::
 
-    namespace Acme\Bundle\UserBundle\Entity;
+    // src/Acme/Bundle/UserBundle/Entity/Group.php
+    namespace Acme\UserBundle\Entity;
 
     use Symfony\Component\Security\Core\Role\RoleInterface;
     use Doctrine\Common\Collections\ArrayCollection;
@@ -424,8 +472,7 @@ La clase de la entidad ``AcmeUserBundle:Group`` define tres campos de tabla (``i
 Para mejorar el rendimiento y evitar la carga diferida de grupos al recuperar un usuario desde el proveedor de entidad personalizado, la mejor solución es unir la relación de grupos en el método ``UserRepository::loadUserByUsername()``. Esto buscará al usuario y sus roles / grupos asociados con una sola consulta::
 
     // src/Acme/UserBundle/Entity/UserRepository.php
-
-    namespace Acme\Bundle\UserBundle\Entity;
+    namespace Acme\UserBundle\Entity;
 
     // ...
 
@@ -440,8 +487,7 @@ Para mejorar el rendimiento y evitar la carga diferida de grupos al recuperar un
                 ->where('u.username = :username OR u.email = :email')
                 ->setParameter('username', $username)
                 ->setParameter('email', $username)
-                ->getQuery()
-            ;
+                ->getQuery();
 
             // ...
         }

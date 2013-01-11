@@ -1,0 +1,387 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Cómo implementar un sencillo formulario de registro &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Doctrine" href="index.html" />
+    <link rel="next" title="Formularios" href="../form/index.html" />
+    <link rel="prev" title="Cómo definir relaciones con interfaces y clases abstractas" href="resolve_target_entity.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../form/index.html" title="Formularios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="resolve_target_entity.html" title="Cómo definir relaciones con interfaces y clases abstractas"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U"><em>Doctrine</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="como-implementar-un-sencillo-formulario-de-registro">
+<span id="index-0"></span><h1>Cómo implementar un sencillo formulario de registro<a class="headerlink" href="#como-implementar-un-sencillo-formulario-de-registro" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Algunos formularios tienen campos adicionales cuyos valores no se necesita almacenar en la base de datos. Por ejemplo, posiblemente quieras crear un formulario de inscripción con unos cuantos campos adicionales (como un campo de casilla de verificación &#8220;términos aceptados&#8221;) e integrar en el formulario lo que realmente almacena la información de la cuenta.</p>
+<div class="section" id="el-sencillo-modelo-de-usuario">
+<h2>El sencillo modelo de usuario<a class="headerlink" href="#el-sencillo-modelo-de-usuario" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Tienes una sencilla entidad <tt class="docutils literal"><span class="pre">Usuario</span></tt> asignada a la base de datos:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Entity/User.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Entity</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Doctrine\ORM\Mapping</span> <span class="k">as</span> <span class="nx">ORM</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity</span><span class="p">;</span>
+
+<span class="sd">/**</span>
+<span class="sd"> * @ORM\Entity</span>
+<span class="sd"> * @UniqueEntity(fields=&quot;email&quot;, message=&quot;Email already taken&quot;)</span>
+<span class="sd"> */</span>
+<span class="k">class</span> <span class="nc">User</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\Id</span>
+<span class="sd">     * @ORM\Column(type=&quot;integer&quot;)</span>
+<span class="sd">     * @ORM\GeneratedValue(strategy=&quot;AUTO&quot;)</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$id</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\Column(type=&quot;string&quot;, length=255)</span>
+<span class="sd">     * @Assert\NotBlank()</span>
+<span class="sd">     * @Assert\Email()</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$email</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @ORM\Column(type=&quot;string&quot;, length=255)</span>
+<span class="sd">     * @Assert\NotBlank()</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$plainPassword</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getId</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getEmail</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">email</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEmail</span><span class="p">(</span><span class="nv">$email</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">email</span> <span class="o">=</span> <span class="nv">$email</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getPlainPassword</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">plainPassword</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setPlainPassword</span><span class="p">(</span><span class="nv">$password</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">plainPassword</span> <span class="o">=</span> <span class="nv">$password</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Esta entidad <tt class="docutils literal"><span class="pre">Usuario</span></tt> contiene tres campos y dos de ellos (<tt class="docutils literal"><span class="pre">email</span></tt> y <tt class="docutils literal"><span class="pre">plainPassword</span></tt>) se deben mostrar en el formulario. La propiedad <tt class="docutils literal"><span class="pre">email</span></tt> debe ser única en la base de datos, esto se consigue añadiendo esta validación en la parte superior de la clase.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si deseas integrar este <tt class="docutils literal"><span class="pre">Usuario</span></tt> en el sistema de seguridad, necesitas implementar la entidad <a class="reference internal" href="../../book/security.html#book-security-user-entity"><em>UserInterface</em></a> del componente de seguridad.</p>
+</div>
+</div>
+<div class="section" id="creando-un-formulario-para-el-modelo">
+<h2>Creando un formulario para el modelo<a class="headerlink" href="#creando-un-formulario-para-el-modelo" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A continuación, crea el formulario para el modelo <tt class="docutils literal"><span class="pre">Usuario</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Form/Type/UserType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\OptionsResolver\OptionsResolverInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">UserType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="s1">&#39;email&#39;</span><span class="p">);</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;plainPassword&#39;</span><span class="p">,</span> <span class="s1">&#39;repeated&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+           <span class="s1">&#39;first_name&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;password&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;second_name&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;confirm&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;password&#39;</span><span class="p">,</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setDefaultOptions</span><span class="p">(</span><span class="nx">OptionsResolverInterface</span> <span class="nv">$resolver</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$resolver</span><span class="o">-&gt;</span><span class="na">setDefaults</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;data_class&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Acme\AccountBundle\Entity\User&#39;</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;user&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Sólo hay dos campos: <tt class="docutils literal"><span class="pre">email</span></tt> y <tt class="docutils literal"><span class="pre">plainPassword</span></tt> (repetido para confirmar la contraseña introducida). La opción <tt class="docutils literal"><span class="pre">data_class</span></tt> le dice al formulario el nombre de la clase datos (es decir, la entidad <tt class="docutils literal"><span class="pre">usuario</span></tt>).</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Para explorar más cosas sobre el componente <tt class="docutils literal"><span class="pre">formulario</span></tt>, consulta <a class="reference internal" href="../../book/forms.html"><em>Formularios</em></a> en el libro.</p>
+</div>
+</div>
+<div class="section" id="incorporando-el-formulario-del-usuario-en-un-formulario-de-inscripcion">
+<h2>Incorporando el formulario del usuario en un formulario de inscripción<a class="headerlink" href="#incorporando-el-formulario-del-usuario-en-un-formulario-de-inscripcion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El formulario que vamos a usar para la página de registro no es el mismo que el
+formulario para simplemente modificar al <tt class="docutils literal"><span class="pre">usuario</span></tt> (es decir, <tt class="docutils literal"><span class="pre">UserType</span></tt>). El formulario de inscripción contendrá otros campos, como &#8220;Acepto los términos&#8221;, cuyo valor no se almacena en la base de datos.</p>
+<p>Comienza creando una simple clase que represente la &#8220;inscripción&#8221;:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Form/Model/Registration.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Form\Model</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Acme\AccountBundle\Entity\User</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Registration</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @Assert\Type(type=&quot;Acme\AccountBundle\Entity\User&quot;)</span>
+<span class="sd">     * @Assert\Valid()</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$user</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @Assert\NotBlank()</span>
+<span class="sd">     * @Assert\True()</span>
+<span class="sd">     */</span>
+    <span class="k">protected</span> <span class="nv">$termsAccepted</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setUser</span><span class="p">(</span><span class="nx">User</span> <span class="nv">$user</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">user</span> <span class="o">=</span> <span class="nv">$user</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getUser</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">user</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getTermsAccepted</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">termsAccepted</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setTermsAccepted</span><span class="p">(</span><span class="nv">$termsAccepted</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">termsAccepted</span> <span class="o">=</span> <span class="p">(</span><span class="nx">Boolean</span><span class="p">)</span> <span class="nv">$termsAccepted</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Luego, crea el formulario para este modelo <tt class="docutils literal"><span class="pre">Registration</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Form/Type/RegistrationType.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Form\Type</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\AbstractType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Form\FormBuilderInterface</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">RegistrationType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">buildForm</span><span class="p">(</span><span class="nx">FormBuilderInterface</span> <span class="nv">$builder</span><span class="p">,</span> <span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;user&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">UserType</span><span class="p">());</span>
+        <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span>
+            <span class="s1">&#39;terms&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;checkbox&#39;</span><span class="p">,</span>
+            <span class="k">array</span><span class="p">(</span><span class="s1">&#39;property_path&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;termsAccepted&#39;</span><span class="p">)</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getName</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s1">&#39;registration&#39;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>No es necesario utilizar el método especial para incorporar el formulario <tt class="docutils literal"><span class="pre">UserType</span></tt>.
+Un formulario es un campo, también &#8212; así que lo puedes agregar como cualquier otro campo, con la expectativa de que la propiedad <tt class="docutils literal"><span class="pre">Registration.user</span></tt> mantendrá una instancia de la clase <tt class="docutils literal"><span class="pre">usuario</span></tt>.</p>
+</div>
+<div class="section" id="manejando-el-envio-del-formulario">
+<h2>Manejando el envío del formulario<a class="headerlink" href="#manejando-el-envio-del-formulario" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Después, necesitas un controlador para manejar el formulario. Comienza creando un simple controlador para mostrar el formulario de inscripción:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/AccountBundle/Controller/AccountController.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\AccountBundle\Controller</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Bundle\FrameworkBundle\Controller\Controller</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Response</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Acme\AccountBundle\Form\Type\RegistrationType</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\AccountBundle\Form\Model\Registration</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">AccountController</span> <span class="k">extends</span> <span class="nx">Controller</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">registerAction</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createForm</span><span class="p">(</span>
+            <span class="k">new</span> <span class="nx">RegistrationType</span><span class="p">(),</span>
+            <span class="k">new</span> <span class="nx">Registration</span><span class="p">()</span>
+        <span class="p">);</span>
+
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span>
+            <span class="s1">&#39;AcmeAccountBundle:Account:register.html.twig&#39;</span><span class="p">,</span>
+            <span class="k">array</span><span class="p">(</span><span class="s1">&#39;form&#39;</span> <span class="o">=&gt;</span> <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">createView</span><span class="p">())</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>y su plantilla:</p>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/AccountBundle/Resources/views/Account/register.html.twig #}</span>
+<span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;</span><span class="cp">{{</span> <span class="nv">path</span><span class="o">(</span><span class="s1">&#39;create&#39;</span><span class="o">)</span><span class="cp">}}</span><span class="s">&quot;</span> <span class="na">method=</span><span class="s">&quot;post&quot;</span> <span class="cp">{{</span> <span class="nv">form_enctype</span><span class="o">(</span><span class="nv">form</span><span class="o">)</span> <span class="cp">}}</span><span class="nt">&gt;</span>
+    <span class="cp">{{</span> <span class="nv">form_widget</span><span class="o">(</span><span class="nv">form</span><span class="o">)</span> <span class="cp">}}</span>
+
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/form&gt;</span>
+</pre></div>
+</div>
+<p>Finalmente, crea el controlador que maneja el envío del formulario.  Esto llevará a cabo la validación y guardará los datos en la base de datos:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">createAction</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$em</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">();</span>
+
+    <span class="nv">$form</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">createForm</span><span class="p">(</span><span class="k">new</span> <span class="nx">RegistrationType</span><span class="p">(),</span> <span class="k">new</span> <span class="nx">Registration</span><span class="p">());</span>
+
+    <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">bind</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">());</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
+        <span class="nv">$registration</span> <span class="o">=</span> <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">getData</span><span class="p">();</span>
+
+        <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$registration</span><span class="o">-&gt;</span><span class="na">getUser</span><span class="p">());</span>
+        <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
+
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span>
+        <span class="s1">&#39;AcmeAccountBundle:Account:register.html.twig&#39;</span><span class="p">,</span>
+        <span class="k">array</span><span class="p">(</span><span class="s1">&#39;form&#39;</span> <span class="o">=&gt;</span> <span class="nv">$form</span><span class="o">-&gt;</span><span class="na">createView</span><span class="p">())</span>
+    <span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>¡Eso es todo! Tu formulario ahora valida, y te permite guardar en la base de datos el objeto <tt class="docutils literal"><span class="pre">Usuario</span></tt>. La casilla de verificación adicional <tt class="docutils literal"><span class="pre">términos</span> <span class="pre">``</span> <span class="pre">en</span> <span class="pre">la</span>&nbsp; <span class="pre">clase</span> <span class="pre">``Registration</span></tt> del modelo se utiliza durante la validación, pero en realidad no se utiliza más tarde, cuando se guarda al usuario en la base de datos.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../form/index.html" title="Formularios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="resolve_target_entity.html" title="Cómo definir relaciones con interfaces y clases abstractas"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" ><em>Doctrine</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

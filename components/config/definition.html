@@ -1,0 +1,587 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Definiendo y procesando valores de configuración &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Config" href="index.html" />
+    <link rel="next" title="Consola" href="../console/index.html" />
+    <link rel="prev" title="Almacenamiento en caché basado en recursos" href="caching.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../console/index.html" title="Consola"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="caching.html" title="Almacenamiento en caché basado en recursos"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U"><tt class="docutils literal docutils literal docutils literal"><span class="pre">Config</span></tt></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="definiendo-y-procesando-valores-de-configuracion">
+<span id="index-0"></span><h1>Definiendo y procesando valores de configuración<a class="headerlink" href="#definiendo-y-procesando-valores-de-configuracion" title="Enlazar permanentemente con este título">¶</a></h1>
+<div class="section" id="validando-valores-de-configuracion">
+<h2>Validando valores de configuración<a class="headerlink" href="#validando-valores-de-configuracion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Después de cargar los valores de configuración de todo tipo de recursos, los valores y su estructura se pueden validar usando la parte &#8220;Definición&#8221; del componente <tt class="docutils literal"><span class="pre">Config</span></tt>. Generalmente, se espera que los valores de configuración muestren algún tipo de jerarquía. Además, los valores deben ser de un determinado tipo, estar limitados en número o ser uno de un determinado conjunto de valores. Por ejemplo, la siguiente configuración (en <em>YAML</em>) muestra una clara jerarquía y algunas reglas de validación que se deben aplicar (como: &#8220;el valor de <tt class="docutils literal"><span class="pre">auto_connect</span></tt> debe ser un valor booleano&#8221;):</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">auto_connect</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+<span class="l-Scalar-Plain">default_connection</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">mysql</span>
+<span class="l-Scalar-Plain">connections</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">mysql</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">localhost</span>
+        <span class="l-Scalar-Plain">driver</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">mysql</span>
+        <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">user</span>
+        <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">pass</span>
+    <span class="l-Scalar-Plain">sqlite</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">localhost</span>
+        <span class="l-Scalar-Plain">driver</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">sqlite</span>
+        <span class="l-Scalar-Plain">memory</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+        <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">user</span>
+        <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">pass</span>
+</pre></div>
+</div>
+<p>Al cargar varios archivos de configuración, debería ser posible combinar y sobrescribir algunos valores. Otros valores no se deben fusionar y quedarse como estaban cuando se encontraron por primera vez. Además, algunas claves sólo están disponibles cuando otra clave tiene un valor específico (en la configuración del ejemplo anterior: la clave <tt class="docutils literal"><span class="pre">memory</span></tt> sólo tiene sentido cuando <tt class="docutils literal"><span class="pre">driver</span></tt> es <tt class="docutils literal"><span class="pre">sqlite</span></tt>).</p>
+</div>
+<div class="section" id="definiendo-una-jerarquia-de-valores-de-configuracion-usando-el-treebuilder">
+<h2>Definiendo una jerarquía de valores de configuración usando el <cite>TreeBuilder</cite><a class="headerlink" href="#definiendo-una-jerarquia-de-valores-de-configuracion-usando-el-treebuilder" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Todas las normas relativas a los valores de configuración se pueden definir usando el <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Config\Definition\Builder\TreeBuilder</span></tt>.</p>
+<p>Debes devolver una instancia de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Config\Definition\Builder\TreeBuilder</span></tt> desde una clase  <tt class="docutils literal"><span class="pre">Configuration</span></tt> personalizada que implemente la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Config\Definition\ConfigurationInterface</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">namespace</span> <span class="nx">Acme\DatabaseConfiguration</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\ConfigurationInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\Builder\TreeBuilder</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">DatabaseConfiguration</span> <span class="k">implements</span> <span class="nx">ConfigurationInterface</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getConfigTreeBuilder</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="nv">$treeBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">TreeBuilder</span><span class="p">();</span>
+        <span class="nv">$rootNode</span> <span class="o">=</span> <span class="nv">$treeBuilder</span><span class="o">-&gt;</span><span class="na">root</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">);</span>
+
+        <span class="c1">// ... añade definiciones de nodo a la raíz del árbol</span>
+
+        <span class="k">return</span> <span class="nv">$treeBuilder</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="anadiendo-definiciones-de-nodo-al-arbol">
+<h2>Añadiendo definiciones de nodo al árbol<a class="headerlink" href="#anadiendo-definiciones-de-nodo-al-arbol" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="variables-de-nodo">
+<h3>Variables de nodo<a class="headerlink" href="#variables-de-nodo" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Un árbol contiene definiciones de nodo que se pueden establecer de manera semántica.
+Esto significa que, usando la sangría y una sencilla notación, es posible reflejar la estructura real de los valores de configuración:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">booleanNode</span><span class="p">(</span><span class="s1">&#39;auto_connect&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">defaultTrue</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;default_connection&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">defaultValue</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+<p>El nodo raíz en sí es un arreglo de nodos, y tiene hijos, como el nodo booleano <tt class="docutils literal"><span class="pre">auto_connect</span></tt> y el nodo escalar <tt class="docutils literal"><span class="pre">default_connection</span></tt>. En general:
+después de definir un nodo, una llamada a <tt class="docutils literal"><span class="pre">end()</span></tt> te lleva un paso más arriba en la jerarquía.</p>
+</div>
+<div class="section" id="tipo-node">
+<h3>Tipo «node»<a class="headerlink" href="#tipo-node" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Es posible validar el tipo de un valor proporcionado utilizando la definición
+de nodo apropiada. El tipo de nodo está disponible para:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">scalar</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">boolean</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">array</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">enum</span></tt> (nuevo en 2.1)</li>
+<li><tt class="docutils literal"><span class="pre">integer</span></tt> (nuevo en 2.2)</li>
+<li><tt class="docutils literal"><span class="pre">float</span></tt> (nuevo en 2.2)</li>
+<li>variable (sin validación)</li>
+</ul>
+<p>y se crean con <tt class="docutils literal"><span class="pre">node($nombre,</span> <span class="pre">$tipo)</span></tt> o su método abreviado asociado
+<tt class="docutils literal"><span class="pre">xxxxNode($nombre)</span></tt>.</p>
+</div>
+<div class="section" id="restricciones-de-nodos-numericos">
+<h3>Restricciones de nodos numéricos<a class="headerlink" href="#restricciones-de-nodos-numericos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.2: </span>Los nodos numéricos (<tt class="docutils literal"><span class="pre">float</span></tt> e <tt class="docutils literal"><span class="pre">integer</span></tt>) son nuevos en 2.2</p>
+<p>Los nodos numéricos (<tt class="docutils literal"><span class="pre">float</span></tt> e <tt class="docutils literal"><span class="pre">integer</span></tt>) proporcionan dos restricciones extra &#8212;
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Config/Definition/Builder.html#method_min" title="Symfony\Component\Config\Definition\Builder::min()"><span class="pre">min()</span></a></tt> y
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Config/Definition/Builder.html#method_max" title="Symfony\Component\Config\Definition\Builder::max()"><span class="pre">max()</span></a></tt> &#8212; que te permiten validar el valor:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">integerNode</span><span class="p">(</span><span class="s1">&#39;positive_value&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">min</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">floatNode</span><span class="p">(</span><span class="s1">&#39;big_value&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">max</span><span class="p">(</span><span class="mf">5E45</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">integerNode</span><span class="p">(</span><span class="s1">&#39;value_inside_a_range&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">min</span><span class="p">(</span><span class="o">-</span><span class="mi">50</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">max</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="nodos-del-arreglo">
+<h3>Nodos del arreglo<a class="headerlink" href="#nodos-del-arreglo" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Es posible añadir un nivel más profundo a la jerarquía, añadiendo un nodo al arreglo. El arreglo de nodos en sí mismo, puede tener un conjunto predefinido de variables de nodo:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">arrayNode</span><span class="p">(</span><span class="s1">&#39;connection&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;driver&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+<p>O puedes definir un prototipo para cada nodo dentro del arreglo de nodos:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">arrayNode</span><span class="p">(</span><span class="s1">&#39;connections&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">prototype</span><span class="p">(</span><span class="s1">&#39;array&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;driver&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+<p>Puedes utilizar un prototipo para añadir una definición la cual se puede repetir muchas veces dentro del nodo actual. De acuerdo con la definición del prototipo en el ejemplo anterior, es posible tener varios arreglos de conexión (conteniendo un <tt class="docutils literal"><span class="pre">driver</span></tt>, <tt class="docutils literal"><span class="pre">host</span></tt>, etc.).</p>
+</div>
+<div class="section" id="opciones-del-arreglo-de-nodos">
+<h3>Opciones del arreglo de nodos<a class="headerlink" href="#opciones-del-arreglo-de-nodos" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Antes de definir los hijos de un arreglo de nodos, puedes proveer opciones como:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">useAttributeAsKey()</span></tt></dt>
+<dd>Proporciona el nombre de un nodo secundario, cuyo valor se debe usar como la clave en el arreglo resultante</dd>
+<dt><tt class="docutils literal"><span class="pre">requiresAtLeastOneElement()</span></tt></dt>
+<dd>Debe haber por lo menos un elemento en el arreglo (sólo funciona cuando además se llama a <tt class="docutils literal"><span class="pre">isRequired()</span></tt>).</dd>
+</dl>
+<p>Un ejemplo de esto:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">arrayNode</span><span class="p">(</span><span class="s1">&#39;parameters&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">isRequired</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">requiresAtLeastOneElement</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">useAttributeAsKey</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">prototype</span><span class="p">(</span><span class="s1">&#39;array&#39;</span><span class="p">)</span>
+                <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">isRequired</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+<p>En <em>YAML</em>, la configuración podría tener esta apariencia:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">database</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">param1</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">value</span><span class="p-Indicator">:</span> <span class="nv">param1val</span> <span class="p-Indicator">}</span>
+</pre></div>
+</div>
+<p>En <em>XML</em>, cada nodo <tt class="docutils literal"><span class="pre">parameters</span></tt> tendría un atributo <tt class="docutils literal"><span class="pre">name</span></tt> (junto con
+<tt class="docutils literal"><span class="pre">value</span></tt>), el cual se sacaría y utilizarí como la clave para ese elemento en el
+arreglo final. El <tt class="docutils literal"><span class="pre">useAttributeAsKey</span></tt> es útil para normalizar cómo se especifican los arreglos entre diferentes formatos como <em>XML</em> y <em>YAML</em>.</p>
+</div>
+</div>
+<div class="section" id="valores-predefinidos-y-requeridos">
+<h2>Valores predefinidos y requeridos<a class="headerlink" href="#valores-predefinidos-y-requeridos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para todos los tipos de nodo, es posible definir valores predeterminados y valores de sustitución en caso de que un nodo tenga un cierto valor:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">defaultValue()</span></tt></dt>
+<dd>Establece un valor predeterminado</dd>
+<dt><tt class="docutils literal"><span class="pre">isRequired()</span></tt></dt>
+<dd>Se debe definir (pero puede estar vacío)</dd>
+<dt><tt class="docutils literal"><span class="pre">cannotBeEmpty()</span></tt></dt>
+<dd>No puede contener un valor vacío</dd>
+<dt><tt class="docutils literal"><span class="pre">default*()</span></tt></dt>
+<dd>(<tt class="docutils literal"><span class="pre">null</span></tt>, <tt class="docutils literal"><span class="pre">true</span></tt>, <tt class="docutils literal"><span class="pre">false</span></tt>), acceso directo para <tt class="docutils literal"><span class="pre">defaultValue()</span></tt></dd>
+<dt><tt class="docutils literal"><span class="pre">treat*Like()</span></tt></dt>
+<dd>(<tt class="docutils literal"><span class="pre">null</span></tt>, <tt class="docutils literal"><span class="pre">true</span></tt>, <tt class="docutils literal"><span class="pre">false</span></tt>), provee un valor sustituto en caso de que el valor sea <tt class="docutils literal"><span class="pre">*.</span></tt></dd>
+</dl>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">arrayNode</span><span class="p">(</span><span class="s1">&#39;connection&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;driver&#39;</span><span class="p">)</span>
+                    <span class="o">-&gt;</span><span class="na">isRequired</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">cannotBeEmpty</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span>
+                    <span class="o">-&gt;</span><span class="na">defaultValue</span><span class="p">(</span><span class="s1">&#39;localhost&#39;</span><span class="p">)</span>
+                <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">booleanNode</span><span class="p">(</span><span class="s1">&#39;memory&#39;</span><span class="p">)</span>
+                    <span class="o">-&gt;</span><span class="na">defaultFalse</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="secciones-opcionales">
+<h2>Secciones opcionales<a class="headerlink" href="#secciones-opcionales" title="Enlazar permanentemente con este título">¶</a></h2>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>Los métodos <tt class="docutils literal"><span class="pre">canBeEnabled</span></tt> y <tt class="docutils literal"><span class="pre">canBeDisabled</span></tt> son nuevos en <em>Symfony 2.2</em></p>
+<p>Si tienes secciones enteras que son opcionales y se pueden activar/desactivar, puedes aprovechar los métodos abreviados <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Config/Definition/Builder/ArrayNodeDefinition.html#method_canBeEnabled" title="Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition::canBeEnabled()"><span class="pre">canBeEnabled()</span></a></tt> y
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Config/Definition/Builder/ArrayNodeDefinition.html#method_canBeDisabled" title="Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition::canBeDisabled()"><span class="pre">canBeDisabled()</span></a></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$arrayNode</span>
+    <span class="o">-&gt;</span><span class="na">canBeEnabled</span><span class="p">()</span>
+<span class="p">;</span>
+
+<span class="c1">// es equivalente a</span>
+
+<span class="nv">$arrayNode</span>
+    <span class="o">-&gt;</span><span class="na">treatFalseLike</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;enabled&#39;</span> <span class="o">=&gt;</span> <span class="k">false</span><span class="p">))</span>
+    <span class="o">-&gt;</span><span class="na">treatTrueLike</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;enabled&#39;</span> <span class="o">=&gt;</span> <span class="k">true</span><span class="p">))</span>
+    <span class="o">-&gt;</span><span class="na">treatNullLike</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;enabled&#39;</span> <span class="o">=&gt;</span> <span class="k">true</span><span class="p">))</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">booleanNode</span><span class="p">(</span><span class="s1">&#39;enabled&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">defaultFalse</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+<p>El método <tt class="docutils literal"><span class="pre">canBeDisabled</span></tt> se ve igual salvo que de manera predefinida la sección estaría habilitada.</p>
+</div>
+<div class="section" id="combinando-opciones">
+<h2>Combinando opciones<a class="headerlink" href="#combinando-opciones" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes proporcionar opciones adicionales sobre el proceso de mezcla. Para arreglos:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">performNoDeepMerging()</span></tt></dt>
+<dd>Cuando también defines el valor en un segundo arreglo de configuración, no se intenta combinar un arreglo, sino que lo sobrescribe por completo.</dd>
+</dl>
+<p>Para todos los nodos:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">cannotBeOverwritten()</span></tt></dt>
+<dd>No permite que otros arreglos de configuración sobrescriban un valor existente de este nodo.</dd>
+</dl>
+</div>
+<div class="section" id="anexando-secciones">
+<h2>Anexando secciones<a class="headerlink" href="#anexando-secciones" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si tienes una configuración de validación compleja, entonces el árbol puede crecer bastante y posiblemente quieras dividirlo en secciones. Lo puedes conseguir haciendo una sección en un nodo separado y luego anexándolo al árbol principal con <tt class="docutils literal"><span class="pre">append()</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">getConfigTreeBuilder</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$treeBuilder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">TreeBuilder</span><span class="p">();</span>
+    <span class="nv">$rootNode</span> <span class="o">=</span> <span class="nv">$treeBuilder</span><span class="o">-&gt;</span><span class="na">root</span><span class="p">(</span><span class="s1">&#39;database&#39;</span><span class="p">);</span>
+
+    <span class="nv">$rootNode</span>
+        <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">arrayNode</span><span class="p">(</span><span class="s1">&#39;connection&#39;</span><span class="p">)</span>
+                <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;driver&#39;</span><span class="p">)</span>
+                        <span class="o">-&gt;</span><span class="na">isRequired</span><span class="p">()</span>
+                        <span class="o">-&gt;</span><span class="na">cannotBeEmpty</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span>
+                        <span class="o">-&gt;</span><span class="na">defaultValue</span><span class="p">(</span><span class="s1">&#39;localhost&#39;</span><span class="p">)</span>
+                    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">booleanNode</span><span class="p">(</span><span class="s1">&#39;memory&#39;</span><span class="p">)</span>
+                        <span class="o">-&gt;</span><span class="na">defaultFalse</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">append</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">addParametersNode</span><span class="p">())</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="p">;</span>
+
+    <span class="k">return</span> <span class="nv">$treeBuilder</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">addParametersNode</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="nv">$builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">TreeBuilder</span><span class="p">();</span>
+    <span class="nv">$node</span> <span class="o">=</span> <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">root</span><span class="p">(</span><span class="s1">&#39;parameters&#39;</span><span class="p">);</span>
+
+    <span class="nv">$node</span>
+        <span class="o">-&gt;</span><span class="na">isRequired</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">requiresAtLeastOneElement</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">useAttributeAsKey</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+        <span class="o">-&gt;</span><span class="na">prototype</span><span class="p">(</span><span class="s1">&#39;array&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">isRequired</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="p">;</span>
+
+    <span class="k">return</span> <span class="nv">$node</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Esto también es útil para ayudarte a evitar repeticiones si tienes repetida la configuración de esas secciones en diferentes sitios.</p>
+</div>
+<div class="section" id="normalizacion">
+<h2>Normalización<a class="headerlink" href="#normalizacion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cuándo son procesados los archivos de configuración primero se normalizan, luego se fusionan
+y finalmente el árbol se usa para validar el arreglo resultante. El proceso de normalización se usa para sacar algunos de las diferencias que resultan de diferentes formatos de configuración, principalmente las diferencias entre <em>Yaml</em> y <em>XML</em>.</p>
+<p>El separador utilizado en las claves en <em>Yaml</em> típicamente es <tt class="docutils literal"><span class="pre">_</span></tt> y <tt class="docutils literal"><span class="pre">-</span></tt> en <em>XML</em>. Por ejemplo, <tt class="docutils literal"><span class="pre">auto_connect</span></tt> en <em>Yaml</em> y <tt class="docutils literal"><span class="pre">auto-connect</span></tt> en <em>XML</em>. La normalización debería hacer que ambos fueran <tt class="docutils literal"><span class="pre">auto_connect</span></tt>.</p>
+<p>Otra diferencia entre <em>Yaml</em> y <em>XML</em> es la manera en que los valores del arreglo se pueden
+representar. En <em>Yaml</em>  puedes tener:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">twig</span><span class="p-Indicator">:</span>
+<span class="l-Scalar-Plain">extensions</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&#39;twig.extension.foo&#39;</span><span class="p-Indicator">,</span> <span class="s">&#39;twig.extension.bar&#39;</span><span class="p-Indicator">]</span>
+</pre></div>
+</div>
+<p>y en <em>XML</em>:</p>
+<div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;twig:config&gt;</span>
+    <span class="nt">&lt;twig:extension&gt;</span>twig.extension.foo<span class="nt">&lt;/twig:extension&gt;</span>
+    <span class="nt">&lt;twig:extension&gt;</span>twig.extension.bar<span class="nt">&lt;/twig:extension&gt;</span>
+<span class="nt">&lt;/twig:config&gt;</span>
+</pre></div>
+</div>
+<p>Esta diferencia se puede sacar en la normalización pluralizando la clave utilizada
+en <em>XML</em>. Puedes especificar que deseas que un clave se pluralice de este modo con <tt class="docutils literal"><span class="pre">fixXmlConfig()</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">fixXmlConfig</span><span class="p">(</span><span class="s1">&#39;extension&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">arrayNode</span><span class="p">(</span><span class="s1">&#39;extensions&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">prototype</span><span class="p">(</span><span class="s1">&#39;scalar&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+<p>Si es una pluralización irregular puedes especificar el plural a utilizar como
+segundo argumento:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">fixXmlConfig</span><span class="p">(</span><span class="s1">&#39;child&#39;</span><span class="p">,</span> <span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">arrayNode</span><span class="p">(</span><span class="s1">&#39;children&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+<p>Así como se corrigió este, <tt class="docutils literal"><span class="pre">fixXmlConfig</span></tt> garantiza que solo los elementos
+<em>XML</em> todavía se convierten en un arreglo. Por lo tanto que puedes tener:</p>
+<div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;connection&gt;</span>default<span class="nt">&lt;/connection&gt;</span>
+<span class="nt">&lt;connection&gt;</span>extra<span class="nt">&lt;/connection&gt;</span>
+</pre></div>
+</div>
+<p>y a veces sólo:</p>
+<div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;connection&gt;</span>default<span class="nt">&lt;/connection&gt;</span>
+</pre></div>
+</div>
+<p>De manera predefinida <tt class="docutils literal"><span class="pre">connection</span></tt> sería un arreglo en el primer caso y una cadena
+en el segundo dificultando su validación. Puedes garantizar que siempre sea un arreglo con con <tt class="docutils literal"><span class="pre">fixXmlConfig</span></tt>.</p>
+<p>Puedes controlar el proceso de normalización más allá, de ser necesario. Por ejemplo, posiblemente quieras permitir que se pueda configurar una cadena y utilizarla como una clave particular o que se configuren varias claves explícitamente. De modo que, si todo aparte del <tt class="docutils literal"><span class="pre">name</span></tt> es opcional en esta configuración:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">connection</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">my_mysql_connection</span>
+    <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">localhost</span>
+    <span class="l-Scalar-Plain">driver</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">mysql</span>
+    <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">user</span>
+    <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">pass</span>
+</pre></div>
+</div>
+<p>También puedes permitir lo siguiente:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">connection</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">my_mysql_connection</span>
+</pre></div>
+</div>
+<p>Cambiando el valor de una cadena a un arreglo asociativo con <tt class="docutils literal"><span class="pre">name</span></tt> como la clave:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">arrayNode</span><span class="p">(</span><span class="s1">&#39;connection&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">beforeNormalization</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">ifString</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">then</span><span class="p">(</span><span class="k">function</span><span class="p">(</span><span class="nv">$v</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="o">=&gt;</span> <span class="nv">$v</span><span class="p">);</span> <span class="p">})</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">isRequired</span><span class="p">()</span>
+                <span class="c1">// ...</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="reglas-de-validacion">
+<h2>Reglas de validación<a class="headerlink" href="#reglas-de-validacion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Puedes proporcionar reglas de validación más avanzadas utilizando la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Config\Definition\Builder\ExprBuilder</span></tt>. Este constructor implementa una interfaz fluida para un bien conocido control de la estructura.
+El constructor se utiliza para agregar reglas avanzadas de validación a las definiciones de nodo, como:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$rootNode</span>
+    <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">arrayNode</span><span class="p">(</span><span class="s1">&#39;connection&#39;</span><span class="p">)</span>
+            <span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">scalarNode</span><span class="p">(</span><span class="s1">&#39;driver&#39;</span><span class="p">)</span>
+                    <span class="o">-&gt;</span><span class="na">isRequired</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">validate</span><span class="p">()</span>
+                    <span class="o">-&gt;</span><span class="na">ifNotInArray</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;mysql&#39;</span><span class="p">,</span> <span class="s1">&#39;sqlite&#39;</span><span class="p">,</span> <span class="s1">&#39;mssql&#39;</span><span class="p">))</span>
+                        <span class="o">-&gt;</span><span class="na">thenInvalid</span><span class="p">(</span><span class="s1">&#39;Invalid database driver &quot;%s&quot;&#39;</span><span class="p">)</span>
+                    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+                <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+            <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+        <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="na">end</span><span class="p">()</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+<p>Una regla de validación siempre tiene una parte <tt class="docutils literal"><span class="pre">«if»</span></tt>. Puedes especificar esta parte de las siguientes maneras:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">ifTrue()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">ifString()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">ifNull()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">ifArray()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">ifInArray()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">ifNotInArray()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">always()</span></tt></li>
+</ul>
+<p>Una regla de validación también requiere una parte <tt class="docutils literal"><span class="pre">«then»</span></tt>:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">then()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">thenEmptyArray()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">thenInvalid()</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">thenUnset()</span></tt></li>
+</ul>
+<p>Normalmente, <tt class="docutils literal"><span class="pre">«then»</span></tt> es un cierre. Su valor de retorno se utiliza como un nuevo valor para el nodo, en lugar del valor original.</p>
+</div>
+<div class="section" id="procesando-valores-de-configuracion">
+<h2>Procesando valores de configuración<a class="headerlink" href="#procesando-valores-de-configuracion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Config\Definition\Processor</span></tt> utiliza el árbol que fue construido usando el <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Config\Definition\Builder\TreeBuilder</span></tt> para procesar múltiples arreglos de valores de configuración que se deben combinar.
+Si algún valor no es del tipo esperado, todavía es obligatorio e indefinido, o no se pudo validar de alguna otra manera, será lanzada una excepción.
+De lo contrario, el resultado es un arreglo de valores de configuración limpio:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Yaml\Yaml</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\Definition\Processor</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Acme\DatabaseConfiguration</span><span class="p">;</span>
+
+<span class="nv">$config1</span> <span class="o">=</span> <span class="nx">Yaml</span><span class="o">::</span><span class="na">parse</span><span class="p">(</span><span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/src/Matthias/config/config.yml&#39;</span><span class="p">);</span>
+<span class="nv">$config2</span> <span class="o">=</span> <span class="nx">Yaml</span><span class="o">::</span><span class="na">parse</span><span class="p">(</span><span class="nx">__DIR__</span><span class="o">.</span><span class="s1">&#39;/src/Matthias/config/config_extra.yml&#39;</span><span class="p">);</span>
+
+<span class="nv">$configs</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="nv">$config1</span><span class="p">,</span> <span class="nv">$config2</span><span class="p">);</span>
+
+<span class="nv">$processor</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Processor</span><span class="p">();</span>
+<span class="nv">$configuration</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">DatabaseConfiguration</span><span class="p">;</span>
+<span class="nv">$processedConfiguration</span> <span class="o">=</span> <span class="nv">$processor</span><span class="o">-&gt;</span><span class="na">processConfiguration</span><span class="p">(</span>
+    <span class="nv">$configuration</span><span class="p">,</span>
+    <span class="nv">$configs</span><span class="p">)</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../console/index.html" title="Consola"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="caching.html" title="Almacenamiento en caché basado en recursos"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" ><tt class="docutils literal docutils literal docutils literal"><span class="pre">Config</span></tt></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

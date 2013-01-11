@@ -7,8 +7,8 @@ Cómo crear un proveedor de usuario personalizado
 Parte del proceso de autenticación estándar de *Symfony* depende del "proveedor de usuarios".
 Cuando un usuario envía un nombre de usuario y una contraseña, la capa de autenticación solicita al proveedor de usuarios configurado devuelva un objeto usuario para un nombre de usuario dado.
 *Symfony* comprueba si la contraseña de este usuario es correcta y genera un indicador de seguridad para que el usuario quede autenticado durante la sesión actual.
-Fuera de la caja, *Symfony* tiene un proveedor de usuario "en memoria" y una "entidad".
-En este artículo vamos a ver cómo puedes crear un proveedor de usuarios propio, que podrías utilizar si los usuarios se acceden a través de una base de datos personalizada, un archivo, o --- como se muestra en este ejemplo --- un servicio web.
+Fuera de la caja, *Symfony* tiene un proveedor de usuario «en memoria» y una «entidad».
+En este artículo varás cómo puedes crear un proveedor de usuarios propio, el cual te podría ser útil si tus usuarios se acceden a través de una base de datos personalizada, un archivo, o ---como muestra este ejemplo--- un servicio web.
 
 Creando una clase usuario
 -------------------------
@@ -16,11 +16,9 @@ Creando una clase usuario
 En primer lugar, independientemente de *donde* vienen los datos de tu usuario, tendrás que crear una clase ``User`` que represente esos datos. El ``usuario`` se puede ver como te apetezca y contener los datos que quieras. El único requisito es que implemente la clase :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.
 Los métodos de esta interfaz por lo tanto, se deben definir en la clase usuario personalizada: ``getRoles()``, ``getPassword()``, ``getSalt()``, ``getUsername()``, ``eraseCredentials()``, ``equals()``.
 
-Vamos a ver esto en acción:
+Veamos esto en acción::
 
-.. code-block:: php
-
-    // src/Acme/WebserviceUserBundle/Security/User.php
+    // src/Acme/WebserviceUserBundle/Security/User/WebserviceUser.php
     namespace Acme\WebserviceUserBundle\Security\User;
 
     use Symfony\Component\Security\Core\User\UserInterface;
@@ -58,7 +56,7 @@ Vamos a ver esto en acción:
         public function getUsername()
         {
             return $this->username;
-        }   
+        }
 
         public function eraseCredentials()
         {
@@ -93,12 +91,12 @@ Para más detalles sobre cada uno de los métodos, consulta la :class:`Symfony\\
 Creando un proveedor de usuario
 -------------------------------
 
-Ahora que tenemos una clase de ``usuario``, vamos a crear un proveedor de usuario, que tome información del usuario de algún servicio web, cree un objeto ``WebserviceUser``, y lo rellene con datos.
+Ahora que tienes una clase ``Usuario``, debes crear un proveedor de usuarios, el cual toma información del usuario desde algún servicio web, crea un objeto ``WebserviceUser`` y lo rellena con datos.
 
-El proveedor de usuario sólo es una simple clase *PHP* que debe aplicar la :class:`Symfony\\Component\\Security\\Core\\User\\UserProviderInterface`, la cual requiere que se definan tres métodos: ``loadUserByUsername($username)``, ``refreshUser(UserInterface $user)`` y ``supportsClass($class)``. para más detalles, consulta la :class:`Symfony\\Component\\Security\\Core\\User\\UserProviderInterface`.
+El proveedor de usuarios sólo es una simple clase *PHP* que debe implementar la :class:`Symfony\\Component\\Security\\Core\\User\\UserProviderInterface`, la cual requiere que se definan tres métodos: ``loadUserByUsername($username)``, ``refreshUser(UserInterface $user)`` y ``supportsClass($class)``. para más detalles, consulta la :class:`Symfony\\Component\\Security\\Core\\User\\UserProviderInterface`.
 
 
-He aquí un ejemplo de cómo se podría hacer esto::
+Aquí tienes un ejemplo de cómo lo podrías hacer::
 
     // src/Acme/WebserviceUserBundle/Security/User/WebserviceUserProvider.php
     namespace Acme\WebserviceUserBundle\Security\User;
@@ -113,17 +111,19 @@ He aquí un ejemplo de cómo se podría hacer esto::
         public function loadUserByUsername($username)
         {
             // aquí haz una llamada a tu servicio web
-            // $userData = ...
-            // pretende que devuelve una matriz cuando tiene éxito, false si no hay usuario
+            $userData = ...
+            // pretende que devuelve un arreglo cuando tiene éxito,
+            // false si no hay usuario
 
             if ($userData) {
-                // $password = '...';
+                $password = '...';
+
                 // ...
 
-                return new WebserviceUser($username, $password, $salt, $roles)
-            } else {
-                throw new UsernameNotFoundException(sprintf('Username "%s" does not exist.', $username));
+                return new WebserviceUser($username, $password, $salt, $roles);
             }
+
+            throw new UsernameNotFoundException(sprintf('Username "%s" does not exist.', $username));
         }
 
         public function refreshUser(UserInterface $user)
@@ -144,7 +144,7 @@ He aquí un ejemplo de cómo se podría hacer esto::
 Creando un servicio para el proveedor de usuario
 ------------------------------------------------
 
-Ahora hagamos disponible el proveedor de usuarios como un servicio:
+Ahora has disponible el proveedor de usuarios como un servicio:
 
 .. configuration-block::
 
@@ -153,29 +153,29 @@ Ahora hagamos disponible el proveedor de usuarios como un servicio:
         # src/Acme/WebserviceUserBundle/Resources/config/services.yml
         parameters:
             webservice_user_provider.class: Acme\WebserviceUserBundle\Security\User\WebserviceUserProvider
-            
+
         services:
             webservice_user_provider:
-                class: %webservice_user_provider.class%
-    
+                class: "%webservice_user_provider.class%"
+
     .. code-block:: xml
 
         <!-- src/Acme/WebserviceUserBundle/Resources/config/services.xml -->
         <parameters>
             <parameter key="webservice_user_provider.class">Acme\WebserviceUserBundle\Security\User\WebserviceUserProvider</parameter>
         </parameters>
- 
+
             <services>
             <service id="webservice_user_provider" class="%webservice_user_provider.class%"></service>
             </services>
-        
+
     .. code-block:: php
-    
+
         // src/Acme/WebserviceUserBundle/Resources/config/services.php
         use Symfony\Component\DependencyInjection\Definition;
-        
+
         $container->setParameter('webservice_user_provider.class', 'Acme\WebserviceUserBundle\Security\User\WebserviceUserProvider');
-        
+
         $container->setDefinition('webservice_user_provider', new Definition('%webservice_user_provider.class%');
 
 .. tip::
@@ -189,8 +189,7 @@ Ahora hagamos disponible el proveedor de usuarios como un servicio:
 Modificando :file:`security.yml`
 --------------------------------
 
-En ``/app/config/security.yml`` se junta todo. Añade el proveedor de usuario a la lista de proveedores en la sección de "seguridad". Elige un nombre para el proveedor de usuario (por ejemplo, ``"webservice"``) y menciona el identificador del servicio que acabas de definir.
-
+En ``/app/config/security.yml`` se junta todo. Añade el proveedor de usuario a la lista de proveedores en la sección de "seguridad". Elige un nombre para el proveedor de usuarios (p. ej. ``«webservice»``) y menciona el ``id`` del servicio que acabas de definir.
 
 .. code-block:: yaml
 
@@ -199,7 +198,7 @@ En ``/app/config/security.yml`` se junta todo. Añade el proveedor de usuario a 
             webservice:
                 id: webservice_user_provider
 
-*Symfony* también necesita saber cómo codificar las contraseñas suministradas por los usuarios del sitio web, por ejemplo, mediante la cumplimentación de un formulario de acceso. Lo puedes hacer añadiendo una línea a la opción ``"encoders"`` en ``/app/config/security.yml``. 
+*Symfony* también necesita saber cómo codificar las contraseñas suministradas por los usuarios del sitio web, por ejemplo, mediante la cumplimentación de un formulario de acceso. Lo puedes hacer añadiendo una línea a la opción ``«encoders»`` en ``/app/config/security.yml``.
 
 .. code-block:: yaml
 
@@ -212,16 +211,16 @@ El valor aquí debe corresponder con cualquiera de las contraseñas que fueron c
 .. sidebar:: Detalles sobre cómo se codifican las contraseñas
 
     *Symfony* utiliza un método específico para combinar la sal y codificar la contraseña antes de compararla con la contraseña codificada. Si ``getSalt()`` no devuelve nada, entonces la contraseña es presentada simplemente codificada utilizando el algoritmo que especificaste en :file:`security.yml`. Si se especificó una *sal*, entonces se crea el siguiente valor y *luego* codifica mediante el algoritmo:
-    
+
         ``$password.'{'.$salt.'}';``
 
     Si tus usuarios externos tienen sus contraseñas saladas por medio de un método diferente, entonces tendrás que trabajar un poco más para que *Symfony* codifique correctamente la contraseña. Eso está fuera del alcance de este artículo, pero incluimos la subclase ``MessageDigestPasswordEncoder`` y reemplazamos el método ``mergePasswordAndSalt``.
-    
+
     Además, la codificación predeterminada, está codificada en múltiples ocasiones y finalmente codificada a ``base64``. Para detalles más específicos, consulta `MessageDigestPasswordEncoder`_.
     Para evitarlo, esto se configura en :file:`security.yml`:
-    
+
     .. code-block:: yaml
-    
+
         security:
             encoders:
                 Acme\WebserviceUserBundle\Security\User\WebserviceUser:

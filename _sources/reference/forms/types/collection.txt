@@ -4,34 +4,30 @@
 Tipo de campo ``Collection``
 ============================
 
-Este tipo de campo suele reproducir una ``"colección"`` de algún campo o formulario. En el sentido más sencillo, puede ser un arreglo de campos de ``texto`` que pueblan un arreglo de campos del tipo ``email``. En ejemplos más complejos, puedes incrustar formularios enteros, lo cual es útil cuándo creas formularios que exponen relaciones uno-a-muchos (por ejemplo, un producto desde donde puedes gestionar muchos productos relacionados con fotos).
+Este tipo de campo suele reproducir una ``«colección»`` de algún campo o formulario. En el sentido más sencillo, puede ser un arreglo de campos de ``texto`` que pueblan un arreglo de campos del tipo ``email``. En ejemplos más complejos, puedes incrustar formularios enteros, lo cual es útil cuándo creas formularios que exponen relaciones uno-a-muchos (por ejemplo, un producto desde donde puedes gestionar muchos productos relacionados con fotos).
 
-+-------------+-----------------------------------------------------------------------------+
-| Reproducido | depende de la opción `type`_                                                |
-| como        |                                                                             |
-+-------------+-----------------------------------------------------------------------------+
-| Opciones    | - `type`_                                                                   |
-|             | - `options`_                                                                |
-|             | - `allow_add`_                                                              |
-|             | - `allow_delete`_                                                           |
-|             | - `prototype`_                                                              |
-+-------------+-----------------------------------------------------------------------------+
-| Opciones    | - `label`_                                                                  |
-| heredadas   | - `error_bubbling`_                                                         |
-|             | - `by_reference`_                                                           |
-+-------------+-----------------------------------------------------------------------------+
-| Tipo del    | :doc:`form</reference/forms/types/form>`                                    |
-| padre       |                                                                             |
-+-------------+-----------------------------------------------------------------------------+
-| Clase       | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\CollectionType`    |
-+-------------+-----------------------------------------------------------------------------+
++----------------+-----------------------------------------------------------------------------+
+| Dibujado como  | depende de la opción `type`_                                                |
++----------------+-----------------------------------------------------------------------------+
+| Opciones       | - `type`_                                                                   |
+|                | - `options`_                                                                |
+|                | - `allow_add`_                                                              |
+|                | - `allow_delete`_                                                           |
+|                | - `prototype`_                                                              |
++----------------+-----------------------------------------------------------------------------+
+| Opciones       | - `label`_                                                                  |
+| heredadas      | - `error_bubbling`_                                                         |
+|                | - `by_reference`_                                                           |
++----------------+-----------------------------------------------------------------------------+
+| Tipo del padre | :doc:`form</reference/forms/types/form>`                                    |
++----------------+-----------------------------------------------------------------------------+
+| Clase          | :class:`Symfony\\Component\\Form\\Extension\\Core\\Type\\CollectionType`    |
++----------------+-----------------------------------------------------------------------------+
 
 Uso básico
 ----------
 
-Este tipo se utiliza cuándo quieres gestionar una colección de elementos similares en un formulario. Por ejemplo, supongamos que tienes un campo ``emails`` que corresponde a un arreglo de direcciones de correo electrónico. En el formulario, quieres exponer cada dirección de correo electrónico en su propio cuadro de entrada de texto:
-
-.. code-block:: php
+Este tipo se utiliza cuándo quieres gestionar una colección de elementos similares en un formulario. Por ejemplo, supongamos que tienes un campo ``emails`` que corresponde a un arreglo de direcciones de correo electrónico. En el formulario, quieres exponer cada dirección de correo electrónico en su propio cuadro de entrada de texto::
 
     $builder->add('emails', 'collection', array(
         // cada elemento en el arreglo debe ser un campo "email"
@@ -77,7 +73,7 @@ Un método mucho más flexible sería el siguiente:
 
         <?php echo $view['form']->label($form['emails']) ?>
         <?php echo $view['form']->errors($form['emails']) ?>
-        
+
         <ul>
         <?php foreach ($form['emails'] as $emailField): ?>
             <li>
@@ -94,14 +90,14 @@ En este sencillo ejemplo, todavía es imposible añadir nuevas direcciones o eli
 Agregando y quitando elementos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Si fijas `allow_add`_ en ``true``, entonces si se presenta algún elemento no reconocido, será perfectamente añadido a la matriz de elementos. Esto es grandioso en teoría, pero en la practica, conlleva un poco más de esfuerzo conseguir el *JavaScript* correcto de lado del cliente.
+Si fijas `allow_add`_ en ``true``, entonces si se presenta algún elemento no reconocido, simplemente será añadido al arreglo de elementos. Esto es grandioso en teoría, pero en la practica, conlleva un poco más de esfuerzo conseguir el *JavaScript* correcto de lado del cliente.
 
-Siguiendo con el ejemplo anterior, supongamos que empiezas con dos direcciones de correo electrónico en la matriz de datos ``emails``. En este caso, se pintarán dos campos de entrada que se verán algo así (dependiendo del nombre de tu
+Siguiendo con el ejemplo anterior, supongamos que empiezas con dos direcciones de correo electrónico en el arreglo de datos ``emails``. En este caso, se pintarán dos campos de entrada que se verán algo así (dependiendo del nombre de tu
 formulario):
 
 .. code-block:: html
 
-    <input type="email" id="form_emails_1" name="form[emails][0]" value="foo@foo.com" />
+    <input type="email" id="form_emails_0" name="form[emails][0]" value="foo@foo.com" />
     <input type="email" id="form_emails_1" name="form[emails][1]" value="bar@bar.com" />
 
 Para permitir que tu usuario agregue otro correo electrónico, solo establece `allow_add`_ a ``true`` y ---vía *JavaScript*--- reproduce otro campo con el nombre de ``form[emails][2]`` (y así sucesivamente para más y más campos).
@@ -110,9 +106,9 @@ Para facilitarte esto, ajusta la opción `prototype`_  a ``true`` para permitirt
 
 .. code-block:: html
 
-    <input type="email" id="form_emails_$$name$$" name="form[emails][$$name$$]" value="" />
+    <input type="email" id="form_emails___name__" name="form[emails][__name__]" value="" />
 
-Al reemplazar ``$$name$$`` con algún valor único (por ejemplo ``2``), puedes construir e insertar nuevos campos *HTML* en tu formulario.
+Al reemplazar ``__name__`` con algún valor único (por ejemplo ``2``), puedes construir e insertar nuevos campos *HTML* en tu formulario.
 
 Al usar *jQuery*, un ejemplo sencillo se podría ver como este. Si estás pintando tu colección de campos simultáneamente (por ejemplo, ``form_row(form.emails)``), entonces las cosas son aún más fáciles, porque el atributo ``data-prototype`` automáticamente los reproduce por ti (con una ligera diferencia ---ve la nota abajo---) y todo lo que necesitas es el código *JavaScript*:
 
@@ -124,7 +120,7 @@ Al usar *jQuery*, un ejemplo sencillo se podría ver como este. Si estás pintan
             {# ... #}
 
             {# almacena el prototipo en el atributo data-prototype #}
-            <ul id="email-fields-list" data-prototype="{{ form_widget(form.emails.get('prototype')) | e }}">
+            <ul id="email-fields-list" data-prototype="{{ form_widget(form.emails.vars.prototype) | e }}">
             {% for emailField in form.emails %}
                 <li>
                     {{ form_errors(emailField) }}
@@ -132,9 +128,9 @@ Al usar *jQuery*, un ejemplo sencillo se podría ver como este. Si estás pintan
                 </li>
             {% endfor %}
             </ul>
-        
+
             <a href="#" id="add-another-email">Add another email</a>
-        
+
             {# ... #}
         </form>
 
@@ -148,13 +144,13 @@ Al usar *jQuery*, un ejemplo sencillo se podría ver como este. Si estás pintan
 
                     // graba la plantilla prototipo
                     var newWidget = emailList.attr('data-prototype');
-                    // sustituye el "$$name$$" usado en el id y name del prototipo
-                    // con un número que es único en tus correos
-                    // termina con el atributo name viéndose como name="contact[emails][2]"
+                    // sustituye el "__name__" usado en el id y name del prototipo con un
+                    // número que es único en tus correos termina con el
+                    // atributo name viéndose como name="contact[emails][2]"
                     newWidget = newWidget.replace(/\$\$name\$\$/g, emailCount);
                     emailCount++;
 
-                    // crea un nuevo elemento lista y lo añade a nuestra lista
+                    // crea un nuevo elemento lista y lo añade a la lista
                     var newLi = jQuery('<li></li>').html(newWidget);
                     newLi.appendTo(jQuery('#email-fields-list'));
 
@@ -165,7 +161,7 @@ Al usar *jQuery*, un ejemplo sencillo se podría ver como este. Si estás pintan
 
 .. tip::
 
-    Si estás reproduciendo la colección entera a la vez, entonces el prototipo automáticamente está disponible en el atributo ``data-prototype`` del elemento (por ejemplo ``div`` o ``table``) que rodea a tu colección. La única diferencia es que la "fila del formulario" entera se reproduce para ti, lo cual significa que no tendrías que envolverla en algún elemento contenedor cómo vimos anteriormente.
+    Si estás reproduciendo la colección entera a la vez, entonces el prototipo automáticamente está disponible en el atributo ``data-prototype`` del elemento (por ejemplo ``div`` o ``table``) que rodea a tu colección. La única diferencia es que la «fila del formulario» entera es dibujada para ti, lo cual significa que no tendrás que envolverla en ningún elemento contenedor como se hizo arriba.
 
 Opciones del campo
 ~~~~~~~~~~~~~~~~~~
@@ -182,9 +178,7 @@ Este es el tipo de campo para cada elemento de esta colección (por ejemplo, ``t
 
 **tipo**: ``array`` **predeterminado**: ``array()``
 
-Este es el arreglo que pasaste al tipo formulario especificado en la opción `type`_. Por ejemplo, si utilizaste el tipo :doc:`choice </reference/forms/types/choice>` como tu opción `type`_ (por ejemplo, para una colección de menús desplegables), entonces necesitarás ---por lo menos--- pasar la opción ``choices`` al tipo subyacente:
-
-.. code-block:: php
+Este es el arreglo que pasaste al tipo formulario especificado en la opción `type`_. Por ejemplo, si utilizaste el tipo :doc:`choice </reference/forms/types/choice>` como tu opción `type`_ (por ejemplo, para una colección de menús desplegables), entonces necesitarás ---por lo menos--- pasar la opción ``choices`` al tipo subyacente::
 
     $builder->add('favorite_cities', 'collection', array(
         'type'   => 'choice',
@@ -230,7 +224,7 @@ Para más información, ve :ref:`cookbook-form-collections-remove`.
 
 **tipo**: ``Boolean`` **predeterminado**: ``true``
 
-Esta opción es útil cuando utilizas la opción `allow_add`_. Si es ``true`` (y si además `allow_add`_ también es ``true``), un atributo ``"prototype"`` especial estará disponible de modo que puedas reproducir una ``"plantilla"`` de ejemplo en la página en que aparecerá un nuevo elemento. El atributo ``name`` dado a este elemento es ``$$name$$``. Esto te permite añadir un botón "añadir otro" vía *JavaScript* el cuál lee el prototipo, reemplaza ``$$name$$`` con algún nombre o número único, y lo reproduce dentro de tu formulario. Cuándo se envía, este se añade a tu arreglo subyacente gracias a la opción `allow_add`_.
+Esta opción es útil cuando utilizas la opción `allow_add`_. Si es ``true`` (y si además `allow_add`_ también es ``true``), un atributo ``"prototype"`` especial estará disponible de modo que puedas reproducir una ``"plantilla"`` de ejemplo en la página en que aparecerá un nuevo elemento. El atributo ``name`` dado a este elemento es ``__name__``. Esto te permite añadir un botón "añadir otro" vía *JavaScript* el cuál lee el prototipo, reemplaza ``__name__`` con algún nombre o número único, y lo reproduce dentro de tu formulario. Cuándo se envía, este se añade a tu arreglo subyacente gracias a la opción `allow_add`_.
 
 El campo prototipo se puede pintar vía la variable ``prototype`` del campo ``colección``:
 
@@ -238,11 +232,11 @@ El campo prototipo se puede pintar vía la variable ``prototype`` del campo ``co
 
     .. code-block:: jinja
 
-        {{ form_row(form.emails.get('prototype')) }}
+        {{ form_row(form.emails.vars.prototype) }}
 
     .. code-block:: php
 
-        <?php echo $view['form']->row($form['emails']->get('prototype')) ?>
+        <?php echo $view['form']->row($form['emails']->vars['prototype']) ?>
 
 Ten en cuenta que todo lo que realmente necesitas es el "elemento gráfico", pero dependiendo del formulario que estés reproduciendo, puede ser más fácil para ti pintar la "fila del formulario" entera.
 
@@ -251,6 +245,16 @@ Ten en cuenta que todo lo que realmente necesitas es el "elemento gráfico", per
     Si estás reproduciendo el campo ``colección`` entero a la vez, entonces el prototipo de la fila del formulario automáticamente está disponible en el atributo ``data-prototype`` del elemento (por ejemplo ``div`` o ``table``) que envuelve tu colección.
 
 Para obtener más información sobre como utilizar esta opción, ve el ejemplo anterior, así como :ref:`cookbook-form-collections-new-prototype`.
+
+``prototype_name``
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.1
+    La opción ``prototype_name`` se agregó en *Symfony 2.1*
+
+**tipo**: ``string`` **predefinido**: ``__name__``
+
+Si tienes varias colecciones en tu formulario, o peor aún, colecciones anidadas posiblemente quieras cambiar el marcador de posición a modo que los marcadores de posición no relacionados no sean reemplazados con el mismo valor.
 
 Opciones heredadas
 ------------------

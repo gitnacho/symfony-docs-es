@@ -1,0 +1,301 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Autenticación &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Seguridad" href="index.html" />
+    <link rel="next" title="Autorización" href="authorization.html" />
+    <link rel="prev" title="Cortafuegos y el contexto de seguridad" href="firewall.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="authorization.html" title="Autorización"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="firewall.html" title="Cortafuegos y el contexto de seguridad"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Seguridad</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="autenticacion">
+<span id="index-0"></span><h1>Autenticación<a class="headerlink" href="#autenticacion" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Cuándo una petición apunta a una área protegida, y uno de los escuchas del
+cortafuegos asociado es capaz de extraer las credenciales del usuario desde el objeto <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Request</span></tt> actual, este debe crear una ficha conteniendo estas credenciales. Lo siguiente que el escucha debería hacer es consultar al gestor de autenticación para validar la ficha dada, y regresar una ficha <em>autenticada</em> si resulta que las credenciales suministradas son válidas.
+El escucha entonces debería almacenar la ficha autenticada en el contexto de seguridad:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Http\Firewall\ListenerInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\SecurityContextInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Authentication\AuthenticationManagerInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Event\GetResponseEvent</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">SomeAuthenticationListener</span> <span class="k">implements</span> <span class="nx">ListenerInterface</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @var SecurityContextInterface</span>
+<span class="sd">     */</span>
+    <span class="k">private</span> <span class="nv">$securityContext</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @var AuthenticationManagerInterface</span>
+<span class="sd">     */</span>
+    <span class="k">private</span> <span class="nv">$authenticationManager</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * @var string Uniquely identifies the secured area</span>
+<span class="sd">     */</span>
+    <span class="k">private</span> <span class="nv">$providerKey</span><span class="p">;</span>
+
+    <span class="c1">// ...</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">handle</span><span class="p">(</span><span class="nx">GetResponseEvent</span> <span class="nv">$event</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$request</span> <span class="o">=</span> <span class="nv">$event</span><span class="o">-&gt;</span><span class="na">getRequest</span><span class="p">();</span>
+
+        <span class="nv">$username</span> <span class="o">=</span> <span class="o">...</span><span class="p">;</span>
+        <span class="nv">$password</span> <span class="o">=</span> <span class="o">...</span><span class="p">;</span>
+
+        <span class="nv">$unauthenticatedToken</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">UsernamePasswordToken</span><span class="p">(</span>
+            <span class="nv">$username</span><span class="p">,</span>
+            <span class="nv">$password</span><span class="p">,</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">providerKey</span>
+        <span class="p">);</span>
+
+        <span class="nv">$authenticatedToken</span> <span class="o">=</span> <span class="nv">$this</span>
+            <span class="o">-&gt;</span><span class="na">authenticationManager</span>
+            <span class="o">-&gt;</span><span class="na">authenticate</span><span class="p">(</span><span class="nv">$unauthenticatedToken</span><span class="p">);</span>
+
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">securityContext</span><span class="o">-&gt;</span><span class="na">setToken</span><span class="p">(</span><span class="nv">$authenticatedToken</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Una ficha puede ser cualquier clase, siempre y cuando implemente la interfaz <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authentication\Token\TokenInterface</span></tt>.</p>
+</div>
+<div class="section" id="el-gestor-de-autenticacion">
+<h2>El gestor de autenticación<a class="headerlink" href="#el-gestor-de-autenticacion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El gestor de autenticación predefinido es una instancia de la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authentication\AuthenticationProviderManager</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Authentication\AuthenticationProviderManager</span><span class="p">;</span>
+
+<span class="c1">// instancias de Symfony\Component\Security\Core\Authentication\AuthenticationProviderInterface</span>
+<span class="nv">$providers</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
+
+<span class="nv">$authenticationManager</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AuthenticationProviderManager</span><span class="p">(</span><span class="nv">$providers</span><span class="p">);</span>
+
+<span class="k">try</span> <span class="p">{</span>
+    <span class="nv">$authenticatedToken</span> <span class="o">=</span> <span class="nv">$authenticationManager</span>
+        <span class="o">-&gt;</span><span class="na">authenticate</span><span class="p">(</span><span class="nv">$unauthenticatedToken</span><span class="p">);</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">AuthenticationException</span> <span class="nv">$failed</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// falló la autenticación</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>El <tt class="docutils literal"><span class="pre">AuthenticationProviderManager</span></tt>, al crear una instancia, recibe varios proveedores de autenticación, cada uno compatible a un diferente tipo de señal.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Por supuesto, puedes escribir tu propio gestor de autenticación, sólo tienes que implementar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authentication\AuthenticationManagerInterface</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="proveedores-de-autenticacion">
+<span id="authentication-providers"></span><h2>Proveedores de autenticación<a class="headerlink" href="#proveedores-de-autenticacion" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Cada proveedor (debido a que implementan la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProviderInterface</span></tt>) tiene un método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/Authentication/Provider/AuthenticationProviderInterface.html#method_supports" title="Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProviderInterface::supports()"><span class="pre">supports()</span></a></tt> por medio del cual el <tt class="docutils literal"><span class="pre">AuthenticationProviderManager</span></tt> puede determinar si es compatible con la ficha dada. Si este es el caso, el gestor, entonces llama al método <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProviderInterface::authenticate</span></tt> del proveedor
+.
+Este método debe devolver una ficha autenticada o lanzar una <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Exception\AuthenticationException</span></tt> (o cualquier otra excepción que extienda esta).</p>
+<div class="section" id="autenticando-usuarios-por-nombre-de-usuario-y-contrasena">
+<h3>Autenticando usuarios por nombre de usuario y contraseña<a class="headerlink" href="#autenticando-usuarios-por-nombre-de-usuario-y-contrasena" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Un proveedor de autenticación intentará autenticar a un usuario basándose en las credenciales que él proporcionó. Generalmente, se trata de un nombre de usuario y una contraseña.
+La mayoría de las aplicaciones <em>web</em> guardan el nombre de usuario y una codificación de la contraseña del usuario combinada con una «sal» generada aleatoriamente. Esto significa que la autenticación promedio consistirá en recuperar la sal y la contraseña codificada del almacén de datos del usuario, la contraseña codificada del usuario es proporcionada (por ejemplo, utilizando un formulario de inicio de sesión) con la sal y comparando ambas para determinar si la contraseña dada es válida.</p>
+<p>Esta funcionalidad es ofrecida por el <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authentication\Provider\DaoAuthenticationProvider</span></tt>.
+Esta recupera los datos del usuario a partir de una <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserProviderInterface</span></tt>, utilizando una <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface</span></tt> para crear la codificación de la contraseña y devolver una ficha autenticada si la contraseña es válida:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Authentication\Provider\DaoAuthenticationProvider</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\User\UserChecker</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\User\InMemoryUserProvider</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Encoder\EncoderFactory</span><span class="p">;</span>
+
+<span class="nv">$userProvider</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">InMemoryUserProvider</span><span class="p">(</span>
+    <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;admin&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="c1">// password is &quot;foo&quot;</span>
+            <span class="s1">&#39;password&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;5FZ2Z8QIkA7UTZ4BYkoC+GsReLf569mSKDsfods6LYQ8t+a8EW9oaircfMpmaLbPBh4FOBiiFyLfuZmTSUwzZg==&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;roles&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;ROLE_ADMIN&#39;</span><span class="p">),</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+<span class="p">);</span>
+
+<span class="c1">// para alguna comprobación extra: ¿la cuenta está habilitada, cerrada, expirada, etc.?</span>
+<span class="nv">$userChecker</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">UserChecker</span><span class="p">();</span>
+
+<span class="c1">// un arreglo de codificadores de contraseña (ve abajo)</span>
+<span class="nv">$encoderFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">EncoderFactory</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
+
+<span class="nv">$provider</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">DaoAuthenticationProvider</span><span class="p">(</span>
+    <span class="nv">$userProvider</span><span class="p">,</span>
+    <span class="nv">$userChecker</span><span class="p">,</span>
+    <span class="s1">&#39;secured_area&#39;</span><span class="p">,</span>
+    <span class="nv">$encoderFactory</span>
+<span class="p">);</span>
+
+<span class="nv">$provider</span><span class="o">-&gt;</span><span class="na">authenticate</span><span class="p">(</span><span class="nv">$unauthenticatedToken</span><span class="p">);</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">El ejemplo anterior demuestra el uso del proveedor de usuarios «en memoria», pero puedes utilizar cualquier proveedor de usuario, siempre y cuando implemente la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserProviderInterface</span></tt>.
+También es posible permitir que múltiples proveedores de usuario intenten encontrar los datos del usuario, utilizando la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\ChainUserProvider</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="la-fabrica-codificadora-de-contrasenas">
+<h3>La fábrica codificadora de contraseñas<a class="headerlink" href="#la-fabrica-codificadora-de-contrasenas" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Authentication\Provider\DaoAuthenticationProvider</span></tt> utiliza una fábrica codificadora para crear una contraseña codificada para un determinado tipo de usuario. Esto te permite utilizar diferentes estrategias de codificado para diferentes tipos de usuario. La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Encoder\EncoderFactory</span></tt> recibe un arreglo de codificadores:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Encoder\EncoderFactory</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Encoder\MessageDigestPasswordEncoder</span><span class="p">;</span>
+
+<span class="nv">$defaultEncoder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">MessageDigestPasswordEncoder</span><span class="p">(</span><span class="s1">&#39;sha512&#39;</span><span class="p">,</span> <span class="k">true</span><span class="p">,</span> <span class="mi">5000</span><span class="p">);</span>
+<span class="nv">$weakEncoder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">MessageDigestPasswordEncoder</span><span class="p">(</span><span class="s1">&#39;md5&#39;</span><span class="p">,</span> <span class="k">true</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+<span class="nv">$encoders</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;Symfony\\Component\\Security\\Core\\User\\User&#39;</span> <span class="o">=&gt;</span> <span class="nv">$defaultEncoder</span><span class="p">,</span>
+    <span class="s1">&#39;Acme\\Entity\\LegacyUser&#39;</span> <span class="o">=&gt;</span> <span class="nv">$weakEncoder</span><span class="p">,</span>
+    <span class="o">...</span><span class="p">,</span>
+<span class="p">);</span>
+
+<span class="nv">$encoderFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">EncoderFactory</span><span class="p">(</span><span class="nv">$encoders</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Cada codificador debería implementar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface</span></tt> o ser un arreglo con una clave <tt class="docutils literal"><span class="pre">class</span></tt> y <tt class="docutils literal"><span class="pre">arguments</span></tt>, lo cual permite a la fábrica codificadora construir el codificador sólo cuándo es necesario.</p>
+</div>
+<div class="section" id="codificadores-de-contrasena">
+<h3>Codificadores de contraseña<a class="headerlink" href="#codificadores-de-contrasena" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Cuándo invocas al método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/Encoder/EncoderFactory.html#method_getEncoder" title="Symfony\Component\Security\Core\Encoder\EncoderFactory::getEncoder()"><span class="pre">getEncoder()</span></a></tt> de la fábrica codificadora de contraseñas con el objeto <tt class="docutils literal"><span class="pre">usuario</span></tt> como primer argumento, regresa un codificador de tipo <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\Encoder\PasswordEncoderInterface</span></tt> el cuál se tendría que usar para codificar la contraseña de ese usuario:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// recupera un usuario de tipo Acme\Entity\LegacyUser</span>
+<span class="nv">$user</span> <span class="o">=</span> <span class="o">...</span>
+
+<span class="nv">$encoder</span> <span class="o">=</span> <span class="nv">$encoderFactory</span><span class="o">-&gt;</span><span class="na">getEncoder</span><span class="p">(</span><span class="nv">$user</span><span class="p">);</span>
+
+<span class="c1">// debe regresar $weakEncoder (ve arriba)</span>
+
+<span class="nv">$encodedPassword</span> <span class="o">=</span> <span class="nv">$encoder</span><span class="o">-&gt;</span><span class="na">encodePassword</span><span class="p">(</span><span class="nv">$password</span><span class="p">,</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getSalt</span><span class="p">());</span>
+
+<span class="c1">// comprueba si la contraseña es válida:</span>
+
+<span class="nv">$validPassword</span> <span class="o">=</span> <span class="nv">$encoder</span><span class="o">-&gt;</span><span class="na">isPasswordValid</span><span class="p">(</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getPassword</span><span class="p">(),</span>
+    <span class="nv">$password</span><span class="p">,</span>
+    <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getSalt</span><span class="p">());</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="authorization.html" title="Autorización"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="firewall.html" title="Cortafuegos y el contexto de seguridad"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Seguridad</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

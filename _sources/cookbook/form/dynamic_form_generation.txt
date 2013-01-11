@@ -4,19 +4,17 @@
 Cómo generar formularios dinámicamente usando eventos del formulario
 ====================================================================
 
-Antes de zambullirnos en la generación dinámica de formularios, hagamos una rápida revisión de lo que es una clase formulario desnuda:
+Antes de zambullirte en la generación dinámica de formularios, hagamos una rápida revisión de lo que es una clase formulario desnuda::
 
-.. code-block:: php
-
-    //src/Acme/DemoBundle/Form/ProductType.php
-    namespace Acme\DemoBundle\Form;
+    // src/Acme/DemoBundle/Form/Type/ProductType.php
+    namespace Acme\DemoBundle\Form\Type;
 
     use Symfony\Component\Form\AbstractType;
-    use Symfony\Component\Form\FormBuilder;
-    
+    use Symfony\Component\Form\FormBuilderInterface;
+
     class ProductType extends AbstractType
     {
-        public function buildForm(FormBuilder $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options)
         {
             $builder->add('name');
             $builder->add('price');
@@ -32,33 +30,31 @@ Antes de zambullirnos en la generación dinámica de formularios, hagamos una r�
 
     Si esta sección de código en particular no te es familiar, probablemente necesites dar un paso atrás y revisar en primer lugar el :doc:`Capítulo de Formularios </book/forms>` antes de continuar.
 
-Asumiremos por un momento que este formulario utiliza una clase ``"Product"`` imaginaria que únicamente tiene dos propiedades relevantes ("name" y "price"). El formulario generado a partir de esta clase se verá exactamente igual, independientemente de que se esté creando un nuevo producto o si se está editando un producto existente (por ejemplo, un producto recuperado de la base de datos).
+Asumiremos por un momento que este formulario utiliza una clase imaginaria ``«Product»`` que únicamente tiene dos propiedades relevantes (``name`` y ``price``). El formulario generado de esta clase a toda costa se verá exactamente igual si estás creando un nuevo Producto o si estás editando un producto existente (p. ej. un producto recuperado de la base de datos).
 
-Ahora, supongamos que no deseas que el usuario pueda cambiar el valor del ``name`` una vez creado el objeto. Para ello, puedes confiar en el sistema :ref:`Despachador de eventos <book-internals-event-dispatcher>` de *Symfony* para analizar los datos en el objeto y modificar el formulario basándose en los datos del objeto ``Producto``. En este artículo, aprenderás cómo añadir este nivel de flexibilidad a tus formularios.
+Ahora, supongamos que no deseas que el usuario pueda cambiar el valor del ``name`` una vez creado el objeto. Para ello, puedes confiar en el sistema :doc:`Despachador de eventos </components/event_dispatcher/introduction>` de *Symfony* para analizar los datos en el objeto y modificar el formulario basándose en los datos del objeto ``Producto``. En este artículo, aprenderás cómo añadir este nivel de flexibilidad a tus formularios.
 
 .. _`cookbook-forms-event-subscriber`:
 
 Añadiendo un suscriptor de evento a una clase formulario
 --------------------------------------------------------
 
-Por lo tanto, en lugar de añadir directamente el elemento gráfico ``"name"`` vía nuestra clase formulario ``ProductType``, vamos a delegar la responsabilidad de crear este campo en particular a un suscriptor de evento:
+Por lo tanto, en lugar de añadir directamente el elemento gráfico ``name`` vía tu clase formulario ``ProductType``, vas a delegar la responsabilidad de crear este campo en particular a un suscriptor de evento::
 
-.. code-block:: php
+    // src/Acme/DemoBundle/Form/Type/ProductType.php
+    namespace Acme\DemoBundle\Form\Type;
 
-    //src/Acme/DemoBundle/Form/ProductType.php
-    namespace Acme\DemoBundle\Form
-
-    use Symfony\Component\Form\AbstractType
-    use Symfony\Component\Form\FormBuilder;
+    use Symfony\Component\Form\AbstractType;
+    use Symfony\Component\Form\FormBuilderInterface;
     use Acme\DemoBundle\Form\EventListener\AddNameFieldSubscriber;
 
     class ProductType extends AbstractType
     {
-        public function buildForm(FormBuilder $builder, array $options)
+        public function buildForm(FormBuilderInterface $builder, array $options)
         {
-            $subscriber = new AddNameFieldSubscriber($builder->getFormFactory());
-            $builder->addEventSubscriber($subscriber);
             $builder->add('price');
+
+            $builder->addEventSubscriber(new AddNameFieldSubscriber());
         }
 
         public function getName()
@@ -67,76 +63,67 @@ Por lo tanto, en lugar de añadir directamente el elemento gráfico ``"name"`` v
         }
     }
 
-El suscriptor de eventos se pasa al objeto ``FormFactory`` en su constructor de modo que  nuestro nuevo suscriptor es capaz de crear el elemento gráfico del formulario una vez notificado de que el evento se ha despachado durante creación del formulario.
-
 .. _`cookbook-forms-inside-subscriber-class`:
 
 Dentro de la clase suscriptor de eventos
 ----------------------------------------
 
-El objetivo es crear el campo ``"name"`` *únicamente* si el objeto ``Producto`` subyacente es nuevo (por ejemplo, no se ha persistido a la base de datos). Basándonos en esto, el suscriptor podría tener la siguiente apariencia:
+El objetivo es crear el campo ``«name»`` *únicamente* si el objeto ``Producto`` subyacente es nuevo (por ejemplo, no se ha persistido a la base de datos). Basándose en esto, el suscriptor podría tener la siguiente apariencia:
+
+.. versionadded:: 2.2
+    La habilidad de pasar una cadena al método :method:`FormInterface::add <Symfony\\Component\\Form\\FormInterface::add>` se añadió en *Symfony 2.2*.
 
 .. code-block:: php
 
     // src/Acme/DemoBundle/Form/EventListener/AddNameFieldSubscriber.php
     namespace Acme\DemoBundle\Form\EventListener;
 
-    use Symfony\Component\Form\Event\DataEvent;
-    use Symfony\Component\Form\FormFactoryInterface;
-    use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+    use Symfony\Component\Form\FormEvent;
     use Symfony\Component\Form\FormEvents;
+    use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
     class AddNameFieldSubscriber implements EventSubscriberInterface
     {
-            private $factory;
-        
-        public function __construct(FormFactoryInterface $factory)
-        {
-                $this->factory = $factory;
-        }
-        
         public static function getSubscribedEvents()
         {
-            // Informa al despachador que deseamos escuchar el evento
+            // Informa al despachador que deseas escuchar el evento
             // form.pre_set_data y se debe llamar al método 'preSetData'.
             return array(FormEvents::PRE_SET_DATA => 'preSetData');
         }
 
-        public function preSetData(DataEvent $event)
+        public function preSetData(FormEvent $event)
         {
             $data = $event->getData();
             $form = $event->getForm();
-            
+
             // Durante la creación del formulario setData() es llamado con null como
-            // argumento por el constructor FormBuilder. Solo nos interesa cuando
+            // argumento por el constructor FormBuilder. Solo te interesa cuando
             // setData es llamado con un objeto Entity real (ya sea nuevo,
-            // o recuperado con Doctrine). Esta declaración if nos permite saltar 
-            // directamente a la condición null.
+            // o recuperado con Doctrine). Esta declaración 'if' permite evadir
+            // la condición null.
             if (null === $data) {
                 return;
             }
 
             // comprueba si el objeto producto es "nuevo"
             if (!$data->getId()) {
-                $form->add($this->factory->createNamed('text', 'name'));
+                $form->add('name', 'text');
             }
         }
     }
 
 .. caution::
 
-    Es fácil malinterpretar el propósito del segmento ``if (null === $data)`` de este suscriptor de eventos. Para comprender plenamente su papel, podrías considerar echarle un vistazo también a la `clase Form`_  prestando especial atención a donde se llama a ``setData()`` al final del constructor, así como al método ``setData()`` en sí mismo.
+    Es fácil malinterpretar el propósito del segmento ``if (null === $data)`` de este suscriptor de eventos. Para comprender plenamente su papel, también podrías considerar echarle un vistazo a la `clase Form`_  prestando especial atención a donde se llama a ``setData()`` al final del constructor, así como al método ``setData()`` en sí mismo.
 
-La línea ``FormEvents::PRE_SET_DATA`` en realidad se resuelve en la cadena ``form.pre_set_data``. 
+La línea ``FormEvents::PRE_SET_DATA`` en realidad se resuelve en la cadena ``form.pre_set_data``.
 La `clase FormEvents`_ sirve a un propósito organizacional. Se trata de una ubicación centralizada en la cual puedes encontrar todos los eventos de formulario disponibles.
 
-Aunque este ejemplo podría haber utilizado el evento ``form.set_data`` o incluso el evento ``form.post_set_data`` con la misma eficacia, al usar ``form.pre_set_data`` garantizamos que los datos se recuperan desde el objeto ``Evento`` el cual de ninguna manera ha sido modificado por ningún otro suscriptor o escucha. Esto se debe a que ``form.pre_set_data`` pasa un objeto `DataEvent`_ en lugar del objeto `FilterDataEvent`_ que pasa el evento ``form.set_data``. `DataEvent`_, a diferencia de su hijo `FilterDataEvent`_, carece de un método ``setData()``.
+Si bien este ejemplo podría haber utilizado eficientemente el evento ``form.post_set_data``, al usar ``form.pre_set_data`` garantizas que el dato recuperado desde el objeto ``Event`` no tiene manera alguna de ser modificado por ningún otro suscriptor o escucha debido a que ``form.pre_set_data`` es el primer evento remitido por el formulario.
 
 .. note::
 
-    Puedes ver la lista de eventos de formulario completa vía la `clase FormEvents`_, del paquete ``form``.
+    Puedes ver la lista completa de eventos de formulario vía la `clase FormEvents`_, del paquete ``form``.
 
-.. _`DataEvent`: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Event/DataEvent.php
 .. _`clase FormEvents`: https://github.com/symfony/Form/blob/master/FormEvents.php
 .. _`clase Form`: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Form.php
-.. _`FilterDataEvent`: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Form/Event/FilterDataEvent.php

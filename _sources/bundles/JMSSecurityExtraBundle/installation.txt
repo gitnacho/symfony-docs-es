@@ -1,0 +1,123 @@
+Instalando
+----------
+
+1. Usando ``Composer`` (recomendado)
+------------------------------------
+
+Para instalar ``JMSSecurityExtraBundle`` con ``Composer`` sólo añade lo siguiente al tu archivo ``composer.json``:
+
+.. code-block:: js
+
+    // composer.json
+    {
+        // ...
+        require: {
+            // ...
+            "jms/security-extra-bundle": "dev-master"
+        }
+    }
+    
+.. note::
+
+    Por favor, sustituye ``dev-master`` en el fragmento anterior con la última rama estable, por ejemplo ``1.0.*``.
+    
+Luego, puedes instalar las nuevas dependencias ejecutando la orden ``update`` de  ``Composer`` desde el directorio donde tienes tu archivo ``composer.json``:
+
+.. code-block:: bash
+
+    $ php composer.phar update jms/security-extra-bundle
+
+Ahora, ``Composer`` automáticamente descargará todos los archivos necesarios y los instalará
+por ti. Todo lo que resta por hacer es actualizar el archivo ``AppKernel.php`` y registrar el nuevo paquete:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    // en AppKernel::registerBundles()
+    $bundles = array(
+        // ...
+        new JMS\AopBundle\JMSAopBundle(),
+        new JMS\SecurityExtraBundle\JMSSecurityExtraBundle(),
+        new JMS\DiExtraBundle\JMSDiExtraBundle($this),
+        // ...
+    );
+
+2. Usando el archivo ``deps`` (*Symfony 2.0.x*)
+-----------------------------------------------
+
+En primer lugar consigue una copia del código. Sólo tienes que añadir lo siguiente al archivo ``deps`` de tu distribución estándar de *Symfony*:
+
+.. code-block:: ini
+
+    [JMSSecurityExtraBundle]
+        git=https://github.com/schmittjoh/JMSSecurityExtraBundle.git
+        target=/bundles/JMS/SecurityExtraBundle
+
+    ; Dependencias:
+    ;--------------
+    [metadata]
+        git=https://github.com/schmittjoh/metadata.git
+        version=1.1.0 ; <- asegúrate de conseguir 1.1, no 1.0
+
+    ; ve https://github.com/schmittjoh/JMSAopBundle/blob/master/Resources/doc/index.rst    
+    [JMSAopBundle]
+        git=https://github.com/schmittjoh/JMSAopBundle.git
+        target=/bundles/JMS/AopBundle
+
+    [cg-library]
+        git=https://github.com/schmittjoh/cg-library.git
+
+    ; Esta dependencia es opcional (la necesitas si no estás usando
+    ; servicios como controladores):
+    ; Consulta https://github.com/schmittjoh/JMSDiExtraBundle/blob/master/Resources/doc/index.rst
+
+    [JMSDiExtraBundle]
+        git=https://github.com/schmittjoh/JMSDiExtraBundle.git
+        target=/bundles/JMS/DiExtraBundle
+
+Luego registra el paquete en tu núcleo:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    // en AppKernel::registerBundles()
+    $bundles = array(
+        // ...
+        new JMS\AopBundle\JMSAopBundle(),
+        new JMS\SecurityExtraBundle\JMSSecurityExtraBundle(),
+        new JMS\DiExtraBundle\JMSDiExtraBundle($this),
+        // ...
+    );
+
+Asegúrate de registrar los espacios de nombres en tu cargador automático:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    // app/autoload.php
+    $loader->registerNamespaces(array(
+        // ...
+        // ...
+        'JMS'              => __DIR__.'/../vendor/bundles',
+        'Metadata'         => __DIR__.'/../vendor/metadata/src',
+        'CG'               => __DIR__.'/../vendor/cg-library/src',
+        // ...
+    ));
+
+Ahora usa el programa ``vendors`` para clonar en tu proyecto los repositorios recientemente añadidos:
+
+.. code-block:: bash
+
+    php bin/vendors install

@@ -1,5 +1,6 @@
 .. index::
    single: Process
+   single: Componentes; Process
 
 El componente ``Process``
 =========================
@@ -12,15 +13,12 @@ Instalando
 Puedes instalar el componente de varias maneras diferentes:
 
 * Usando el repositorio *Git* oficial (https://github.com/symfony/Process);
-* Instalándolo a través de *PEAR* ( `pear.symfony.com/Process`);
-* Instalándolo vía ``Composer`` (`symfony/process` en Packagist).
+* :doc:`Instalándolo vía Composer </components/using_components>` (``symfony/process`` en `Packagist`_).
 
 Usando
 ------
 
-La clase :class:`Symfony\\Component\\Process\\Process` te permite ejecutar una orden en un subproceso:
-
-.. code-block:: php
+La clase :class:`Symfony\\Component\\Process\\Process` te permite ejecutar una orden en un subproceso::
 
     use Symfony\Component\Process\Process;
 
@@ -28,16 +26,20 @@ La clase :class:`Symfony\\Component\\Process\\Process` te permite ejecutar una o
     $process->setTimeout(3600);
     $process->run();
     if (!$process->isSuccessful()) {
-        throw new RuntimeException($process->getErrorOutput());
+        throw new \RuntimeException($process->getErrorOutput());
     }
 
     print $process->getOutput();
 
 El método :method:`Symfony\\Component\\Process\\Process:run()` se encarga de las sutiles diferencias entre las diferentes plataformas cuando ejecuta la orden.
 
-Cuando se ejecuta una orden que consume demasiado tiempo (tal como la resincronización de archivos con un servidor remoto), puedes retroalimentar en tiempo real al usuario final suministrando una función anónima al método :method:`Symfony\\Component\\Process\\Process::run`:
+.. versionadded:: 2.2
+    Los métodos ``getIncrementalOutput()`` y ``getIncrementalErrorOutput()`` fueron añadidos en *Symfony 2.2*.
 
-.. code-block:: php
+El método ``getOutput()`` siempre regresa el contenido entero de la salida estándar de la orden y ``getErrorOutput()`` el contenido de la salida de error. Alternativamente, los métodos :method:`Symfony\\Component\\Process\\Process::getIncrementalOutput`
+y :method:`Symfony\\Component\\Process\\Process::getIncrementalErrorOutput` regresan la nueva producción desde la última llamada.
+
+Cuando se ejecuta una orden que consume demasiado tiempo (tal como la resincronización de archivos con un servidor remoto), puedes retroalimentar en tiempo real al usuario final suministrando una función anónima al método :method:`Symfony\\Component\\Process\\Process::run`::
 
     use Symfony\Component\Process\Process;
 
@@ -50,13 +52,24 @@ Cuando se ejecuta una orden que consume demasiado tiempo (tal como la resincroni
         }
     });
 
-Si deseas ejecutar algún código *PHP* independiente, en su lugar usa ``PhpProcess``:
-
-.. code-block:: php
+Si deseas ejecutar algún código *PHP* independiente, en su lugar usa ``PhpProcess``::
 
     use Symfony\Component\Process\PhpProcess;
 
     $process = new PhpProcess(<<<EOF
         <?php echo 'Hello World'; ?>
-    EOF);
+    EOF
+    );
     $process->run();
+
+.. versionadded:: 2.1
+    La clase ``ProcessBuilder`` existe desde 2.1.
+
+Para hacer que tu código trabaje mejor en todas las plataformas, posiblemente en su lugar quieras usar la clase :class:`Symfony\\Component\\Process\\ProcessBuilder`::
+
+    use Symfony\Component\Process\ProcessBuilder;
+
+    $builder = new ProcessBuilder(array('ls', '-lsa'));
+    $builder->getProcess()->run();
+
+.. _`Packagist`: https://packagist.org/packages/symfony/process

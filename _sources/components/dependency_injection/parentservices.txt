@@ -20,6 +20,7 @@ A medida que agregas más funcionalidad a tu aplicación, puedes comenzar a tene
         {
             $this->emailFormatter = $emailFormatter;
         }
+
         // ...
     }
 
@@ -39,6 +40,7 @@ y también una clase para tus ``Tarjetas de saludo`` que comparte las mismas dep
         {
             $this->emailFormatter = $emailFormatter;
         }
+
         // ...
     }
 
@@ -64,7 +66,7 @@ La configuración del servicio de estas clases se vería algo como esto:
                     - [ setEmailFormatter, [ @my_email_formatter] ]
 
             greeting_card_manager:
-                class:     %greeting_card_manager.class%
+                class:     "%greeting_card_manager.class%"
                 calls:
                     - [ setMailer, [ @my_mailer ] ]
                     - [ setEmailFormatter, [ @my_email_formatter] ]
@@ -78,10 +80,10 @@ La configuración del servicio de estas clases se vería algo como esto:
         </parameters>
 
             <services>
-            <service id="my_mailer" ... >
+            <service id="my_mailer" ...>
               <!-- ... -->
             </service>
-            <service id="my_email_formatter" ... >
+            <service id="my_email_formatter" ...>
               <!-- ... -->
             </service>
             <service id="newsletter_manager" class="%newsletter_manager.class%">
@@ -111,8 +113,8 @@ La configuración del servicio de estas clases se vería algo como esto:
         $container->setParameter('newsletter_manager.class', 'NewsletterManager');
         $container->setParameter('greeting_card_manager.class', 'GreetingCardManager');
 
-        $container->setDefinition('my_mailer', ... );
-        $container->setDefinition('my_email_formatter', ... );
+        $container->setDefinition('my_mailer', ...);
+        $container->setDefinition('my_email_formatter', ...);
         $container->setDefinition('newsletter_manager', new Definition(
             '%newsletter_manager.class%'
         ))->addMethodCall('setMailer', array(
@@ -144,6 +146,7 @@ Hay mucha repetición, tanto en las clases como en la configuración. Esto signi
         {
             $this->emailFormatter = $emailFormatter;
         }
+
         // ...
     }
 
@@ -179,18 +182,18 @@ De manera similar, el contenedor de servicios de *Symfony2* también apoya la ex
             my_email_formatter:
                 # ...
             mail_manager:
-                class:     %mail_manager.class%
+                class:     "%mail_manager.class%"
                 abstract:  true
                 calls:
                     - [ setMailer, [ @my_mailer ] ]
                     - [ setEmailFormatter, [ @my_email_formatter] ]
             
             newsletter_manager:
-                class:     %newsletter_manager.class%
+                class:     "%newsletter_manager.class%"
                 parent: mail_manager
             
             greeting_card_manager:
-                class:     %greeting_card_manager.class%
+                class:     "%greeting_card_manager.class%"
                 parent: mail_manager
             
     .. code-block:: xml
@@ -203,10 +206,10 @@ De manera similar, el contenedor de servicios de *Symfony2* también apoya la ex
         </parameters>
 
             <services>
-            <service id="my_mailer" ... >
+            <service id="my_mailer" ...>
               <!-- ... -->
             </service>
-            <service id="my_email_formatter" ... >
+            <service id="my_email_formatter" ...>
               <!-- ... -->
             </service>
             <service id="mail_manager" class="%mail_manager.class%" abstract="true">
@@ -224,6 +227,7 @@ De manera similar, el contenedor de servicios de *Symfony2* también apoya la ex
     .. code-block:: php
 
         use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\DefinitionDecorator;
         use Symfony\Component\DependencyInjection\Reference;
 
         // ...
@@ -231,11 +235,11 @@ De manera similar, el contenedor de servicios de *Symfony2* también apoya la ex
         $container->setParameter('greeting_card_manager.class', 'GreetingCardManager');
         $container->setParameter('mail_manager.class', 'MailManager');
 
-        $container->setDefinition('my_mailer', ... );
-        $container->setDefinition('my_email_formatter', ... );
+        $container->setDefinition('my_mailer', ...);
+        $container->setDefinition('my_email_formatter', ...);
         $container->setDefinition('mail_manager', new Definition(
             '%mail_manager.class%'
-        ))->SetAbstract(
+        ))->setAbstract(
             true
         )->addMethodCall('setMailer', array(
             new Reference('my_mailer')
@@ -260,12 +264,16 @@ En concreto, los métodos definidores especificados para el servicio padre será
 
    Si quitas la clave de configuración del ``padre``, el servicio todavía seguirá siendo una instancia, por supuesto, extendiendo la clase ``MailManager``. La diferencia es que la omisión del ``padre`` en la clave de configuración significa que las ``llamadas`` definidas en el servicio ``mail_manager`` no se ejecutarán al crear instancias de los servicios descendientes.
 
-La clase padre es abstracta, ya que no se deben crear instancias directamente. Al establecerla como abstracta en el archivo de configuración como se hizo anteriormente, significa que sólo se puede utilizar como un servicio primario y no se puede utilizar directamente como un servicio para inyectar y retirar en tiempo de compilación. En otras palabras, existe sólo como una "plantilla" que otros servicios pueden utilizar.
+La clase padre es abstracta, ya que no se deben crear instancias directamente. Al establecerla como abstracta en el archivo de configuración como se hizo anteriormente, significa que sólo se puede utilizar como un servicio primario y no se puede utilizar directamente como un servicio para inyectar y retirar en tiempo de compilación. En otras palabras, existe sólo como una «plantilla» que otros servicios pueden utilizar.
 
-Sustituyendo dependencias padre
--------------------------------
+.. note::
 
-Puede haber ocasiones en las que deses sustituir que clase se pasa a una dependencia en un servicio hijo único. Afortunadamente, añadiendo la llamada al método de configuración para el servicio hijo, las dependencias establecidas por la clase principal se sustituyen. Así que si necesitas pasar una dependencia diferente sólo para la clase ``NewsletterManager``, la configuración sería la siguiente:
+   A fin de resolver las dependencias del padre, el ``ContainerBuilder`` se tiene que compilar primero. Consulta :doc:`/components/dependency_injection/compilation` para más detalles.
+
+Sustituyendo dependencias del padre
+-----------------------------------
+
+Puede haber ocasiones en las que deses sustituir cual clase se pasa a una dependencia en un único servicio hijo. Afortunadamente, añadiendo la llamada al método de configuración para el servicio hijo, se sustituyen las dependencias establecidas por la clase principal. Así que si necesitas pasar una dependencia diferente sólo para la clase ``NewsletterManager``, la configuración sería la siguiente:
 
 .. configuration-block::
 
@@ -284,20 +292,20 @@ Puede haber ocasiones en las que deses sustituir que clase se pasa a una depende
             my_email_formatter:
                 # ...
             mail_manager:
-                class:     %mail_manager.class%
+                class:     "%mail_manager.class%"
                 abstract:  true
                 calls:
                     - [ setMailer, [ @my_mailer ] ]
                     - [ setEmailFormatter, [ @my_email_formatter] ]
             
             newsletter_manager:
-                class:     %newsletter_manager.class%
+                class:     "%newsletter_manager.class%"
                 parent: mail_manager
                 calls:
                     - [ setMailer, [ @my_alternative_mailer ] ]
             
             greeting_card_manager:
-                class:     %greeting_card_manager.class%
+                class:     "%greeting_card_manager.class%"
                 parent: mail_manager
             
     .. code-block:: xml
@@ -310,13 +318,13 @@ Puede haber ocasiones en las que deses sustituir que clase se pasa a una depende
         </parameters>
 
             <services>
-            <service id="my_mailer" ... >
+            <service id="my_mailer" ...>
               <!-- ... -->
             </service>
-            <service id="my_alternative_mailer" ... >
+            <service id="my_alternative_mailer" ...>
               <!-- ... -->
             </service>
-            <service id="my_email_formatter" ... >
+            <service id="my_email_formatter" ...>
               <!-- ... -->
             </service>
             <service id="mail_manager" class="%mail_manager.class%" abstract="true">
@@ -338,6 +346,7 @@ Puede haber ocasiones en las que deses sustituir que clase se pasa a una depende
     .. code-block:: php
 
         use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\DefinitionDecorator;
         use Symfony\Component\DependencyInjection\Reference;
 
         // ...
@@ -345,12 +354,12 @@ Puede haber ocasiones en las que deses sustituir que clase se pasa a una depende
         $container->setParameter('greeting_card_manager.class', 'GreetingCardManager');
         $container->setParameter('mail_manager.class', 'MailManager');
 
-        $container->setDefinition('my_mailer', ... );
-        $container->setDefinition('my_alternative_mailer', ... );
-        $container->setDefinition('my_email_formatter', ... );
+        $container->setDefinition('my_mailer', ...);
+        $container->setDefinition('my_alternative_mailer', ...);
+        $container->setDefinition('my_email_formatter', ...);
         $container->setDefinition('mail_manager', new Definition(
             '%mail_manager.class%'
-        ))->SetAbstract(
+        ))->setAbstract(
             true
         )->addMethodCall('setMailer', array(
             new Reference('my_mailer')
@@ -387,6 +396,7 @@ En algunos casos, sin embargo, esto puede ser un problema. Por ejemplo, si la su
         {
             $this->filters[] = $filter;
         }
+
         // ...
     }
 
@@ -406,13 +416,13 @@ Si tienes la siguiente configuración:
             another_filter:
                 # ...
             mail_manager:
-                class:     %mail_manager.class%
+                class:     "%mail_manager.class%"
                 abstract:  true
                 calls:
                     - [ setFilter, [ @my_filter ] ]
                     
             newsletter_manager:
-                class:     %newsletter_manager.class%
+                class:     "%newsletter_manager.class%"
                 parent: mail_manager
                 calls:
                     - [ setFilter, [ @another_filter ] ]
@@ -426,10 +436,10 @@ Si tienes la siguiente configuración:
         </parameters>
 
             <services>
-            <service id="my_filter" ... >
+            <service id="my_filter" ...>
               <!-- ... -->
             </service>
-            <service id="another_filter" ... >
+            <service id="another_filter" ...>
               <!-- ... -->
             </service>
             <service id="mail_manager" class="%mail_manager.class%" abstract="true">
@@ -447,17 +457,18 @@ Si tienes la siguiente configuración:
     .. code-block:: php
 
         use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\DefinitionDecorator;
         use Symfony\Component\DependencyInjection\Reference;
 
         // ...
         $container->setParameter('newsletter_manager.class', 'NewsletterManager');
         $container->setParameter('mail_manager.class', 'MailManager');
 
-        $container->setDefinition('my_filter', ... );
-        $container->setDefinition('another_filter', ... );
+        $container->setDefinition('my_filter', ...);
+        $container->setDefinition('another_filter', ...);
         $container->setDefinition('mail_manager', new Definition(
             '%mail_manager.class%'
-        ))->SetAbstract(
+        ))->setAbstract(
             true
         )->addMethodCall('setFilter', array(
             new Reference('my_filter')

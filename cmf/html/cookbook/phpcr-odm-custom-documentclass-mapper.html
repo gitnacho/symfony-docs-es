@@ -1,0 +1,134 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Usando una clase documento personalizada asociada con PHPCR-ODM &mdash; Symblog</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="top" title="Symblog" href="../index.html" />
+    <link rel="next" title="Usando un repositorio de rutas personalizado con un enrutador dinámico" href="using-a-custom-route-repository.html" />
+    <link rel="prev" title="TreeBrowserBundle" href="../bundles/tree-browser.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="using-a-custom-route-repository.html" title="Usando un repositorio de rutas personalizado con un enrutador dinámico"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="../bundles/tree-browser.html" title="TreeBrowserBundle"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">Symblog</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="usando-una-clase-documento-personalizada-asociada-con-phpcr-odm">
+<h1>Usando una clase documento personalizada asociada con <em>PHPCR-ODM</em><a class="headerlink" href="#usando-una-clase-documento-personalizada-asociada-con-phpcr-odm" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El asignador predefinido para la clase <tt class="docutils literal"><span class="pre">document</span></tt> <em>PHPCR-ODM</em> utiliza el atributo <tt class="docutils literal"><span class="pre">phpcr:class</span></tt> para almacenar y recuperar la clase <tt class="docutils literal"><span class="pre">documento</span></tt> de un nodo. Cuándo accedes a un repositorio <em>PHPCR</em> existente, podrías necesitar diferente lógica para decidir en la clase.</p>
+<p>Puedes extender el <tt class="docutils literal"><span class="pre">DocumentClassMapper</span></tt> o implementar la <tt class="docutils literal"><span class="pre">DocumentClassMapperInterface</span></tt> desde el principio. Los métodos importantes son <tt class="docutils literal"><span class="pre">getClassName</span></tt> que se necesita para encontrar el nombre de clase y <tt class="docutils literal"><span class="pre">writeMetadata</span></tt> que se necesita para garantizar que la clase de un nuevo documento almacenado se puede determinar al cargarlo de nuevo.</p>
+<p>Luego, puedes sustituir el servicio <tt class="docutils literal"><span class="pre">doctrine.odm_configuration</span></tt> para llamar a <tt class="docutils literal"><span class="pre">setDocumentClassMapper</span></tt> en él. Un ejemplo del <a class="reference external" href="https://github.com/symfony-cmf/cmf-sandbox/tree/magnolia_integration">recinto de seguridad del CMF de Symfony</a> (rama de magnolia_integration):</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># Resources/config/services.yml
+
+# Si quieres sobrescribir la configuración predefinida, de lo contrario utiliza
+# un nombre personalizado y pónlo en el bloque de configuración del odm
+
+doctrine.odm_configuration:
+    class: %doctrine_phpcr.odm.configuration.class%
+    calls:
+        - [ setDocumentClassMapper, [@sandbox_magnolia.odm_mapper] ]
+
+sandbox_magnolia.odm_mapper:
+    class: "Sandbox\MagnoliaBundle\Document\MagnoliaDocumentClassMapper"
+    arguments:
+        - 'standard-templating-kit:pages/stkSection': 'Sandbox\MagnoliaBundle\Document\Section'</pre>
+</div>
+</li>
+</ul>
+</div>
+<p>Aquí creamos una asociación que usa una configuración para leer información del nodo y se asocia a una clase <tt class="docutils literal"><span class="pre">documento</span></tt>.</p>
+<p>Si tienes varios repositorios, puedes usar una configuración por repositorio.
+Ve <a class="reference internal" href="../bundles/phpcr-odm.html#multiple-phpcr-sessions"><em>Configurando múltiples sesiones</em></a>.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Tema anterior</h4>
+  <p class="topless"><a href="../bundles/tree-browser.html"
+                        title="Capítulo anterior"><tt class="docutils literal docutils literal docutils literal"><span class="pre">TreeBrowserBundle</span></tt></a></p>
+  <h4>Próximo tema</h4>
+  <p class="topless"><a href="using-a-custom-route-repository.html"
+                        title="Próximo capítulo">Usando un repositorio de rutas personalizado con un enrutador dinámico</a></p>
+<div id="searchbox" style="display: none">
+  <h3>Búsqueda rápida</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Ir a" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="using-a-custom-route-repository.html" title="Usando un repositorio de rutas personalizado con un enrutador dinámico"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="../bundles/tree-browser.html" title="TreeBrowserBundle"
+             >anterior</a> |</li>
+        <li><a href="../index.html">Symblog</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Comunidad CMF de Symfony Traducido al español por Nacho Pacheco.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

@@ -1,12 +1,10 @@
 
-<!DOCTYPE html>
-
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html> 
+<html lang="es">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Cómo utilizar PdoSessionStorage para almacenar sesiones en la base de datos &mdash; Manual de Symfony2 en Español</title>
+    <title>Cómo utilizar PdoSessionHandler para almacenar sesiones en la base de datos &mdash; Manual de Symfony2 en Español</title>
     
     <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -35,7 +33,7 @@
     
   <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
   
-    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
     <div class="social">
       <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
@@ -51,7 +49,6 @@
     </div>
     
 
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -77,18 +74,22 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="como-utilizar-pdosessionstorage-para-almacenar-sesiones-en-la-base-de-datos">
-<span id="index-0"></span><h1>Cómo utilizar <tt class="docutils literal"><span class="pre">PdoSessionStorage</span></tt> para almacenar sesiones en la base de datos<a class="headerlink" href="#como-utilizar-pdosessionstorage-para-almacenar-sesiones-en-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h1>
+  <div class="section" id="como-utilizar-pdosessionhandler-para-almacenar-sesiones-en-la-base-de-datos">
+<span id="index-0"></span><h1>Cómo utilizar <tt class="docutils literal"><span class="pre">PdoSessionHandler</span></tt> para almacenar sesiones en la base de datos<a class="headerlink" href="#como-utilizar-pdosessionhandler-para-almacenar-sesiones-en-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h1>
 <p>El almacenamiento de sesiones predeterminado de <em>Symfony2</em> escribe la información de la sesión en archivo(s). La mayoría desde medianos hasta grandes sitios web utilizan una base de datos para almacenar valores de sesión en lugar de archivos, porque las bases de datos son más fáciles de usar y escalar en un entorno web multiservidor.</p>
-<p><em>Symfony2</em> ha incorporado una solución de almacenamiento en base de datos denominada <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage</span></tt>.
+<p><em>Symfony2</em> ha incorporado una solución para el almacenamiento de la sesión en la base de datos denominada <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage</span></tt>.
 Para usarla, sólo tienes que cambiar algunos parámetros en <tt class="file docutils literal"><span class="pre">config.yml</span></tt> (o el formato de configuración de tu elección):</p>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>En <em>Symfony 2.1</em> la clase y el espacio de nombres se han modificado significativamente. Ahora puedes encontrar las clases de almacenamiento de sesión en el espacio de nombres <cite>Session\Storage</cite>:
+<tt class="docutils literal"><span class="pre">Symfony\Component\HttpFoundation\Session\Storage</span></tt>. Además ten en cuenta que en <em>Symfony 2.1</em> debes configurar <tt class="docutils literal"><span class="pre">handler_id</span></tt> no <tt class="docutils literal"><span class="pre">storage_id</span></tt> como en <em>Symfony2.0</em>.
+Abajo, notarás que ya no se utiliza <tt class="docutils literal"><span class="pre">%sesión.storage.options%</span></tt>.</p>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><pre># app/config/config.yml
 framework:
     session:
         # ...
-        storage_id:     session.storage.pdo
+        handler_id:     session.handler.pdo
 
 parameters:
     pdo.db_options:
@@ -105,14 +106,14 @@ services:
             user:     myuser
             password: mypassword
 
-    session.storage.pdo:
-        class:     Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage
-        arguments: [@pdo, %session.storage.options%, %pdo.db_options%]</pre>
+    session.handler.pdo:
+        class:     Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+        arguments: [@pdo, %pdo.db_options%]</pre>
 </div>
 </li>
 <li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
 <span class="nt">&lt;framework:config&gt;</span>
-    <span class="nt">&lt;framework:session</span> <span class="na">storage-id=</span><span class="s">&quot;session.storage.pdo&quot;</span> <span class="na">default-locale=</span><span class="s">&quot;en&quot;</span> <span class="na">lifetime=</span><span class="s">&quot;3600&quot;</span> <span class="na">auto-start=</span><span class="s">&quot;true&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;framework:session</span> <span class="na">handler-id=</span><span class="s">&quot;session.handler.pdo&quot;</span> <span class="na">lifetime=</span><span class="s">&quot;3600&quot;</span> <span class="na">auto-start=</span><span class="s">&quot;true&quot;</span><span class="nt">/&gt;</span>
 <span class="nt">&lt;/framework:config&gt;</span>
 
 <span class="nt">&lt;parameters&gt;</span>
@@ -131,24 +132,23 @@ services:
         <span class="nt">&lt;argument&gt;</span>mypassword<span class="nt">&lt;/argument&gt;</span>
     <span class="nt">&lt;/service&gt;</span>
 
-    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;session.storage.pdo&quot;</span> <span class="na">class=</span><span class="s">&quot;Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;session.handler.pdo&quot;</span> <span class="na">class=</span><span class="s">&quot;Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler&quot;</span><span class="nt">&gt;</span>
         <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;pdo&quot;</span> <span class="nt">/&gt;</span>
-        <span class="nt">&lt;argument&gt;</span>%session.storage.options%<span class="nt">&lt;/argument&gt;</span>
         <span class="nt">&lt;argument&gt;</span>%pdo.db_options%<span class="nt">&lt;/argument&gt;</span>
     <span class="nt">&lt;/service&gt;</span>
     <span class="nt">&lt;/services&gt;</span>
 </pre></div>
 </div>
 </li>
-<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.yml</span>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
 
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
     <span class="c1">// ...</span>
     <span class="s1">&#39;session&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
-        <span class="c1">// ...</span>
-        <span class="s1">&#39;storage_id&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;session.storage.pdo&#39;</span><span class="p">,</span>
+        <span class="o">...</span><span class="p">,</span>
+        <span class="s1">&#39;handler_id&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;session.handler.pdo&#39;</span><span class="p">,</span>
     <span class="p">),</span>
 <span class="p">));</span>
 
@@ -166,12 +166,11 @@ services:
 <span class="p">));</span>
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;pdo&#39;</span><span class="p">,</span> <span class="nv">$pdoDefinition</span><span class="p">);</span>
 
-<span class="nv">$storageDefinition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;Symfony\Component\HttpFoundation\SessionStorage\PdoSessionStorage&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+<span class="nv">$storageDefinition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
     <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;pdo&#39;</span><span class="p">),</span>
-    <span class="s1">&#39;%session.storage.options%&#39;</span><span class="p">,</span>
     <span class="s1">&#39;%pdo.db_options%&#39;</span><span class="p">,</span>
 <span class="p">));</span>
-<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;session.storage.pdo&#39;</span><span class="p">,</span> <span class="nv">$storageDefinition</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;session.handler.pdo&#39;</span><span class="p">,</span> <span class="nv">$storageDefinition</span><span class="p">);</span>
 </pre></div>
 </div>
 </li>
@@ -192,13 +191,13 @@ services:
 <li><em>YAML</em><div class="highlight-yaml"><pre>pdo:
     class: PDO
     arguments:
-        - "mysql:dbname=%database_name%"
+        - "mysql:host=%database_host%;port=%database_port%;dbname=%database_name%"
         - %database_user%
         - %database_password%</pre>
 </div>
 </li>
 <li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;pdo&quot;</span> <span class="na">class=</span><span class="s">&quot;PDO&quot;</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;argument&gt;</span>mysql:dbname=%database_name%<span class="nt">&lt;/argument&gt;</span>
+    <span class="nt">&lt;argument&gt;</span>mysql:host=%database_host%;port=%database_port%;dbname=%database_name%<span class="nt">&lt;/argument&gt;</span>
     <span class="nt">&lt;argument&gt;</span>%database_user%<span class="nt">&lt;/argument&gt;</span>
     <span class="nt">&lt;argument&gt;</span>%database_password%<span class="nt">&lt;/argument&gt;</span>
 <span class="nt">&lt;/service&gt;</span>
@@ -206,7 +205,7 @@ services:
 </div>
 </li>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$pdoDefinition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;PDO&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-    <span class="s1">&#39;mysql:dbname=%database_name%&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;mysql:host=%database_host%;port=%database_port%;dbname=%database_name%&#39;</span><span class="p">,</span>
     <span class="s1">&#39;%database_user%&#39;</span><span class="p">,</span>
     <span class="s1">&#39;%database_password%&#39;</span><span class="p">,</span>
 <span class="p">));</span>
@@ -242,6 +241,26 @@ services:
 </pre></div>
 </div>
 </div>
+<div class="section" id="microsoft-sql-server">
+<h3>«Microsoft SQL Server»<a class="headerlink" href="#microsoft-sql-server" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Para <em>MSSQL</em>, la declaración se podría parecer a la siguiente:</p>
+<div class="highlight-sql"><div class="highlight"><pre><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="p">[</span><span class="n">dbo</span><span class="p">].[</span><span class="k">session</span><span class="p">](</span>
+        <span class="p">[</span><span class="n">session_id</span><span class="p">]</span> <span class="p">[</span><span class="n">nvarchar</span><span class="p">](</span><span class="mi">255</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">session_value</span><span class="p">]</span> <span class="p">[</span><span class="n">ntext</span><span class="p">]</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">session_time</span><span class="p">]</span> <span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">,</span>
+            <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="n">CLUSTERED</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">session_id</span><span class="p">]</span> <span class="k">ASC</span>
+            <span class="p">)</span> <span class="k">WITH</span> <span class="p">(</span>
+                <span class="n">PAD_INDEX</span>  <span class="o">=</span> <span class="k">OFF</span><span class="p">,</span>
+                <span class="n">STATISTICS_NORECOMPUTE</span>  <span class="o">=</span> <span class="k">OFF</span><span class="p">,</span>
+                <span class="n">IGNORE_DUP_KEY</span> <span class="o">=</span> <span class="k">OFF</span><span class="p">,</span>
+                <span class="n">ALLOW_ROW_LOCKS</span>  <span class="o">=</span> <span class="k">ON</span><span class="p">,</span>
+                <span class="n">ALLOW_PAGE_LOCKS</span>  <span class="o">=</span> <span class="k">ON</span>
+            <span class="p">)</span> <span class="k">ON</span> <span class="p">[</span><span class="k">PRIMARY</span><span class="p">]</span>
+<span class="p">)</span> <span class="k">ON</span> <span class="p">[</span><span class="k">PRIMARY</span><span class="p">]</span> <span class="n">TEXTIMAGE_ON</span> <span class="p">[</span><span class="k">PRIMARY</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
 </div>
 </div>
 
@@ -254,7 +273,6 @@ services:
   <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
   
   <div style="width:740px;margin:10px auto;">
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -280,8 +298,8 @@ services:
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 14, 2012.
-      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
    <script type="text/javascript">

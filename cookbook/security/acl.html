@@ -1,12 +1,10 @@
 
-<!DOCTYPE html>
-
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html> 
+<html lang="es">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Listas de control de acceso (ACL) &mdash; Manual de Symfony2 en Español</title>
+    <title>Cómo usar las listas para el control de acceso (ACL) &mdash; Manual de Symfony2 en Español</title>
     
     <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -27,7 +25,7 @@
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
     <link rel="up" title="Seguridad" href="index.html" />
-    <link rel="next" title="Conceptos ACL avanzados" href="acl_advanced.html" />
+    <link rel="next" title="Cómo usar los conceptos avanzados ACL" href="acl_advanced.html" />
     <link rel="prev" title="Cómo implementar tu propio votante para agregar direcciones IP a la lista negra" href="voters.html" /> 
   </head>
   <body>
@@ -35,7 +33,7 @@
     
   <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
   
-    <a href="http://gitnacho.github.com/tnp/"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
     <div class="social">
       <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
       <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
@@ -51,7 +49,6 @@
     </div>
     
 
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -59,7 +56,7 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="acl_advanced.html" title="Conceptos ACL avanzados"
+          <a href="acl_advanced.html" title="Cómo usar los conceptos avanzados ACL"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
           <a href="voters.html" title="Cómo implementar tu propio votante para agregar direcciones IP a la lista negra"
@@ -77,8 +74,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="listas-de-control-de-acceso-acl">
-<span id="index-0"></span><h1>Listas de control de acceso (<em>ACL</em>)<a class="headerlink" href="#listas-de-control-de-acceso-acl" title="Enlazar permanentemente con este título">¶</a></h1>
+  <div class="section" id="como-usar-las-listas-para-el-control-de-acceso-acl">
+<span id="index-0"></span><h1>Cómo usar las listas para el control de acceso (ACL)<a class="headerlink" href="#como-usar-las-listas-para-el-control-de-acceso-acl" title="Enlazar permanentemente con este título">¶</a></h1>
 <p>En aplicaciones complejas, a menudo te enfrentas al problema de que las decisiones de acceso no se pueden basar únicamente en la persona (<tt class="docutils literal"><span class="pre">Token</span></tt>) que está solicitando el acceso, sino también implica un objeto dominio al cual se está solicitando acceso. Aquí es donde entra en juego el sistema <em>ACL</em>.</p>
 <p>Imagina que estás diseñando un sistema de <em>blog</em> donde los usuarios pueden comentar tus entradas. Ahora, deseas que un usuario pueda editar sus propios comentarios, pero no los de otros usuarios. Además, como usuario <tt class="docutils literal"><span class="pre">admin</span></tt>, quieres tener la posibilidad de editar <em>todos</em> los comentarios. En este escenario, <tt class="docutils literal"><span class="pre">Comentario</span></tt> sería nuestro objeto dominio al cual deseas restringir el acceso. Podrías tomar varios enfoques para lograr esto usando <em>Symfony2</em>, dos enfoques básicos (no exhaustivos) son:</p>
 <ul class="simple">
@@ -86,17 +83,17 @@
 <li><em>Reforzar la seguridad con roles</em>:  En este enfoque, debes agregar un rol a cada objeto <tt class="docutils literal"><span class="pre">comentario</span></tt>, es decir, <tt class="docutils literal"><span class="pre">ROLE_COMMENT_1</span></tt>, <tt class="docutils literal"><span class="pre">ROLE_COMMENT_2</span></tt>, etc.</li>
 </ul>
 <p>Ambos enfoques son perfectamente válidos. Sin embargo, su pareja lógica de autorización a tu código del negocio lo hace menos reutilizable en otros lugares, y también aumenta la dificultad de las pruebas unitarias. Además, posiblemente tengas problemas de rendimiento si muchos usuarios tuvieran acceso a un único objeto dominio.</p>
-<p>Afortunadamente, hay una manera mejor, de la cual vamos a hablar ahora.</p>
+<p>Afortunadamente, hay una manera mejor, de la cual hablaremos ahora.</p>
 <div class="section" id="proceso-de-arranque">
 <h2>Proceso de arranque<a class="headerlink" href="#proceso-de-arranque" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Ahora, antes de que finalmente puedas entrar en acción, tenemos que hacer algún proceso de arranque.
-En primer lugar, tenemos que configurar la conexión al sistema <em>ACL</em> que se supone vamos a emplear:</p>
+<p>Ahora, antes de que finalmente puedas entrar en acción, necesitas hacer un poco del proceso de arranque (<tt class="docutils literal"><span class="pre">bootstrapping</span></tt>).
+En primer lugar, tienes que configurar la conexión al sistema <em>ACL</em> que se supone vas a usar:</p>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/security.yml</span>
 <span class="l-Scalar-Plain">security</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">acl</span><span class="p-Indicator">:</span>
-        <span class="l-Scalar-Plain">connection</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">predeterminado</span>
+        <span class="l-Scalar-Plain">connection</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">default</span>
 </pre></div>
 </div>
 </li>
@@ -118,51 +115,58 @@ En primer lugar, tenemos que configurar la conexión al sistema <em>ACL</em> que
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
-<p class="last">El sistema <em>ACL</em> requiere al menos configurar una conexión <em>DBAL</em> con <em>Doctrine</em>. Sin embargo, eso no significa que tengas que utilizar <em>Doctrine</em> para asignar tus objetos del dominio. Puedes usar cualquier asignador de objetos que te guste, ya sea el <em>ORM</em> de <em>Doctrine</em>, <em>Mongo</em> <em>ODM</em>, <em>Propel</em>, o <em>SQL</em> crudo, la elección es tuya.</p>
+<p class="last">El sistema <em>ACL</em> requiere que configures cuando menos una conexión <em>DBAL</em> con <em>Doctrine</em> (utilizable de manera predeterminada) o <em>MongoDB</em> de <em>Docrine</em> (utilizable con <a class="reference external" href="https://github.com/IamPersistent/MongoDBAclBundle">MongoDBAclBundle</a>). Sin embargo, eso no significa que tengas que utilizar <em>Doctrine</em> para asociar tus objetos del dominio. Puedes usar cualquier asignador de objetos que gustes, ya sea el <em>ORM</em> de <em>Doctrine</em>, <em>ODM</em> de <em>MongoDB</em>, <em>Propel</em>, o <em>SQL</em> crudo, etc. La elección es tuya</p>
 </div>
-<p>Después de configurar la conexión, tenemos que importar la estructura de la base de datos.
-Afortunadamente, tenemos una tarea para eso. Basta con ejecutar la siguiente orden:</p>
-<div class="highlight-text"><div class="highlight"><pre>php app/console init:acl
+<p>Después de configurar la conexión, tienes que importar la estructura de la base de datos.
+Afortunadamente, existe una tarea para eso precisamente. Basta con ejecutar la siguiente orden:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>php app/console init:acl
 </pre></div>
 </div>
 </div>
 <div class="section" id="como-empezar">
 <h2>Cómo empezar<a class="headerlink" href="#como-empezar" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Volviendo a nuestro pequeño ejemplo desde el principio, vamos a implementar <em>ACL</em> para ello.</p>
-<div class="section" id="crea-una-acl-y-anade-una-ace">
-<h3>Crea una <em>ACL</em>, y añade una <em>ACE</em><a class="headerlink" href="#crea-una-acl-y-anade-una-ace" title="Enlazar permanentemente con este título">¶</a></h3>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Exception\AccessDeniedException</span><span class="p">;</span>
+<p>Volviendo al pequeño ejemplo desde el principio, implementarás <em>ACL</em> para ello.</p>
+<div class="section" id="creando-una-acl-y-anade-una-ace">
+<h3>Creando una <em>ACL</em>, y añade una <em>ACE</em><a class="headerlink" href="#creando-una-acl-y-anade-una-ace" title="Enlazar permanentemente con este título">¶</a></h3>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Controller/BlogController.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Controller</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Bundle\FrameworkBundle\Controller\Controller</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\Exception\AccessDeniedException</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\Security\Acl\Domain\ObjectIdentity</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\Security\Acl\Domain\UserSecurityIdentity</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\Security\Acl\Permission\MaskBuilder</span><span class="p">;</span>
-<span class="c1">// ...</span>
 
-<span class="c1">// BlogController.php</span>
-<span class="k">public</span> <span class="k">function</span> <span class="nf">addCommentAction</span><span class="p">(</span><span class="nx">Post</span> <span class="nv">$post</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">BlogController</span>
 <span class="p">{</span>
-    <span class="nv">$comment</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Comment</span><span class="p">();</span>
-
-    <span class="c1">// configura $form, y vincula datos</span>
     <span class="c1">// ...</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
-        <span class="nv">$entityManager</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;doctrine.orm.default_entity_manager&#39;</span><span class="p">);</span>
-        <span class="nv">$entityManager</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$comment</span><span class="p">);</span>
-        <span class="nv">$entityManager</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">addCommentAction</span><span class="p">(</span><span class="nx">Post</span> <span class="nv">$post</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$comment</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Comment</span><span class="p">();</span>
 
-        <span class="c1">// creando la ACL</span>
-        <span class="nv">$aclProvider</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;security.acl.provider&#39;</span><span class="p">);</span>
-        <span class="nv">$objectIdentity</span> <span class="o">=</span> <span class="nx">ObjectIdentity</span><span class="o">::</span><span class="na">fromDomainObject</span><span class="p">(</span><span class="nv">$comment</span><span class="p">);</span>
-        <span class="nv">$acl</span> <span class="o">=</span> <span class="nv">$aclProvider</span><span class="o">-&gt;</span><span class="na">createAcl</span><span class="p">(</span><span class="nv">$objectIdentity</span><span class="p">);</span>
+        <span class="c1">// ... configura $form, y vincula datos</span>
 
-        <span class="c1">// recupera la identidad de seguridad del usuario registrado actual</span>
-        <span class="nv">$securityContext</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;security.context&#39;</span><span class="p">);</span>
-        <span class="nv">$user</span> <span class="o">=</span> <span class="nv">$securityContext</span><span class="o">-&gt;</span><span class="na">getToken</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getUser</span><span class="p">();</span>
-        <span class="nv">$securityIdentity</span> <span class="o">=</span> <span class="nx">UserSecurityIdentity</span><span class="o">::</span><span class="na">fromAccount</span><span class="p">(</span><span class="nv">$user</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$form</span><span class="o">-&gt;</span><span class="na">isValid</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nv">$entityManager</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDoctrine</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getManager</span><span class="p">();</span>
+            <span class="nv">$entityManager</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$comment</span><span class="p">);</span>
+            <span class="nv">$entityManager</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
 
-        <span class="c1">// otorga permiso de propietario</span>
-        <span class="nv">$acl</span><span class="o">-&gt;</span><span class="na">insertObjectAce</span><span class="p">(</span><span class="nv">$securityIdentity</span><span class="p">,</span> <span class="nx">MaskBuilder</span><span class="o">::</span><span class="na">MASK_OWNER</span><span class="p">);</span>
-        <span class="nv">$aclProvider</span><span class="o">-&gt;</span><span class="na">updateAcl</span><span class="p">(</span><span class="nv">$acl</span><span class="p">);</span>
+            <span class="c1">// creando la ACL</span>
+            <span class="nv">$aclProvider</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;security.acl.provider&#39;</span><span class="p">);</span>
+            <span class="nv">$objectIdentity</span> <span class="o">=</span> <span class="nx">ObjectIdentity</span><span class="o">::</span><span class="na">fromDomainObject</span><span class="p">(</span><span class="nv">$comment</span><span class="p">);</span>
+            <span class="nv">$acl</span> <span class="o">=</span> <span class="nv">$aclProvider</span><span class="o">-&gt;</span><span class="na">createAcl</span><span class="p">(</span><span class="nv">$objectIdentity</span><span class="p">);</span>
+
+            <span class="c1">// recupera la identidad de seguridad del usuario</span>
+            <span class="c1">// registrado actualmente</span>
+            <span class="nv">$securityContext</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;security.context&#39;</span><span class="p">);</span>
+            <span class="nv">$user</span> <span class="o">=</span> <span class="nv">$securityContext</span><span class="o">-&gt;</span><span class="na">getToken</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getUser</span><span class="p">();</span>
+            <span class="nv">$securityIdentity</span> <span class="o">=</span> <span class="nx">UserSecurityIdentity</span><span class="o">::</span><span class="na">fromAccount</span><span class="p">(</span><span class="nv">$user</span><span class="p">);</span>
+
+            <span class="c1">// otorga permiso de propietario</span>
+            <span class="nv">$acl</span><span class="o">-&gt;</span><span class="na">insertObjectAce</span><span class="p">(</span><span class="nv">$securityIdentity</span><span class="p">,</span> <span class="nx">MaskBuilder</span><span class="o">::</span><span class="na">MASK_OWNER</span><span class="p">);</span>
+            <span class="nv">$aclProvider</span><span class="o">-&gt;</span><span class="na">updateAcl</span><span class="p">(</span><span class="nv">$acl</span><span class="p">);</span>
+        <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -171,32 +175,39 @@ Afortunadamente, tenemos una tarea para eso. Basta con ejecutar la siguiente ord
 Por ahora, sólo quiero destacar dos:</p>
 <p>En primer lugar, te habrás dado cuenta de que <tt class="docutils literal"><span class="pre">-&gt;createAcl()</span></tt> no acepta objetos de dominio directamente, sino sólo implementaciones de <tt class="docutils literal"><span class="pre">ObjectIdentityInterface</span></tt>.
 Este paso adicional de desvío te permite trabajar con <em>ACL</em>, incluso cuando no tienes a mano ninguna instancia real del objeto dominio. Esto será muy útil si deseas comprobar los permisos de un gran número de objetos sin tener que hidratar estos objetos.</p>
-<p>La otra parte interesante es la llamada a <tt class="docutils literal"><span class="pre">-&gt;insertObjectAce()</span></tt>. En nuestro ejemplo, estamos otorgando al usuario que ha iniciado sesión acceso de propietario al comentario. <tt class="docutils literal"><span class="pre">MaskBuilder::MASK_OWNER</span></tt> es una máscara predefinida de bits enteros;
-no te preocupes que el constructor de la máscara debe abstraer la mayoría de los detalles técnicos, pero gracias a esta técnica puedes almacenar muchos permisos diferentes en la fila de la base de datos lo cual nos da un impulso considerable en cuanto a rendimiento.</p>
+<p>La otra parte interesante es la llamada a <tt class="docutils literal"><span class="pre">-&gt;insertObjectAce()</span></tt>. En el ejemplo, estas otorgando acceso de propietario al comentario al usuario que ha iniciado sesión. <tt class="docutils literal"><span class="pre">MaskBuilder::MASK_OWNER</span></tt> es una máscara de bits enteros predefinida;
+no te preocupe que el constructor de la máscara abstraiga la mayoría de los detalles técnicos, pero gracias a esta técnica puedes almacenar muchos permisos diferentes en la fila de la base de datos, lo cual te dá un considerable impulso en rendimiento.</p>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
-<p class="last">El orden en que las <em>ACE</em> son revisadas ​​es significativo. Como regla general, debes poner más entradas específicas al principio.</p>
+<p class="last">El orden en que las <em>ACE</em> son revisadas es significativo. Como regla general, debes poner las entradas más específicas al principio.</p>
 </div>
 </div>
 <div class="section" id="comprobando-el-acceso">
 <h3>Comprobando el acceso<a class="headerlink" href="#comprobando-el-acceso" title="Enlazar permanentemente con este título">¶</a></h3>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// BlogController.php</span>
-<span class="k">public</span> <span class="k">function</span> <span class="nf">editCommentAction</span><span class="p">(</span><span class="nx">Comment</span> <span class="nv">$comment</span><span class="p">)</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Controller/BlogController.php</span>
+
+<span class="c1">// ...</span>
+
+<span class="k">class</span> <span class="nc">BlogController</span>
 <span class="p">{</span>
-    <span class="nv">$securityContext</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;security.context&#39;</span><span class="p">);</span>
-
-    <span class="c1">// verifica el acceso para edición</span>
-    <span class="k">if</span> <span class="p">(</span><span class="k">false</span> <span class="o">===</span> <span class="nv">$securityContext</span><span class="o">-&gt;</span><span class="na">isGranted</span><span class="p">(</span><span class="s1">&#39;EDIT&#39;</span><span class="p">,</span> <span class="nv">$comment</span><span class="p">))</span>
-    <span class="p">{</span>
-        <span class="k">throw</span> <span class="k">new</span> <span class="nx">AccessDeniedException</span><span class="p">();</span>
-    <span class="p">}</span>
-
-    <span class="c1">// recupera el objeto comentario actual, y realiza tu edición aquí</span>
     <span class="c1">// ...</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">editCommentAction</span><span class="p">(</span><span class="nx">Comment</span> <span class="nv">$comment</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$securityContext</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;security.context&#39;</span><span class="p">);</span>
+
+        <span class="c1">// verifica el acceso para edición</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">false</span> <span class="o">===</span> <span class="nv">$securityContext</span><span class="o">-&gt;</span><span class="na">isGranted</span><span class="p">(</span><span class="s1">&#39;EDIT&#39;</span><span class="p">,</span> <span class="nv">$comment</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">AccessDeniedException</span><span class="p">();</span>
+        <span class="p">}</span>
+
+        <span class="c1">// recupera el objeto comentario actual, y realiza tu edición aquí</span>
+    <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>En este ejemplo, comprobamos si el usuario tiene el permiso de <tt class="docutils literal"><span class="pre">EDICIÓN</span></tt>.
+<p>En este ejemplo, comproebas si el usuario tiene el permiso de <tt class="docutils literal"><span class="pre">EDICIÓN</span></tt>.
 Internamente, <em>Symfony2</em> asigna el permiso a varias máscaras de bits enteros, y comprueba si el usuario tiene alguno de ellos.</p>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
@@ -206,8 +217,8 @@ Internamente, <em>Symfony2</em> asigna el permiso a varias máscaras de bits ent
 </div>
 <div class="section" id="permisos-acumulados">
 <h2>Permisos acumulados<a class="headerlink" href="#permisos-acumulados" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>En nuestro primer ejemplo anterior, sólo concedemos al usuario el permiso <tt class="docutils literal"><span class="pre">OWNER</span></tt> base. Si bien este además permite efectivamente al usuario realizar cualquier operación, como ver, editar, etc., sobre el objeto dominio, hay casos en los que deseas conceder estos permisos de forma explícita.</p>
-<p>El <tt class="docutils literal"><span class="pre">MaskBuilder</span></tt> se puede utilizar para crear máscaras de bits fácilmente combinando varios permisos base:</p>
+<p>En el primer ejemplo de arriba, sólo concediste al usuario el permiso <tt class="docutils literal"><span class="pre">OWNER</span></tt> base. Si bien este además permite efectivamente al usuario realizar cualquier operación, como ver, editar, etc., sobre el objeto dominio, hay casos en los que deseas conceder explícitamente estos permisos.</p>
+<p>Puedes utilizar el <tt class="docutils literal"><span class="pre">MaskBuilder</span></tt> para crear máscaras de bits combinando fácilmente varios permisos base:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="nv">$builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">MaskBuilder</span><span class="p">();</span>
 <span class="nv">$builder</span>
     <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;view&#39;</span><span class="p">)</span>
@@ -215,11 +226,12 @@ Internamente, <em>Symfony2</em> asigna el permiso a varias máscaras de bits ent
     <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;delete&#39;</span><span class="p">)</span>
     <span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;undelete&#39;</span><span class="p">)</span>
 <span class="p">;</span>
-<span class="nv">$mask</span> <span class="o">=</span> <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">();</span> <span class="c1">// int(15)</span>
+<span class="nv">$mask</span> <span class="o">=</span> <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">();</span> <span class="c1">// int(29)</span>
 </pre></div>
 </div>
-<p>Esta máscara de bits de enteros, entonces se puede utilizar para conceder a un usuario los permisos base que se añaden por encima:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="nv">$acl</span><span class="o">-&gt;</span><span class="na">insertObjectAce</span><span class="p">(</span><span class="k">new</span> <span class="nx">UserSecurityIdentity</span><span class="p">(</span><span class="s1">&#39;johannes&#39;</span><span class="p">),</span> <span class="nv">$mask</span><span class="p">);</span>
+<p>Esta máscara de bits de enteros, luego se puede utilizar para conceder a un usuario los permisos base añadidos anteriormente:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$identity</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">UserSecurityIdentity</span><span class="p">(</span><span class="s1">&#39;johannes&#39;</span><span class="p">,</span> <span class="s1">&#39;Acme\UserBundle\Entity\User&#39;</span><span class="p">);</span>
+<span class="nv">$acl</span><span class="o">-&gt;</span><span class="na">insertObjectAce</span><span class="p">(</span><span class="nv">$identity</span><span class="p">,</span> <span class="nv">$mask</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>El usuario ahora puede ver, editar, borrar, y recuperar objetos eliminados.</p>
@@ -235,7 +247,6 @@ Internamente, <em>Symfony2</em> asigna el permiso a varias máscaras de bits ent
   <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
   
   <div style="width:740px;margin:10px auto;">
-    
     <div class="related">
       <h3>Navegación</h3>
       <ul>
@@ -243,7 +254,7 @@ Internamente, <em>Symfony2</em> asigna el permiso a varias máscaras de bits ent
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="acl_advanced.html" title="Conceptos ACL avanzados"
+          <a href="acl_advanced.html" title="Cómo usar los conceptos avanzados ACL"
              >siguiente</a> |</li>
         <li class="right" >
           <a href="voters.html" title="Cómo implementar tu propio votante para agregar direcciones IP a la lista negra"
@@ -261,8 +272,8 @@ Internamente, <em>Symfony2</em> asigna el permiso a varias máscaras de bits ent
      
     <div class="footer">
         &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jun 14, 2012.
-      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
    <script type="text/javascript">

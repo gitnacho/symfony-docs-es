@@ -18,7 +18,7 @@ El código *Symfony2* está hecho de varias capas independientes. Cada capa est�
 
 .. tip::
 
-    La carga automática no la gestiona la plataforma directamente; sino que se hace independientemente con la ayuda de la clase :class:`Symfony\\Component\\ClassLoader\\UniversalClassLoader` y el archivo :file:`src/autoload.php`. Lee el :doc:`capítulo dedicado </components/class_loader>` para más información.
+    La carga automática no la gestiona la plataforma directamente; Esto se hace utilizando el cargador automático de ``Composer`` (:file:`vendor/autoload.php`), el cual está incluido en el archivo :file:`src/autoload.php`.
 
 Componente ``HttpFoundation``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,17 +46,17 @@ Además, opcionalmente añade configurabilidad y extensibilidad, gracias al comp
 Paquete ``FrameworkBundle``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-El paquete :namespace:`Symfony\\Bundle\\FrameworkBundle` es el paquete que une los principales componentes y bibliotecas para hacer una plataforma *MVC* ligera y rápida. Este viene con una configuración predeterminada sensible y convenios para facilitar la curva de aprendizaje.
+El paquete :namespace:`Symfony\\Bundle\\FrameworkBundle` es el paquete que une los principales componentes y bibliotecas para hacer una plataforma *MVC* ligera y rápida. Este viene con una sensible configuración predeterminada y convenios para suavizar la curva de aprendizaje.
 
 .. index::
    single: Funcionamiento interno; Kernel
 
-``Kernel``
-----------
+El núcleo
+---------
 
-La clase :class:`Symfony\\Component\\HttpKernel\\HttpKernel` es la clase central de *Symfony2* y es responsable de procesar las peticiones del cliente. Su objetivo principal es "convertir" un objeto :class:`Symfony\\Component\\HttpFoundation\\Request` a un objeto :class:`Symfony\\Component\\HttpFoundation\\Response`.
+La clase :class:`Symfony\\Component\\HttpKernel\\HttpKernel` es la clase central de *Symfony2* y es responsable de procesar las peticiones del cliente. Su objetivo principal es «convertir» un objeto :class:`Symfony\\Component\\HttpFoundation\\Request` a un objeto :class:`Symfony\\Component\\HttpFoundation\\Response`.
 
-Cada ``Kernel`` de *Symfony2* implementa :class:`Symfony\\Component\\HttpKernel\\HttpKernelInterface`::
+Cada ``núcleo`` de *Symfony2* implementa :class:`Symfony\\Component\\HttpKernel\\HttpKernelInterface`::
 
     function handle(Request $request, $type = self::MASTER_REQUEST, $catch = true)
 
@@ -66,23 +66,23 @@ Cada ``Kernel`` de *Symfony2* implementa :class:`Symfony\\Component\\HttpKernel\
 Controladores
 ~~~~~~~~~~~~~
 
-Para convertir una ``Petición`` a una ``Respuesta``, el ``Kernel`` cuenta con un ``"Controlador"``. Un controlador puede ser cualquier *PHP* ejecutable válido.
+Para convertir una ``Petición`` a una ``Respuesta``, el ``núcleo`` cuenta con un «``Controlador``». Un controlador puede ser cualquier *PHP* ejecutable válido.
 
-El ``Kernel`` delega la selección de cual controlador se debe ejecutar a una implementación de :class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface`::
+El ``núcleo`` delega la selección de cual controlador se debe ejecutar a una implementación de :class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface`::
 
     public function getController(Request $request);
 
     public function getArguments(Request $request, $controller);
 
-El método :method:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface::getController` devuelve el controlador (un *PHP* ejecutable) asociado a la petición dada. La implementación predeterminada de (:class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolver`) busca un atributo ``_controller`` en la petición que representa el nombre del controlador (una cadena "clase::método", cómo ``Bundle\BlogBundle\PostController:indexAction``).
+El método :method:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface::getController` devuelve el controlador (un *PHP* ejecutable) asociado a la petición dada. La implementación predeterminada de (:class:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolver`) busca un atributo ``_controller`` en la petición que representa el nombre del controlador (una cadena ``«class::method»``, cómo ``Bundle\BlogBundle\PostController:indexAction``).
 
 .. tip::
 
-    La implementación predeterminada utiliza la clase :class:`Symfony\\Bundle\\FrameworkBundle\\EventListener\\RouterListener` para definir el atributo ``_controller`` de la petición (consulta :ref:`kernel-core-request`).
+    La implementación predeterminada utiliza la clase :class:`Symfony\\Bundle\\FrameworkBundle\\EventListener\\RouterListener` para definir el atributo ``_controller`` de la petición (consulta el :ref:`kernel-core-request`).
 
-El método :method:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface::getArguments` devuelve una matriz de argumentos para pasarla al Controlador ejecutable. La implementación predeterminada automáticamente resuelve los argumentos del método, basándose en los atributos de la Petición.
+El método :method:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolverInterface::getArguments` devuelve un arreglo de argumentos para pasarlo al Controlador ejecutable. La implementación predeterminada automáticamente resuelve los argumentos del método, basándose en los atributos de la Petición.
 
-.. sidebar:: Cuadrando los argumentos del método ``Controlador`` desde los atributos de la ``Petición``
+.. sidebar:: Emparejando los argumentos del método ``Controlador`` desde los atributos de la ``Petición``
 
     Por cada argumento del método, *Symfony2* trata de obtener el valor de un atributo de la ``Petición`` con el mismo nombre. Si no se proporciona, el valor predeterminado es el argumento utilizado de estar definido::
 
@@ -99,26 +99,25 @@ El método :method:`Symfony\\Component\\HttpKernel\\Controller\\ControllerResolv
 Procesando peticiones
 ~~~~~~~~~~~~~~~~~~~~~
 
-El método ``handle()`` toma una ``Petición`` y *siempre* devuelve una ``Respuesta``.
-Para convertir la ``Petición``, ``handle()`` confía en el mecanismo de resolución y una cadena ordenada de notificaciones de evento (consulta la siguiente sección para más información acerca de cada evento):
+El método :method:`Symfony\\Component\\HttpKernel\\HttpKernel::handle` toma una ``Petición`` y *siempre* devuelve una ``Respuesta``. Para convertir la ``Petición``, ``handle()`` confía en el mecanismo de resolución y una cadena ordenada de notificaciones de evento (consulta la siguiente sección para más información acerca de cada evento):
 
-1. Antes de hacer cualquier otra cosa, difunde el evento ``kernel.request`` ---si alguno de los escuchas devuelve una ``Respuesta``, salta directamente al paso 8;
+#. Antes de hacer cualquier otra cosa, difunde el evento ``kernel.request`` ---si alguno de los escuchas devuelve una ``Respuesta``, salta directamente al paso 8;
 
-2. El mecanismo de resolución es llamado para determinar el controlador a ejecutar;
+#. El mecanismo de resolución es llamado para determinar el controlador a ejecutar;
 
-3. Los escuchas del evento ``kernel.controller`` ahora pueden manipular el controlador ejecutable como quieras (cambiarlo, envolverlo, ...);
+#. Los escuchas del evento ``kernel.controller`` ahora pueden manipular el controlador ejecutable como quieras (cambiarlo, envolverlo, ...);
 
-4. El núcleo verifica que el controlador en realidad es un *PHP* ejecutable válido;
+#. El núcleo verifica que el controlador en realidad es un *PHP* ejecutable válido;
 
-5. Se llama al mecanismo de resolución para determinar los argumentos a pasar al controlador;
+#. Se llama al mecanismo de resolución para determinar los argumentos a pasar al controlador;
 
-6. El ``Kernel`` llama al controlador;
+#. El ``núcleo`` llama al controlador;
 
-7. Si el controlador no devuelve una ``Respuesta``, los escuchas del evento ``kernel.view`` pueden convertir en ``Respuesta`` el valor devuelto por el Controlador;
+#. Si el controlador no devuelve una ``Respuesta``, los escuchas del evento ``kernel.view`` pueden convertir en ``Respuesta`` el valor devuelto por el Controlador;
 
-8. Los escuchas del evento ``kernel.response`` pueden manipular la ``Respuesta`` (contenido y cabeceras);
+#. Los escuchas del evento ``kernel.response`` pueden manipular la ``Respuesta`` (contenido y cabeceras);
 
-9. Devuelve la respuesta.
+#. Devuelve la respuesta.
 
 Si se produce una Excepción durante el procesamiento, difunde la ``kernel.exception`` y se da la oportunidad a los escuchas de convertir la excepción en una ``Respuesta``. Si esto funciona, se difunde el evento ``kernel.response``; si no, se vuelve a lanzar la excepción.
 
@@ -143,13 +142,13 @@ El tipo se pasa a todos los eventos y los escuchas pueden actuar en consecuencia
 Eventos
 ~~~~~~~
 
-Cada evento lanzado por el ``Kernel`` es una subclase de :class:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent`. Esto significa que cada evento tiene acceso a la misma información básica:
+Cada evento lanzado por el ``núcleo`` es una subclase de :class:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent`. Esto significa que cada evento tiene acceso a la misma información básica:
 
-* ``getRequestType()`` --- devuelve el *tipo* de la petición   (``HttpKernelInterface::MASTER_REQUEST`` o ``HttpKernelInterface::SUB_REQUEST``);
+* :method:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent::getRequestType` --- devuelve el *tipo* de la petición (``HttpKernelInterface::MASTER_REQUEST`` o ``HttpKernelInterface::SUB_REQUEST``);
 
-* ``getKernel()`` --- devuelve el ``Kernel`` que está procesando la petición;
+* :method:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent::getKernel` --- devuelve el núcleo que está procesando la petición;
 
-* ``getRequest()`` --- devuelve la ``Petición`` que se está procesando actualmente.
+* :method:`Symfony\\Component\\HttpKernel\\Event\\KernelEvent::getRequest` --- devuelve la ``Petición`` procesada actualmente.
 
 ``getRequestType()``
 ....................
@@ -179,7 +178,7 @@ Evento ``kernel.request``
 
 El objetivo de este evento es devolver inmediatamente un objeto ``Respuesta`` o variables de configuración para poder invocar un controlador después del evento. Cualquier escucha puede devolver un objeto ``Respuesta`` a través del método ``setResponse()`` en el evento. En este caso, todos los otros escuchas no serán llamados.
 
-Este evento lo utiliza el ``FrameworkBundle`` para llenar el atributo ``_controller`` de la ``Petición``, a través de :class:`Symfony\\Bundle\\FrameworkBundle\\EventListener\\RouterListener`. ``RequestListener`` usa un objeto :class:`Symfony\\Component\\Routing\\RouterInterface` para coincidir la ``Petición`` y determinar el nombre del controlador (guardado en el atributo ``_controller`` de la  ``Petición``).
+Este evento lo utiliza el ``FrameworkBundle`` para llenar el atributo ``_controller`` de la ``Petición``, a través de :class:`Symfony\\Bundle\\FrameworkBundle\\EventListener\\RouterListener`. ``RequestListener`` usa un objeto :class:`Symfony\\Component\\Routing\\RouterInterface` para emparejar la ``Petición`` y determinar el nombre del controlador (guardado en el atributo ``_controller`` de la  ``Petición``).
 
 .. index::
    single: Evento; kernel.controller
@@ -189,9 +188,7 @@ Evento ``kernel.controller``
 
 *Clase del evento*: :class:`Symfony\\Component\\HttpKernel\\Event\\FilterControllerEvent`
 
-Este evento no lo utiliza ``FrameworkBundle``, pero puede ser un punto de entrada para modificar el controlador que se debe ejecutar:
-
-.. code-block:: php
+Este evento no lo utiliza el ``FrameworkBundle``, pero puede ser un punto de entrada para modificar el controlador que se debe ejecutar::
 
     use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
 
@@ -223,7 +220,8 @@ El valor devuelto por el controlador es accesible a través del método ``getCon
     {
         $val = $event->getControllerResult();
         $response = new Response();
-        // De alguna manera modifica la respuesta desde el valor de retorno
+
+        // ... de alguna manera modifica la Respuesta desde el valor de retorno
 
         $event->setResponse($response);
     }
@@ -236,14 +234,13 @@ Evento ``kernel.response``
 
 *Clase del evento*: :class:`Symfony\\Component\\HttpKernel\\Event\\FilterResponseEvent`
 
-El propósito de este evento es permitir que otros sistemas modifiquen o sustituyan el objeto ``Respuesta`` después de su creación:
-
-.. code-block:: php
+El propósito de este evento es permitir que otros sistemas modifiquen o sustituyan el objeto ``Respuesta`` después de su creación::
 
     public function onKernelResponse(FilterResponseEvent $event)
     {
         $response = $event->getResponse();
-        // .. modifica el objeto Respuesta
+
+        // ... modifica el objeto Respuesta
     }
 
 El ``FrameworkBundle`` registra varios escuchas:
@@ -268,11 +265,9 @@ Evento ``kernel.exception``
 
 *Clase del evento*: :class:`Symfony\\Component\\HttpKernel\\Event\\GetResponseForExceptionEvent`
 
-``FrameworkBundle`` registra un :class:`Symfony\\Component\\HttpKernel\\EventListener\\ExceptionListener` el cual remite la ``Petición`` a un determinado controlador (el valor del parámetro ``exception_listener.controller`` --- debe estar en notación ``clase::método``---).
+``FrameworkBundle`` registra un :class:`Symfony\\Component\\HttpKernel\\EventListener\\ExceptionListener` el cual remite la ``Petición`` a un determinado controlador (el valor del parámetro ``exception_listener.controller`` ---debe estar en notación ``clase::método``---).
 
-Un escucha en este evento puede crear y establecer un objeto ``Respuesta``, crear y establecer un nuevo objeto ``Excepción``, o simplemente no hacer nada:
-
-.. code-block:: php
+Un escucha de este evento puede crear y configurar un objeto ``Respuesta``, crear y establecer un nuevo objeto ``Excepción``, o simplemente no hacer nada::
 
     use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
     use Symfony\Component\HttpFoundation\Response;
@@ -289,13 +284,19 @@ Un escucha en este evento puede crear y establecer un objeto ``Respuesta``, crea
         // $event->setException($exception);
     }
 
+.. note::
+
+    Debido a que *Symfony* se asegura de que el código de estado de la ``Respuesta`` se ajusta al más adecuado dependiendo de la excepción, establecer el estado de la respuesta no funcionará. Si quieres reescribir el código de estado (no deberías, sin una buena razón), configurar la cabecera ``X-Status-Code``::
+
+        return new Response('Error', 404 /* ignored */, array('X-Status-Code' => 200));
+
 .. index::
    single: Despachador de evento
 
 El despachador de eventos
 -------------------------
 
-El despachador de eventos es un componente independiente que es el responsable de mucha de la lógica y flujo subyacente detrás de una petición *Symfony*. Para más información consulta la documentación del :doc:`Componente despachador de eventos </components/event_dispatcher/introduction>`.
+El despachador de eventos es un componente independiente y es el responsable de mucha de la lógica y flujo subyacente detrás de una petición *Symfony*. Para más información consulta la documentación del :doc:`Componente despachador de eventos </components/event_dispatcher/introduction>`.
 
 .. index::
    single: Generador de perfiles
@@ -328,7 +329,7 @@ Si el resumen presentado por las herramientas de la barra de depuración web no 
 
 .. note::
 
-    Si no se puede hacer clic en el enlace, significa que las rutas del generador de perfiles no están registradas (más abajo hay información de configuración).
+    Si no se puede hacer clic en el enlace, significa que las rutas del generador de perfiles no están registradas (más adelante hay información de configuración).
 
 Analizando datos del perfil con el generador de perfiles web
 ............................................................
@@ -341,7 +342,7 @@ El generador de perfiles web es una herramienta de visualización para perfilar 
 Accediendo a información del generador de perfiles
 ..................................................
 
-No es necesario utilizar el visualizador predeterminado para acceder a la información de perfiles. Pero ¿cómo se puede recuperar información de perfiles de una petición específica después del hecho? Cuando el generador de perfiles almacena datos sobre una ``Petición``, también le asocia un símbolo; esta muestra está disponible en la cabecera *HTTP* ``X-Debug-Token`` de la Respuesta::
+No es necesario utilizar el visualizador predeterminado para acceder a la información de perfiles. Pero ¿cómo se puede recuperar información del perfil de una petición específica después del hecho? Cuando el generador de perfiles almacena datos sobre una ``Petición``, también le asocia una ficha; esta ficha está disponible en la cabecera *HTTP* ``X-Debug-Token`` de la Respuesta::
 
     $profile = $container->get('profiler')->loadProfileFromResponse($response);
 
@@ -349,20 +350,20 @@ No es necesario utilizar el visualizador predeterminado para acceder a la inform
 
 .. tip::
 
-    Cuando el generador de perfiles está habilitado pero no la barra de herramientas de depuración *web*, o cuando desees obtener el símbolo de una petición *Ajax*, utiliza una herramienta como *Firebug* para obtener el valor de la cabecera *HTTP* ``X-Debug-Token``.
+    Cuando el generador de perfiles está habilitado pero no la barra de herramientas de depuración *web*, o cuando desees obtener la ficha de una petición *Ajax*, utiliza una herramienta como *Firebug* para obtener el valor de la cabecera *HTTP* ``X-Debug-Token``.
 
-Usa el método ``find()`` para acceder a elementos basándose en algún criterio::
+Usa el método :method:`Symfony\\Component\\HttpKernel\\Profiler\\Profiler::find` para acceder a elementos basándose en algún criterio::
 
-    // consigue los 10 últimas fragmentos
+    // consigue las 10 últimas fichas
     $tokens = $container->get('profiler')->find('', '', 10);
 
-    // consigue los 10 últimos fragmentos de todas las URL que contienen /admin/
+    // consigue las 10 últimas fichas de todas las URL que contienen /admin/
     $tokens = $container->get('profiler')->find('', '/admin/', 10);
 
-    // consigue los 10 últimos fragmentos de peticiones locales
+    // consigue las 10 últimas fichas de peticiones locales
     $tokens = $container->get('profiler')->find('127.0.0.1', '', 10);
 
-Si deseas manipular los datos del perfil en una máquina diferente a la que generó la información, utiliza los métodos ``export()`` e ``import()``::
+Si deseas manipular los datos del perfil en una máquina diferente a la que generó la información, utiliza los métodos :method:`Symfony\\Component\\HttpKernel\\Profiler\\Profiler::export` e :method:`Symfony\\Component\\HttpKernel\\Profiler\\Profiler::import`::
 
     // en la máquina en producción
     $profile = $container->get('profiler')->loadProfile($token);
@@ -391,7 +392,6 @@ La configuración predeterminada de *Symfony2* viene con ajustes razonables para
         web_profiler:
             toolbar: true
             intercept_redirects: true
-            verbose: true
 
     .. code-block:: xml
 
@@ -428,8 +428,6 @@ Cuando ``only-exceptions`` se establece a ``true``, el generador de perfiles só
 
 Cuando ``intercept-redirects`` está establecido en ``true``, el generador de perfiles web intercepta las redirecciones y te da la oportunidad de analizar los datos recogidos antes de seguir la redirección.
 
-Cuando ``verbose`` está establecido en ``true``, la barra de herramientas de depuración web muestra una gran cantidad de información. Configurar ``verbose`` a ``false`` oculta algo de información secundaria para hacer más corta la barra de herramientas.
-
 Si activas el generador de perfiles web, también es necesario montar las rutas de los perfiles:
 
 .. configuration-block::
@@ -448,7 +446,7 @@ Si activas el generador de perfiles web, también es necesario montar las rutas 
 
         $collection->addCollection($loader->import("@WebProfilerBundle/Resources/config/routing/profiler.xml"), '/_profiler');
 
-Dado que el generador de perfiles añade algo de sobrecarga, posiblemente desees activarlo sólo bajo ciertas circunstancias en el entorno de producción. La configuración ``only-exceptions`` limita al generador de perfiles a 500 páginas, ¿pero si quieres obtener información cuando el cliente *IP* proviene de una dirección específica, o para una parte limitada de la página web? Puedes utilizar una emparejadora de petición:
+Dado que el generador de perfiles añade algo de sobrecarga, posiblemente desees activarlo sólo bajo ciertas circunstancias en el entorno de producción. La configuración ``only-exceptions`` limita al generador de perfiles a 500 páginas, ¿pero si quieres obtener información cuando la *IP* cliente proviene de una dirección específica, o para una porción limitada del sitio web? Puedes utilizar una emparejadora de petición:
 
 .. configuration-block::
 
@@ -469,7 +467,7 @@ Dado que el generador de perfiles añade algo de sobrecarga, posiblemente desees
             profiler:
                 matcher: { ip: 192.168.0.0/24, path: "^/admin/" }
 
-        # usa una instancia emparejadora personalizada definida en el servicio "custom_matcher"
+        # usa una instancia emparejadora personalizada definida en el servicio 'custom_matcher'
         framework:
             profiler:
                 matcher: { service: custom_matcher }
@@ -527,7 +525,7 @@ Dado que el generador de perfiles añade algo de sobrecarga, posiblemente desees
             ),
         ));
 
-        # usa una instancia emparejadora personalizada definida en el servicio "custom_matcher"
+        # usa una instancia emparejadora personalizada definida en el servicio 'custom_matcher'
         $container->loadFromExtension('framework', array(
             'profiler' => array(
                 'matcher' => array('service' => 'custom_matcher'),

@@ -1,0 +1,44 @@
+.. index::
+   single: Config; Almacenamiento en caché basado en recursos
+
+Almacenamiento en caché basado en recursos
+==========================================
+
+Al cargar todos los recursos de configuración, posiblemente desees procesar los valores de configuración y combinarlos en un solo archivo. Este archivo actúa como la memorización en caché. Su contenido no se tiene que regenerar cada vez que ejecutas la aplicación - sólo cuando se modifican los recursos de configuración.
+
+Por ejemplo, el componente de enrutamiento de Symfony permite cargar todas las rutas, y luego volcar un comparador de URL o un generador de URL basándose en estas rutas. En este caso, cuando uno de los recursos se ha modificado (y estás trabajando en un entorno de desarrollo), debes invalidar el archivo generado y regenerarlo.
+Esto se puede lograr usando la clase :class:`Symfony\\Component\\Config\\ConfigCache`.
+
+El siguiente ejemplo muestra cómo recolectar los recursos, luego generar algún código basado en los recursos que se han cargado, y escribir el código en la memoria caché. La memoria caché también recibe la colección de recursos que se utilizaron para generar el código. Al mirar la marca de tiempo de la "última modificación" de esos recursos, puedes saber si la caché aún está fresca o que debes regenerar su contenido::
+
+    use Symfony\Component\Config\ConfigCache;
+    use Symfony\Component\Config\Resource\FileResource;
+
+    $cachePath = __DIR__.'/cache/appUserMatcher.php';
+
+    // el segundo argumento indica cuando o no deseas usar el modo de depuración
+    $userMatcherCache = new ConfigCache($cachePath, true);
+
+    if (!$userMatcherCache->isFresh()) {
+        // llénalo con un arreglo de rutas de los archivos 'users.yml'
+        $yamlUserFiles = ...;
+
+        $resources = array();
+
+        foreach ($yamlUserFiles as $yamlUserFile) {
+            // ver el artículo anterior «Cargando recursos» para
+            // ver de dónde proviene $delegatingLoader
+            $delegatingLoader->load($yamlUserFile);
+            $resources[] = new FileResource($yamlUserFile);
+        }
+
+        // el código del UserMatcher se genera en otros lugares
+        $code = ...;
+
+        $userMatcherCache->write($code, $resources);
+    }
+
+    // posiblemente desees requerir el código almacenado en caché:
+    require $cachePath;
+
+En modo de depuración, se creará un archivo ``.meta`` en el mismo directorio que el propio archivo de caché. Este archivo ``.meta`` contiene los recursos serializados, cuya marca de tiempo se utiliza para determinar si la caché todavía está fresca. Cuando no estás en modo de depuración, la caché se considera que es «fresca» tan pronto como existe, y por lo tanto no se generará el archivo ``.meta``.

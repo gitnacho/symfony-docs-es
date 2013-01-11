@@ -1,0 +1,113 @@
+``SimpleCmsBundle``
+===================
+
+El `SimpleCmsBundle <https://github.com/symfony-cmf/SimpleCmsBundle#readme>`_ proporciona un *CMS* simplista sobre los componentes y paquetes del ``CMF``.
+
+Si bien los componentes del núcleo del *CMF* se enfocan en la flexibilidad, el simple *CMS* especula con alguna de esa flexibilidad a favor de la simplicidad.
+
+.. index:: SimpleCmsBundle, i18n
+
+Dependencias
+------------
+
+Tal como se especifica en el archivo :file:`composer.json` este paquete depende de muchos de los paquetes del *CMF*.
+
+Configurando
+------------
+
+La clave de configuración para este paquete es ``symfony_cmf_simple_cms``.
+
+La opción ``use_menu`` automáticamente habilita un servicio para proporcionar los menús del simple *CMS* si ``MenuBundle`` está habilitado. También lo puedes desactivar explícitamente si tienes el paquete ``menu`` pero no quieres utilizar el servicio predefinido, o habilitarlo explícitamente para conseguir un error si el paquete ``menu`` se vuelve inasequible.
+
+La sección de enrutado define cual plantilla o controlador utilizar para una clase de contenido. Esta reutiliza lo que hace el enrutado extra, por favor ve la :ref:`sección de configuración de enrutado <routing-route-enhancer>` correspondiente. También explica el ``generic_controller``.
+
+Ve la sección para soporte multilingüe más adelante.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_simple_cms:
+            use_menu:             auto # usa true/false para forzar provisión / no provisión de un menú
+            use_sonata_admin:     auto # usa true/false para forzar el uso / no uso de
+                                    # la administración de sonata
+            document_class:       Symfony\Cmf\Bundle\SimpleCmsBundle\Document\Page
+                                    # controlador a usar para dibujar documentos
+                                    # únicamente con plantilla personalizada
+            generic_controller:   symfony_cmf_content.controller:indexAction
+            # dónde almacenar las páginas en el árbol PHPCR
+            basepath:             /cms/simple
+            routing:
+                content_repository_id:  symfony_cmf_routing_extra.content_repository
+                controllers_by_class:
+                    # ...
+                templates_by_class:
+                    # ...
+            multilang:
+                locales:              []
+
+.. tip::
+
+    Si tienes habilitada la administración *PHPCR-ODM* de ``Sonata`` pero *NO* quieres mostrar la administración predefinida proporcionada por este paquete, puedes añadir lo siguiente a tu configuración:
+
+    .. configuration-block::
+
+        .. code-block:: yaml
+
+            symfony_cmf_simple_cms:
+                use_sonata_admin: false
+
+Soporte multilingüe
+-------------------
+
+El modo ``multi-language-mode`` se habilita proporcionando la lista de regiones permitidas en el campo ``multilang > locales``.
+
+En ``multi-language-mode`` el paquete automáticamente utilizará ``Symfony\Cmf\Bundle\SimpleCmsBundle\Document\MultilangPage`` como la ``document_class`` a no ser que explícitamente esté configurada una clase diferente.
+
+Esta clase  de manera predeterminada prefijará todas las rutas con ``/{_locale}``. Este comportamiento se puede desactivar poniendo a ``false`` el segundo parámetro en el constructor del modelo.
+
+Además, la capa de enrutado será configurada para utilizar ``Symfony\Cmf\Bundle\SimpleCmsBundle\Document\MultilangRouteRepository`` la cuál garantizará que incluso con el prefijo ``locale`` el nodo de contenido correcto será encontrado. Además, automáticamente añade un ``_locale`` el requisito enumerando las regiones actualmente disponibles para la ruta emparejada.
+
+.. note::
+
+    Debido a que ``SimpleCmsBundle`` sólo proporciona una sencilla estructura de árbol, todos los nodos tendrán el mismo nombre de nodo para todos los idiomas. Así que una *url* ``http://foo.com/en/bar`` para contenido en inglés se vería cómo ``http://foo.com/de/bar`` para contenido en alemán. A veces puede ser más factible utilizar enteros como nombres de nodo y sencillamente anexarlos al título del nodo en la región dada como una ancla. Así por ejemplo ``http://foo.com/de/1#my title`` y ``http://foo.com/de/1#mein title``.
+    Si necesitas las *URL* específicas al idioma, quieres usar el enrutado del paquete *CMF* y el paquete de contenido directamente para tener un documento de ruta separado por idioma.
+
+
+Reproduciendo
+-------------
+
+Puedes especificar la plantilla para reproducir una página del ``SimpleCms``, o utilizar un controlador donde luego proporciones el documento de página a la plantilla. Un sencillo ejemplo para tal plantilla es este:
+
+
+.. code-block:: jinja
+
+    {% block content %}
+
+        <h1>{{ page.title }}</h1>
+
+        <div>{{ page.body|raw }}</div>
+
+        <ul>
+        {% foreach tag in page.tags %}
+            <li>{{ tag }}</li>
+        {% endforeach %}
+        </ul>
+
+    {% endblock %}
+
+
+Si tienes habilitado el ``CreateBundle``, también puedes producir el documento con anotaciones *RDF*, permitiéndote editar el contenido así como las etiquetas en la interfaz de usuario. La forma más sencilla es el siguiente bloque de *Twig*:
+
+.. code-block:: jinja
+
+    {% block content %}
+
+        {% createphp page as="rdf" %}
+            {{ rdf|raw }}
+        {% endcreatephp %}
+
+    {% endblock %}
+
+Si quieres un control más detallado se tendría que mostrar con *RDF*, ve el capítulo :doc:`create`.

@@ -1,0 +1,126 @@
+Instalando y configurando el núcleo del ``CMF``
+===============================================
+
+El objetivo de esta guía es instalar los componentes mínimos necesarios (el «núcleo») del ``CMF`` con la mínima configuración requerida. A partir de aquí, puedes empezar a incorporar en tu aplicación la funcionalidad del ``CMF`` que necesites.
+
+Esta guía está dirigida a usuarios experimentados que quieren conocer todos los
+detalles sobre el ``CMF`` de *Symfony*. Si este es tu primer encuentro con el ``CMF`` de *Symfony* es buena idea empezar con:
+
+- La página :doc:`../getting-started/installing-symfony-cmf` para instrucciones sobre cómo instalar rápidamente el ``CMF`` (recommendada para desarrolladores)
+- :doc:`../cookbook/installing-cmf-sandbox` para instrucciones sobre cómo instalar una demostración del recinto de seguridad.
+
+.. index:: RoutingExtraBundle, CoreBundle, MenuBundle, ContentBundle, SonataBlockBundle, KnpMenuBundle, instalando
+
+Requisitos previos
+------------------
+
+- `Instalando Symfony2 <http://gitnacho.github.com/symfony-docs-es/book/installation.html>`_ (2.1.x)
+- :doc:`installing-configuring-doctrine-phpcr-odm`
+
+Instalando
+----------
+
+Descarga los paquetes
+~~~~~~~~~~~~~~~~~~~~~
+
+Añade lo siguiente a tu archivo :file:`composer.json`:
+
+.. code-block:: javascript
+
+    "minimum-stability": "dev",
+    "require": {
+        ...
+        "symfony-cmf/symfony-cmf": "1.0.*"
+    }
+
+Y luego ejecuta:
+
+.. code-block:: bash
+
+    php composer.phar update
+
+
+Iniciando paquetes
+~~~~~~~~~~~~~~~~~~
+
+Luego, inicia los paquetes en :file:`AppKernel.php` añadiéndolos al método ``registerBundles``:
+
+.. code-block:: php
+
+    // app/AppKernel.php
+
+    public function registerBundles()
+    {
+        $bundles = array(
+            // ...
+
+            new Symfony\Cmf\Bundle\RoutingExtraBundle\SymfonyCmfRoutingExtraBundle(),
+            new Symfony\Cmf\Bundle\CoreBundle\SymfonyCmfCoreBundle(),
+            new Symfony\Cmf\Bundle\MenuBundle\SymfonyCmfMenuBundle(),
+            new Symfony\Cmf\Bundle\ContentBundle\SymfonyCmfContentBundle(),
+            new Symfony\Cmf\Bundle\BlockBundle\SymfonyCmfBlockBundle(),
+
+            // Dependencias del SymfonyCmfMenuBundle
+            new Knp\Bundle\MenuBundle\KnpMenuBundle(),
+
+            // Dependencias del SymfonyCmfBlockBundle
+            new Sonata\BlockBundle\SonataBlockBundle(),
+        );
+
+        // ...
+    }
+
+.. note::
+
+    Esto también habilita el *PHPCR-ODM* y dependencias relacionadas; las instrucciones de configuración se pueden encontrar en la documentación dedicada.
+
+
+Configurando
+------------
+
+Para lograr que tu aplicación funcione, es muy poca la configuración necesaria.
+
+Configuración mínima
+~~~~~~~~~~~~~~~~~~~~
+
+Estos pasos son necesarios para garantizar que tu ``AppKernel`` todavía se ejecuta.
+
+Si no lo has hecho ya, asegúrate de que has seguido estos pasos en :doc:`installing-configuring-doctrine-phpcr-odm`:
+
+
+- Inicia el ``DoctrinePHPCRBundle`` en :file:`app/AppKernel.php`
+- Asegúrate que hay una sección ``doctrine_phpcr:`` en :file:`app/config/config.yml`
+- Y la línea ``AnnotationRegistry::registerFile`` en :file:`app/autoload.php`
+
+Configura el ``BlockBundle`` en tu archivo :file:`config.yml`:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        sonata_block:
+            default_contexts: [cms]
+
+Configuración adicional
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Puesto que la mayoría de los componentes del ``CMF`` utilizan el ``DynamicRouter`` del ``RoutingExtraBundle``, el cual de manera predeterminada no se carga, necesitarás habilitarlo de la siguiente manera:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        symfony_cmf_routing_extra:
+            chain:
+                routers_by_id:
+                    symfony_cmf_routing_extra.dynamic_router: 200
+                    router.default: 100
+            dynamic:
+                enabled: true
+
+Podrías querer configurar más en el enrutador dinámico, es decir escoger automáticamente los controladores basados en contenido.
+Ve :doc:`../bundles/routing-extra` para detalles.
+
+Por ahora esta es la única configuración que necesitamos. Dominar la configuración de los diferentes paquetes será el tema de otras guías. Si estás buscando la configuración de un paquete específico dale un vistazo al :doc:`artículo del paquete <../index>` correspondiente.

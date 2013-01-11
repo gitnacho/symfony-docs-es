@@ -1,0 +1,96 @@
+Instalando la edición estándar del ``CMF`` de *Symfony*
+=======================================================
+
+El objetivo de esta guía es instalar todos los componentes del ``CMF`` con la configuración mínima necesaria y algunos muy sencillos ejemplos en una aplicación *Symfony2* en funcionamiento. Esto se suele usar para familiarizarte con el ``CMF`` o para utilizarlo como punto de partida para personalizar una nueva aplicación.
+
+Si este es tu primer encuentro con el ``CMF`` de *Symfony* sería buena idea darle un vistazo primero a:
+
+- `El concepto <http://slides.liip.ch/static/2012-01-17_symfony_cmf_big_picture.html#1>`_
+- La demostración en línea del recinto de seguridad en `cmf.liip.ch <http://cmf.liip.ch>`_
+
+.. note::
+
+    Para otras guías de instalación del ``CMF`` de *Symfony*, por favor, consulta:
+    - El artículo :doc:`../cookbook/installing-cmf-sandbox` en el recetario para instrucciones sobre cómo instalar un ejemplo de una demostración más completa del ``CMF`` de *Symfony*.
+    - :doc:`../tutorials/installing-cmf-core` para instrucciones de instalación paso a paso y detalles de configuración de los componentes necesarios del núcleo en una aplicación de *Symfony* existente.
+
+.. index:: Edición estándar, instalando
+
+Requisitos previos
+------------------
+
+Debido a que el ``CMF`` de *Symfony* está basado en *Symfony2*, deberías asegurarte de que cubres los `Requisitos para que funcione Symfony2 <http://gitnacho.github.com/symfony-docs-es/reference/requirements.html>`_.
+Además, necesitas tener instalada la extensión *PDO* de `SQLite <http://www.sqlite.org/>`_  (``pdo_sqlite``), puesto que esta se utiliza como el medio de almacenamiento predeterminado.
+
+.. note::
+
+    De manera predeterminada, el ``CMF`` de *Symfony* utiliza *Jackalope* + *DBAL* de *Doctrine* y *SQLite* como *BD* subyacente. No obstante, el ``CMF`` de *Symfony* es de almacenamiento agnóstico, lo cual significa que puedes utilizar uno de varios mecanismos de almacenamiento de datos disponibles sin tener que reescribir tu código. Para más información en los diferentes mecanismos disponibles y cómo instalarlos y configurarlos, consulta el :doc:`../tutorials/installing-configuring-doctrine-phpcr-odm`
+
+`Git <http://git-scm.com/>`_ y `Curl <http://curl.haxx.se/>`_ también son necesarios para seguir los pasos de instalación enumerados más adelante.
+
+
+Instalando
+----------
+
+La manera más fácil de instalar el ``CMF`` de *Symfony* es utilizando `Composer <http://getcomposer.org/>`_.
+Consíguelo usando:
+
+.. code-block:: bash
+
+    curl -s http://getcomposer.org/installer | php --
+
+Y luego consigue el código del ``CMF`` de *Symfony* con él (esto puede tomar un buen rato)
+
+.. code-block:: bash
+
+    php composer.phar create-project symfony-cmf/standard-edition ↓
+                      <ruta-de-instalación> --stability=dev
+    mv composer.phar <ruta-de-instalación>/.
+    cd <ruta-de-instalación>
+
+.. note::
+
+    En realidad es recomendable mover :file:`composer.phar` al directorio :file:`bin` de tu sistema de archivos, con el fin de que puedas acceder a la orden desde cualquier directorio.
+
+La ``<ruta-de-instalación>`` debe estar dentro del directorio raíz de tu servidor *web* o tienes que configurar un anfitrión virtual para ``<ruta-de-instalación>``.
+
+Esto clonará la edición estándar e instalará todas las dependencias y ejecutará algunas órdenes iniciales.
+Estas órdenes requieren permisos de escritura en los directorios :file:`app/cache` y :file:`app/logs`. En caso de que al final las órdenes terminen dando errores de permisos, por favor sigue las `directrices en la documentación oficial <http://gitnacho.github.com/symfony-docs-es/book/installation.html#configuration-and-setup>`_ para configurar los permisos y luego ejecuta la orden ``composer.phar install`` mencionada abajo.
+
+Si lo prefieres, también puedes clonar el proyecto directamente:
+
+.. code-block:: bash
+
+    git clone git://github.com/symfony-cmf/symfony-cmf-standard.git <nombre-dir>
+    cd <nombre-dir>
+
+Si ocurrieron problemas durante la orden ``create-project``, o si utilizaste ``git clone`` o si después activaste una versión anterior (con ``checkout``), siempre ejecuta la siguiente orden para actualizar las dependencias:
+
+.. code-block:: bash
+
+    php composer.phar install
+
+El siguiente paso es configurar la base de datos, si quieres usar *SQLite* como tu servidor de base de datos sólo continúa y ejecuta las siguientes ordenes:
+
+.. code-block:: bash
+
+    app/console doctrine:database:create
+    app/console doctrine:phpcr:init:dbal
+    app/console doctrine:phpcr:register-system-node-types
+    app/console doctrine:phpcr:fixtures:load
+
+Esto creará un archivo llamado :file:`app.sqlite` dentro de tu directorio :file:`app`, el cual contiene la base de datos.
+
+El proyecto ahora tendría que estar accesible en tu servidor *web*. Si tienes instalado *PHP 5.4*, alternativamente puedes utilizar el servidor *web* interno de *PHP*:
+
+.. code-block:: bash
+
+    app/console server:run
+
+Y entonces accede al ``CMF`` vía:
+
+.. code-block:: text
+
+    http://localhost:8000
+
+Si prefieres utilizar otro servidor de base de datos, por ejemplo *MySQL*, ejecuta el configurador (apunta tu navegador a ``/web/config.php``) o configura tus parámetros de conexión a la base de datos en el archivo :file:`app/config/parameters.yml`. Asegúrate de dejar la propiedad ``database_path`` en ``null`` para utilizar otro controlador distinto a *SQLite*. Dejar el campo en blanco en el configurador *web* lo debería poner a ``null``.

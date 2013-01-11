@@ -1,0 +1,34 @@
+Usando una clase documento personalizada asociada con *PHPCR-ODM*
+=================================================================
+
+El asignador predefinido para la clase ``document`` *PHPCR-ODM* utiliza el atributo ``phpcr:class`` para almacenar y recuperar la clase ``documento`` de un nodo. Cuándo accedes a un repositorio *PHPCR* existente, podrías necesitar diferente lógica para decidir en la clase.
+
+Puedes extender el ``DocumentClassMapper`` o implementar la ``DocumentClassMapperInterface`` desde el principio. Los métodos importantes son ``getClassName`` que se necesita para encontrar el nombre de clase y ``writeMetadata`` que se necesita para garantizar que la clase de un nuevo documento almacenado se puede determinar al cargarlo de nuevo.
+
+Luego, puedes sustituir el servicio ``doctrine.odm_configuration`` para llamar a ``setDocumentClassMapper`` en él. Un ejemplo del `recinto de seguridad del CMF de Symfony`_ (rama de magnolia_integration):
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # Resources/config/services.yml
+
+        # Si quieres sobrescribir la configuración predefinida, de lo contrario utiliza
+        # un nombre personalizado y pónlo en el bloque de configuración del odm
+
+        doctrine.odm_configuration:
+            class: %doctrine_phpcr.odm.configuration.class%
+            calls:
+                - [ setDocumentClassMapper, [@sandbox_magnolia.odm_mapper] ]
+
+        sandbox_magnolia.odm_mapper:
+            class: "Sandbox\MagnoliaBundle\Document\MagnoliaDocumentClassMapper"
+            arguments:
+                - 'standard-templating-kit:pages/stkSection': 'Sandbox\MagnoliaBundle\Document\Section'
+
+Aquí creamos una asociación que usa una configuración para leer información del nodo y se asocia a una clase ``documento``.
+
+Si tienes varios repositorios, puedes usar una configuración por repositorio.
+Ve :ref:`multiple-phpcr-sessions`.
+
+.. _`recinto de seguridad del CMF de Symfony`: https://github.com/symfony-cmf/cmf-sandbox/tree/magnolia_integration

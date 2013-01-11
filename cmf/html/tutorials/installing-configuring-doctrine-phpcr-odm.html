@@ -1,0 +1,350 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Instalando y configurando Doctrine y PHPCR-ODM &mdash; Symblog</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/translations.js"></script>
+    <link rel="top" title="Symblog" href="../index.html" />
+    <link rel="next" title="Instalando y configurando el SimpleCmsBundle" href="installing-configuring-simple-cms.html" />
+    <link rel="prev" title="Eligiendo una capa de almacenamiento" href="choosing-a-storage-layer.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="installing-configuring-simple-cms.html" title="Instalando y configurando el SimpleCmsBundle"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="choosing-a-storage-layer.html" title="Eligiendo una capa de almacenamiento"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../index.html">Symblog</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="instalando-y-configurando-doctrine-y-phpcr-odm">
+<h1>Instalando y configurando <em>Doctrine</em> y <em>PHPCR-ODM</em><a class="headerlink" href="#instalando-y-configurando-doctrine-y-phpcr-odm" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony2</em> necesita almacenar el contenido en algún lugar. Muchos de los paquetes proporcionan documentos y asignación para el contenido del repositorio <em>PHP</em> &#8212; Asignación para el objeto documento (<em>PHPCR-ODM</em>), y la documentación que actualmente está basada en torno a la utilización de este. Aun así, también tiene que ser posible utilizar otra forma de almacenamiento para el contenido, como otro <em>ORM/ODM</em> o <em>MongoDB</em>.</p>
+<p>El objetivo de esta guía es instalar y configurar <em>Doctrina</em> y <em>PHPCR-ODM</em>, listo para que empieces
+con el <tt class="docutils literal"><span class="pre">CMF</span></tt>.</p>
+<p>Para más detalles ve la <a class="reference external" href="http://www.doctrine-project.org/projects/phpcr-odm.html">documentación oficial de PHPCR-ODM</a>.
+Puedes encontrar alguna información adicional en el <a class="reference external" href="https://github.com/doctrine/DoctrinePHPCRBundle">repositorio git del proyecto DoctrinePhpcrBundle</a>, el cual mayoritariamente imita al <a class="reference external" href="https://github.com/doctrine/DoctrineBundle">DoctrineBundle</a> estándar.</p>
+<p>Finalmente para información sobre <em>PHPCR</em> ve el <a class="reference external" href="http://phpcr.github.com">sitio web oficial PHPCR</a>.</p>
+<div class="section" id="requisitos-previos">
+<span id="index-0"></span><h2>Requisitos previos<a class="headerlink" href="#requisitos-previos" title="Enlazar permanentemente con este título">¶</a></h2>
+<ul class="simple">
+<li>php &gt;= 5.3</li>
+<li>libxml versión &gt;= 2.7.0 (debido a un error en libxml <a class="reference external" href="http://bugs.php.net/bug.php?id=36501">http://bugs.php.net/bug.php?id=36501</a>)</li>
+<li>phpunit &gt;= 3.6 (si quieres ejecutar las pruebas)</li>
+<li>Symfony2 (versión 2.1.x)</li>
+</ul>
+</div>
+<div class="section" id="instalando">
+<h2>Instalando<a class="headerlink" href="#instalando" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="escogiendo-un-repositorio-para-el-contenido">
+<h3>Escogiendo un repositorio para el contenido<a class="headerlink" href="#escogiendo-un-repositorio-para-el-contenido" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La primer cosa a decidir es qué repositorio de contenido utilizar. Un repositorio de contenido esencialmente es una base de datos que será la responsable para almacenar todo el contenido que quieras persistir. Este proporciona una <em>API</em> optimizada para las necesidades de un <em>CMS</em> (estructuras de árbol, referencias, versionado, completa búsqueda
+de texto, etc.). Si bien, cada repositorio de contenido puede tener requisitos y características de rendimiento muy diferentes, la <em>API</em> es igual para todos ellos.</p>
+<p>Además, debido a que la <em>API</em> define un formato de importación/exportación, siempre puedes cambiar a una
+diferente implementación del repositorio de contenido más tarde.</p>
+<p>Estas son las opciones disponibles:</p>
+<ul class="simple">
+<li><strong>Jackalope con Jackrabbit</strong> (Jackrabbit requiere Java, este puede persistir al sistema de archivos, a una base de datos, etc.)</li>
+<li><strong>Jackalope con DBAL de Doctrine</strong> (requiere un <em>RDBMS</em> como <em>MySQL</em>, <em>PostgreSQL</em> o <em>SQLite</em>)</li>
+<li><strong>Midgard</strong> (Requiere la extensión <tt class="docutils literal"><span class="pre">midgard2</span></tt> de <em>PHP</em> y un <em>RDBMS</em> como <em>MySQL</em>, <em>PostgreSQL</em> o <em>SQLite</em>)</li>
+</ul>
+<p>La siguiente documentación incluye ejemplos para todas las opciones de arriba.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Si justo estás empezando con el <tt class="docutils literal"><span class="pre">CMF</span></tt>, es mejor escoger un repositorio de contenido basado en un motor de almacenamiento con el cual ya estés familiarizado. Por ejemplo, <strong>Jackalope con DBAL de Doctrine</strong> trabajará con tu <em>RDBMS</em> existente y no requiere instalar <em>Java</em> o la extensión <tt class="docutils literal"><span class="pre">midgard2</span></tt> de <em>PHP</em>. Una vez que tienes una aplicación trabajando debe ser fácil cambiar a otra opción.</p>
+</div>
+</div>
+<div class="section" id="descarga-los-paquetes">
+<h3>Descarga los paquetes<a class="headerlink" href="#descarga-los-paquetes" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Añade lo siguiente a tu archivo <tt class="file docutils literal"><span class="pre">composer.json</span></tt>, dependiendo del repositorio de contenido que hayas escogido.</p>
+<div class="line-block">
+<div class="line"><strong>Jackalope con Jackrabbit</strong></div>
+</div>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="s2">&quot;minimum-stability&quot;</span><span class="o">:</span> <span class="s2">&quot;dev&quot;</span><span class="p">,</span>
+<span class="s2">&quot;require&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="p">...</span>
+    <span class="s2">&quot;jackalope/jackalope-jackrabbit&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;doctrine/phpcr-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;doctrine/phpcr-odm&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="line-block">
+<div class="line"><strong>Jackalope con Doctrine DBAL</strong></div>
+</div>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="s2">&quot;minimum-stability&quot;</span><span class="o">:</span> <span class="s2">&quot;dev&quot;</span><span class="p">,</span>
+<span class="s2">&quot;require&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="p">...</span>
+    <span class="s2">&quot;jackalope/jackalope-doctrine-dbal&quot;</span><span class="o">:</span> <span class="s2">&quot;dev-master&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;doctrine/phpcr-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;doctrine/phpcr-odm&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Midgard</strong></p>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="s2">&quot;minimum-stability&quot;</span><span class="o">:</span> <span class="s2">&quot;dev&quot;</span><span class="p">,</span>
+<span class="s2">&quot;require&quot;</span><span class="o">:</span> <span class="p">{</span>
+    <span class="p">...</span>
+    <span class="s2">&quot;midgard/phpcr&quot;</span><span class="o">:</span> <span class="s2">&quot;dev-master&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;doctrine/phpcr-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;doctrine/phpcr-odm&quot;</span><span class="o">:</span> <span class="s2">&quot;1.0.*&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Para todo lo anterior, si también estás utilizando el <em>ORM</em> de <em>Doctrine</em>, asegúrate de usar <tt class="docutils literal"><span class="pre">&quot;doctrine/orm&quot;:</span> <span class="pre">&quot;2.3.*&quot;</span></tt>, o de lo contrario <tt class="docutils literal"><span class="pre">composer</span></tt> no podrá resolver las dependencias cuando <em>Doctrine</em> dependa del <em>PHPCR-ODM</em> más nuevo de <em>Doctrine 2.3</em>. (la edición estándar de <em>Symfony 2.1</em> utiliza «2.2.*».)</p>
+</div>
+<p>Para instalar las dependencias anteriores, ejecuta:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php composer.phar update
+</pre></div>
+</div>
+</div>
+<div class="section" id="registrando-anotaciones">
+<h3>Registrando anotaciones<a class="headerlink" href="#registrando-anotaciones" title="Enlazar permanentemente con este título">¶</a></h3>
+<p><em>PHPCR-ODM</em> usa anotaciones y es necesario registrarlas en tu archivo <tt class="file docutils literal"><span class="pre">app/autoload.php</span></tt>. Añade la siguiente línea, inmediatamente después de la última línea <tt class="docutils literal"><span class="pre">AnnotationRegistry::registerFile</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="x">   // app/autoload.php</span>
+
+<span class="x">   // ...</span>
+<span class="x">AnnotationRegistry::registerFile(__DIR__.&#39;/../vendor/doctrine/phpcr-odm/lib/Doctrine/ODM/PHPCR/Mapping/Annotations/DoctrineAnnotations.php&#39;);</span>
+<span class="x">   // ...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="iniciando-los-paquetes">
+<h3>Iniciando los paquetes<a class="headerlink" href="#iniciando-los-paquetes" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Luego, inicia los paquetes en el archivo <tt class="file docutils literal"><span class="pre">app/AppKernel.php</span></tt> añadiéndolos al método <tt class="docutils literal"><span class="pre">registerBundle</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="x">// app/AppKernel.php</span>
+
+<span class="x">public function registerBundles()</span>
+<span class="x">{</span>
+<span class="x">    $bundles = array(</span>
+<span class="x">        // ...</span>
+
+<span class="x">        // Doctrine PHPCR</span>
+<span class="x">        new Doctrine\Bundle\PHPCRBundle\DoctrinePHPCRBundle(),</span>
+
+<span class="x">    );</span>
+<span class="x">    // ...</span>
+<span class="x">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="configurando">
+<h2>Configurando<a class="headerlink" href="#configurando" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El siguiente paso es configurar los paquetes.</p>
+<div class="section" id="doctrine-con-phpcr-odm">
+<h3><em>Doctrine</em> con <em>PHPCR-ODM</em><a class="headerlink" href="#doctrine-con-phpcr-odm" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>La configuración básica para cada repositorio de contenido se muestra abajo; añade las líneas apropiadas a tu archivo <tt class="file docutils literal"><span class="pre">app/config/config.yml</span></tt>. Más información sobre la configuración de este paquete se puede encontrar <a class="reference external" href="https://github.com/doctrine/DoctrinePHPCRBundle#readme">en la página del proyecto Doctrine PHPCR</a>.</p>
+<p><strong>Jackalope con Jackrabbit</strong></p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">doctrine_phpcr</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">session</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">backend</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">jackrabbit</span>
+            <span class="l-Scalar-Plain">url</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">http://localhost:8080/server/</span>
+        <span class="l-Scalar-Plain">workspace</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">default</span>
+        <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">admin</span>
+        <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">admin</span>
+    <span class="l-Scalar-Plain">odm</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">auto_mapping</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p><strong>Jackalope con DBAL de Doctrine</strong></p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">doctrine_phpcr</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">session</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">backend</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">doctrinedbal</span>
+            <span class="l-Scalar-Plain">connection</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">doctrine.dbal.default_connection</span>
+        <span class="l-Scalar-Plain">workspace</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">default</span>
+        <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">admin</span>
+        <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">admin</span>
+<span class="l-Scalar-Plain">odm</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">auto_mapping</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Asegúrate también de configurar la sección principal de <tt class="docutils literal"><span class="pre">doctrine:</span></tt> al <em>RDBMS</em> que escogiste.
+Ve <a class="reference external" href="http://gitnacho.github.com/symfony-docs-es/book/doctrine.html">Bases de datos y Doctrine</a>.</p>
+</div>
+<p><strong>Midgard</strong></p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">doctrine_phpcr</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">session</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">backend</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">midgard2</span>
+            <span class="l-Scalar-Plain">db_type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">MySQL</span>
+            <span class="l-Scalar-Plain">db_name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">midgard2_test</span>
+            <span class="l-Scalar-Plain">db_host</span><span class="p-Indicator">:</span> <span class="s">&quot;0.0.0.0&quot;</span>
+            <span class="l-Scalar-Plain">db_port</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">3306</span>
+            <span class="l-Scalar-Plain">db_username</span><span class="p-Indicator">:</span> <span class="s">&quot;&quot;</span>
+            <span class="l-Scalar-Plain">db_password</span><span class="p-Indicator">:</span> <span class="s">&quot;&quot;</span>
+            <span class="l-Scalar-Plain">db_init</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+            <span class="l-Scalar-Plain">blobdir</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/tmp/cmf-blobs</span>
+        <span class="l-Scalar-Plain">workspace</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">default</span>
+        <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">admin</span>
+        <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">admin</span>
+<span class="l-Scalar-Plain">odm</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">auto_mapping</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="configurando-el-repositorio-de-contenido">
+<h2>Configurando el repositorio de contenido<a class="headerlink" href="#configurando-el-repositorio-de-contenido" title="Enlazar permanentemente con este título">¶</a></h2>
+<p id="tutorials-installing-phpcr-jackrabbit"><strong>Jackalope Jackrabbit</strong></p>
+<p id="index-1">Estos son los pasos necesarios para instalar <em>Apache Jackrabbit</em>:</p>
+<ul class="simple">
+<li>Asegúrate de que tienes instalada en tu caja la máquina virtual de <em>Java</em>. Si no, puedes conseguir una aquí: <a class="reference external" href="http://www.java.com/en/download/manual.jsp">http://www.java.com/en/download/manual.jsp</a></li>
+<li>Descarga la versión más reciente de <a class="reference external" href="http://jackrabbit.apache.org/downloads.html">Jackrabbit de la página de descarga</a></li>
+<li>Ejecuta el servidor. Ve al directorio donde descargaste el archivo <tt class="docutils literal"><span class="pre">.jar</span></tt> y lánzalo:</li>
+</ul>
+<div class="highlight-bash"><div class="highlight"><pre>java -jar jackrabbit-standalone-*.jar
+</pre></div>
+</div>
+<p>Ve a <a class="reference external" href="http://localhost:8080/">http://localhost:8080/</a>, ahora <em>Apache</em> te debería mostrar una página <tt class="docutils literal"><span class="pre">Jackrabbit</span></tt>.</p>
+<p>Puedes encontrar más información sobre cómo <a class="reference external" href="https://github.com/jackalope/jackalope/wiki/Running-a-jackrabbit-server">ejecutar un servidor Jackrabbit</a> en el <em>wiki</em> de <tt class="docutils literal"><span class="pre">Jackalope</span></tt>.</p>
+<p id="tutorials-installing-phpcr-doctrinedbal"><strong>Jackalope DBAL de Doctrine</strong></p>
+<p id="index-2">Ejecuta las siguientes órdenes para crear la base de datos e instalar un esquema predefinido:</p>
+<div class="highlight-bash"><div class="highlight"><pre>app/console doctrine:database:create
+app/console doctrine:phpcr:init:dbal
+</pre></div>
+</div>
+<p>Para más información sobre cómo configurar el <em>DBAL</em> de <em>Doctrine</em> en <em>Symfony2</em>, ve el <a class="reference external" href="http://gitnacho.github.com/symfony-docs-es/book/doctrine.html">capítulo de Doctrine en la documentación de Symfony2</a> y las explicaciones en el <a class="reference internal" href="../bundles/phpcr-odm.html#reference-phpcr-doctrinedbal"><em>capítulo de referencia de PHPCR</em></a>.</p>
+<p id="tutorials-installing-phpcr-midgard"><strong>Midgard</strong></p>
+<p id="index-3"><em>Midgard</em> es una extensión <em>C</em> que implementa la <em>API</em> de <em>PHPCR</em> en lo alto de un <em>RDBMS</em> estándar.</p>
+<p>Ve la <a class="reference external" href="http://midgard-project.org/phpcr/">documentación oficial de Midgard PHPCR</a>.</p>
+</div>
+<div class="section" id="registrando-tipos-de-nodo-del-sistema">
+<h2>Registrando tipos de nodo del sistema<a class="headerlink" href="#registrando-tipos-de-nodo-del-sistema" title="Enlazar permanentemente con este título">¶</a></h2>
+<p><em>PHPCR-ODM</em> utiliza un <a class="reference external" href="https://github.com/doctrine/phpcr-odm/wiki/Custom-node-type-phpcr%3Amanaged">tipo de nodo personalizado</a> para dar seguimiento a la metainformación sin interferir con tu contenido. Hay una orden que hace trivial el registro de este tipo y el espacio de nombres <em>PHPCR</em>:</p>
+<div class="highlight-bash"><div class="highlight"><pre>php app/console doctrine:phpcr:register-system-node-types
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Contenidos</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Instalando y configurando <em>Doctrine</em> y <em>PHPCR-ODM</em></a><ul>
+<li><a class="reference internal" href="#requisitos-previos">Requisitos previos</a></li>
+<li><a class="reference internal" href="#instalando">Instalando</a><ul>
+<li><a class="reference internal" href="#escogiendo-un-repositorio-para-el-contenido">Escogiendo un repositorio para el contenido</a></li>
+<li><a class="reference internal" href="#descarga-los-paquetes">Descarga los paquetes</a></li>
+<li><a class="reference internal" href="#registrando-anotaciones">Registrando anotaciones</a></li>
+<li><a class="reference internal" href="#iniciando-los-paquetes">Iniciando los paquetes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configurando">Configurando</a><ul>
+<li><a class="reference internal" href="#doctrine-con-phpcr-odm"><em>Doctrine</em> con <em>PHPCR-ODM</em></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configurando-el-repositorio-de-contenido">Configurando el repositorio de contenido</a></li>
+<li><a class="reference internal" href="#registrando-tipos-de-nodo-del-sistema">Registrando tipos de nodo del sistema</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Tema anterior</h4>
+  <p class="topless"><a href="choosing-a-storage-layer.html"
+                        title="Capítulo anterior">Eligiendo una capa de almacenamiento</a></p>
+  <h4>Próximo tema</h4>
+  <p class="topless"><a href="installing-configuring-simple-cms.html"
+                        title="Próximo capítulo">Instalando y configurando el <tt class="docutils literal"><span class="pre">SimpleCmsBundle</span></tt></a></p>
+<div id="searchbox" style="display: none">
+  <h3>Búsqueda rápida</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Ir a" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="installing-configuring-simple-cms.html" title="Instalando y configurando el SimpleCmsBundle"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="choosing-a-storage-layer.html" title="Eligiendo una capa de almacenamiento"
+             >anterior</a> |</li>
+        <li><a href="../index.html">Symblog</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Comunidad CMF de Symfony Traducido al español por Nacho Pacheco.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

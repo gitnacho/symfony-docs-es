@@ -1,0 +1,119 @@
+Lenguaje de autorización basado en expresiones
+##############################################
+
+Introducción
+------------
+
+El lenguaje de expresiones es una muy potente alternativa para los atributos simples de los votantes del sistema de seguridad. Te permiten tomar decisiones complejas para controlar el acceso, y debido a que está compiladas hasta *PHP* crudo, son mucho más rápidas que los votantes integrados. Estas además se cargan de manera diferida por naturaleza, así que también ahorrarás algunos recursos, por ejemplo, no tener que iniciar el sistema *ACL* entero en cada petición.
+
+Uso
+---
+
+Uso programado
+~~~~~~~~~~~~~~
+
+Puedes ejecutar expresiones programadas utilizando el método ``isGranted`` del ``SecurityContext``. Algunos ejemplos:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    use JMS\SecurityExtraBundle\Security\Authorization\Expression\Expression;
+
+    $securityContext->isGranted(array(new Expression('hasRole("A")')));
+    $securityContext->isGranted(array(new Expression('hasRole("A") or (hasRole("B") and hasRole("C"))')));
+    $securityContext->isGranted(array(new Expression('hasPermission(object, "VIEW")'), $object));
+    $securityContext->isGranted(array(new Expression('token.getUsername() == "Johannes"')));
+
+Usando *Twig*
+~~~~~~~~~~~~~
+
+Puedes comprobar expresiones desde plantillas *Twig* utilizando la función ``is_expr_granted``. Algunos ejemplos:
+
+.. code-block:: jinja
+
+    is_expr_granted("hasRole('FOO')")
+    is_expr_granted("hasPermission(object, 'VIEW')", object)
+
+Usando el control de acceso
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+También puedes usar expresiones en ``access_control``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        security:
+            access_control:
+                - { path: ^/foo, access: "hasRole('FOO') and hasRole('BAR')" }
+
+    .. code-block:: xml
+
+        <security>
+            <rule path="^/foo" access="hasRole('FOO') and hasRole('BAR')" />
+        </security>
+
+Usándolo en base a anotaciones
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Consulta la anotación ``@PreAuthorize`` en la `Referencia`_. Por favor, recuerda activar las expresiones en tu configuración, de lo contrario obtendrás una excepción al comprobar el acceso.
+
+Referencia
+----------
+
++-----------------------------------+--------------------------------------------------------+
+| Expresión                         | Descripción                                            |
++===================================+========================================================+
+| hasRole('ROLE')                   | comprueba si el segmento tiene un determinado rol.     |                                      
++-----------------------------------+--------------------------------------------------------+
+| hasAnyRole('ROLE1', 'ROLE2', ...) | Comprueba si el segmento tiene alguno de los roles     |
+|                                   | proporcionados.                                        |                               
++-----------------------------------+--------------------------------------------------------+
+| isAnonymous()                     | Comprueba si el segmento es anónimo.                   |     
++-----------------------------------+--------------------------------------------------------+
+| isRememberMe()                    | Comprueba si el segmento es del tipo "Recuérdame".     |   
++-----------------------------------+--------------------------------------------------------+
+| isFullyAuthenticated()            | Comprueba si el segmento está completamente            |
+|                                   | autenticado.                                           |                             
++-----------------------------------+--------------------------------------------------------+
+| isAuthenticated()                 | Comprueba si el segmento no es anónimo.                | 
++-----------------------------------+--------------------------------------------------------+
+| hasPermission(var, 'PERMISSION')  | Comprueba si el segmento tiene los permisos            |
+|                                   | proporcionados para un objeto dado (necesita el        |
+|                                   | sistema  *ACL*).                                       |                           
++-----------------------------------+--------------------------------------------------------+
+| token                             | Variable que permite el acceso al segmento que se      |
+|                                   | encuentra actualmente en el contexto de seguridad.     |
++-----------------------------------+--------------------------------------------------------+
+| user                              | Variable que permite el acceso al usuario que está     |
+|                                   | actualmente en el contexto de seguridad.               |
++-----------------------------------+--------------------------------------------------------+
+| object                            | Variable que hace referencia al objeto para el cual se |
+|                                   | solicita acceso.                                       |           
++-----------------------------------+--------------------------------------------------------+
+| #*paramName*                      | Cualquier identificador prefijado con # se refiere a   |
+|                                   | un parámetro del mismo nombre pasado al método donde   |
+|                                   | se usa la expresión                                    |
++-----------------------------------+--------------------------------------------------------+
+| and / &&                          | El operador binario "and"                              |
++-----------------------------------+--------------------------------------------------------+
+| or / ||                           | El operador binario "or"                               |
++-----------------------------------+--------------------------------------------------------+
+| ==                                | El operador binario "is equal"                         |
++-----------------------------------+--------------------------------------------------------+
+| not / !                           | Operador de negación                                   |
++-----------------------------------+--------------------------------------------------------+
+
+Recursos adicionales
+--------------------
+
+.. toctree ::
+    :hidden:
+
+    cookbook/creating_your_own_expression_function
+
+- :doc:`Creando tus propieas funciones de expresión <cookbook/creating_your_own_expression_function>`

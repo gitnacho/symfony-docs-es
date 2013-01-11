@@ -1,0 +1,160 @@
+.. index::
+   single: Enrutando; Reconociendo el nombre del servidor
+
+Cómo emparejar una ruta basada en el nombre del servidor
+========================================================
+
+.. versionadded:: 2.2
+    La compatibilidad para reconocer el patrón «nombre del servidor» o *hostname* se añadió en *Symfony 2.2*
+
+Además, puedes emparejar en el nombre del servidor *HTTP* de la petición entrante.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        mobile_homepage:
+            pattern:  /
+            hostname_pattern: m.example.com
+            defaults: { _controller: AcmeDemoBundle:Main:mobileHomepage }
+
+        homepage:
+            pattern:  /
+            defaults: { _controller: AcmeDemoBundle:Main:homepage }
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing
+                http://symfony.com/schema/routing/routing-1.0.xsd"
+        >
+
+            <route id="mobile_homepage" pattern="/" hostname-pattern="m.example.com">
+                <default key="_controller">AcmeDemoBundle:Main:mobileHomepage</default>
+            </route>
+
+            <route id="homepage" pattern="/">
+                <default key="_controller">AcmeDemoBundle:Main:homepage</default>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('mobile_homepage', new Route('/', array(
+            '_controller' => 'AcmeDemoBundle:Main:mobileHomepage',
+        ), array(), array(), 'm.example.com'));
+
+        $collection->add('homepage', new Route('/', array(
+            '_controller' => 'AcmeDemoBundle:Main:homepage',
+        )));
+
+        return $collection;
+
+Ambas rutas coinciden con el mismo patrón ``/``, aun así el primero emparejará
+sólo si el nombre del servidor es ``m.example.com``.
+
+Marcadores de posición y requisitos en patrones de nombre del servidor
+----------------------------------------------------------------------
+
+Si estás utilizando el :doc:`componente DependencyInjection </components/dependency_injection/index>` (o la plataforma *Symfony2* en su totalidad), entonces puedes utilizar los :ref:`parámetros del contenedor de servicios <book-service-container-parameters>` como variables en cualquier lugar en tus rutas.
+
+Puedes evitar codificar el nombre de dominio usando un marcador de posición y un requisito.
+El ``%domain%`` en los requisitos se sustituye por el valor del parámetro ``domain`` en el contenedor de inyección de dependencias.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        mobile_homepage:
+            pattern:  /
+            hostname_pattern: m.{domain}
+            defaults: { _controller: AcmeDemoBundle:Main:mobileHomepage }
+            requirements:
+                domain: %domain%
+
+        homepage:
+            pattern:  /
+            defaults: { _controller: AcmeDemoBundle:Main:homepage }
+
+    .. code-block:: xml
+
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <route id="mobile_homepage" pattern="/" hostname-pattern="m.example.com">
+                <default key="_controller">AcmeDemoBundle:Main:mobileHomepage</default>
+                <requirement key="domain">%domain%</requirement>
+            </route>
+
+            <route id="homepage" pattern="/">
+                <default key="_controller">AcmeDemoBundle:Main:homepage</default>
+            </route>
+        </routes>
+
+    .. code-block:: php
+
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection = new RouteCollection();
+        $collection->add('mobile_homepage', new Route('/', array(
+            '_controller' => 'AcmeDemoBundle:Main:mobileHomepage',
+        ), array(
+            'domain' => '%domain%',
+        ), array(), 'm.{domain}'));
+
+        $collection->add('homepage', new Route('/', array(
+            '_controller' => 'AcmeDemoBundle:Main:homepage',
+        )));
+
+        return $collection;
+
+.. _component-routing-hostname-imported:
+
+Añadiendo el patrón «nombre del servidor» a rutas importadas
+------------------------------------------------------------
+
+Puedes poner un patrón «nombre del servidor» en rutas importadas.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/routing.yml
+        acme_hello:
+            resource: "@AcmeHelloBundle/Resources/config/routing.yml"
+            hostname_pattern: "hello.example.com"
+
+    .. code-block:: xml
+
+        <!-- app/config/routing.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <import resource="@AcmeHelloBundle/Resources/config/routing.xml" hostname-pattern="hello.example.com" />
+        </routes>
+
+    .. code-block:: php
+
+        // app/config/routing.php
+        use Symfony\Component\Routing\RouteCollection;
+
+        $collection = new RouteCollection();
+        $collection->addCollection($loader->import("@AcmeHelloBundle/Resources/config/routing.php"), '', array(), array(), array(), 'hello.example.com');
+
+        return $collection;
+
+El patrón «nombre del servidor» ``hello.example.com`` se pondrá en cada ruta cargada del nuevo enrutamiento del recurso.

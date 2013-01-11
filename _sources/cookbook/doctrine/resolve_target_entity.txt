@@ -1,0 +1,143 @@
+.. index::
+   single: Doctrine; Resolviendo entidades destino
+   single: Doctrine; Definiendo relaciones con interfaces y clases abstractas
+
+Cómo definir relaciones con interfaces y clases abstractas
+==========================================================
+
+.. versionadded:: 2.1
+    El ``ResolveTargetEntityListener`` es nuevo para *Doctrine 2.2*, fue empacado por primera vez con *Symfony 2.1*.
+
+Uno de los objetivos de los paquetes es la creación discreta de paquetes de funcionalidad que no tienen muchas dependencias (o ninguna, en su caso), lo cual te permite utilizar esa funcionalidad en otras aplicaciones sin incluir elementos innecesarios.
+
+*Doctrine 2.2* incluye una nueva utilidad llamada ``ResolveTargetEntityListener``, con la cual las funciones interceptan llamadas dentro de *Doctrine* y reescriben los parámetros ``targetEntity`` en tu correlación de metadatos en tiempo de ejecución. Esto significa que en tu paquete eres capaz de utilizar una interfaz o una clase abstracta en tus asignaciones y esperar una correcta correlación en una entidad concreta en tiempo de ejecución.
+
+Esta funcionalidad te permite definir las relaciones entre diferentes entidades sin volverlas dependencias duras.
+
+Antecedentes
+------------
+
+Supongamos que tienes un ``InvoiceBundle`` que proporciona la funcionalidad de facturación y un ``CustomerBundle`` que contiene herramientas para la gestión de clientes. Los quieres mantener separados, ya que se pueden utilizar en otros sistemas el uno sin el otro, pero para tu aplicación deseas usarlos juntos.
+
+En este caso, tiene una entidad factura (``Invoice``) con una relación a un objeto inexistente, un ``InvoiceSubjectInterface``. El objetivo es conseguir que el ``ResolveTargetEntityListener`` reemplace cualquier mención a la interfaz con un objeto real que implemente esa interfaz.
+
+Configurando
+------------
+
+Vamos a usar las siguientes entidades básicas (incompletas por razones de brevedad) para explicar cómo configurar y utilizar el ``ResolveTargetEntityListener``.
+
+Una entidad ``Cliente``::
+
+    // src/Acme/AppBundle/Entity/Customer.php
+
+    namespace Acme\AppBundle\Entity;
+
+    use Doctrine\ORM\Mapping as ORM;
+    use Acme\CustomerBundle\Entity\Customer as BaseCustomer;
+    use Acme\InvoiceBundle\Model\InvoiceSubjectInterface;
+
+    /**
+     * @ORM\Entity
+     * @ORM\Table(name="customer")
+     */
+    class Customer extends BaseCustomer implements InvoiceSubjectInterface
+    {
+        // En nuestro ejemplo, todos los métodos definidos en la
+        // InvoiceSubjectInterface ya están implementados en
+        // BaseCustomer
+
+La entidad ``Factura``::
+
+    // src/Acme/InvoiceBundle/Entity/Invoice.php
+
+    namespace Acme\InvoiceBundle\Entity;
+
+    use Doctrine\ORM\Mapping AS ORM;
+    use Acme\InvoiceBundle\Model\InvoiceSubjectInterface;
+
+    /**
+     * Representa una ``Factura``.
+     *
+     * @ORM\Entity
+     * @ORM\Table(name="invoice")
+     */
+    class Invoice
+    {
+        /**
+         * @ORM\ManyToOne(targetEntity="Acme\InvoiceBundle\Model\InvoiceSubjectInterface")
+         * @var InvoiceSubjectInterface
+         */
+        protected $subject;
+    }
+
+Una ``InvoiceSubjectInterface``::
+
+    // src/Acme/InvoiceBundle/Model/InvoiceSubjectInterface.php
+
+    namespace Acme\InvoiceBundle\Model;
+
+    /**
+     * Una interfaz que debe implementar el objeto súbdito de la factura.
+     * En la mayoría de los casos, un único objeto debe implementar esta
+     * interfaz puesto que ResolveTargetEntityListener sólo puede
+     * cambiar el destino a un único objeto.
+     */
+    interface InvoiceSubjectInterface
+    {
+        // Enumera los métodos adicionales que necesita tu InvoiceBundle
+        // para acceder al súbdito para que puedas garantizar
+        // que tienes acceso a esos métodos.
+
+        /**
+         * @return string
+         */
+        public function getName();
+    }
+
+A continuación, tienes que configurar el escucha, el cual informa a ``DoctrineBundle`` acerca de la sustitución:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine:
+            # ....
+            orm:
+                # ....
+                resolve_target_entities:
+                    Acme\InvoiceBundle\Model\InvoiceSubjectInterface: Acme\AppBundle\Entity\Customer
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:doctrine="http://symfony.com/schema/dic/doctrine"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd
+                                http://symfony.com/schema/dic/doctrine http://symfony.com/schema/dic/doctrine/doctrine-1.0.xsd">
+
+            <doctrine:config>
+                <doctrine:orm>
+                    <!-- ... -->
+                    <doctrine:resolve-target-entity interface="Acme\InvoiceBundle\Model\InvoiceSubjectInterface">Acme\AppBundle\Entity\Customer</resolve-target-entity>
+                </doctrine:orm>
+            </doctrine:config>
+        </container>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('doctrine', array(
+            'orm' => array(
+                // ...
+                'resolve_target_entities' => array(
+                    'Acme\InvoiceBundle\Model\InvoiceSubjectInterface' => 'Acme\AppBundle\Entity\Customer',
+                ),
+            ),
+        ));
+
+Consideraciones finales
+-----------------------
+
+Con el ``ResolveTargetEntityListener``, puedes separar tus paquetes, y siguen siendo útiles por sí mismos, pero aún así capaces de definir relaciones entre diferentes objetos. Usando este método, los paquetes terminan siendo más fáciles de mantener de manera independiente.

@@ -4,23 +4,29 @@
 Referencia de funciones de formulario en plantillas *Twig*
 ==========================================================
 
-Este manual de referencia cubre todas las posibles funciones *Twig* disponibles para reproducir formularios. Hay varias funciones diferentes disponibles, y cada una es responsable de representar una parte diferente de un formulario (por ejemplo, etiquetas, errores, elementos gráficos, etc.).
+Este manual de referencia cubre todas las posibles funciones *Twig* disponibles para reproducir formularios. Hay disponibles muchas funciones diferentes, y cada una es responsable de dibujar una parte diferente de un formulario (por ejemplo, etiquetas, errores, elementos gráficos, etc.).
 
-``form_label(form.name, label, variables)``
--------------------------------------------
+.. _reference-forms-twig-label:
 
-Reproduce la etiqueta para el campo dado. Si lo deseas, puedes pasar como segundo argumento la etiqueta específica que deseas mostrar.
+``form_label(view, label, variables)``
+--------------------------------------
+
+Dibuja la etiqueta para el campo dado. Si lo deseas, puedes pasar como segundo argumento la etiqueta específica que deseas mostrar.
 
 .. code-block:: jinja
 
     {{ form_label(form.name) }}
 
     {# las dos siguientes sintaxis son equivalentes #}
-    {{ form_label(form.name, 'Your Name', { 'attr': {'class': 'foo'} }) }}
-    {{ form_label(form.name, null, { 'label': 'Your name', 'attr': {'class': 'foo'} }) }}
+    {{ form_label(form.name, 'Your Name', {'label_attr': {'class': 'foo'}}) }}
+    {{ form_label(form.name, null, {'label': 'Your name', 'label_attr': {'class': 'foo'}}) }}
 
-``form_errors(form.name)``
---------------------------
+Ve «:ref:`twig-reference-form-variables`» para aprender sobre el argumento ``variables``.
+
+.. _reference-forms-twig-errors:
+
+``form_errors(view)``
+---------------------
 
 Reproduce los errores para el campo dado.
 
@@ -31,41 +37,55 @@ Reproduce los errores para el campo dado.
     {# reproduce cualquier error "global" #}
     {{ form_errors(form) }}
 
-``form_widget(form.name, variables)``
--------------------------------------
+.. _reference-forms-twig-widget:
 
-Pinta el elemento gráfico *HTML* de un determinado campo. Si aplicas este a todo el formulario o a la colección de campos, reproducirá cada fila subyacente del formulario.
+``form_widget(view, variables)``
+--------------------------------
+
+Pinta el elemento gráfico *HTML* de un determinado campo. Si aplicas este a todo el formulario o a la colección de campos, dibujará cada fila subyacente del formulario.
 
 .. code-block:: jinja
 
     {# pinta un elemento gráfico, pero añadiéndole la clase "foo" #}
-    {{ form_widget(form.name, { 'attr': {'class': 'foo'} }) }}
+    {{ form_widget(form.name, {'attr': {'class': 'foo'}}) }}
 
-El segundo argumento de ``form_widget`` es un conjunto de variables. La variable más común es ``attr``, que es una matriz de atributos *HTML* que puedes aplicar al elemento gráfico *HTML*. En algunos casos, ciertos tipos también tienen otras opciones relacionadas con la plantilla que les puedes pasar. Estas se explican en base a tipo por tipo.
+El segundo argumento de ``form_widget`` es un conjunto de variables. La variable más común es ``attr``, que es un arreglo de atributos *HTML* que puedes aplicar al elemento gráfico *HTML*. En algunos casos, ciertos tipos también tienen otras opciones relacionadas con la plantilla que les puedes pasar. Estas se explican en base a tipo por tipo.
+Los ``atributos`` no son aplicados recursivamente a los campos hijo si estás
+dibujando muchos campos simultáneamente (p. ej. ``form_widget(form)``).
 
-``form_row(form.name, variables)``
-----------------------------------
+Ve «:ref:`twig-reference-form-variables` para aprender más sobre el argumento ``variables``.
+
+.. _reference-forms-twig-row:
+
+``form_row(view, variables)``
+-----------------------------
 
 Pinta la "fila" (``row``) de un determinado campo, el cual es la combinación de la etiqueta del campo, los errores y el elemento gráfico.
 
 .. code-block:: jinja
 
     {# pinta la fila de un campo, pero muestra una etiqueta con el texto "foo" #}
-    {{ form_row(form.name, { 'label': 'foo' }) }}
+    {{ form_row(form.name, {'label': 'foo'}) }}
 
 El segundo argumento de ``form_row`` es un arreglo de variables. Las plantillas provistas en *Symfony* sólo permiten redefinir la etiqueta como muestra el ejemplo anterior.
 
-``form_rest(form, variables)``
+Ve «:ref:`twig-reference-form-variables`» para aprender sobre el argumento ``variables``.
+
+.. _reference-forms-twig-rest:
+
+``form_rest(view, variables)``
 ------------------------------
 
-Esto reproduce todos los campos que aún no se han presentado en el formulario dado.
-Es buena idea tenerlo siempre en alguna parte dentro del formulario ya que debe representar los campos ocultos por ti y los campos que se te olvide representar (puesto que va a representar el campo para ti).
+Esta dibuja todos los campos que aún no se han pintado en el formulario dado.
+Es buena idea tenerlo siempre en alguna parte dentro del formulario ya que debe representar los campos ocultos por ti y los campos que se te olvide dibujar (puesto que va a representar el campo por ti).
 
 .. code-block:: jinja
 
     {{ form_rest(form) }}
 
-``form_enctype(form)``
+.. _reference-forms-twig-enctype:
+
+``form_enctype(view)``
 ----------------------
 
 Si el formulario contiene al menos un campo para cargar archivos, esta reproducirá el atributo ``"enctype=multipart/form-data"`` requerido. Siempre es una buena idea incluirlo en tu etiqueta de formulario:
@@ -73,3 +93,58 @@ Si el formulario contiene al menos un campo para cargar archivos, esta reproduci
 .. code-block:: html+jinja
 
     <form action="{{ path('form_submit') }}" method="post" {{ form_enctype(form) }}>
+
+.. _`twig-reference-form-variables`:
+
+Más sobre ``variables`` de formulario
+-------------------------------------
+
+En casi cada una de las funciones *Twig* anteriores, el argumento final es un arreglo de «variables» que se utiliza al dibujar una parte del formulario. Por ejemplo, lo siguiente dibuja el «elemento gráfico» para un campo, y modifica sus atributos
+para incluir una clase especial:
+
+.. code-block:: jinja
+
+    {# pinta un elemento gráfico, pero añadiéndole la clase "foo" #}
+    {{ form_widget(form.name, { 'attr': {'class': 'foo'} }) }}
+
+El propósito de estas variables ---qué hacen y de donde vienen--- puede no ser claro inmediatamente, pero son increíblemente potentes. Siempre que dibujas cualquier parte de un formulario, el bloque que estés dibujando usa una serie de variables. De manera predefinida, estos bloques viven en `form_div_layout.html.twig`_.
+
+Considera la ``form_label`` por ejemplo:
+
+.. code-block:: jinja
+
+    {% block form_label %}
+        {% if not compound %}
+            {% set label_attr = label_attr|merge({'for': id}) %}
+        {% endif %}
+        {% if required %}
+            {% set label_attr = label_attr|merge({'class': (label_attr.class|default('') ~ ' required')|trim}) %}
+        {% endif %}
+        {% if label is empty %}
+            {% set label = name|humanize %}
+        {% endif %}
+        <label{% for attrname, attrvalue in label_attr %} {{ attrname }}="{{ attrvalue }}"{% endfor %}>{{ label|trans({}, translation_domain) }}</label>
+    {% endblock form_label %}
+
+Este bloque utiliza diversas variables: ``compound``, ``label_attr``, ``required``,
+``label``, ``name`` and ``translation_domain``.
+Estas variables las hace disponibles el sistema de representación del formulario. Pero más importante aún, estas son las variables que puedes sustituir cuándo llamas a ``form_label``
+(debido a que en este ejemplo, estás dibujando la etiqueta).
+
+Las variables disponibles exactas a sustituir dependen de en qué parte del formulario estás dibujando (p. ej. etiqueta frente a elemento gráfico) y en qué campo estás dibujando (p. ej. un elemento gráfico de elección ---``choice``--- tiene una opción ``expanded`` extra). Si te sientes cómodo viendo a través del `form_div_layout.html.twig`_, siempre serás capaz de ver qué opciones tienes disponibles.
+
+.. tip::
+
+    Detrás de la escena, estas variables las hace disponibles el objeto ``FormView`` de tu formulario cuándo el componente ``form`` llama a ``buildView`` y ``buildViewBottomUp`` en cada «nodo» de tu árbol del formulario. Para «ver» qué variables en particular tiene el campo, busca el campo en el código fuente del formulario (y sus campos padre) y observa las dos funciones anteriores.
+
+.. note::
+
+    Si estás dibujando simultáneamente un formulario entero (o un formulario integrado entero), el argumento ``variables`` sólo será aplicado al formulario en sí mismo y no a sus descendientes. En otras palabras, lo siguiente **no** pasará un atributo de clase ``«foo»`` a todos los campos descendientes en el formulario:
+
+    .. code-block:: jinja
+
+        {# **no** trabaja  - las variables no son recursivas #}
+        {{ form_widget(form, { 'attr': {'class': 'foo'} }) }}
+
+
+.. _`form_div_layout.html.twig`: https://github.com/symfony/symfony/blob/2.1/src/Symfony/Bridge/Twig/Resources/views/Form/form_div_layout.html.twig

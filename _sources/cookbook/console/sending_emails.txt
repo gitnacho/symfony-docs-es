@@ -1,0 +1,101 @@
+.. index::
+   single: Console; Enviando mensajes de correo electrónico
+   single: Console; Generando URL
+
+Cómo generar *URL* y enviar mensajes de correo electrónico desde la consola
+===========================================================================
+
+Desafortunadamente, el contexto de la línea de ordenes no sabe nada de tu servidor virtual o nombre de dominio. Esto significa que si generas *URL* absolutas dentro de una orden de consola, probablemente terminarás con algo inútil similar a ``http://localhost/foo/bar``.
+
+Para solucionar este problema, necesitas configurar el «contexto de la petición», que es una caprichosa manera de decir que necesitas configurar el entorno para que sepa qué *URL* debe utilizar al generar direcciones *URL*.
+
+Hay dos maneras de configurar el contexto de la petición: a nivel de aplicación y por orden.
+
+Configurando el contexto de la petición a nivel global
+------------------------------------------------------
+
+
+.. versionadded:: 2.1
+    Los parámetros ``host`` y ``scheme`` están disponibles a partir de *Symfony 2.1*
+
+.. versionadded:: 2.2
+    El parámetro ``base_url`` está disponible desde *Symfony 2.2*
+
+Para configurar el contexto de la petición ---el cual utiliza el generador de *URL*--- puedes redefinir los parámetros que utiliza como valores predefinidos para cambiar el servidor (``localhost``) y esquema (``http``) predeterminado. A partir de *Symfony 2.2* también puedes configurar la ruta base siempre y cuando *Symfony* no se esté ejecutando en el directorio raíz.
+
+Ten en cuenta que esto no impacta directamente en las *URL* generadas a través de peticiones web normales, ya que se sustituyen los valores predeterminados.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/parameters.yml
+        parameters:
+            router.request_context.host: example.org
+            router.request_context.scheme: https
+            router.request_context.base_url: my/path
+
+    .. code-block:: xml
+
+        <!-- app/config/parameters.xml -->
+        <?xml version="1.0" encoding="UTF-8"?>
+
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+            <parameters>
+                <parameter key="router.request_context.host">example.org</parameter>
+                <parameter key="router.request_context.scheme">https</parameter>
+                <parameter key="router.request_context.base_url">my/path</parameter>
+            </parameters>
+        </container>
+
+    .. code-block:: php
+
+        // app/config/config_test.php
+        $container->setParameter('router.request_context.host', 'example.org');
+        $container->setParameter('router.request_context.scheme', 'https');
+        $container->setParameter('router.request_context.base_url', 'my/path');
+
+Configurando el contexto de la petición por orden
+-------------------------------------------------
+
+Para cambiarlo sólo en una orden sencillamente puede recuperar el contexto del servicio de la petición y sustituir sus opciones::
+
+   // src/Acme/DemoBundle/Command/DemoCommand.php
+
+   // ...
+   class DemoCommand extends ContainerAwareCommand
+   {
+       protected function execute(InputInterface $input, OutputInterface $output)
+       {
+           $context = $this->getContainer()->get('router')->getContext();
+           $context->setHost('example.com');
+           $context->setScheme('https');
+           $context->setBaseUrl('my/path');
+
+           // ... tu código aquí
+       }
+   }
+
+Con cola de memoria
+-------------------
+
+El envío de mensajes de correo electrónico en una orden de consola funciona de la misma manera descrita en el artículo :doc:`/cookbook/email/email` del recetario, salvo que esta utiliza memoria de la cola de impresión.
+
+Cuando se utiliza memoria de la cola (consulta el :doc:`/cookbook/email/spool` del recetario para más información), debes tener en cuenta que debido a la forma en que *Symfony* se maneja de consola de ordenes, los mensajes de correo electrónico no se envían automáticamente. Debes tener cuidado de vaciar tú mismo la cola. Utiliza el siguiente código para enviar mensajes de correo electrónico dentro de tu orden de consola::
+
+    $container = $this->getContainer();
+    $mailer = $container->get('mailer');
+    $spool = $mailer->getTransport()->getSpool();
+    $transport = $container->get('swiftmailer.transport.real');
+
+    $spool->flushQueue($transport);
+    
+Otra opción es crear un ambiente que sólo sea utilizado por esa orden de consola y utilizar un método diferente en la cola de impresión. 
+    
+.. note::
+
+    Sólo es necesario tener cuidado de la cola de impresión cuando se utiliza memoria de la cola de impresión. 
+    Si estás utilizando un archivo para la cola (o no utilizas la cola de impresión), no es necesario vaciar manualmente la cola dentro de la orden.
+

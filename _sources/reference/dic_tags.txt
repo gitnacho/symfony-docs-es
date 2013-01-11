@@ -1,51 +1,56 @@
 Etiquetas de inyección de dependencias
 ======================================
 
-Las etiquetas para la inyección de dependencia son pequeñas cadenas que se pueden aplicar a la "bandera" de un servicio para poder usarla de alguna manera especial. Por ejemplo, si tienes un servicio que quieres registrar como escucha de uno de los principales eventos de *Symfony*, lo puedes marcar con la etiqueta ``kernel.event_listener``.
+Las etiquetas para la inyección de dependencia son pequeñas cadenas que se pueden aplicar a la «bandera» de un servicio para poder usarla de alguna manera especial. Por ejemplo, si tienes un servicio que quieres registrar como escucha de uno de los principales eventos de *Symfony*, lo puedes marcar con la etiqueta ``kernel.event_listener``.
 
-A continuación mostramos información sobre todas las etiquetas disponibles en *Symfony2*:
+Puedes aprender un poco más sobre las «etiquetas» leyendo la sección «:ref:`book-service-container-tags`»
+del capítulo Contenedor de Servicio.
+
+A continuación mostramos información sobre todas las etiquetas disponibles en *Symfony2*. También puede haber etiquetas usadas en otros paquetes que no aparecen aquí. Por ejemplo, ``AsseticBundle`` tiene muchas etiquetas no enumeradas aquí.
 
 +-----------------------------------+---------------------------------------------------------------------------+
 | Nombre de etiqueta                | Uso                                                                       |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `data_collector`_                 | Crea una clase que recolecta datos personalizados para el generador de    |
-|                                   | perfiles                                                                  |
+| `data_collector`_                 | Crea una clase que colecciona datos personalizados para el perfilador     |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `form.type`_                      | Crea un tipo de campo personalizado para formulario                       |
+| `form.type`_                      | Crea un tipo de campo para formulario personalizado                       |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `form.type_extension`_            | Crea una "extensión para formulario" personalizada                        |
+| `form.type_extension`_            | Crea una «extensión de formulario» personalizada                          |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `form.type_guesser`_              | Añade tu propia lógica para "deducir el tipo del formulario"              |
+| `form.type_guesser`_              | Añade tu propia lógica para «adivinar el tipo del formulario»             |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `kernel.cache_warmer`_            | Registra tu servicio para invocarlo durante el proceso de calentamiento   |
+| `kernel.cache_warmer`_            | Registra tu servicio para llamarlo durante el proceso de calentamiento    |
 |                                   | de la caché                                                               |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `kernel.event_listener`_          | Escucha diferentes eventos/ganchos en *Symfony*                           |
+| `kernel.event_listener`_          | Escucha diferentes eventos/ganchos de *Symfony*                           |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `monolog.logger`_                 | Bitácora con un canal personalizado para el registro cronológico de       |
-|                                   | eventos                                                                   |
+| `kernel.event_subscriber`_        | Para suscribirse a un conjunto de eventos/ganchos de *Symfony*            |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `monolog.processor`_              | Añade un procesador personalizado para el registro cronológico de eventos |
+| `monolog.logger`_                 | Registra eventos cronológicamente en un canal de bitácora personalizado   |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `routing.loader`_                 | Registra un servicio personalizado para cargar rutas                      |
+| `monolog.processor`_              | Añade un procesador personalizado para la bitácora                        |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `security.voter`_                 | Añade un votante personalizado a la lógica de autorización de *Symfony*   |
+| `routing.loader`_                 | Registra un servicio personalizado que carga rutas                        |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `security.remember_me_aware`_     | Para permitir la funcionalidad de autenticación "recuérdame"              |
+| `security.voter`_                 | Añade un votante personalizdo a la lógica de autorización de *Symfony*    |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `security.listener.factory`_      | Necesaria al crear un sistema de autenticación personalizado              |
+| `security.remember_me_aware`_     | Para permitir la autenticación «recuérdame»                               |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `swiftmailer.plugin`_             | Registra un complemento personalizado para ``SwiftMailer``                |
+| `security.listener.factory`_      | Necesario al crear un sistema de autenticación personalizado              |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `templating.helper`_              | Hace que tu servicio esté disponible en las plantillas *PHP*              |
+| `swiftmailer.plugin`_             | Registra un complemento ``SwiftMailer`` personalizado                     |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `translation.loader`_             | Registra un servicio personalizado que carga las traducciones             |
+| `templating.helper`_              | Activa un servicio en plantillas *PHP*                                    |
++-----------------------------------+---------------------------------------------------------------------------+
+| `translation.loader`_             | Registra un servicio personalizado que carga traducciones                 |
 +-----------------------------------+---------------------------------------------------------------------------+
 | `twig.extension`_                 | Registra una extensión *Twig* personalizada                               |
 +-----------------------------------+---------------------------------------------------------------------------+
+| `twig.loader`_                    | Registra un servicio personalizado que carga plantillas *Twig*            |
++-----------------------------------+---------------------------------------------------------------------------+
 | `validator.constraint_validator`_ | Crea tu propia restricción de validación personalizada                    |
 +-----------------------------------+---------------------------------------------------------------------------+
-| `validator.initializer`_          | Registra un servicio que inicia objetos antes de la validación            |
+| `validator.initializer`_          | Registra un servicio que inicia objetos antes de validarlos               |
 +-----------------------------------+---------------------------------------------------------------------------+
 
 ``data_collector``
@@ -75,18 +80,17 @@ Por simplicidad, a menudo extenderás una clase
 :class:`Symfony\\Component\\Form\\AbstractTypeExtension` en lugar de la interfaz directamente::
 
     // src/Acme/MainBundle/Form/Type/MyFormTypeExtension.php
-    namespace Acme\MainBundle\Form\Type\MyFormTypeExtension;
+    namespace Acme\MainBundle\Form\Type;
 
     use Symfony\Component\Form\AbstractTypeExtension;
 
     class MyFormTypeExtension extends AbstractTypeExtension
     {
         // ... rellena cualquier método que quieras redefinir
-        // como buildForm(), buildView(), buildViewBottomUp(),
-        // getDefaultOptions() o getAllowedOptionValues()
+        // como buildForm(), buildView(), finishView(), setDefaultOptions()
     }
 
-Para dar a conocer tu extensión del tipo ``Form`` a *Symfony* y su uso, ponle la etiqueta `form.type_extension`:
+Para dar a conocer tu extensión del tipo ``Form`` a *Symfony* y usarla, ponle la etiqueta `form.type_extension`:
 
 .. configuration-block::
 
@@ -194,12 +198,133 @@ Para ver un ejemplo completo de este escucha, ve el artículo :doc:`/cookbook/se
 Para otro ejemplo práctico de un escucha del núcleo consulta en el recetario el
 artículo: :doc:`/cookbook/request/mime_type`.
 
+Referencia de escuchas de eventos del núcleo
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Al agregar tus propios escuchas, puede ser útil saber sobre los otros escuchas del núcleo de Symfony y sus prioridades.
+
+.. note::
+
+    Todos los escuchas enumerados aquí posiblemente no figuren dependiendo de tu entorno, configuración y paquetes. Además, los paquetes de terceros traerán escucha adicionales que no figuran en esta lista.
+
+``kernel.request``
+..................
+
++-------------------------------------------------------------------------------------------+-----------+
+| Nombre de la clase escucha                                                                | Prioridad |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\HttpKernel\\EventListener\\ProfilerListener`                  | 1024      |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Bundle\\FrameworkBundle\\EventListener\\TestSessionListener`             | 192       |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Bundle\\FrameworkBundle\\EventListener\\SessionListener`                 | 128       |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\HttpKernel\\EventListener\\RouterListener`                    | 32        |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\HttpKernel\\EventListener\\LocaleListener`                    | 16        |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\Security\\Http\\Firewall`                                     | 8         |
++-------------------------------------------------------------------------------------------+-----------+
+
+``kernel.controller``
+.....................
+
++-------------------------------------------------------------------------------------------+-----------+
+| Nombre de la clase escucha                                                                | Prioridad |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Bundle\\FrameworkBundle\\DataCollector\\RequestDataCollector`            | 0         |
++-------------------------------------------------------------------------------------------+-----------+
+
+``kernel.response``
+...................
+
++-------------------------------------------------------------------------------------------+-----------+
+| Nombre de la clase escucha                                                                | Prioridad |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\HttpKernel\\EventListener\\EsiListener`                       | 0         |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\HttpKernel\\EventListener\\ResponseListener`                  | 0         |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Bundle\\SecurityBundle\\EventListener\\ResponseListener`                 | 0         |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\HttpKernel\\EventListener\\ProfilerListener`                  | -100      |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Bundle\\FrameworkBundle\\EventListener\\TestSessionListener`             | -128      |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Bundle\\WebProfilerBundle\\EventListener\\WebDebugToolbarListener`       | -128      |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\HttpKernel\\EventListener\\StreamedResponseListener`          | -1024     |
++-------------------------------------------------------------------------------------------+-----------+
+
+``kernel.exception``
+....................
+
++-------------------------------------------------------------------------------------------+-----------+
+| Nombre de la clase escucha                                                                | Prioridad |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\HttpKernel\\EventListener\\ProfilerListener`                  | 0         |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Component\\HttpKernel\\EventListener\\ExceptionListener`                 | -128      |
++-------------------------------------------------------------------------------------------+-----------+
+
+``kernel.terminate``
+....................
+
++-------------------------------------------------------------------------------------------+-----------+
+| Nombre de la clase escucha                                                                | Prioridad |
++-------------------------------------------------------------------------------------------+-----------+
+| :class:`Symfony\\Bundle\\SwiftmailerBundle\\EventListener\\EmailSenderListener`           | 0         |
++-------------------------------------------------------------------------------------------+-----------+
+
+.. _dic-tags-kernel-event-subscriber:
+
+``kernel.event_subscriber``
+---------------------------
+
+**Propósito**: Para suscribirse a un conjunto de diferentes eventos o ganchos en *Symfony*.
+
+.. versionadded:: 2.1
+   La habilidad para añadir suscriptores a eventos del núcleo se agregó en la versión 2.1.
+
+Para habilitar un suscriptor personalizado, agrégalo como un servicio regular en una de tus configuraciones, y etiquétalo con ``kernel.event_subscriber``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            kernel.subscriber.your_subscriber_name:
+                class: Nombre\De\Clase\Del\Suscriptor\Completamente\Cualificado
+                tags:
+                        - { name: kernel.event_subscriber }
+
+    .. code-block:: xml
+
+        <service id="kernel.subscriber.your_subscriber_name" class="Nombre\De\Clase\Del\Suscriptor\Completamente\Cualificado">
+            <tag name="kernel.event_subscriber" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('kernel.subscriber.your_subscriber_name', 'Nombre\De\Clase\Del\Suscriptor\Completamente\Cualificado')
+            ->addTag('kernel.event_subscriber')
+        ;
+
+.. note::
+
+    Tu servicio debe implementar la :class:`Symfony\Component\EventDispatcher\EventSubscriberInterface`.
+
+.. note::
+
+    Si tu servicio es creado por una factoría, **DEBES** establecer correctamente el parámetro ``class`` para que esta etiqueta trabaje correctamente.
+
 .. _dic_tags-monolog:
 
 ``monolog.logger``
 ------------------
 
-**Propósito**: Para utilizar un canal personalizado para el registro cronológico de eventos con Monolog.
+**Propósito**: Para utilizar un canal personalizado para el registro cronológico de eventos con ``Monolog``.
 
 ``Monolog`` te permite compartir sus controladores entre varios canales del registro cronológico de eventos.
 El servicio de registro cronológico utiliza el canal ``app`` pero puedes cambiar el canal cuando inyectes el registro cronológico en un servicio.
@@ -363,7 +488,7 @@ Esta etiqueta se utiliza al crear tu propio sistema de autenticación personaliz
 ``security.remember_me_aware``
 ------------------------------
 
-**Propósito**: Para permitir la autenticación "Recuérdame".
+**Propósito**: Para permitir la autenticación «recuérdame».
 
 Esta etiqueta se utiliza internamente para permitir que trabaje la autenticación por recordatorio. Si tienes un método de autenticación personalizado en que el usuario se pueda autenticar por medio de recordatorio, entonces posiblemente tengas que utilizar esta etiqueta.
 
@@ -430,7 +555,7 @@ De forma predeterminada, las traducciones se cargan desde el sistema de archivos
     // src/Acme/MainBundle/Translation/MyCustomLoader.php
     namespace Acme\MainBundle\Translation;
 
-    use Symfony\Component\Translation\Loader\LoaderInterface
+    use Symfony\Component\Translation\Loader\LoaderInterface;
     use Symfony\Component\Translation\MessageCatalogue;
 
     class MyCustomLoader implements LoaderInterface
@@ -451,26 +576,28 @@ El método ``load`` de tu cargador personalizado es responsable de devolver una 
 
 Ahora, registra tu cargador como un servicio y etiquétalo como ``translation.loader``:
 
-.. code-block:: yaml
+.. configuration-block::
 
-    services:
-        main.translation.my_custom_loader:
-            class: Acme\MainBundle\Translation\MyCustomLoader
-            tags:
-                    - { name: translation.loader, alias: bin }
+    .. code-block:: yaml
 
-.. code-block:: xml
+        services:
+            main.translation.my_custom_loader:
+                class: Acme\MainBundle\Translation\MyCustomLoader
+                tags:
+                        - { name: translation.loader, alias: bin }
 
-    <service id="main.translation.my_custom_loader" class="Acme\MainBundle\Translation\MyCustomLoader">
-        <tag name="translation.loader" alias="bin" />
-    </service>
+    .. code-block:: xml
 
-.. code-block:: php
+        <service id="main.translation.my_custom_loader" class="Acme\MainBundle\Translation\MyCustomLoader">
+            <tag name="translation.loader" alias="bin" />
+        </service>
 
-    $container
-        ->register('main.translation.my_custom_loader', 'Acme\MainBundle\Translation\MyCustomLoader')
-        ->addTag('translation.loader', array('alias' => 'bin'))
-    ;
+    .. code-block:: php
+
+        $container
+            ->register('main.translation.my_custom_loader', 'Acme\MainBundle\Translation\MyCustomLoader')
+            ->addTag('translation.loader', array('alias' => 'bin'))
+        ;
 
 La opción ``alias`` es necesaria y muy importante: Esta define la "extensión" del archivo que se utilizará para los archivos de recursos que usa este cargador. Por ejemplo, supongamos que tienes un formato ``bin`` personalizado que necesitas cargar.
 Si tienes un archivo ``bin`` que contiene traducciones al Francés del dominio ``menssages``, entonces podrías tener un archivo ``app/Resources/translations/messages.fr.bin``.
@@ -539,6 +666,37 @@ Antes de escribir tus propias extensiones, echa un vistazo al `Repositorio ofici
             ->addTag('twig.extension')
         ;
 
+``twig.loader``
+---------------
+
+**Propósito**: Registrar un servicio personalizado que cargue plantillas *Twig*
+
+De manera predeterminada, *Symfony* sólo utiliza un `Cargador Twig`_ ---:class:`Symfony\\Bundle\\TwigBundle\\Loader\\FilesystemLoader`. Si necesitas cargar plantillas *Twig* desde otro recurso, puedes crear un servicio para
+el nuevo cargador y etiquetarlo con ``twig.loader``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            acme.demo_bundle.loader.some_twig_loader:
+                class: Acme\DemoBundle\Loader\SomeTwigLoader
+                tags:
+                        - { name: twig.loader }
+
+    .. code-block:: xml
+
+        <service id="acme.demo_bundle.loader.some_twig_loader" class="Acme\DemoBundle\Loader\SomeTwigLoader">
+            <tag name="twig.loader" />
+        </service>
+
+    .. code-block:: php
+
+        $container
+            ->register('acme.demo_bundle.loader.some_twig_loader', 'Acme\DemoBundle\Loader\SomeTwigLoader')
+            ->addTag('twig.loader')
+        ;
+
 ``validator.constraint_validator``
 ----------------------------------
 
@@ -561,6 +719,7 @@ Luego, etiquétala como ``validator.initializer`` (que no tiene opciones).
 Para un ejemplo, consulta la clase ``EntityInitializer`` en el puente de *Doctrine*.
 
 .. _`documentación de extensiones`: http://gitnacho.github.com/Twig/advanced.html#creando-una-extension
-.. _`Repositorio oficial de extensiones Twig`: http://github.com/fabpot/Twig-extensions
-.. _`KernelEvents`: https://github.com/symfony/symfony/blob/2.0/src/Symfony/Component/HttpKernel/KernelEvents.php
+.. _`Repositorio oficial de extensiones Twig`: https://github.com/fabpot/Twig-extensions
+.. _`KernelEvents`: https://github.com/symfony/symfony/blob/2.1/src/Symfony/Component/HttpKernel/KernelEvents.php
 .. _`Complemento para SwiftMailer`: http://swiftmailer.org/docs/plugins.html
+.. _`Cargador Twig`: http://twig.sensiolabs.org/doc/api.html#loaders

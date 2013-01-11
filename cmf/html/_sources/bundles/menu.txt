@@ -1,0 +1,92 @@
+``MenuBundle``
+==============
+
+El `MenuBundle <https://github.com/symfony-cmf/MenuBundle#readme>`_
+proporciona menús desde un gestor de objetos de *Doctrine* con la ayuda de ``KnpMenuBundle``.
+
+.. index:: MenuBundle
+
+Dependencias
+------------
+
+Este paquete se extiende del `KnpMenuBundle <https://github.com/knplabs/KnpMenuBundle>`_.
+
+A menos que cambies los predefinidos y proporciones tus propias implementaciones, este paquete también depende de:
+
+* ``SymfonyRoutingExtraBundle`` para el servicio de enrutado ``symfony_cmf_routing_extra.dynamic_router``.
+  Ten en cuenta que necesitas habilitar explícitamente el enrutador dinámico puesto que de manera predeterminada no se carga.
+  Ve la :doc:`documentación del paquete routing extra <routing-extra>` para saber cómo hacer esto.
+* :doc:`PHPCR-ODM <phpcr-odm>` para cargar documentos de ruta desde el contenido del repositorio
+
+Configurando
+------------
+
+Si quieres utilizar las configuraciones predefinidas, no debes cambiar nada.
+Los valores son:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        symfony_cmf_menu:
+            menu_basepath:        /cms/menu
+            document_manager_name:  default
+            admin_class:          ~
+            document_class:       ~
+            content_url_generator:  router
+            content_key:          ~ # (resuelve a DynamicRouter::CONTENT_KEY)
+            route_name:           ~ # las rutas cmf son creadas por el contenido en lugar del nombre
+            content_basepath:     ~ # por omisión a symfony_cmf_core.content_basepath
+            use_sonata_admin:     auto # usa true/false para forzar si usar / no usar
+            # la administración de sonata
+            multilang:
+                use_sonata_admin:     auto # usa true/false para forzar el usar / no usar
+                # la administración de sonata
+                admin_class:          ~
+                document_class:       ~
+                locales:              []
+
+Si quieres dibujar el menú desde *Twig*, asegúrate de no desactivar *Twig* en la sección de configuración ``knp_menu``.
+
+Si añades ``sonata-project/doctrine-phpcr-admin-bundle`` a la sección de requisitos del archivo :file:`composer.json`, los documentos del menú son expuestos en el ``SonataDoctrinePhpcrAdminBundle``.
+Para instrucciones sobre cómo configurar este paquete ve :doc:`doctrine_phpcr_admin`.
+
+De manera predeterminada, ``use_sonata_admin`` se configura automáticamente basándose en si ``SonataDoctrinePhpcrAdminBundle`` está disponible, pero lo puedes desactivar explícitamente al incluirlo si ``sonata`` está habilitado, o habilitarlo explícitamente para obtener un error si se desactiva ``sonata``.
+
+
+Entradas del menú
+-----------------
+
+``Document\MenuItem`` definen entradas del menú. Puedes construir elementos del menú basándote en las rutas de *Symfony*, *url* absolutas o relativas o refiriendo documentos de contenido *PHPCR-ODM*.
+
+El árbol del menú se construye desde los documentos bajo ``[menu_basepath]/[menuname]``. Puedes utilizar diferentes clases de documento para elementos del menú, siempre y cuando implementen la ``Knp\Menu\NodeInterface`` para integrarse con ``KnpMenuBundle``. El documento ``MenuItem`` predefinido descarta hijos que no implementen esta interfaz.
+
+La entrada resaltada actualmente es determinada al comprobar si el contenido asociado con un documento menú es igual que el contenido del ``DynamicRouter`` puesto en la petición.
+
+
+Usando
+------
+
+Ajusta tu plantilla *Twig* para cargar el menú.
+
+.. code-block:: jinja
+
+    {{ knp_menu_render('simple') }}
+
+El nombre del menú es el nombre del nodo bajo ``menu_basepath``. Por ejemplo si tu repositorio almacena los nodos del menú bajo ``/cms/menu``, dibujar «principal» significaría dibujar el menú que está en ``/cms/menu/principal``
+
+
+Cómo usar otros componentes no predefinidos
+-------------------------------------------
+
+Si utilizas el menú del ``cmf`` con *PHPCR-ODM*, solo necesitas almacenar documentos de Ruta bajo ``menu_basepath``. Si utilizas un diferente gestor de objetos, debes asegúrarte que el documento raíz del menú se encuentra con:
+
+.. code-block:: php
+
+    $dm->find($menu_document_class, $menu_basepath . $menu_name)
+
+El documento de ruta tiene que implementar la ``Knp\Menu\NodeInterface`` --- ve el archivo :file:`Document/MenuItem.php` para un ejemplo. Probablemente también necesites especificar la clase ``menu_document_class``, puesto que *PHPCR-ODM* sólo puede determinar el documento a partir del contenido en la base de datos.
+
+Si  utilizas el menú ``CMF`` con el ``DynamicRouter``,  no necesitas ningún nombre de ruta como el documento de menú, sólo debes proporcionar un campo ``content_key`` en las opciones.
+Si  quieres utilizar un diferente servicio para generar las *URL*, te debes asegurar de que tus entradas del menú proporcionan información en tu ``content_key`` seleccionada que el generador de la *url* pueda utilizar para generar la *url*. Dependiendo de tu generador, también podrías necesitar especificar un ``route_name``.
+Ten en cuenta que si solo quieres generar rutas *Symfony* normales con un menú que está en la base de datos, puedes pasar el servicio de enrutado al núcleo como el ``content_url_generator``, asegúrate que el ``content_key`` nunca coincida y haz que tus documentos de menú proporcionen el nombre de ruta y eventuales ``routeParameters``.

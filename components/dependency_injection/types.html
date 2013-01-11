@@ -1,0 +1,313 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tipos de inyección &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Inyección de dependencias" href="index.html" />
+    <link rel="next" title="Trabajando con contenedores de parámetros y definiciones" href="definitions.html" />
+    <link rel="prev" title="El componente Inyección de dependencias" href="introduction.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="definitions.html" title="Trabajando con contenedores de parámetros y definiciones"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="El componente Inyección de dependencias"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="tipos-de-inyeccion">
+<span id="index-0"></span><h1>Tipos de inyección<a class="headerlink" href="#tipos-de-inyeccion" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Hacer dependencias de una clase explícita y requerir que se inyecte es una buena manera de hacer una clase más reutilizable, comprobable y desacoplada de las demás.</p>
+<p>Hay varias maneras en que se pueden inyectar dependencias. Cada punto de inyección tiene sus ventajas y desventajas a considerar, así como las diferentes formas de trabajar con ellas cuando se utiliza el contenedor de servicios.</p>
+<div class="section" id="inyectando-en-el-constructor">
+<h2>Inyectando en el constructor<a class="headerlink" href="#inyectando-en-el-constructor" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>La manera más común para inyectar dependencias es a través del constructor de la clase.
+Para ello es necesario añadir un argumento a la firma del constructor para aceptar la dependencia:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">NewsletterManager</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$mailer</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">\Mailer</span> <span class="nv">$mailer</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">mailer</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Puedes especificar qué tipo de servicio deseas inyectar en la configuración del contenedor de servicios:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre>services:
+     my_mailer:
+         # ...
+     newsletter_manager:
+         class:     NewsletterManager
+         arguments: [@my_mailer]</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;services&gt;
+&lt;service id="my_mailer" ... &gt;
+  &lt;!-- ... --&gt;
+&lt;/service&gt;
+&lt;service id="newsletter_manager" class="NewsletterManager"&gt;
+    &lt;argument type="service" id="my_mailer"/&gt;
+&lt;/service&gt;
+&lt;/services&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;NewsletterManager&#39;</span><span class="p">,</span>
+    <span class="k">array</span><span class="p">(</span><span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">))</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Aludir el tipo de objeto a inyectar significa que puedes estar seguro de  haber inyectado la dependencia adecuada. Al aludir el tipo, de inmediato obtendrás un error claro si inyectas una dependencia inadecuada. Al aludir el tipo usando una interfaz en lugar de una clase puedes hacer más flexible la elección de la dependencia. Y suponiendo que sólo utilizas los métodos definidos en la interfaz, te puedes beneficiar de la flexibilidad y seguridad al utilizar el objeto.</p>
+</div>
+<p>Hay varias ventajas al utilizar la inyección en el constructor:</p>
+<ul class="simple">
+<li>Si la dependencia es un requisito y la clase no puede funcionar sin ella, entonces la inyección a través del constructor garantiza que está presente al utilizar la clase debido a que la clase no se puede construir sin ella.</li>
+<li>El constructor sólo se invoca una vez cuando se crea el objeto, por lo tanto puedes estar seguro de que la dependencia no va a cambiar durante la vida del objeto.</li>
+</ul>
+<p>Estas ventajas no significan que la inyección en el constructor no sea adecuada para trabajar con dependencias opcionales. Ademas, es más difícil usar en combinación con jerarquías de clase: si una clase utiliza la inyección en el constructor entonces extender y reemplazar el constructor se vuelve problemático.</p>
+</div>
+<div class="section" id="inyectando-en-un-definidor">
+<h2>Inyectando en un definidor<a class="headerlink" href="#inyectando-en-un-definidor" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Otro posible punto de inyección en una clase es añadiendo un método definidor que acepte la dependencia:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">NewsletterManager</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$mailer</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setMailer</span><span class="p">(</span><span class="nx">\Mailer</span> <span class="nv">$mailer</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">mailer</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre>services:
+     my_mailer:
+         # ...
+     newsletter_manager:
+         class:     NewsletterManager
+         calls:
+             - [ setMailer, [ @my_mailer ] ]</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;services&gt;
+&lt;service id="my_mailer" ... &gt;
+  &lt;!-- ... --&gt;
+&lt;/service&gt;
+&lt;service id="newsletter_manager" class="NewsletterManager"&gt;
+    &lt;call method="setMailer"&gt;
+         &lt;argument type="service" id="my_mailer" /&gt;
+    &lt;/call&gt;
+&lt;/service&gt;
+&lt;/services&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;NewsletterManager&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">)));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Esta vez las ventajas son:</p>
+<ul class="simple">
+<li>La inyección en el definidor funciona bien con dependencias opcionales. Si no necesitas la dependencia, entonces simplemente no llames al definidor.</li>
+<li>Puedes llamar al definidor varias veces. Esto es particularmente útil si el método añade la dependencia a una colección. Entonces, puedes tener un número variable de dependencias.</li>
+</ul>
+<p>Las desventajas de la inyección en definidor son:</p>
+<ul class="simple">
+<li>El definidor se puede llamar más que justo al momento de la construcción por lo que no puedes estar seguro de que la dependencia no sea reemplazada durante la vida del objeto (salvo que escribas el definidor de tal manera que compruebe si ya se ha llamado).</li>
+<li>No puedes estar seguro de que el definidor se llamó y necesitas añadir comprobaciones para verificar que se inyecten las dependencias necesarias.</li>
+</ul>
+</div>
+<div class="section" id="inyectando-en-propiedades">
+<h2>Inyectando en propiedades<a class="headerlink" href="#inyectando-en-propiedades" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Otra posibilidad es sólo configurar campos públicos en la clase directamente:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">NewsletterManager</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="nv">$mailer</span><span class="p">;</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre>services:
+     my_mailer:
+         # ...
+     newsletter_manager:
+         class:     RNewsletterManager
+         properties:
+             mailer: @my_mailer</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;services&gt;
+&lt;service id="my_mailer" ... &gt;
+  &lt;!-- ... --&gt;
+&lt;/service&gt;
+&lt;service id="newsletter_manager" class="NewsletterManager"&gt;
+    &lt;property name="mailer" type="service" id="my_mailer" /&gt;
+&lt;/service&gt;
+&lt;/services&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;NewsletterManager&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setProperty</span><span class="p">(</span><span class="s1">&#39;mailer&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">)));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Hay desventajas, principalmente sólo para usar la inyección de la propiedad, es similar a la inyección del definidor, pero con estos importantes problemas adicionales:</p>
+<ul class="simple">
+<li>No puedes controlar cuando la dependencia se ha fijado del todo, esta puede cambiar en cualquier momento durante la vida del objeto.</li>
+<li>No puedes usar la alusión de tipo, por lo tanto no puedes estar seguro de cual dependencia se inyecte, salvo que escribas código en la clase para probar explícitamente la clase de la instancia antes de usarla.</li>
+</ul>
+<p>Sin embargo, es útil saber que esto se puede hacer en el contenedor de servicios, sobre todo si trabajas con código que está fuera de tu control, como en una biblioteca de terceros, que utiliza propiedades públicas para sus dependencias.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="definitions.html" title="Trabajando con contenedores de parámetros y definiciones"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="El componente Inyección de dependencias"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2012, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 11, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

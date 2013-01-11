@@ -1,0 +1,97 @@
+.. index::
+   single: Seguridad, cortafuegos
+
+Cortafuegos y el contexto de seguridad
+======================================
+
+Una parte central del componente de seguridad es el contexto de seguridad, el cual es una instancia de la clase :class:`Symfony\\Component\\Security\\Core\\SecurityContextInterface`. Cuando todos los pasos en el proceso de autenticar al usuario han sido exitosos, puedes preguntar al contexto de seguridad si el usuario autenticado tiene acceso a una determinada acción o recurso de la aplicación::
+
+    use Symfony\Component\Security\SecurityContext;
+    use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+
+    $securityContext = new SecurityContext();
+
+    // ... autentifica al usuario
+
+    if (!$securityContext->isGranted('ROLE_ADMIN')) {
+        throw new AccessDeniedException();
+    }
+
+.. _firewall:
+
+Un cortafuegos para peticiones *HTTP*
+-------------------------------------
+
+La autenticación de un usuario se hizo para el cortafuegos. Una aplicación puede tener múltiples áreas protegidas, así que el cortafuegos está configurado utilizando un mapa de estas áreas protegidas. Para cada una de estas áreas, el mapa contiene un emparejador con la petición y una colección de escuchas. El emparejador de petición da al cortafuegos la habilidad de descubrir si la petición actual apunta a una área protegida.
+Los escuchas entonces son consultados para ver si se puede usar la petición actual para autenticar al usuario::
+
+    use Symfony\Component\Security\Http\FirewallMap;
+    use Symfony\Component\HttpFoundation\RequestMatcher;
+    use Symfony\Component\Security\Http\Firewall\ExceptionListener;
+
+    $map = new FirewallMap();
+
+    $requestMatcher = new RequestMatcher('^/secured-area/');
+
+    // instancias de
+    // Symfony\Component\Security\Http\Firewall\ListenerInterface
+    $listeners = array(...);
+
+    $exceptionListener = new ExceptionListener(...);
+
+    $map->add($requestMatcher, $listeners, $exceptionListener);
+
+El mapa del cortafuegos será asociado al cortafuegos como su primer argumento, junto con el despachador de eventos utilizado por la clase :class:`Symfony\\Component\\HttpKernel\\HttpKernel`::
+
+    use Symfony\Component\Security\Http\Firewall;
+    use Symfony\Component\HttpKernel\KernelEvents;
+
+    // el EventDispatcher usado por el HttpKernel
+    $dispatcher = ...;
+
+    $firewall = new Firewall($map, $dispatcher);
+
+    $dispatcher->addListener(KernelEvents::REQUEST,
+                             array($firewall,
+                                   'onKernelRequest'
+                 ));
+
+El cortafuegos es registrado para escuchar el evento ``kernel.request`` que será despachado por el ``HttpKernel`` al principio de cada petición procesada. De este modo, el cortafuegos puede impedir al usuario ir más allá de dónde tiene permitido.
+
+.. _firewall_listeners:
+
+Escuchas del cortafuegos
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Cuándo el cortafuegos es notificado del evento ``kernel.request``, este consulta el mapa del cortafuegos para ver si la petición coincide con una de las áreas protegidas. La primer área protegida que coincide con la petición regresará el correspondiente conjunto de escuchas del cortafuegos (el cual implementa la :class:`Symfony\\Component\\Security\\Http\\Firewall\\ListenerInterface`).
+Todos estos escuchas serán consultados para manejar la petición actual. Esto básicamente significa: descubrir si la petición actual contiene alguna información por medio de la cual se podría autenticar al usuario (para casos de autenticación *HTTP* básicos el escucha comprueba si la petición tiene una cabecera llamada ``PHP_AUTH_USER``).
+
+Escucha de excepciones
+~~~~~~~~~~~~~~~~~~~~~~
+
+Si cualquiera de los escuchas lanza una :class:`Symfony\\Component\\Security\\Core\\Exception\\AuthenticationException`, el escucha de la excepción proporcionado al añadir las áreas protegidas saltará al mapa del cortafuegos.
+
+El escucha de la excepción determina qué pasa luego, basándose en los argumentos recibidos al crearlo. Este puede empezar el procedimiento de autenticación, quizás ---nuevamente--- haciendo que el usuario suministre sus credenciales (cuándo sólo ha sido
+autenticado basándose en una ``galleta`` «recuérdame»), o transformando la excepción a una clase :class:`Symfony\\Component\\HttpKernel\\Exception\\AccessDeniedHttpException`, la cual finalmente resulta en una «respuesta 403 de *HTTP/1.1*: Acceso denegado».
+
+Puntos de entrada
+~~~~~~~~~~~~~~~~~
+
+Cuándo el usuario no es autenticado en absoluto (es decir, cuándo el contexto de seguridad
+no tiene ficha todavía), el punto de entrada del cortafuegos será llamado para que «empiece»
+el proceso de autenticación. Un punto de entrada debería implementar :class:`Symfony\\Component\\Security\\Http\\EntryPoint\\AuthenticationEntryPointInterface`, la cual sólo tiene un método: :method:`Symfony\\Component\\Security\\Http\\EntryPoint\\AuthenticationEntryPointInterface::start`.
+Este método recibe el objeto :class:`Symfony\\Component\\HttpFoundation\\Request` actual y la excepción por la cual el escucha de excepciones fue lanzado.
+El método debería regresar un objeto :class:`Symfony\\Component\\HttpFoundation\\Response`. Este podría ser, por ejemplo, la página que contiene el formulario de inicio de sesión o, en el caso de autenticación *HTTP* básica, una respuesta con la cabecera ``WWW-Authenticate``, la cual hará que el usuario suministre su nombre de usuario y contraseña.
+
+Flujo: cortafuegos, autenticación, autorización
+-----------------------------------------------
+
+Con algo de suerte, ahora puedes ver un poco de cómo «fluye» el trabajo del contexto de seguridad:
+
+#. El cortafuegos es registrado como escucha en el evento ``kernel.request``;
+#. Al principio de la petición, el cortafuegos comprueba el mapa del cortafuegos para ver si algún cortafuegos debería estar activo para esa *URL*;
+#. Si se encontró un cortafuegos en el mapa para esta *URL*, sus escuchas son notificados
+#. Cada escucha comprueba si la petición actual contiene alguna información de autenticación ---un escucha puede (a) autenticar un usuario, (b) lanzar una ``AuthenticationException``, o (c) no hacer nada (porque no hay información de autenticación en la petición);
+#. Una vez autenticado un usuario, utilizarás la :doc:`/components/security/authorization` para denegar el acceso a determinados recursos.
+
+Lee las siguientes secciones para descubrir más sobre :doc:`/components/security/authentication` y :doc:`/components/security/authorization`.

@@ -4,17 +4,18 @@
 Cómo crear un servicio *Web SOAP* en un controlador de *Symfony2*
 =================================================================
 
-Configurar un controlador para que actúe como un servidor *SOAP* es muy sencillo con un par de herramientas.  Debes, por supuesto, tener instalada la extensión `SOAP de PHP`_.  
+Configurar un controlador para que actúe como un servidor *SOAP* es muy sencillo con un par de herramientas. Debes, por supuesto, tener instalada la extensión `SOAP de PHP`_.
 Debido a que la extensión *SOAP* de *PHP*, actualmente no puede generar un *WSDL*, debes crear uno desde cero o utilizar un generador de un tercero.
 
 .. note::
 
-    Hay varias implementaciones de servidor *SOAP* disponibles para usarlas con *PHP*. `Zend SOAP`_ y `NuSOAP`_ son dos ejemplos. A pesar de que usamos la extensión *SOAP* de *PHP* en nuestros ejemplos, la idea general debería seguir siendo aplicable a otras implementaciones.
+    Hay disponibles varias implementaciones del servidor *SOAP* para usarlas con *PHP*. `Zend SOAP`_ y `NuSOAP`_ son dos ejemplos. A pesar de que usamos la extensión *SOAP* de *PHP* en estos ejemplos, la idea general debería seguir siendo aplicable a otras implementaciones.
 
 *SOAP* trabaja explotando los métodos de un objeto *PHP* a una entidad externa (es decir, la persona que utiliza el servicio *SOAP*). Para empezar, crea una clase ---``HelloService``--- que representa la funcionalidad que vas a exponer en tu servicio *SOAP*.
 En este caso, el servicio *SOAP* debe permitir al cliente invocar a un método llamado ``hello``, el cual sucede que envía un correo electrónico::
 
-    namespace Acme\SoapBundle;
+    // src/Acme/SoapBundle/Services/HelloService.php
+    namespace Acme\SoapBundle\Services;
 
     class HelloService
     {
@@ -27,7 +28,7 @@ En este caso, el servicio *SOAP* debe permitir al cliente invocar a un método l
 
         public function hello($name)
         {
-            
+
             $message = \Swift_Message::newInstance()
                                     ->setTo('me@example.com')
                                     ->setSubject('Hello Service')
@@ -36,65 +37,66 @@ En este caso, el servicio *SOAP* debe permitir al cliente invocar a un método l
             $this->cartero->send($mensaje);
 
 
-            return 'Hello, ' . $nombre;
+            return 'Hello, '.$name;
         }
     }
 
 A continuación, puedes entrenar a *Symfony* para que sea capaz de crear una instancia de esta clase.
-Puesto que la clase envía un correo electrónico, se ha diseñado para aceptar una instancia de ``Swift_Mailer``. Usando el contenedor de servicios, podemos configurar a *Symfony* para construir correctamente un objeto ``HelloService``:
+Puesto que la clase envía un correo electrónico, se ha diseñado para aceptar una instancia de ``Swift_Mailer``. Usando el contenedor de servicios, puedes configurar a *Symfony* para construir correctamente un objeto ``HelloService``:
 
 .. configuration-block::
 
     .. code-block:: yaml
 
-        # app/config/config.yml    
+        # app/config/config.yml
         services:
             hello_service:
-                class: Acme\DemoBundle\Services\HelloService
+                class: Acme\SoapBundle\Services\HelloService
                 arguments: [@mailer]
 
     .. code-block:: xml
 
         <!-- app/config/config.xml -->
             <services>
-         <service id="hello_service" class="Acme\DemoBundle\Services\HelloService">
+         <service id="hello_service" class="Acme\SoapBundle\Services\HelloService">
           <argument type="service" id="mailer"/>
          </service>
             </services>
 
-A continuación mostramos un ejemplo de un controlador que es capaz de manejar una petición *SOAP*.  Si ``indexAction()`` es accesible a través de la ruta ``/soap``, se puede recuperar el documento WSDL a través de ``/soap?wsdl``.
+A continuación hay un ejemplo de un controlador que es capaz de manejar una petición *SOAP*. Si ``indexAction()`` es accesible a través de la ruta ``/soap``, entonces puedes recuperar el documento *WSDL* a través de ``/soap?wsdl``.
 
 .. code-block:: php
 
     namespace Acme\SoapBundle\Controller;
-    
-    use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 
-    class HelloServiceController extends Controller 
+    use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+    use Symfony\Component\HttpFoundation\Response;
+
+    class HelloServiceController extends Controller
     {
         public function indexAction()
         {
             $server = new \SoapServer('/path/to/hello.wsdl');
             $server->setObject($this->get('hello_service'));
-            
+
             $response = new Response();
             $response->headers->set('Content-Type', 'text/xml; charset=ISO-8859-1');
-            
+
             ob_start();
             $server->handle();
             $response->setContent(ob_get_clean());
-            
+
             return $response;
         }
     }
 
-Toma nota de las llamadas a ``ob_start()`` y ``ob_get_clean()``.  Estos métodos controlan la `salida almacenada temporalmente`_ que te permite "atrapar" la salida difundida por ``$server->handle()``. Esto es necesario porque *Symfony* espera que el controlador devuelva un objeto ``Respuesta`` con la salida como "contenido".
-También debes recordar establecer la cabecera ``Content-Type`` a ``text/xml``, ya que esto es lo que espera el cliente.  Por lo tanto, utiliza ``ob_start()`` para empezar a amortiguar la ``STDOUT`` y usa ``ob_get_clean()`` para volcar la salida difundida al contenido de la ``Respuesta`` y limpiar la salida.  Por último, estás listo para devolver la ``Respuesta``.
+Toma nota de las llamadas a ``ob_start()`` y ``ob_get_clean()``. Estos métodos controlan la `salida almacenada temporalmente`_ lo cual te permite «atrapar» la salida difundida por ``$server->handle()``. Esto es necesario porque *Symfony* espera que el controlador devuelva un objeto ``Respuesta`` con la salida como «contenido».
+También debes recordar establecer la cabecera ``Content-Type`` a ``text/xml``, ya que esto es lo que espera el cliente. Por lo tanto, utiliza ``ob_start()`` para empezar a almacenar la ``STDOUT`` y usa ``ob_get_clean()`` para volcar la salida difundida al contenido de la ``Respuesta`` y limpiar la memoria de salida. Por último, estás listo para devolver la ``Respuesta``.
 
-A continuación hay un ejemplo de llamada al servicio usando el cliente `NuSOAP`_.  Este ejemplo asume que el ``indexAction`` en el controlador de arriba es accesible a través de la ruta ``/soap``::
+A continuación hay un ejemplo de llamada al servicio usando el cliente `NuSOAP`_. Este ejemplo asume que el ``indexAction`` en el controlador de arriba es accesible a través de la ruta ``/soap``::
 
-    $client = new \soapclient('http://example.com/app.php/soap?wsdl', true);
-    
+    $client = new \Soapclient('http://example.com/app.php/soap?wsdl', true);
+
     $result = $client->call('hello', array('name' => 'Scott'));
 
 Abajo está un ejemplo de ``WSDL``.
@@ -102,14 +104,14 @@ Abajo está un ejemplo de ``WSDL``.
 .. code-block:: xml
 
     <?xml version="1.0" encoding="ISO-8859-1"?>
-     <definitions xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" 
-         xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-         xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" 
-         xmlns:tns="urn:arnleadservicewsdl" 
-         xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" 
-         xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
-         xmlns="http://schemas.xmlsoap.org/wsdl/" 
+     <definitions xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+         xmlns:tns="urn:arnleadservicewsdl"
+         xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+         xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+         xmlns="http://schemas.xmlsoap.org/wsdl/"
          targetNamespace="urn:helloservicewsdl">
       <types>
        <xsd:schema targetNamespace="urn:hellowsdl">
@@ -135,11 +137,11 @@ Abajo está un ejemplo de ``WSDL``.
       <operation name="hello">
        <soap:operation soapAction="urn:arnleadservicewsdl#hello" style="rpc"/>
        <input>
-        <soap:body use="encoded" namespace="urn:hellowsdl" 
+        <soap:body use="encoded" namespace="urn:hellowsdl"
             encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
        </input>
        <output>
-        <soap:body use="encoded" namespace="urn:hellowsdl" 
+        <soap:body use="encoded" namespace="urn:hellowsdl"
             encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
        </output>
       </operation>

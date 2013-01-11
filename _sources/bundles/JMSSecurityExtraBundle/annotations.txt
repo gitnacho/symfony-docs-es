@@ -1,0 +1,155 @@
+Anotaciones
+-----------
+
+``@PreAuthorize``
+~~~~~~~~~~~~~~~~~
+
+Esta anotación te permite definir una expresión (ve el párrafo del lenguaje de expresiones) que se ejecutó anteriormente a la invocación de un método:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    use JMS\SecurityExtraBundle\Annotation\PreAuthorize;
+
+    class MyService
+    {
+        /** @PreAuthorize("hasRole('A') or (hasRole('B') and hasRole('C'))") */
+        public function secureMethod()
+        {
+            // ...
+        }
+    }
+
+.. tip ::
+
+    Si quieres asegurar todas las acciones del controlador con la misma regla, también puedes especificar ``@PreAuthorize`` en la misma clase. Aun así ten cuidado, esta regla sólo es aplica a los métodos declarados en la clase.
+
+``@Secure``
+~~~~~~~~~~~
+
+Esta anotación te permite definir quién está autorizado a invocar un método:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    use JMS\SecurityExtraBundle\Annotation\Secure;
+
+    class MyService
+    {
+        /**
+         * @Secure(roles="ROLE_USER, ROLE_FOO, ROLE_ADMIN")
+         */
+        public function secureMethod()
+        {
+            // ...
+        }
+    }
+
+``@SecureParam``
+~~~~~~~~~~~~~~~~
+
+Esta anotación te permite definir restricciones para los parámetros que se le pasan al método. Esto sólo es útil si los parámetros son objetos del dominio:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    use JMS\SecurityExtraBundle\Annotation\SecureParam;
+
+    class MyService
+    {
+        /**
+         * @SecureParam(name="comment", permissions="EDIT, DELETE")
+         * @SecureParam(name="post", permissions="OWNER")
+         */
+        public function secureMethod($comment, $post)
+        {
+            // ...
+        }
+    }
+
+``@SecureReturn``
+~~~~~~~~~~~~~~~~~~
+
+Esta anotación te permite definir restricciones para el valor que devuelve el método. Esto también es útil sólo si el valor devuelto es un objeto del dominio:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    use JMS\SecurityExtraBundle\Annotation\SecureReturn;
+
+    class MyService
+    {
+        /**
+         * @SecureReturn(permissions="VIEW")
+         */
+        public function secureMethod()
+        {
+            // ...
+
+            return $domainObject;
+        }
+    }
+
+``@RunAs``
+~~~~~~~~~~
+
+Esta anotación te permite especificar los roles que se añadirán sólo mientras subsista la invocación del método. Estos roles no serán tomados en consideración antes o después de las decisiones de acceso en la invocación.
+
+Este se suele utilizar para implementar una capa de dos niveles para el servicio, donde tienes servicios públicos y privados, y los servicios privados únicamente son invocados a través de un servicio público específico:
+
+.. code-block:: php
+
+    
+.. code-block:: php
+
+    <?php
+
+    use JMS\SecurityExtraBundle\Annotation\Secure;
+    use JMS\SecurityExtraBundle\Annotation\RunAs;
+
+    class MyPrivateService
+    {
+        /**
+         * @Secure(roles="ROLE_PRIVATE_SERVICE")
+         */
+        public function aMethodOnlyToBeInvokedThroughASpecificChannel()
+        {
+            // ...
+        }
+    }
+
+    class MyPublicService
+    {
+        protected $myPrivateService;
+
+        /**
+         * @Secure(roles="ROLE_USER")
+         * @RunAs(roles="ROLE_PRIVATE_SERVICE")
+         */
+        public function canBeInvokedFromOtherServices()
+        {
+            return $this->myPrivateService->aMethodOnlyToBeInvokedThroughASpecificChannel();
+        }
+    }
+
+``@SatisfiesParentSecurityPolicy``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Esto lo debes definir en un método que sustituya al método que tiene metadatos de seguridad.
+Está ahí para asegurarse de que estás consciente de que la seguridad del método reemplazado no se puede hacer valer más, y que tienes que copiar todas las anotaciones si deseas mantenerlas.

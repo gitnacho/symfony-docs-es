@@ -1,0 +1,91 @@
+.. index::
+   single: Stopwatch
+   single: Componentes; Stopwatch
+
+El componente ``Stopwatch``
+===========================
+
+    El componente ``stopwatch`` proporciona una manera para codificar el perfil.
+
+.. versionadded:: 2.2
+    El componente ``stopwatch`` es nuevo en *Symfony 2.2*. Anteriormente, la clase ``stopwatch`` estaba localizada en el componente ``HttpKernel`` (y era nueva en 2.1).
+
+Instalando
+----------
+
+Puedes instalar el componente en dos diferentes maneras:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/Stopwatch);
+* :doc:`Instalándolo vía Composer </components/using_components>` (``symfony/stopwatch`` en `Packagist`_).
+
+Usando
+------
+
+El el componente ``stopwatch`` proporciona una manera fácil y coherente para medir el tiempo de ejecución de ciertas partes de código a modo de que no tengas que analizar la duración de algo. En cambio, usas la sencilla clase :class:`Symfony\\Component\\Stopwatch\\Stopwatch`::
+
+    use Symfony\Component\Stopwatch\Stopwatch;
+
+    $stopwatch = new Stopwatch();
+    // Inicia el evento llamado 'eventName'
+    $stopwatch->start('eventName');
+    // ... aquí va algún código
+    $event = $stopwatch->stop('eventName');
+
+También puedes proporcionar un nombre de categoría a un evento::
+
+    $stopwatch->start('eventName', 'categoryName');
+
+Puedes considerar a las categorías como una conveniente manera de etiquetar eventos. La herramienta perfiladora de *Symfony*, por ejemplo, usa categorías para colorear amigablemente el código de diferentes eventos. 
+
+Periodos
+--------
+
+Como sabes del mundo real, todos los cronómetros vienen con dos botones.
+Uno para arrancar y detener el cronómetro, otro para medir el tiempo transcurrido.
+Esto exactamente es lo que hace el método :method:`Symfony\\Component\\Stopwatch\\Stopwatch::lap`::
+
+    $stopwatch = new Stopwatch();
+    // Inicia el evento llamado 'foo'
+    $stopwatch->start('foo');
+    // ... aquí va algún código
+    $stopwatch->lap('foo');
+    // ... aquí va algún código
+    $stopwatch->lap('foo');
+    // ... aquí va algún otro código
+    $event = $stopwatch->stop('foo');
+
+La información del lapso se almacena en periodos dentro del evento. Para obtener dicha información (t.c.c. periodos) llama a::
+
+    $event->getPeriods();
+
+Además de consiguir los periodos, puedes conseguir otra información útil del objeto evento.
+Por ejemplo::
+
+    $event->getCategory();      // Devuelve la categoría en que se inició el evenento
+    $event->getOrigin();        // Devuelve el tiempo de inicio del evento en milisegundos
+    $event->ensureStopped();    // Detiene todos los periodos que no se han detenido ya
+    $event->getStartTime();     // Regresa el inicio del primer periodo
+    $event->getEndTime();       // Regresa el tiempo final del muy último periodo
+    $event->getDuration();      // Obtiene la duración (incluyendo todos los  periodos) del evento
+    $event->getMemory();        // Obtiene el máximo uso de memoria de todos los periodos
+
+Secciones
+---------
+
+Las secciones son una manera de dividir lógicamente la cronología en grupos. Puedes ver cómo usa *Symfony* las secciones para visualizar agradablemente el ciclo de vida en la herramienta perfiladora de *Symfony*. Aquí tienes un ejemplo del uso básico de secciones::
+
+    $stopwatch = new Stopwatch();
+
+    $stopwatch->openSection();
+    $stopwatch->start('parsing_config_file', 'filesystem_operations');
+    $stopwatch->stopSection('routing');
+
+    $events = $stopwatch->getSectionEvents('routing');
+
+Puedes reabrir una sección cerrada llamando al método ``openSection`` y especificando el ``id`` de la sección a reabrir::
+
+    $stopwatch->openSection('routing');
+    $stopwatch->start('building_config_tree');
+    $stopwatch->stopSection('routing');
+
+.. _`Packagist`: https://packagist.org/packages/symfony/stopwatch

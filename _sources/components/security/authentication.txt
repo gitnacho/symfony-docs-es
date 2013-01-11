@@ -1,0 +1,179 @@
+.. index::
+   single: Seguridad, autenticación
+
+Autenticación
+=============
+
+Cuándo una petición apunta a una área protegida, y uno de los escuchas del
+cortafuegos asociado es capaz de extraer las credenciales del usuario desde el objeto :class:`Symfony\\Component\\HttpFoundation\\Request` actual, este debe crear una ficha conteniendo estas credenciales. Lo siguiente que el escucha debería hacer es consultar al gestor de autenticación para validar la ficha dada, y regresar una ficha *autenticada* si resulta que las credenciales suministradas son válidas.
+El escucha entonces debería almacenar la ficha autenticada en el contexto de seguridad::
+
+    use Symfony\Component\Security\Http\Firewall\ListenerInterface;
+    use Symfony\Component\Security\Core\SecurityContextInterface;
+    use Symfony\Component\Security\Core\Authentication\AuthenticationManagerInterface;
+    use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+    use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+
+    class SomeAuthenticationListener implements ListenerInterface
+    {
+        /**
+         * @var SecurityContextInterface
+         */
+        private $securityContext;
+
+        /**
+         * @var AuthenticationManagerInterface
+         */
+        private $authenticationManager;
+
+        /**
+         * @var string Uniquely identifies the secured area
+         */
+        private $providerKey;
+
+        // ...
+
+        public function handle(GetResponseEvent $event)
+        {
+            $request = $event->getRequest();
+
+            $username = ...;
+            $password = ...;
+
+            $unauthenticatedToken = new UsernamePasswordToken(
+                $username,
+                $password,
+                $this->providerKey
+            );
+
+            $authenticatedToken = $this
+                ->authenticationManager
+                ->authenticate($unauthenticatedToken);
+
+            $this->securityContext->setToken($authenticatedToken);
+        }
+    }
+
+.. note::
+
+    Una ficha puede ser cualquier clase, siempre y cuando implemente la interfaz :class:`Symfony\\Component\\Security\\Core\\Authentication\\Token\\TokenInterface`.
+
+El gestor de autenticación
+--------------------------
+
+El gestor de autenticación predefinido es una instancia de la clase :class:`Symfony\\Component\\Security\\Core\\Authentication\\AuthenticationProviderManager`::
+
+    use Symfony\Component\Security\Core\Authentication\AuthenticationProviderManager;
+
+    // instancias de Symfony\Component\Security\Core\Authentication\AuthenticationProviderInterface
+    $providers = array(...);
+
+    $authenticationManager = new AuthenticationProviderManager($providers);
+
+    try {
+        $authenticatedToken = $authenticationManager
+            ->authenticate($unauthenticatedToken);
+    } catch (AuthenticationException $failed) {
+        // falló la autenticación
+    }
+
+El ``AuthenticationProviderManager``, al crear una instancia, recibe varios proveedores de autenticación, cada uno compatible a un diferente tipo de señal.
+
+.. note::
+
+    Por supuesto, puedes escribir tu propio gestor de autenticación, sólo tienes que implementar la :class:`Symfony\\Component\\Security\\Core\\Authentication\\AuthenticationManagerInterface`.
+
+.. _authentication_providers:
+
+Proveedores de autenticación
+----------------------------
+
+Cada proveedor (debido a que implementan la clase :class:`Symfony\\Component\\Security\\Core\\Authentication\\Provider\\AuthenticationProviderInterface`) tiene un método :method:`Symfony\\Component\\Security\\Core\\Authentication\\Provider\\AuthenticationProviderInterface::supports` por medio del cual el ``AuthenticationProviderManager`` puede determinar si es compatible con la ficha dada. Si este es el caso, el gestor, entonces llama al método :class:`Symfony\\Component\\Security\\Core\\Authentication\\Provider\\AuthenticationProviderInterface::authenticate` del proveedor
+.
+Este método debe devolver una ficha autenticada o lanzar una :class:`Symfony\\Component\\Security\\Core\\Exception\\AuthenticationException` (o cualquier otra excepción que extienda esta).
+
+Autenticando usuarios por nombre de usuario y contraseña
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Un proveedor de autenticación intentará autenticar a un usuario basándose en las credenciales que él proporcionó. Generalmente, se trata de un nombre de usuario y una contraseña.
+La mayoría de las aplicaciones *web* guardan el nombre de usuario y una codificación de la contraseña del usuario combinada con una «sal» generada aleatoriamente. Esto significa que la autenticación promedio consistirá en recuperar la sal y la contraseña codificada del almacén de datos del usuario, la contraseña codificada del usuario es proporcionada (por ejemplo, utilizando un formulario de inicio de sesión) con la sal y comparando ambas para determinar si la contraseña dada es válida.
+
+Esta funcionalidad es ofrecida por el :class:`Symfony\\Component\\Security\\Core\\Authentication\\Provider\\DaoAuthenticationProvider`.
+Esta recupera los datos del usuario a partir de una :class:`Symfony\\Component\\Security\\Core\\User\\UserProviderInterface`, utilizando una :class:`Symfony\\Component\\Security\\Core\\Encoder\\PasswordEncoderInterface` para crear la codificación de la contraseña y devolver una ficha autenticada si la contraseña es válida::
+
+    use Symfony\Component\Security\Core\Authentication\Provider\DaoAuthenticationProvider;
+    use Symfony\Component\Security\Core\User\UserChecker;
+    use Symfony\Component\Security\Core\User\InMemoryUserProvider;
+    use Symfony\Component\Security\Core\Encoder\EncoderFactory;
+
+    $userProvider = new InMemoryUserProvider(
+        array(
+            'admin' => array(
+                // password is "foo"
+                'password' => '5FZ2Z8QIkA7UTZ4BYkoC+GsReLf569mSKDsfods6LYQ8t+a8EW9oaircfMpmaLbPBh4FOBiiFyLfuZmTSUwzZg==',
+                'roles' => array('ROLE_ADMIN'),
+            ),
+        )
+    );
+
+    // para alguna comprobación extra: ¿la cuenta está habilitada, cerrada, expirada, etc.?
+    $userChecker = new UserChecker();
+
+    // un arreglo de codificadores de contraseña (ve abajo)
+    $encoderFactory = new EncoderFactory(...);
+
+    $provider = new DaoAuthenticationProvider(
+        $userProvider,
+        $userChecker,
+        'secured_area',
+        $encoderFactory
+    );
+
+    $provider->authenticate($unauthenticatedToken);
+
+.. note::
+
+    El ejemplo anterior demuestra el uso del proveedor de usuarios «en memoria», pero puedes utilizar cualquier proveedor de usuario, siempre y cuando implemente la :class:`Symfony\\Component\\Security\\Core\\User\\UserProviderInterface`.
+    También es posible permitir que múltiples proveedores de usuario intenten encontrar los datos del usuario, utilizando la :class:`Symfony\\Component\\Security\\Core\\User\\ChainUserProvider`.
+
+La fábrica codificadora de contraseñas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+La clase :class:`Symfony\\Component\\Security\\Core\\Authentication\\Provider\\DaoAuthenticationProvider` utiliza una fábrica codificadora para crear una contraseña codificada para un determinado tipo de usuario. Esto te permite utilizar diferentes estrategias de codificado para diferentes tipos de usuario. La clase :class:`Symfony\\Component\\Security\\Core\\Encoder\\EncoderFactory` recibe un arreglo de codificadores::
+
+    use Symfony\Component\Security\Core\Encoder\EncoderFactory;
+    use Symfony\Component\Security\Core\Encoder\MessageDigestPasswordEncoder;
+
+    $defaultEncoder = new MessageDigestPasswordEncoder('sha512', true, 5000);
+    $weakEncoder = new MessageDigestPasswordEncoder('md5', true, 1);
+
+    $encoders = array(
+        'Symfony\\Component\\Security\\Core\\User\\User' => $defaultEncoder,
+        'Acme\\Entity\\LegacyUser' => $weakEncoder,
+        ...,
+    );
+
+    $encoderFactory = new EncoderFactory($encoders);
+
+Cada codificador debería implementar la :class:`Symfony\\Component\\Security\\Core\\Encoder\\PasswordEncoderInterface` o ser un arreglo con una clave ``class`` y ``arguments``, lo cual permite a la fábrica codificadora construir el codificador sólo cuándo es necesario.
+
+Codificadores de contraseña
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Cuándo invocas al método :method:`Symfony\\Component\\Security\\Core\\Encoder\\EncoderFactory::getEncoder` de la fábrica codificadora de contraseñas con el objeto ``usuario`` como primer argumento, regresa un codificador de tipo :class:`Symfony\\Component\\Security\\Core\\Encoder\\PasswordEncoderInterface` el cuál se tendría que usar para codificar la contraseña de ese usuario::
+
+    // recupera un usuario de tipo Acme\Entity\LegacyUser
+    $user = ...
+
+    $encoder = $encoderFactory->getEncoder($user);
+
+    // debe regresar $weakEncoder (ve arriba)
+
+    $encodedPassword = $encoder->encodePassword($password, $user->getSalt());
+
+    // comprueba si la contraseña es válida:
+
+    $validPassword = $encoder->isPasswordValid(
+        $user->getPassword(),
+        $password,
+        $user->getSalt());

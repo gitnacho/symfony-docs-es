@@ -1,0 +1,111 @@
+.. index::
+   single: Inyección de dependencia; Configuración avanzada
+
+Configuración avanzada del contenedor
+=====================================
+
+Marcando servicios como públicos/privados
+-----------------------------------------
+
+Cuando definas servicios, generalmente, querrás poder acceder a estas definiciones dentro del código de tu aplicación. Estos servicios se llaman ``public``. Por ejemplo, el servicio ``doctrine`` registrado en el contenedor cuando se utiliza ``DoctrineBundle`` es un servicio público al que puedes acceder a través de::
+
+   $doctrine = $container->get('doctrine');
+
+Sin embargo, hay casos de uso cuando no quieres que un servicio sea público. Esto es común cuando sólo se define un servicio, ya que se podría utilizar como argumento para otro servicio.
+
+.. note::
+
+    Si utilizas un servicio privado como único argumento para otro servicio, resultará en la creación de ejemplares (por ejemplo. ``new PrivateFooBar()``) dentro de este otro servicio, haciéndolo públicamente inutilizable en tiempo de ejecución.
+
+Simplemente dice: El servicio será privado cuando no deseas acceder a él directamente desde tu código.
+
+Aquí está un ejemplo:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+           foo:
+             class: Example\Foo
+             public: false
+
+    .. code-block:: xml
+
+        <service id="foo" class="Example\Foo" public="false" />
+
+    .. code-block:: php
+
+        $definition = new Definition('Example\Foo');
+        $definition->setPublic(false);
+        $container->setDefinition('foo', $definition);
+
+Ahora que el servicio es privado, *no* puedes llamar a::
+
+    $container->get('foo');
+
+Sin embargo, si has marcado un servicio como privado, todavía puedes asignarle un alias (ve más abajo) para acceder a este servicio (a través del alias).
+
+.. note::
+
+   De manera predeterminada los servicios son públicos.
+
+Apodando
+--------
+
+A veces posiblemente quieras usar atajos para acceder a algunos servicios. Lo puedes hacer por su alias y, además, incluso puedes apodar servicios no públicos.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+           foo:
+             class: Example\Foo
+           bar:
+             alias: foo
+
+    .. code-block:: xml
+
+        <service id="foo" class="Example\Foo"/>
+
+        <service id="bar" alias="foo" />
+
+    .. code-block:: php
+
+        $definition = new Definition('Example\Foo');
+        $container->setDefinition('foo', $definition);
+
+        $containerBuilder->setAlias('bar', 'foo');
+
+Esto significa que cuando utilizas el contenedor directamente, puedes acceder al servicio ``foo`` al pedir el servicio ``bar`` así::
+
+    $container->get('bar'); // debería devolver el servicio foo
+
+Requiriendo archivos
+--------------------
+
+Puede haber casos de uso cuando necesites incluir otro archivo justo antes de cargar el servicio en sí. Para ello, puedes utilizar la directiva ``file``.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+           foo:
+             class: Example\Foo\Bar
+             file: "%kernel.root_dir%/src/path/to/file/foo.php"
+
+    .. code-block:: xml
+
+        <service id="foo" class="Example\Foo\Bar">
+            <file>%kernel.root_dir%/src/ruta/al/archivo/foo.php</file>
+        </service>
+
+    .. code-block:: php
+
+        $definition = new Definition('Example\Foo\Bar');
+        $definition->setFile('%kernel.root_dir%/src/ruta/al/archivo/foo.php');
+        $container->setDefinition('foo', $definition);
+
+Ten en cuenta que internamente *Symfony* llama a la función *PHP* ``require_once``, lo cual significa que el archivo se incluirá una sola vez por petición. 

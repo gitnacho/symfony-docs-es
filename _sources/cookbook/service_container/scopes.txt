@@ -1,7 +1,10 @@
+.. index::
+   single: Inyección de dependencia; Ámbitos
+
 Cómo trabajar con ámbitos
 =========================
 
-Esta entrada trata sobre los ámbitos, un tema un tanto avanzado relacionado con el :doc:`/book/service_container`. Si alguna vez has tenido un error hablando de "ámbitos" en la creación de servicios o necesitas crear un servicio que depende del servicio ``petición``, entonces este artículo es para ti.
+Esta entrada trata sobre los ámbitos, un tema un tanto avanzado relacionado con el :doc:`/book/service_container`. Si alguna vez has tenido un error hablando de «ámbitos» en la creación de servicios o necesitas crear un servicio que depende del servicio ``Petición``, entonces este artículo es para ti.
 
 Entendiendo los ámbitos
 -----------------------
@@ -14,27 +17,27 @@ El ámbito de un servicio controla la duración de una instancia de un servicio 
 
 El ``FrameworkBundle`` también define un tercer ámbito: ``request``. Este ámbito está ligado a la petición, lo cual significa que se crea una nueva instancia para cada subpetición y no está disponible fuera de la petición (por ejemplo, en la *CLI*).
 
-Los ámbitos agregan una restricción en las dependencias de un servicio: un servicio no puede depender de los servicios de un ámbito más estrecho. Por ejemplo, si creas un servicio ``mi_foo`` genérico, pero tratas de inyectar el componente ``petición``, recibirás un: class:`Symfony\\Component\\DependencyInjection\\Exception\\ScopeWideningInjectionException` al compilar el contenedor . Lee la barra lateral más abajo para más detalles.
+Los ámbitos agregan una restricción en las dependencias de un servicio: un servicio no puede depender de los servicios de un ámbito más estrecho. Por ejemplo, si creas un servicio genérico ``mi_foo``, pero tratas de inyectar el componente ``Petición``, recibirás una :class:`Symfony\\Component\\DependencyInjection\\Exception\\ScopeWideningInjectionException` al compilar el contenedor. Lee la barra lateral más adelante para más detalles.
 
 .. sidebar:: Ámbitos y dependencias
 
-    Imaginemos que has configurado un servicio ``my_mailer``. No has configurado el ámbito del servicio, por lo cual el predeterminado es el ``contenedor``. En otras palabras, cada vez que solicitas el ``contenedor`` para el servicio ``my_mailer``, obtienes el mismo objeto de nuevo. Esta, por lo general, es la forma en que deseas que trabajen tus servicios.
-    
-    Imaginemos, sin embargo, que es necesario el servicio ``petición`` en tu servicio ``my_mailer``, tal vez porque estás leyendo la *URL* de la ``petición`` actual.
-    Por lo tanto, lo agregas como argumento del constructor. Veamos por qué esto presenta un problema:
+    Imaginemos que has configurado un servicio ``my_mailer``. No has configurado el ámbito del servicio, por lo cual el predeterminado es el ``contenedor``. En otras palabras, cada vez preguntas al contenedor por el servicio ``my_mailer``, obtienes el mismo objeto. Esta, por lo general, es la forma en que deseas que trabajen tus servicios.
 
-    * Al solicitar ``my_mailer``, se crea una instancia de ``my_mailer`` (llamémosla ``MailerA``) y se pasa al servicio ``petición`` (vamos a llamarlo ``RequestA``). ¡La vida es buena!
+    Imagina, no obstante, que necesitas el servicio ``Petición`` en tu servicio ``my_mailer``, tal vez porque estás leyendo la *URL* de la ``Petición`` actual.
+    Por lo tanto, lo agregas como argumento del constructor. Ve por qué esto presenta un problema:
 
-    * Has hecho una subpetición en *Symfony*, esta es una forma elegante de decir que has llamado, por ejemplo, a la función ``{% render ... %}`` de *Twig*, que ejecuta otro controlador. Internamente, el antiguo servicio ``petición`` (``RequestA``) en realidad es reemplazado por una instancia de la nueva petición (``RequestB``).
+    * Al solicitar ``my_mailer``, se crea una instancia de ``my_mailer`` (llamémosla ``MailerA``) y se pasa al servicio ``Petición`` (vamos a llamarlo ``RequestA``). ¡La vida es buena!
+
+    * Has hecho una subpetición en *Symfony*, esta es una forma elegante de decir que has llamado, por ejemplo, a la función ``{% render ... %}`` de *Twig*, que ejecuta otro controlador. Internamente, el antiguo servicio ``Petición`` (``RequestA``) en realidad es reemplazado por una instancia de la nueva petición (``RequestB``).
       Esto sucede en segundo plano, y es totalmente normal.
 
-    * En tu controlador incorporado, una vez más invocas al servicio ``my_mailer``. Debido a que tu servicio está en el ámbito del ``contenedor``, se vuelve a utilizar la misma instancia (``MailerA``). Pero aquí está el problema: la instancia de ``MailerA`` contiene todavía el viejo objeto ``RequestA``, que ahora **no** es el objeto petición correcto (``RequestB`` ahora es el servicio ``petición`` actual). Esto es sutil, pero el desajuste puede causar grandes problemas, lo cual no está permitido.
+    * En tu controlador incorporado, una vez más invocas al servicio ``my_mailer``. Debido a que tu servicio está en el ámbito del ``contenedor``, se vuelve a utilizar la misma instancia (``MailerA``). Pero aquí está el problema: la instancia de ``MailerA`` contiene todavía el viejo objeto ``RequestA``, que ahora **no** es el objeto petición correcto (``RequestB`` ahora es el servicio ``Petición`` actual). Esto es sutil, pero el desajuste puede causar grandes problemas, lo cual no está permitido.
 
       Por lo tanto, esa es la razón por la *cual* existen los ámbitos, y la forma en que pueden causar problemas. Sigue leyendo para encontrar las soluciones comunes.
 
 .. note::
 
-    Un servicio puede, por supuesto, depender de un servicio desde un ámbito más amplio sin ningún problema. 
+    Un servicio puede, por supuesto, depender de un servicio desde un ámbito más amplio sin ningún problema.
 
 Estableciendo el ámbito en la definición
 ----------------------------------------
@@ -68,7 +71,7 @@ El ámbito de un servicio se establece en la definición del servicio:
             new Definition('Acme\HelloBundle\Mail\GreetingCardManager')
         )->setScope('request');
 
-Si no especificas el ámbito, el valor predeterminado es ``contenedor``, el cual es el que quieres la mayor parte del tiempo. A menos que tu servicio dependa de otro servicio que aplica su ámbito más restringido (por lo general, el servicio ``petición``), es probable que no sea necesario definir el ámbito.
+Si no especificas el ámbito, el valor predeterminado es ``contenedor``, el cual es el que quieres la mayor parte del tiempo. A menos que tu servicio dependa de otro servicio que aplica su ámbito más restringido (por lo general, el servicio ``Petición``), es probable que no sea necesario definir el ámbito.
 
 Usando un servicio de menor ámbito
 ----------------------------------
@@ -78,6 +81,7 @@ Si tu servicio depende del ámbito de un servicio, la mejor solución es ponerlo
 Pero esto no siempre es posible (por ejemplo, una extensión de *Twig* debe estar en el ámbito del ``contenedor`` como el entorno *Twig* que necesita como dependencia).
 En estos casos, debes pasar todo el contenedor en tu servicio y recuperar tu dependencia desde el contenedor cada vez que lo necesites para asegurarte de que tienes la instancia correcta::
 
+    // src/Acme/HelloBundle/Mail/Mailer.php
     namespace Acme\HelloBundle\Mail;
 
     use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -94,7 +98,7 @@ En estos casos, debes pasar todo el contenedor en tu servicio y recuperar tu dep
         public function sendEmail()
         {
             $request = $this->container->get('request');
-            // hace algo con la respuesta de redirección
+            // ... haz algo con la respuesta de redirección
         }
     }
 
@@ -114,7 +118,7 @@ La configuración del servicio de esta clase sería algo como esto:
             my_mailer.class: Acme\HelloBundle\Mail\Mailer
         services:
             my_mailer:
-                class:     %my_mailer.class%
+                class:     "%my_mailer.class%"
                 arguments:
                     - "@service_container"
                 # scope: el contenedor se puede omitir como si fuera el predefinido

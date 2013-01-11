@@ -6,43 +6,30 @@ Los accesorios se utilizan para cargar en una base de datos un juego de datos co
 Instalando y configurando
 -------------------------
 
-Si todavía no tienes configurada en *Symfony2* la biblioteca `Doctrine Data Fixtures`_, sigue estos pasos para hacerlo.
+Los accesorios de *Doctrine* para *Symfony* se mantienen en el `DoctrineMigrationsBundle`_.
+El paquete utiliza la biblioteca externa de `Datos accesorios de Doctrine`_.
 
-Si estás utilizando la distribución estándar, agrega lo siguiente a tu archivo ``deps``:
+Sigue estos pasos para instalar el paquete y la biblioteca en la edición estándar de *Symfony*. Añade lo siguiente a tu archivo :file:`composer.json`:
 
-.. code-block:: text
+.. code-block:: json
 
-    [doctrine-fixtures]
-        git=http://github.com/doctrine/data-fixtures.git
-
-    [DoctrineFixturesBundle]
-        git=http://github.com/doctrine/DoctrineFixturesBundle.git
-        target=/bundles/Doctrine/Bundle/FixturesBundle
+    {
+        "require": {
+            "doctrine/doctrine-fixtures-bundle": "dev-master"
+        }
+    }
 
 Actualiza las bibliotecas de proveedores:
 
 .. code-block:: bash
 
-    $ php bin/vendors install
+    $ php composer.phar update
 
-Si todo funcionó, ahora puedes encontrar la biblioteca ``doctrine-fixtures`` en ``vendor/doctrine-fixtures``.
+Si todo va bien, el ``DoctrineFixturesBundle`` ahora se puede encontrar en ``vendor/doctrine/doctrine-fixtures-bundle``.
 
-Registra el espacio de nombres ``Doctrine\Common\DataFixtures`` en ``app/autoload.php``.
+.. note::
 
-.. code-block:: php
-
-    // ...
-    $loader->registerNamespaces(array(
-        // ...
-        'Doctrine\\Bundle' => __DIR__.'/../vendor/bundles',
-        'Doctrine\\Common\\DataFixtures' => __DIR__.'/../vendor/doctrine-fixtures/lib',
-        'Doctrine\\Common' => __DIR__.'/../vendor/doctrine-common/lib',
-        // ...
-    ));
-
-.. caution::
-
-    Asegúrate de registrar el nuevo espacio de nombres *antes* de ``Doctrine\Common``. De lo contrario, *Symfony* buscará clases accesorio dentro del directorio ``Doctrine\Common``. El autocargador de *Symfony*, siempre busca en primer lugar una clase dentro del directorio del espacio de nombres coincidente, los espacios de nombres más específicos *siempre* deben estar primero.
+    ``DoctrineFixturesBundle`` instala la biblioteca de `Datos accesorios de Doctrine`_. La biblioteca se puede encontrar en ``vendor/doctrine/data-fixtures``.
 
 Por último, registra el paquete ``DoctrineFixturesBundle`` en ``app/AppKernel.php``.
 
@@ -237,8 +224,8 @@ Ambas clases accesorio extienden ``AbstractFixture``, lo cual te permite crear o
         public function load(ObjectManager $manager)
         {
             $userGroupAdmin = new UserGroup();
-            $userGroupAdmin->setUser($manager->merge($this->getReference('admin-user')));
-            $userGroupAdmin->setGroup($manager->merge($this->getReference('admin-group')));
+            $userGroupAdmin->setUser($this->getReference('admin-user'));
+            $userGroupAdmin->setGroup($this->getReference('admin-group'));
 
             $manager->persist($userGroupAdmin);
             $manager->flush();
@@ -317,4 +304,5 @@ Como puedes ver, todo lo que necesitas hacer es agregar :class:`Symfony\\Compone
 
     Si te da flojera implementar el método necesario :method:`Symfony\\Component\\DependencyInjection\\ContainerInterface::setContainer`, entonces, puedes extender tu clase con :class:`Symfony\\Component\\DependencyInjection\\ContainerAware`.
 
-.. _`Doctrine Data Fixtures`: https://github.com/doctrine/data-fixtures
+.. _DoctrineFixturesBundle: https://github.com/doctrine/DoctrineFixturesBundle
+.. _`Datos accesorios de Doctrine`: https://github.com/doctrine/data-fixtures

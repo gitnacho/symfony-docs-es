@@ -1,0 +1,196 @@
+.. index::
+   single: Inyección de dependencia; Tipos de inyección
+
+Tipos de inyección
+==================
+
+Hacer dependencias de una clase explícita y requerir que se inyecte es una buena manera de hacer una clase más reutilizable, comprobable y desacoplada de las demás.
+
+Hay varias maneras en que se pueden inyectar dependencias. Cada punto de inyección tiene sus ventajas y desventajas a considerar, así como las diferentes formas de trabajar con ellas cuando se utiliza el contenedor de servicios.
+
+Inyectando en el constructor
+----------------------------
+
+La manera más común para inyectar dependencias es a través del constructor de la clase.
+Para ello es necesario añadir un argumento a la firma del constructor para aceptar la dependencia::
+
+    class NewsletterManager
+    {
+        protected $mailer;
+
+        public function __construct(\Mailer $mailer)
+        {
+            $this->mailer = $mailer;
+        }
+
+        // ...
+    }
+
+Puedes especificar qué tipo de servicio deseas inyectar en la configuración del contenedor de servicios:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+       services:
+            my_mailer:
+                # ...
+            newsletter_manager:
+                class:     NewsletterManager
+                arguments: [@my_mailer]
+
+    .. code-block:: xml
+
+            <services>
+            <service id="my_mailer" ... >
+              <!-- ... -->
+            </service>
+            <service id="newsletter_manager" class="NewsletterManager">
+                <argument type="service" id="my_mailer"/>
+            </service>
+            </services>
+
+    .. code-block:: php
+
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        // ...
+        $container->setDefinition('my_mailer', ...);
+        $container->setDefinition('newsletter_manager', new Definition(
+            'NewsletterManager',
+            array(new Reference('my_mailer'))
+        ));
+
+.. tip::
+
+    Aludir el tipo de objeto a inyectar significa que puedes estar seguro de  haber inyectado la dependencia adecuada. Al aludir el tipo, de inmediato obtendrás un error claro si inyectas una dependencia inadecuada. Al aludir el tipo usando una interfaz en lugar de una clase puedes hacer más flexible la elección de la dependencia. Y suponiendo que sólo utilizas los métodos definidos en la interfaz, te puedes beneficiar de la flexibilidad y seguridad al utilizar el objeto.
+
+Hay varias ventajas al utilizar la inyección en el constructor:
+
+* Si la dependencia es un requisito y la clase no puede funcionar sin ella, entonces la inyección a través del constructor garantiza que está presente al utilizar la clase debido a que la clase no se puede construir sin ella. 
+
+* El constructor sólo se invoca una vez cuando se crea el objeto, por lo tanto puedes estar seguro de que la dependencia no va a cambiar durante la vida del objeto.
+
+Estas ventajas no significan que la inyección en el constructor no sea adecuada para trabajar con dependencias opcionales. Ademas, es más difícil usar en combinación con jerarquías de clase: si una clase utiliza la inyección en el constructor entonces extender y reemplazar el constructor se vuelve problemático.
+
+Inyectando en un definidor
+--------------------------
+
+Otro posible punto de inyección en una clase es añadiendo un método definidor que acepte la dependencia::
+
+    class NewsletterManager
+    {
+        protected $mailer;
+
+        public function setMailer(\Mailer $mailer)
+        {
+            $this->mailer = $mailer;
+        }
+
+        // ...
+    }
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+       services:
+            my_mailer:
+                # ...
+            newsletter_manager:
+                class:     NewsletterManager
+                calls:
+                    - [ setMailer, [ @my_mailer ] ]
+
+    .. code-block:: xml
+
+            <services>
+            <service id="my_mailer" ... >
+              <!-- ... -->
+            </service>
+            <service id="newsletter_manager" class="NewsletterManager">
+                <call method="setMailer">
+                     <argument type="service" id="my_mailer" />
+                </call>
+            </service>
+            </services>
+
+    .. code-block:: php
+
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        // ...
+        $container->setDefinition('my_mailer', ...);
+        $container->setDefinition('newsletter_manager', new Definition(
+            'NewsletterManager'
+        ))->addMethodCall('setMailer', array(new Reference('my_mailer')));
+
+Esta vez las ventajas son:
+
+* La inyección en el definidor funciona bien con dependencias opcionales. Si no necesitas la dependencia, entonces simplemente no llames al definidor.
+
+* Puedes llamar al definidor varias veces. Esto es particularmente útil si el método añade la dependencia a una colección. Entonces, puedes tener un número variable de dependencias.
+
+Las desventajas de la inyección en definidor son:
+
+* El definidor se puede llamar más que justo al momento de la construcción por lo que no puedes estar seguro de que la dependencia no sea reemplazada durante la vida del objeto (salvo que escribas el definidor de tal manera que compruebe si ya se ha llamado).
+
+* No puedes estar seguro de que el definidor se llamó y necesitas añadir comprobaciones para verificar que se inyecten las dependencias necesarias.
+
+Inyectando en propiedades
+-------------------------
+
+Otra posibilidad es sólo configurar campos públicos en la clase directamente::
+
+    class NewsletterManager
+    {
+        public $mailer;
+
+        // ...
+    }
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+       services:
+            my_mailer:
+                # ...
+            newsletter_manager:
+                class:     RNewsletterManager
+                properties:
+                    mailer: @my_mailer
+
+    .. code-block:: xml
+
+            <services>
+            <service id="my_mailer" ... >
+              <!-- ... -->
+            </service>
+            <service id="newsletter_manager" class="NewsletterManager">
+                <property name="mailer" type="service" id="my_mailer" />
+            </service>
+            </services>
+
+    .. code-block:: php
+
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        // ...
+        $container->setDefinition('my_mailer', ...);
+        $container->setDefinition('newsletter_manager', new Definition(
+            'NewsletterManager'
+        ))->setProperty('mailer', new Reference('my_mailer')));
+
+
+Hay desventajas, principalmente sólo para usar la inyección de la propiedad, es similar a la inyección del definidor, pero con estos importantes problemas adicionales:
+
+* No puedes controlar cuando la dependencia se ha fijado del todo, esta puede cambiar en cualquier momento durante la vida del objeto.
+
+* No puedes usar la alusión de tipo, por lo tanto no puedes estar seguro de cual dependencia se inyecte, salvo que escribas código en la clase para probar explícitamente la clase de la instancia antes de usarla.
+
+Sin embargo, es útil saber que esto se puede hacer en el contenedor de servicios, sobre todo si trabajas con código que está fuera de tu control, como en una biblioteca de terceros, que utiliza propiedades públicas para sus dependencias.
+

@@ -1,10 +1,10 @@
 .. index::
-   single: Registrando
+   single: Registrando eventos cronológicamente
 
 Cómo utilizar ``Monolog`` para escribir registros
 =================================================
 
-`Monolog`_ es una biblioteca de registro para *PHP* 5.3 utilizada por *Symfony2*. Inspirada en la biblioteca ``LogBook`` de *Python*.
+`Monolog`_ es una biblioteca para bitácora de eventos en *PHP* 5.3 utilizada por *Symfony2*. Inspirada en la biblioteca ``LogBook`` de *Python*.
 
 Usando
 ------
@@ -17,12 +17,12 @@ En ``Monolog`` cada registro cronológico define un canal de registro. Cada cana
 
 El encargado básico es el ``StreamHandler`` el cual escribe los registros en un flujo (por omisión en ``app/logs/prod.log`` en el entorno de producción y ``app/logs/dev.log`` en el entorno de desarrollo).
 
-`Monolog`_ también viene con una potente capacidad integrada para encargarse del registro en el entorno de producción: ``FingersCrossedHandler``. Esta te permite almacenar los mensajes en la memoria intermedia y registrarla sólo si un mensaje llega al nivel de acción (ERROR en la configuración prevista en la edición estándar) transmitiendo los mensajes a otro controlador.
+`Monolog`_ también viene con una potente capacidad integrada para encargarse del registro cronológico de eventos en el entorno de producción: ``FingersCrossedHandler``. Esta te permite almacenar los mensajes en la memoria intermedia y registrarla sólo si un mensaje llega al nivel de acción (ERROR en la configuración prevista en la edición estándar) transmitiendo los mensajes a otro controlador.
 
 Para registrar un mensaje, simplemente consigue el servicio de ``registro cronológico`` del contenedor en tu controlador::
 
     $logger = $this->get('logger');
-    $logger->info('We just got the logger');
+    $logger->info('I just got the logger');
     $logger->err('An error occurred');
 
 .. tip::
@@ -38,9 +38,10 @@ El registro cronológico de eventos utiliza una pila de controladores que se van
 
     .. code-block:: yaml
 
+        # app/config/config*.yml
         monolog:
             handlers:
-                syslog:
+                applog:
                     type: stream
                     path: /var/log/symfony.log
                     level: error
@@ -51,7 +52,9 @@ El registro cronológico de eventos utiliza una pila de controladores que se van
                 file:
                     type: stream
                     level: debug
-
+                syslog:
+                    type: syslog
+                    level: error
     .. code-block:: xml
 
         <container xmlns="http://symfony.com/schema/dic/services"
@@ -62,7 +65,7 @@ El registro cronológico de eventos utiliza una pila de controladores que se van
 
             <monolog:config>
                 <monolog:handler
-                    name="syslog"
+                    name="applog"
                     type="stream"
                     path="/var/log/symfony.log"
                     level="error"
@@ -78,6 +81,11 @@ El registro cronológico de eventos utiliza una pila de controladores que se van
                     type="stream"
                     level="debug"
                 />
+                <monolog:handler
+                    name="syslog"
+                    type="syslog"
+                    level="error"
+                />
             </monolog:config>
         </container>
 
@@ -85,7 +93,7 @@ La configuración anterior define una pila de controladores que se llamarán en 
 
 .. tip::
 
-    El controlador denominado ``"file"`` no se incluirá en la misma pila que se utiliza como un controlador anidado del controlador `fingers_crossed`.
+    El controlador denominado ``«file»`` no se incluirá en la misma pila que se utiliza como un controlador anidado del controlador `fingers_crossed`.
 
 .. note::
 
@@ -94,12 +102,13 @@ La configuración anterior define una pila de controladores que se llamarán en 
 Cambiando el formateador
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-El controlador utiliza un ``formateador`` para dar formato al registro antes de ingresarlo. Todos los manipuladores ``Monolog`` utilizan una instancia de ``Monolog\Formatter\LineFormatter`` por omisión, pero la puedes reemplazar fácilmente. Tu formateador debe implementar ``Monolog\Formatter\FormatterInterface``.
+El controlador utiliza un ``formateador`` para dar formato al registro del evento antes de ingresarlo. Todos los manipuladores ``Monolog`` utilizan una instancia de ``Monolog\Formatter\LineFormatter`` por omisión, pero la puedes reemplazar fácilmente. Tu formateador debe implementar ``Monolog\Formatter\FormatterInterface``.
 
 .. configuration-block::
 
     .. code-block:: yaml
 
+        # app/config/config.yml
         services:
             my_formatter:
                 class: Monolog\Formatter\JsonFormatter
@@ -134,7 +143,7 @@ El controlador utiliza un ``formateador`` para dar formato al registro antes de 
 Agregando algunos datos adicionales en los mensajes de registro
 ---------------------------------------------------------------
 
-Monolog te permite procesar el registro antes de ingresarlo añadiendo algunos datos adicionales. Un procesador se puede aplicar al controlador de toda la pila o sólo a un controlador específico.
+Monolog te permite procesar el registro del evento antes de ingresarlo añadiendo algunos datos adicionales. Un procesador se puede aplicar al controlador de toda la pila o sólo a un controlador específico.
 
 Un procesador simplemente es un ejecutable que recibe el registro como primer argumento.
 
@@ -149,7 +158,7 @@ A veces es difícil saber cuál de las entradas en el registro pertenece a cada 
 
     namespace Acme\MiBundle;
 
-    use Symfony\Component\HttpFoundation\Session;
+    use Symfony\Component\HttpFoundation\Session\Session;
 
     class SessionRequestProcessor
     {
@@ -177,10 +186,12 @@ A veces es difícil saber cuál de las entradas en el registro pertenece a cada 
         }
     }
 
+
 .. configuration-block::
 
     .. code-block:: yaml
 
+        # app/config/config.yml
         services:
             monolog.formatter.session_request:
                 class: Monolog\Formatter\LineFormatter

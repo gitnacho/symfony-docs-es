@@ -1,0 +1,163 @@
+.. index::
+   single: Desplegando
+
+Cómo desplegar una aplicación *Symfony2*
+========================================
+
+.. note::
+
+    El desplegando puede ser una tarea compleja y diversa que depende de tu configuración y necesidades.
+    Esta sección no trata de explicarlo todo, sino que más bien ofrece la mayoría de los requisitos e ideas comunes para su implementación.
+
+Fundamentos para desplegar *Symfony2*
+-------------------------------------
+
+Los pasos típicos tomados para desplegar una aplicación *Symfony2* incluyen:
+
+#. Subir tu código modificado al servidor en producción;
+#. Actualizar tus dependencias de proveedores (normalmente esto se realiza a través de ``Composer``, y se puede hacer antes de subir tu código);
+#. Ejecutar las migraciones de bases de datos o tareas similares para actualizar la estructura de los datos modificados;
+#. Limpiar (y tal vez lo más importante, preparar) tu caché.
+
+El desplegado también puede incluir otras cosas, tal como:
+
+* Etiquetar una versión particular del tu código como una versión en tu repositorio de control de código fuente;
+* Creación de una zona de estacionamiento temporal para construir la configuración actualizada «fuera de línea»;
+* Ejecutar cualquier prueba disponible para garantizar la estabilidad del código y/o el servidor;
+* La eliminación de todos los archivos innecesarios del directorio ``web`` para mantener limpio tu entorno de producción;
+* Limpieza de los sistemas externos de memoria caché (como `Memcached`_ o `Redis`_).
+
+Cómo desplegar una aplicación *Symfony2*
+----------------------------------------
+
+Hay varias maneras en que puedes desplegar una aplicación *Symfony2*.
+
+Empezarás con algunas estrategias para desplegar básicas y a partir de ahí continuarás.
+
+Transferencia de archivos básica
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+La forma más básica para desplegar una aplicación es copiar los archivos manualmente
+via ``ftp/scp`` (o algún otro método similar). Esto tiene sus desventajas, ya que carecen de control sobre el sistema a medida que progresa su actualización. Este método también requiere que tomes algunos pasos manuales después de transferir los archivos (consulta la sección `Tareas habituales posteriores al despliegue`_)
+
+Usando control de código fuente
+-------------------------------
+
+Si estás utilizando control de código fuente (por ejemplo, ``git`` o ``svn``), puedes simplificar esto teniendo tu instalación en vivo también como una copia en tu repositorio. Cuando estés listo para actualizarlo es tan simple como ir a buscar a las novedades desde tu sistema de control de código fuente.
+
+Esto *facilita* la actualización de tus archivos, pero todavía te tienes que preocupar de tomar otras medidas de control manualmente (consulta la sección `Tareas habituales posteriores al despliegue`_).
+
+Usando programas de creación y otras herramientas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+También hay herramientas de alta calidad para ayudarte a aliviar el dolor de la implantación. Incluso hay unas cuantas herramientas que se han adaptado específicamente a las necesidades de *Symfony2*, y que tienen un cuidado especial para asegurarse de que todo esté correcto antes, durante y después de un despliegue.
+
+Ve `Las herramientas`_ para obtener una lista de las herramientas que te pueden ayudar con el despliegue.
+
+Tareas habituales posteriores al despliegue
+-------------------------------------------
+
+Después de implantar el código fuente real, hay una serie de tareas comunes que
+tendrás que llevar a cabo:
+
+A) Configura tu archivo ``app/config/parameters.ini``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Este archivo se debe personalizar en cada sistema. Cualquier método que utilices para desplegar tu código fuente *no* debe trasladar este archivo. En su lugar, los debes configurar manualmente (o mediante algún proceso de construcción) en tu servidor.
+
+B) Actualiza tus proveedores
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Tus proveedores se pueden actualizar antes de transferir el código fuente (es decir,
+actualiza el directorio ``vendor/``, y luego transfierelo, con tu código fuente), o actualízalo en el servidor después de transferir tu código fuente. En cualquier caso, basta con actualizar tus proveedores como lo haces normalmente:
+
+.. code-block:: bash
+
+    $ php composer.phar install --optimize-autoloader
+
+.. tip::
+
+    La bandera ``--optimize-autoloader`` hace que ``Composer`` lleve a cabo una optimización de la carga automática construyendo un «mapa de clases».
+
+C) Borra la caché de *Symfony*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Asegúrate de limpiar (y preparar) la caché de *Symfony*:
+
+.. code-block:: bash
+
+    $ php app/console cache:clear --env=prod --no-debug
+
+D) Vuelca tus activos con *Assetic*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Si estás utilizando *Assetic*, también querrás volcar tus activos:
+
+.. code-block:: bash
+
+    $ php app/console assetic:dump --env=prod --no-debug
+
+E) ¡Otras cosas!
+~~~~~~~~~~~~~~~~
+
+Es posible que haya un montón de otras cosas que necesites hacer, dependiendo de tu
+configuración:
+
+* La ejecución de cualquier migración de bases de datos
+* Vaciado de tu caché *APC*
+*
+ La ejecución de ``assets:install`` (teniendo cuidado si ya se hizo en ``composer.phar install``)
+* Añadir/editar trabajos ``CRON``
+* Empujar activos a un ``CDN``
+* ...
+
+Ciclo de vida  de una aplicación: Integración continua, control de calidad, etc.
+--------------------------------------------------------------------------------
+
+Si bien esta secco+pm corresponde a los detalles técnicos del despliegue, el ciclo de vida completo de tomar el código fuente de desarrollo trasladarlo a producción puede tener mucho pasos más (Creo que desde el despliegue hasta la puesta en escena, control de calidad, ejecución de pruebas, etc.).
+
+Utilizar la puesta en escena, pruebas, control de calidad, integración continua, migraciones de bases de datos y la capacidad para hacer retroceder en caso de fallo, todas son muy recomendables. Hay herramientas simples y complejas y puedes hacer tan fácil (o compleja) la instalación como tu entorno requiera.
+
+No olvides que el despliegue de tu aplicación también implica la actualización de cualquier dependencia (normalmente a través ``Composer``), la migración de tu base de datos, vaciar la caché y otras cosas posibles como empujar tus activos a un *CDN* (ve `Tareas habituales posteriores al despliegue`_).
+
+Las Herramientas
+----------------
+
+`Capifony`_:
+
+    Esta herramienta ofrece un conjunto especializado de herramientas en la parte superior de *Capistrano*, específicamente a la medida de proyectos *Symfony* y *Symfony2*.
+
+`sf2debpkg`_:
+
+    Esta herramienta te ayuda a construir un paquete nativo de *Debian* para tu proyecto *Symfony2*.
+
+`Magallanes`_:
+
+    Esta herramienta de despliegue tipo *Capistrano* está construida en *PHP*, y puede ser facilitar a los desarrolladores de *PHP* su extensión para cubrir sus necesidades.
+
+Paquetes:
+
+    Hay muchos `paquetes que añaden características de despliegue`_ directamente en tu consola *Symfony2*.
+
+Programación básica:
+
+    Puedes, por supuesto, usar el intérprete de ordenes, `Ant`_, o cualquier otra herramienta para programar el despliegue de tu proyecto.
+
+El ambiente como proveedor de servicios:
+
+    ``PaaS`` es una forma relativamente nueva para desplegar tu aplicación. Normalmente, un ``PaaS`` utilizará un único archivo de configuración en el directorio raíz de tu proyecto para determinar la forma de construir un ambiente al vuelo que apoye a tu software.
+    Un proveedor con el apoyo confirmado para *Symfony2* es `PagodaBox`_.
+
+.. tip::
+
+    ¿Buscando más? Habla con la comunidad en el `canal IRC de Symfony`_ ``#symfony`` (en freenode) para más información.
+
+.. _`Capifony`: http://capifony.org/
+.. _`sf2debpkg`: https://github.com/liip/sf2debpkg
+.. _`Ant`: http://blog.sznapka.pl/deploying-symfony2-applications-with-ant
+.. _`PagodaBox`: https://github.com/jmather/pagoda-symfony-sonata-distribution/blob/master/Boxfile
+.. _`Magallanes`: https://github.com/andres-montanez/Magallanes
+.. _`paquetes que añaden características de despliegue`: http://knpbundles.com/search?q=deploy
+.. _`canal IRC de Symfony`: http://webchat.freenode.net/?channels=symfony
+.. _`Memcached`: http://memcached.org/
+.. _`Redis`: http://redis.io/

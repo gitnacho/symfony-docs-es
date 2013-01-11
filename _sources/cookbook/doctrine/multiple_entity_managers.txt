@@ -1,7 +1,11 @@
-Cómo trabajar con varios gestores de entidad
-============================================
+.. index::
+   single: Doctrine; Múltiples gestores de entidad
 
-En una aplicación *Symfony2* puedes utilizar múltiples gestores de entidad. Esto es necesario si estás utilizando diferentes bases de datos e incluso proveedores con conjuntos de entidades totalmente diferentes. En otras palabras, un gestor de entidad que se conecta a una base de datos deberá administrar algunas entidades, mientras que otro gestor de entidad conectado a otra base de datos puede manejar el resto.
+Cómo trabajar con múltiples gestores de entidad y conexiones
+============================================================
+
+Puedes utilizar múltiples gestores de entidad de *Doctrine* o conexiones en una
+aplicación *Symfony2*. Esto es necesario si estás utilizando diferentes bases de datos e incluso proveedores con conjuntos de entidades totalmente diferentes. En otras palabras, un gestor de entidad que se conecta a una base de datos deberá administrar algunas entidades, mientras que otro gestor de entidad conectado a otra base de datos puede manejar el resto.
 
 .. note::
 
@@ -14,6 +18,26 @@ El siguiente código de configuración muestra cómo puedes configurar dos gesto
     .. code-block:: yaml
 
         doctrine:
+            dbal:
+                default_connection:   default
+                connections:
+                    default:
+                        driver:   %database_driver%
+                        host:     %database_host%
+                        port:     %database_port%
+                        dbname:   %database_name%
+                        user:     %database_user%
+                        password: %database_password%
+                        charset:  UTF8
+                    customer:
+                        driver:   %database_driver2%
+                        host:     %database_host2%
+                        port:     %database_port2%
+                        dbname:   %database_name2%
+                        user:     %database_user2%
+                        password: %database_password2%
+                        charset:  UTF8
+
             orm:
                 default_entity_manager:   default
                 entity_managers:
@@ -27,20 +51,71 @@ El siguiente código de configuración muestra cómo puedes configurar dos gesto
                         mappings:
                             AcmeCustomerBundle: ~
 
-En este caso, hemos definido dos gestores de entidad y los llamamos ``default`` y ``customer``. El gestor de entidad ``default`` administra cualquier entidad en los paquetes ``AcmeDemoBundle`` y ``AcmeStoreBundle``, mientras que el gestor de entidad ``customer`` gestiona cualquiera en el paquete ``AcmeCustomerBundle``.
+En este caso, hemos definido dos gestores de entidad y los llamamos ``default`` y ``customer``. El gestor de entidad ``default`` administra cualquier entidad en los paquetes ``AcmeDemoBundle`` y ``AcmeStoreBundle``, mientras que el gestor de entidad ``customer`` gestiona cualquiera en el paquete ``AcmeCustomerBundle``. También definiste dos conexiones, una para cada gestor de entidad.
 
-Cuando trabajas con múltiples gestores de entidad, entonces debes ser explícito acerca de cual gestor de entidad deseas. Si *no* omites el nombre del gestor de entidad al consultar por él, se devuelve el gestor de entidad predeterminado (es decir, ``default``)::
+.. note::
+
+    Cuando trabajas con múltiples conexiones y gestores de entidad, debes ser explícito sobre cual configuración deseas. Si *omites* el nombre de la conexión o gestor de entidad, se usa el predeterminado (es decir, ``default``).
+
+Cuando trabajes con múltiples conexiones para crear tu base de datos:
+
+.. code-block:: bash
+
+    # Juega sólo con la conexión «default»
+    $ php app/console doctrine:database:create
+
+    # Juega sólo con la conexión «customer»
+    $ php app/console doctrine:database:create --connection=customer
+
+Cuándo trabajas múltiple gestores de entidad para actualizar tu esquema:
+
+.. code-block:: bash
+
+    # Juega sólo con asociaciones «default»
+    $ php app/console doctrine:schema:update --force
+
+    # Juega sólo con asociaciones «customer»
+    $ php app/console doctrine:schema:update --force --em=customer
+
+Si *omites* el nombre del gestor de la entidad al consultar por él, se devuelve el gestor de entidad predeterminado (es decir, ``default``)::
 
     class UserController extends Controller
     {
         public function indexAction()
         {
-            // ambos devuelven el em "predeterminado"
-            $em = $this->get('doctrine')->getEntityManager();
-            $em = $this->get('doctrine')->getEntityManager('default');
-            
-            $customerEm =  $this->get('doctrine')->getEntityManager('customer');
+            // ambos devuelven el gestor de entidad "predefinido"
+            $em = $this->get('doctrine')->getManager();
+            $em = $this->get('doctrine')->getManager('default');
+
+            $customerEm =  $this->get('doctrine')->getManager('customer');
         }
     }
 
 Ahora puedes utilizar *Doctrine* tal como lo hiciste antes --- con el gestor de entidad ``default`` para persistir y recuperar las entidades que gestiona y el gestor de entidad ``customer`` para persistir y recuperar sus entidades.
+
+Lo mismo aplica para llamadas al repositorio::
+
+    class UserController extends Controller
+    {
+        public function indexAction()
+        {
+            // Recupera un repositorio gestionado por el em 'predefinido'
+            $products = $this->get('doctrine')
+                             ->getRepository('AcmeStoreBundle:Product')
+                             ->findAll()
+            ;
+
+            // La manera explícita para tratar con el em 'predefinido'
+            $products = $this->get('doctrine')
+                             ->getRepository('AcmeStoreBundle:Product',
+                                   'default')
+                             ->findAll();
+
+            // Recupera un repositorio gestionado por el em 'customer'
+            $customers = $this->get('doctrine')
+                              ->getRepository('AcmeCustomerBundle:Customer',
+                                    'customer')
+                              ->findAll()
+            ;
+        }
+    }
