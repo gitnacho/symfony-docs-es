@@ -1,0 +1,215 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Colección de servicios diferidos &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="coleccion-de-servicios-diferidos">
+<h1>Colección de servicios diferidos<a class="headerlink" href="#coleccion-de-servicios-diferidos" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Este paquete proporciona un mapa/secuencia genérica de servicios diferidos. La puedes utilizar cuando tienes un mapa, o una lista de servicios donde únicamente necesitas iniciar unos cuantos servicios específicos durante una sóla petición.</p>
+<div class="section" id="secuencia-de-servicio-diferido">
+<h2>Secuencia de servicio diferido<a class="headerlink" href="#secuencia-de-servicio-diferido" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A menudo tienes una lista de servicios en la cuál iteras hasta que un servicio es capaz de manejar tu petición. En <em>Symfony2</em>, un ejemplo podría ser el gestor de decisiones de acceso que itera sobre los votantes hasta que encuentra uno que es capaz de hacer una llamada si se debería o no conceder acceso, y luego potencialmente detenerlo. En tal caso, cualquiera de los otros votantes, y sus dependencias no son necesarios, y no se deberían iniciar.</p>
+<p>El servicio de secuencia diferida garantiza que la iniciación se retrasa hasta que de hecho un servicio es necesario. Empieza escribiendo el servicio que consume la secuencia:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">JMS\DiExtraBundle\Annotation</span> <span class="k">as</span> <span class="nx">DI</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">PhpCollection\Sequence</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">MyService</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$voters</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">Sequence</span> <span class="nv">$voters</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">voters</span> <span class="o">=</span> <span class="nv">$voters</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">isGranted</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">foreach</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">voters</span> <span class="k">as</span> <span class="nv">$voter</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// hace algo, potencialmente regresa anticipadamente.</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Supón que etiquetas tus votantes en el <tt class="docutils literal"><span class="pre">CID</span></tt> para permitir que otros paquetes registren servicios. Luego, puedes utilizar el <tt class="docutils literal"><span class="pre">LazyServiceSequencePass</span></tt> proporcionado el cuál cuidará de recoger los servicios etiquetados, y generará la definición para la secuencia:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">JMS\DiExtraBundle\Compiler\LazyServiceSequencePass</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Bundle\Bundle</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">MyBundle</span> <span class="k">extends</span> <span class="nx">Bundle</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">build</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">addCompilerPass</span><span class="p">(</span><span class="k">new</span> <span class="nx">LazyServiceSequencePass</span><span class="p">(</span><span class="s1">&#39;voter&#39;</span><span class="p">,</span>
+            <span class="k">function</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">,</span> <span class="nx">Definition</span> <span class="nv">$seqDef</span><span class="p">)</span> <span class="p">{</span>
+                <span class="c1">// Añade la definición de la secuencia como argumento para la clase MyService.</span>
+                <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">getDefinition</span><span class="p">(</span><span class="s1">&#39;my_service&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">addArgument</span><span class="p">(</span><span class="nv">$seqDef</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="mapa-de-servicios-diferidos">
+<h2>Mapa de servicios diferidos<a class="headerlink" href="#mapa-de-servicios-diferidos" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Por ejemplo, si  tienes un mapa de formatos a codificadores correspondientes. Muy probablemente, durante una petición, sólo necesites cargar el codificador para un formato específico. Usando el mapa, la carga de ese codificador se retrasará hasta que sabes qué formato necesitas, y no cargas los codificadores (y sus dependencias) para otros formatos.</p>
+<p>Empieza escribiendo el servicio que consume el mapa:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">JMS\DiExtraBundle\Annotation</span> <span class="k">as</span> <span class="nx">DI</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">PhpCollection\Map</span><span class="p">;</span>
+
+<span class="sd">/** @DI\Service(&quot;my_service&quot;) */</span>
+<span class="k">class</span> <span class="nc">MyService</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$encoders</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">Map</span> <span class="nv">$encoders</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">encoders</span> <span class="o">=</span> <span class="nv">$encoders</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">useEncoder</span><span class="p">(</span><span class="nv">$format</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// El codificador se carga aquí.</span>
+        <span class="nv">$encoder</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">encoders</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">&#39;json&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Luego, añade algunos de los que etiquetaste para permitir que los añadiran otros paquetes también:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="sd">/** @DI\Service @DI\Tag(&quot;encoder&quot;, attributes = {&quot;format&quot;: &quot;json&quot;}) */</span>
+<span class="k">class</span> <span class="nc">JsonEncoder</span> <span class="p">{</span> <span class="p">}</span>
+
+<span class="sd">/** @DI\Service @DI\Tag(&quot;encoder&quot;, attributes = {&quot;format&quot;: &quot;xml&quot;}) */</span>
+<span class="k">class</span> <span class="nc">XmlEncoder</span> <span class="p">{</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>Finalmente, sólo necesitas añadir la definición del mapa de <tt class="docutils literal"><span class="pre">ID</span></tt> que fue construida por el <tt class="docutils literal"><span class="pre">LazyServiceMapPass</span></tt> proporcionado como argumento de tu servicio <tt class="docutils literal"><span class="pre">my_service</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">JMS\DiExtraBundle\Compiler\LazyServiceMapPass</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\Bundle\Bundle</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">MyBundle</span> <span class="k">extends</span> <span class="nx">Bundle</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">build</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">addCompilerPass</span><span class="p">(</span><span class="k">new</span> <span class="nx">LazyServiceMapPass</span><span class="p">(</span><span class="s1">&#39;encoder&#39;</span><span class="p">,</span> <span class="s1">&#39;format&#39;</span><span class="p">,</span>
+            <span class="k">function</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">,</span> <span class="nx">Definition</span> <span class="nv">$mapDef</span><span class="p">)</span> <span class="p">{</span>
+                <span class="c1">// Añade la definición del mapa como argumento para la clase MyService.</span>
+                <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">getDefinition</span><span class="p">(</span><span class="s1">&#39;my_service&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">addArgument</span><span class="p">(</span><span class="nv">$mapDef</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Jan 14, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

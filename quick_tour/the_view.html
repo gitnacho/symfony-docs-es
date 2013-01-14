@@ -194,7 +194,7 @@ plantilla derivada puede reemplazar esas porciones de la plantilla.</p>
 
 <span class="c">{# sustituye el bloque &#39;content&#39; por embedded.html.twig #}</span><span class="x"></span>
 <span class="cp">{%</span> <span class="k">block</span> <span class="nv">content</span> <span class="cp">%}</span><span class="x"></span>
-<span class="x">    </span><span class="cp">{%</span> <span class="k">include</span> <span class="s2">&quot;AcmeDemoBundle:Demo:embedded.html.twig&quot;</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    </span><span class="cp">{{</span> <span class="nv">include</span><span class="o">(</span><span class="s2">&quot;AcmeDemoBundle:Demo:embedded.html.twig&quot;</span><span class="o">)</span> <span class="cp">}}</span><span class="x"></span>
 <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="x"></span>
 </pre></div>
 </div>
@@ -203,55 +203,12 @@ plantilla derivada puede reemplazar esas porciones de la plantilla.</p>
 <h3>Integrando otros controladores<a class="headerlink" href="#integrando-otros-controladores" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>¿Y si deseas incrustar el resultado de otro controlador en una plantilla?
 Eso es muy útil cuando se trabaja con <em>Ajax</em>, o cuando la plantilla incrustada necesita alguna variable que no está disponible en la plantilla principal.</p>
-<p>Supongamos que has creado un método controlador <tt class="docutils literal"><span class="pre">fancyAction</span></tt>, y lo quieres <tt class="docutils literal"><span class="pre">reproducir</span></tt> dentro de la plantilla <tt class="docutils literal"><span class="pre">index</span></tt>. Primero, crea una ruta a tu nuevo controlador en uno de los archivos de configuración de enrutado de tu aplicación.</p>
-<div class="configuration-block">
-<ul class="simple">
-<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/routing.yml</span>
-<span class="l-Scalar-Plain">fancy</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">/included/fancy/{name}/{color}</span>
-    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span>  <span class="p-Indicator">{</span> <span class="nv">_controller</span><span class="p-Indicator">:</span> <span class="nv">AcmeDemoBundle</span><span class="p-Indicator">:</span><span class="nv">Demo</span><span class="p-Indicator">:</span><span class="nv">fancy</span> <span class="p-Indicator">}</span>
-</pre></div>
-</div>
-</li>
-<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/routing.xml --&gt;</span>
-<span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;</span>
-<span class="nt">&lt;routes</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/routing&quot;</span>
-    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
-    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd&quot;</span><span class="nt">&gt;</span>
-
-    <span class="nt">&lt;route</span> <span class="na">id=</span><span class="s">&quot;fancy&quot;</span> <span class="na">pattern=</span><span class="s">&quot;/included/fancy/{name}/{color}&quot;</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;default</span> <span class="na">key=</span><span class="s">&quot;_controller&quot;</span><span class="nt">&gt;</span>AcmeDemoBundle:Demo:fancy<span class="nt">&lt;/default&gt;</span>
-    <span class="nt">&lt;/route&gt;</span>
-<span class="nt">&lt;/routes&gt;</span>
-</pre></div>
-</div>
-</li>
-<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/routing.php</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Routing\RouteCollection</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Routing\Route</span><span class="p">;</span>
-
-<span class="nv">$collection</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
-<span class="nv">$collection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;fancy&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/included/fancy/{name}/{color}&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-    <span class="s1">&#39;_controller&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;AcmeDemoBundle:Demo:fancy&#39;</span><span class="p">,</span>
-<span class="p">)));</span>
-
-<span class="k">return</span> <span class="nv">$collection</span><span class="p">;</span>
-</pre></div>
-</div>
-</li>
-</ul>
-</div>
-<p>Para incluir el resultado (p. ej. <tt class="docutils literal"><span class="pre">HTML</span></tt>) del controlador, usa la etiqueta <tt class="docutils literal"><span class="pre">render</span></tt>:</p>
+<p>Supón que has creado un método controlador <tt class="docutils literal"><span class="pre">fancyAction</span></tt>, y lo quieres «reproducir» dentro de la plantilla <tt class="docutils literal"><span class="pre">index</span></tt>, lo que significa incluir el resultado (por ejemplo, el <em>HTML</em>) del controlador. Para ello, usa la función <tt class="docutils literal"><span class="pre">render</span></tt>:</p>
 <div class="highlight-jinja"><div class="highlight"><pre><span class="c">{# src/Acme/DemoBundle/Resources/views/Demo/index.html.twig #}</span><span class="x"></span>
-<span class="cp">{%</span> <span class="k">render</span> <span class="nv">url</span><span class="o">(</span><span class="s1">&#39;fancy&#39;</span><span class="o">,</span> <span class="o">{</span> <span class="s1">&#39;name&#39;</span><span class="o">:</span> <span class="nv">name</span><span class="o">,</span> <span class="s1">&#39;color&#39;</span><span class="o">:</span> <span class="s1">&#39;green&#39;</span><span class="o">})</span> <span class="cp">%}</span><span class="x"></span>
+<span class="cp">{{</span> <span class="nv">render</span><span class="o">(</span><span class="nv">controller</span><span class="o">(</span><span class="s2">&quot;AcmeDemoBundle:Demo:fancy&quot;</span><span class="o">,</span> <span class="o">{</span><span class="s1">&#39;name&#39;</span><span class="o">:</span> <span class="nv">name</span><span class="o">,</span> <span class="s1">&#39;color&#39;</span><span class="o">:</span> <span class="s1">&#39;green&#39;</span><span class="o">}))</span> <span class="cp">}}</span><span class="x"></span>
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="first admonition-title">Nota</p>
-<p class="last">A partir de <em>Symfony 2.0.20/2.1.5</em>, la etiqueta <tt class="docutils literal"><span class="pre">render</span></tt> de <em>Twig</em> toma una <em>URL</em> absoluta en vez de una ruta lógica al controlador. Esto corrige un importante problema de seguridad (<a class="reference external" href="http://symfony.com/blog/security-release-symfony-2-0-20-and-2-1-5-released">CVE-2012-6431</a>) reportado en el blog oficial. Si tu aplicación utiliza una versión más vieja de <em>Symfony</em> o todavía utiliza la anterior sintaxis de la etiqueta <tt class="docutils literal"><span class="pre">render</span></tt>, debes actualizar tu versión tan pronto como sea posible.</p>
-</div>
-<p>La etiqueta <tt class="docutils literal"><span class="pre">render</span></tt> ejecutará el controlador <tt class="docutils literal"><span class="pre">AcmeDemoBundle:Demo:fancy</span></tt>
-e incluirá su resultado. Por ejemplo, tu nueva <tt class="docutils literal"><span class="pre">fancyAction</span></tt> podría tener esta apariencia:</p>
+<p>Aquí, la cadena <tt class="docutils literal"><span class="pre">AcmeDemoBundle:Demo:fancy</span></tt> se refiere a la acción <tt class="docutils literal"><span class="pre">fancy</span></tt> del controlador <tt class="docutils literal"><span class="pre">Demo</span></tt>. Los argumentos (<tt class="docutils literal"><span class="pre">name</span></tt> y <tt class="docutils literal"><span class="pre">color</span></tt>) actúan como variables de la petición simulada (como si <tt class="docutils literal"><span class="pre">fancyAction</span></tt> estuviera manejando una petición completamente nueva) y se ponen a disposición del controlador:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Controller/DemoController.php</span>
 
 <span class="k">class</span> <span class="nc">DemoController</span> <span class="k">extends</span> <span class="nx">Controller</span>
@@ -263,7 +220,7 @@ e incluirá su resultado. Por ejemplo, tu nueva <tt class="docutils literal"><sp
 
         <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeDemoBundle:Demo:fancy.html.twig&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
             <span class="s1">&#39;name&#39;</span> <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">,</span>
-            <span class="s1">&#39;object&#39;</span> <span class="o">=&gt;</span> <span class="nv">$object</span>
+            <span class="s1">&#39;object&#39;</span> <span class="o">=&gt;</span> <span class="nv">$object</span><span class="p">,</span>
         <span class="p">));</span>
     <span class="p">}</span>
 
@@ -360,7 +317,7 @@ Gracias a esta función, puedes mover el directorio raíz de la aplicación a cu
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 11, 2013.
+      Actualizado por última vez en Jan 14, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

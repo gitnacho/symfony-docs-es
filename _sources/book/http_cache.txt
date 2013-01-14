@@ -4,9 +4,9 @@
 Caché *HTTP*
 ============
 
-La naturaleza de las aplicaciones web ricas significa que son dinámicas. No importa qué tan eficiente sea tu aplicación, cada petición siempre contendrá más sobrecarga que servir un archivo estático.
+La naturaleza de las aplicaciones *web* ricas significa que son dinámicas. No importa qué tan eficiente sea tu aplicación, cada petición siempre contendrá más sobrecarga que servir un archivo estático.
 
-Y para la mayoría de las aplicaciones Web, está bien. *Symfony2* es tan rápido como el rayo, a menos que estés haciendo una muy complicada aplicación, cada petición se responderá rápidamente sin poner demasiada tensión a tu servidor.
+Y para la mayoría de las aplicaciones *Web*, está bien. *Symfony2* es tan rápido como el rayo, a menos que estés haciendo una muy complicada aplicación, cada petición se responderá rápidamente sin poner demasiada tensión a tu servidor.
 
 Pero cuando tu sitio crezca, la sobrecarga general se puede convertir en un problema. El procesamiento que se realiza normalmente en cada petición se debe hacer sólo una vez. Este exactamente es el objetivo que tiene que consumar la memoria caché.
 
@@ -630,39 +630,28 @@ Como el contenido integrado viene de otra página (o controlador en este caso), 
 
     .. code-block:: jinja
 
-        {% render url('latest_news', { 'max': 5 }), {'standalone': true} %}
+        {# puedes usar una referencia al controlador #}
+        {{ render_esi(controller('...:news', { 'max': 5 })) }}
+
+        {# ... o una URL #}
+        {{ render_esi(url('latest_news', { 'max': 5 })) }}
 
     .. code-block:: php
 
         <?php echo $view['actions']->render(
+            new ControllerReference('...:news', array('max' => 5)),
+            array('strategy' => 'esi'))
+        ?>
+
+        <?php echo $view['actions']->render(
             $view['router']->generate('latest_news', array('max' => 5), true),
-            array('standalone' => true)
+            array('strategy' => 'esi')
         ) ?>
 
-.. include:: /book/_security-2012-6431.rst.inc
+Al usar la estrategia de reproducción ``esi`` (vía la función ``render_esi`` de *Twig*), le dices a *Symfony2* que la acción debería ser dibujada como una etiqueta *ESI*.
+Tal vez te preguntes por qué querrías usar un ayudante en vez de escribir la etiqueta *ESI* tú mismo. Esto es porque utilizar un ayudante hace que tu aplicación trabaje incluso si no hay instalada ninguna pasarela de caché.
 
-La etiqueta ``render`` toma la *URL* absoluta a la acción integrada. Esto significa que necesitas definir una nueva ruta al controlador que estás incorporando:
-
-.. code-block:: yaml
-
-    # app/config/routing.yml
-    latest_news:
-        pattern:      /esi/latest-news/{max}
-        defaults:     { _controller: AcmeNewsBundle:News:news }
-        requirements: { max: \d+ }
-
-.. caution::
-
-    A menos que quieras que esta *URL* sea accesible al mundo exterior, deberías utilizar el cortafuegos de *Symfony* para protegerla (permitindo el acceso al rango *IP* de tu delegado inverso). Consulta la sección :ref:`Protegiendo por IP <book-security-securing-ip>` del :doc:`Capítulo de seguridad </book/security>` para más información sobre cómo hacer esto.
-
-.. tip::
-
-    La mejor práctica es montar todas tus *URL* *ESI* bajo un solo prefijo de tu elección (p. ej. ``/esi``). Esto tiene dos principales ventajas. Primero, facilita la administración de direcciones *URL* *ESI* puesto que fácilmente puedes identificar las rutas utilizadas por *ESI*.
-    Segundo, alivia la gestión de seguridad debido a que al proteger todas las *URL* que empiezan con el mismo prefijo es más fácil asegurar cada *URL* individual. Ve la nota anterior para más detalles sobre proteger direcciones *URL* *ESI*.
-
-Al configurar ``standalone`` a ``true`` en la etiqueta ``render`` de *Twig*, le dices a *Symfony2* que la acción se debería procesar como una etiqueta *ESI*. Te podrías estar preguntando por qué querrías utilizar un ayudante en vez de sólo escribir la etiqueta *ESI* directamente. Esto es porque utilizar un ayudante hace que tu aplicación trabaje incluso si no hay instalada ninguna pasarela caché.
-
-Cuando ``standalone`` es ``false`` (predeterminado), *Symfony2* combina el contenido de la página incluida en la principal antes de enviar la respuesta al cliente. Pero cuando ``standalone`` es ``true``, *y* si *Symfony2* detecta que está hablando con una pasarela caché compatible con *ESI*, genera una etiqueta ``include`` *ESI*. Pero si no hay una pasarela caché o si no es compatible con *ESI*, *Symfony2* termina fusionando el contenido de las páginas incluidas en la principal como lo habría hecho si ``standalone`` se hubiera establecido en ``false``.
+Al utilizar la función ``render`` predefinida (o configurar la estrategia a ``default``), *Symfony2* fusiona el contenido de la página incluida con la principal antes de enviar la respuesta al cliente. Pero si utilizas la estrategia ``esi`` (es decir, llamas a ``render_esi``), *y* si *Symfony2* detecta que está hablando a una pasarela de caché que cuente con soporte *ESI*, genera una etiqueta que incluya *ESI*. Pero si no hay ninguna pasarela de caché o si no cuenta con soporte *ESI*, *Symfony2* sólo fusionará el contenido de la página incluida dentro de la principal tal como lo haría si hubieras utilizado ``render``.
 
 .. note::
 
@@ -674,20 +663,57 @@ La acción integrada ahora puede especificar sus propias reglas de caché, total
 
     public function newsAction($max)
     {
-      // ...
+        // ...
 
-      $response->setSharedMaxAge(60);
+        $response->setSharedMaxAge(60);
     }
 
 Con *ESI*, la caché de la página completa será válida durante 600 segundos, pero la caché del componente de noticias sólo dura 60 segundos.
 
+Cuándo utilizas una referencia al controlador, la etiqueta *ESI* se debe referir a la acción incorporada como una *URL* accesible a modo de que la pasarela de caché la pueda recuperar independientemente del resto de la página. Naturalmente, no puedes acceder a una acción vía una *URL* a no ser que tengas una ruta que apunte a ella. *Symfony2* cuida de esto a través de una ruta genérica. Para que trabaje correctamente la etiqueta que incluye *ESI*, tienes que definir la ruta ``_proxy``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/routing.yml
+        _proxy:
+            resource: "@FrameworkBundle/Resources/config/routing/proxy.xml"
+            prefix:   /proxy
+
+    .. code-block:: xml
+
+        <!-- app/config/routing.xml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <import resource="@FrameworkBundle/Resources/config/routing/proxy.xml" prefix="/proxy" />
+        </routes>
+
+    .. code-block:: php
+
+        // app/config/routing.php
+        use Symfony\Component\Routing\RouteCollection;
+        use Symfony\Component\Routing\Route;
+
+        $collection->addCollection($loader->import('@FrameworkBundle/Resources/config/routing/proxy.xml', '/proxy'));
+
+        return $collection;
+
 Una gran ventaja de esta estrategia de memoria caché es que puedes hacer tu aplicación tan dinámica como sea necesario y al mismo tiempo, tocar la aplicación lo menos posible.
+
+.. tip::
+
+    La ruta delegada no apunta a un controlador real. En cambio, es manejada por una clase :class:`Symfony\\Component\\HttpKernel\\EventListener\\RouterProxyListener` interna. Este escucha sólo responde a direcciones *IP* locales o delegados confiables.
 
 .. note::
 
     Una vez que comiences a usar *ESI*, recuerda usar siempre la directiva ``s-maxage`` en lugar de ``max-age``. Como el navegador nunca recibe recursos agregados, no es consciente del subcomponente, y por lo tanto obedecerá la directiva ``max-age`` y memorizará la página completa. Y no quieres eso.
 
-El ayudante ``render`` es compatible con otras dos útiles opciones:
+El ayudante ``render_esi`` apoya otras dos útiles opciones:
 
 * ``alt``: utilizada como el atributo ``alt`` en la etiqueta *ESI*, el cual te permite especificar una *URL* alternativa para utilizarla si no se puede encontrar ``src``;
 

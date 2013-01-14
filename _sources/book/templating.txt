@@ -408,9 +408,7 @@ Incluir esta plantilla en cualquier otra plantilla es sencillo:
             <h1>Recent Articles<h1>
 
             {% for article in articles %}
-                {% include 'AcmeArticleBundle:Article:articleDetails.html.twig'
-                       with {'article': article}
-                %}
+                {{ include('AcmeArticleBundle:Article:articleDetails.html.twig', {'article': article}) }}
             {% endfor %}
         {% endblock %}
 
@@ -427,11 +425,14 @@ Incluir esta plantilla en cualquier otra plantilla es sencillo:
             <?php endforeach; ?>
         <?php $view['slots']->stop() ?>
 
-La plantilla se incluye con la etiqueta ``{% include %}``. Observa que el nombre de la plantilla sigue la misma convención típica. La plantilla ``articleDetails.html.twig`` utiliza una variable ``article``. Esta es proporcionada por la plantilla ``list.html.twig`` utilizando la orden ``with``.
+La plantilla se incluye utilizando la función ``{{ include() }}``. Observa que el nombre de la plantilla sigue la misma convención típica. La plantilla ``articleDetails.html.twig`` utiliza una variable ``article``. Esta es proporcionada por la plantilla ``list.html.twig`` utilizando la orden ``with``.
 
 .. tip::
 
     ``{'article': article}`` es la sintaxis de asignación estándar de *Twig* (es decir, un arreglo con claves nombradas). Si tuviéramos que pasar varios elementos, se vería así: ``{'foo': foo, 'bar': bar}``.
+
+.. versionadded:: 2.2
+    La función ``include()`` es una nueva característica de *Twig* que está disponible en *Symfony 2.2*. Anteriormente se utilizaba la etiqueta ``{% include %}``.
 
 .. index::
    single: Plantillas; Integrando acción
@@ -489,42 +490,7 @@ La plantilla ``recentList`` es perfectamente clara:
     Ten en cuenta que la *URL* del artículo está directamente en el código en este ejemplo
     (p. ej. ``/article/*slug*``). Esta es una mala práctica. En la siguiente sección, aprenderás cómo hacer esto correctamente.
 
-Incluso aunque este controlador sólo será utilizado internamente, necesitarás crear una ruta que apunte al controlador:
-
-.. configuration-block::
-
-    .. code-block:: yaml
-
-        latest_articles:
-            pattern:  /articles/latest/{max}
-            defaults: { _controller: AcmeArticleBundle:Article:recentArticles }
-
-    .. code-block:: xml
-
-        <?xml version="1.0" encoding="UTF-8" ?>
-
-        <routes xmlns="http://symfony.com/schema/routing"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
-
-            <route id="latest_articles" pattern="/articles/latest/{max}">
-                <default key="_controller">AcmeArticleBundle:Article:recentArticles</default>
-            </route>
-        </routes>
-
-    .. code-block:: php
-
-        use Symfony\Component\Routing\RouteCollection;
-        use Symfony\Component\Routing\Route;
-
-        $collection = new RouteCollection();
-        $collection->add('latest_articles', new Route('/articles/latest/{max}', array(
-            '_controller' => 'AcmeArticleBundle:Article:recentArticles',
-        )));
-
-        return $collection;
-
-Para incluir el controlador, necesitarás referirte a él utilizando una *URL* absoluta:
+Para incluir el controlador, tendrás que referirte a él utilizando la sintaxis de cadena estándar para controladores (es decir, **paquete**:**controlador**:**acción**):
 
 .. configuration-block::
 
@@ -534,7 +500,7 @@ Para incluir el controlador, necesitarás referirte a él utilizando una *URL* a
 
         {# ... #}
         <div id="sidebar">
-            {% render url('latest_articles', { 'max': 3 }) %}
+            {{ render(controller('AcmeArticleBundle:Article:recentArticles', { 'max': 3 })) }}
         </div>
 
     .. code-block:: html+php
@@ -544,11 +510,9 @@ Para incluir el controlador, necesitarás referirte a él utilizando una *URL* a
         <!-- ... -->
         <div id="sidebar">
             <?php echo $view['actions']->render(
-                $view['router']->generate('latest_articles', array('max' => 3), true)
+                new ControllerReference('AcmeArticleBundle:Article:recentArticles', array('max' => 3))
             ) ?>
         </div>
-
-.. include:: /book/_security-2012-6431.rst.inc
 
 Cada vez que te encuentres necesitando una variable o una pieza de información a la que una plantilla no tiene acceso, considera reproducir un controlador.
 Los controladores se ejecutan rápidamente y promueven la buena organización y reutilización de código.
@@ -566,13 +530,20 @@ Debido a que el contenido integrado proviene de otra página (o controlador para
 
     .. code-block:: jinja
 
-        {% render url('...'), {'standalone': 'js'} %}
+        {{ render_hinclude(controller('...')) }}
+
+        {{ render_hinclude(url('...')) }}
 
     .. code-block:: php
 
         <?php echo $view['actions']->render(
+            new ControllerReference('...'),
+            array('strategy' => 'hinclude')
+        ) ?>
+
+        <?php echo $view['actions']->render(
             $view['router']->generate('...'),
-            array('standalone' => 'js')
+            array('strategy' => 'hinclude')
         ) ?>
 
 .. note::
@@ -609,26 +580,22 @@ Puedes especificar globalmente el contenido predeterminado (al cargar o si *Java
         ));
 
 .. versionadded:: 2.2
-    Las plantillas para etiquetas ``render`` se añadieron en *Symfony 2.2*
+    Las plantillas ``default`` para la función ``render`` se añadieron en *Symfony 2.2*
 
-Puedes definir plantillas predefinidas para etiquetas ``render`` (las cuáles sustituyen cualquier plantilla global predeterminada que esté definida):
+Puedes definir plantillas ``default`` para la función ``render`` (lo cuál sustituye cualquier plantilla ``default`` global que esté definida):
 
 .. configuration-block::
 
     .. code-block:: jinja
 
-        {% render '...:news' with 
-            {}, 
-            {'standalone': 'js', 'default': 'AcmeDemoBundle:Default:content.html.twig'} 
-        %}
+        {{ render_hinclude(controller('...'),  {'default': 'AcmeDemoBundle:Default:content.html.twig'}) }}
 
     .. code-block:: php
 
         <?php echo $view['actions']->render(
-            '...:news',
-            array(),
+            new ControllerReference('...'),
             array(
-                'standalone' => 'js',
+                'strategy' => 'hinclude',
                 'default' => 'AcmeDemoBundle:Default:content.html.twig',
             )
         ) ?>
@@ -639,18 +606,14 @@ O puedes especificar además, una cadena que se mostrará como el contenido pred
 
     .. code-block:: jinja
 
-        {% render '...:news' with 
-            {}, 
-            {'standalone': 'js', 'default': 'Loading...'} 
-        %}
+        {{ render_hinclude(controller('...'), {'default': 'Loading...'}) }}
 
     .. code-block:: php
 
         <?php echo $view['actions']->render(
-            '...:news',
-            array(),
+            new ControllerReference('...'),
             array(
-                'standalone' => 'js',
+                'strategy' => 'hinclude',
                 'default' => 'Loading...',
             )
         ) ?>

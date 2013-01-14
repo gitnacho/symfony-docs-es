@@ -1,0 +1,111 @@
+Colección de servicios diferidos
+================================
+
+Este paquete proporciona un mapa/secuencia genérica de servicios diferidos. La puedes utilizar cuando tienes un mapa, o una lista de servicios donde únicamente necesitas iniciar unos cuantos servicios específicos durante una sóla petición.
+
+Secuencia de servicio diferido
+------------------------------
+
+A menudo tienes una lista de servicios en la cuál iteras hasta que un servicio es capaz de manejar tu petición. En *Symfony2*, un ejemplo podría ser el gestor de decisiones de acceso que itera sobre los votantes hasta que encuentra uno que es capaz de hacer una llamada si se debería o no conceder acceso, y luego potencialmente detenerlo. En tal caso, cualquiera de los otros votantes, y sus dependencias no son necesarios, y no se deberían iniciar.
+
+El servicio de secuencia diferida garantiza que la iniciación se retrasa hasta que de hecho un servicio es necesario. Empieza escribiendo el servicio que consume la secuencia::
+
+    use JMS\DiExtraBundle\Annotation as DI;
+    use PhpCollection\Sequence;
+
+    class MyService
+    {
+        private $voters;
+
+        public function __construct(Sequence $voters)
+        {
+            $this->voters = $voters;
+        }
+
+        public function isGranted(...)
+        {
+            foreach ($this->voters as $voter) {
+                // hace algo, potencialmente regresa anticipadamente.
+            }
+        }
+    }
+
+Supón que etiquetas tus votantes en el ``CID`` para permitir que otros paquetes registren servicios. Luego, puedes utilizar el ``LazyServiceSequencePass`` proporcionado el cuál cuidará de recoger los servicios etiquetados, y generará la definición para la secuencia::
+
+    use JMS\DiExtraBundle\Compiler\LazyServiceSequencePass;
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Definition;
+    use Symfony\Component\HttpKernel\Bundle\Bundle;
+
+    class MyBundle extends Bundle
+    {
+        public function build(ContainerBuilder $container)
+        {
+            $container->addCompilerPass(new LazyServiceSequencePass('voter',
+                function(ContainerBuilder $container, Definition $seqDef) {
+                    // Añade la definición de la secuencia como argumento para la clase MyService.
+                    $container->getDefinition('my_service')->addArgument($seqDef);
+                }
+            ));
+        }
+    }
+
+
+
+Mapa de servicios diferidos
+---------------------------
+
+Por ejemplo, si  tienes un mapa de formatos a codificadores correspondientes. Muy probablemente, durante una petición, sólo necesites cargar el codificador para un formato específico. Usando el mapa, la carga de ese codificador se retrasará hasta que sabes qué formato necesitas, y no cargas los codificadores (y sus dependencias) para otros formatos.
+
+Empieza escribiendo el servicio que consume el mapa::
+
+    use JMS\DiExtraBundle\Annotation as DI;
+    use PhpCollection\Map;
+
+    /** @DI\Service("my_service") */
+    class MyService
+    {
+        private $encoders;
+
+        public function __construct(Map $encoders)
+        {
+            $this->encoders = $encoders;
+        }
+
+        public function useEncoder($format)
+        {
+            // El codificador se carga aquí.
+            $encoder = $this->encoders->get('json')->get();
+        }
+    }
+
+Luego, añade algunos de los que etiquetaste para permitir que los añadiran otros paquetes también::
+
+    /** @DI\Service @DI\Tag("encoder", attributes = {"format": "json"}) */
+    class JsonEncoder { }
+
+    /** @DI\Service @DI\Tag("encoder", attributes = {"format": "xml"}) */
+    class XmlEncoder { }
+
+
+Finalmente, sólo necesitas añadir la definición del mapa de ``ID`` que fue construida por el ``LazyServiceMapPass`` proporcionado como argumento de tu servicio ``my_service``::
+
+    use JMS\DiExtraBundle\Compiler\LazyServiceMapPass;
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\DependencyInjection\Definition;
+    use Symfony\Component\HttpKernel\Bundle\Bundle;
+
+    class MyBundle extends Bundle
+    {
+        public function build(ContainerBuilder $container)
+        {
+            $container->addCompilerPass(new LazyServiceMapPass('encoder', 'format',
+                function(ContainerBuilder $container, Definition $mapDef) {
+                    // Añade la definición del mapa como argumento para la clase MyService.
+                    $container->getDefinition('my_service')->addArgument($mapDef);
+                }
+            ));
+        }
+    }
+
+

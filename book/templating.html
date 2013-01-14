@@ -421,9 +421,7 @@ Consulta <a class="reference internal" href="#template-configuration"><em>Config
     <span class="nt">&lt;h1&gt;</span>Recent Articles<span class="nt">&lt;h1&gt;</span>
 
     <span class="cp">{%</span> <span class="k">for</span> <span class="nv">article</span> <span class="k">in</span> <span class="nv">articles</span> <span class="cp">%}</span>
-        <span class="cp">{%</span> <span class="k">include</span> <span class="s1">&#39;AcmeArticleBundle:Article:articleDetails.html.twig&#39;</span>
-               <span class="k">with</span> <span class="o">{</span><span class="s1">&#39;article&#39;</span><span class="o">:</span> <span class="nv">article</span><span class="o">}</span>
-        <span class="cp">%}</span>
+        <span class="cp">{{</span> <span class="nv">include</span><span class="o">(</span><span class="s1">&#39;AcmeArticleBundle:Article:articleDetails.html.twig&#39;</span><span class="o">,</span> <span class="o">{</span><span class="s1">&#39;article&#39;</span><span class="o">:</span> <span class="nv">article</span><span class="o">})</span> <span class="cp">}}</span>
     <span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span>
 <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
 </pre></div>
@@ -444,11 +442,13 @@ Consulta <a class="reference internal" href="#template-configuration"><em>Config
 </li>
 </ul>
 </div>
-<p>La plantilla se incluye con la etiqueta <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">include</span> <span class="pre">%}</span></tt>. Observa que el nombre de la plantilla sigue la misma convención típica. La plantilla <tt class="docutils literal"><span class="pre">articleDetails.html.twig</span></tt> utiliza una variable <tt class="docutils literal"><span class="pre">article</span></tt>. Esta es proporcionada por la plantilla <tt class="docutils literal"><span class="pre">list.html.twig</span></tt> utilizando la orden <tt class="docutils literal"><span class="pre">with</span></tt>.</p>
+<p>La plantilla se incluye utilizando la función <tt class="docutils literal"><span class="pre">{{</span> <span class="pre">include()</span> <span class="pre">}}</span></tt>. Observa que el nombre de la plantilla sigue la misma convención típica. La plantilla <tt class="docutils literal"><span class="pre">articleDetails.html.twig</span></tt> utiliza una variable <tt class="docutils literal"><span class="pre">article</span></tt>. Esta es proporcionada por la plantilla <tt class="docutils literal"><span class="pre">list.html.twig</span></tt> utilizando la orden <tt class="docutils literal"><span class="pre">with</span></tt>.</p>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
 <p class="last"><tt class="docutils literal"><span class="pre">{'article':</span> <span class="pre">article}</span></tt> es la sintaxis de asignación estándar de <em>Twig</em> (es decir, un arreglo con claves nombradas). Si tuviéramos que pasar varios elementos, se vería así: <tt class="docutils literal"><span class="pre">{'foo':</span> <span class="pre">foo,</span> <span class="pre">'bar':</span> <span class="pre">bar}</span></tt>.</p>
 </div>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.2: </span>La función <tt class="docutils literal"><span class="pre">include()</span></tt> es una nueva característica de <em>Twig</em> que está disponible en <em>Symfony 2.2</em>. Anteriormente se utilizaba la etiqueta <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">include</span> <span class="pre">%}</span></tt>.</p>
 </div>
 <div class="section" id="integrando-controladores">
 <span id="templating-embedding-controller"></span><span id="index-8"></span><h3>Integrando controladores<a class="headerlink" href="#integrando-controladores" title="Enlazar permanentemente con este título">¶</a></h3>
@@ -500,50 +500,14 @@ Recuperar los tres artículos puede incluir consultar la base de datos o realiza
 <p class="last">Ten en cuenta que la <em>URL</em> del artículo está directamente en el código en este ejemplo
 (p. ej. <tt class="docutils literal"><span class="pre">/article/*slug*</span></tt>). Esta es una mala práctica. En la siguiente sección, aprenderás cómo hacer esto correctamente.</p>
 </div>
-<p>Incluso aunque este controlador sólo será utilizado internamente, necesitarás crear una ruta que apunte al controlador:</p>
-<div class="configuration-block">
-<ul class="simple">
-<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">latest_articles</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">/articles/latest/{max}</span>
-    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">_controller</span><span class="p-Indicator">:</span> <span class="nv">AcmeArticleBundle</span><span class="p-Indicator">:</span><span class="nv">Article</span><span class="p-Indicator">:</span><span class="nv">recentArticles</span> <span class="p-Indicator">}</span>
-</pre></div>
-</div>
-</li>
-<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;</span>
-
-<span class="nt">&lt;routes</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/routing&quot;</span>
-    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
-    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd&quot;</span><span class="nt">&gt;</span>
-
-    <span class="nt">&lt;route</span> <span class="na">id=</span><span class="s">&quot;latest_articles&quot;</span> <span class="na">pattern=</span><span class="s">&quot;/articles/latest/{max}&quot;</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;default</span> <span class="na">key=</span><span class="s">&quot;_controller&quot;</span><span class="nt">&gt;</span>AcmeArticleBundle:Article:recentArticles<span class="nt">&lt;/default&gt;</span>
-    <span class="nt">&lt;/route&gt;</span>
-<span class="nt">&lt;/routes&gt;</span>
-</pre></div>
-</div>
-</li>
-<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Routing\RouteCollection</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Routing\Route</span><span class="p">;</span>
-
-<span class="nv">$collection</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">RouteCollection</span><span class="p">();</span>
-<span class="nv">$collection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;latest_articles&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/articles/latest/{max}&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-    <span class="s1">&#39;_controller&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;AcmeArticleBundle:Article:recentArticles&#39;</span><span class="p">,</span>
-<span class="p">)));</span>
-
-<span class="k">return</span> <span class="nv">$collection</span><span class="p">;</span>
-</pre></div>
-</div>
-</li>
-</ul>
-</div>
-<p>Para incluir el controlador, necesitarás referirte a él utilizando una <em>URL</em> absoluta:</p>
+<p>Para incluir el controlador, tendrás que referirte a él utilizando la sintaxis de cadena estándar para controladores (es decir, <strong>paquete</strong>:<strong>controlador</strong>:<strong>acción</strong>):</p>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# app/Resources/views/base.html.twig #}</span>
 
 <span class="c">{# ... #}</span>
 <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;sidebar&quot;</span><span class="nt">&gt;</span>
-    <span class="cp">{%</span> <span class="k">render</span> <span class="nv">url</span><span class="o">(</span><span class="s1">&#39;latest_articles&#39;</span><span class="o">,</span> <span class="o">{</span> <span class="s1">&#39;max&#39;</span><span class="o">:</span> <span class="m">3</span> <span class="o">})</span> <span class="cp">%}</span>
+    <span class="cp">{{</span> <span class="nv">render</span><span class="o">(</span><span class="nv">controller</span><span class="o">(</span><span class="s1">&#39;AcmeArticleBundle:Article:recentArticles&#39;</span><span class="o">,</span> <span class="o">{</span> <span class="s1">&#39;max&#39;</span><span class="o">:</span> <span class="m">3</span> <span class="o">}))</span> <span class="cp">}}</span>
 <span class="nt">&lt;/div&gt;</span>
 </pre></div>
 </div>
@@ -553,17 +517,13 @@ Recuperar los tres artículos puede incluir consultar la base de datos o realiza
 <span class="c">&lt;!-- ... --&gt;</span>
 <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;sidebar&quot;</span><span class="nt">&gt;</span>
     <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span>
-        <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">generate</span><span class="p">(</span><span class="s1">&#39;latest_articles&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;max&#39;</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">),</span> <span class="k">true</span><span class="p">)</span>
+        <span class="k">new</span> <span class="nx">ControllerReference</span><span class="p">(</span><span class="s1">&#39;AcmeArticleBundle:Article:recentArticles&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;max&#39;</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">))</span>
     <span class="p">)</span> <span class="cp">?&gt;</span>
 <span class="nt">&lt;/div&gt;</span>
 </pre></div>
 </div>
 </li>
 </ul>
-</div>
-<div class="admonition note">
-<p class="first admonition-title">Nota</p>
-<p class="last">A partir de <em>Symfony 2.0.20/2.1.5</em>, la etiqueta <tt class="docutils literal"><span class="pre">render</span></tt> de <em>Twig</em> toma una <em>URL</em> absoluta en vez de una ruta lógica al controlador. Esto corrige un importante problema de seguridad (<a class="reference external" href="http://symfony.com/blog/security-release-symfony-2-0-20-and-2-1-5-released">CVE-2012-6431</a>) reportado en el blog oficial. Si tu aplicación utiliza una versión más vieja de <em>Symfony</em> o todavía utiliza la anterior sintaxis de la etiqueta <tt class="docutils literal"><span class="pre">render</span></tt>, debes actualizar tu versión tan pronto como sea posible.</p>
 </div>
 <p>Cada vez que te encuentres necesitando una variable o una pieza de información a la que una plantilla no tiene acceso, considera reproducir un controlador.
 Los controladores se ejecutan rápidamente y promueven la buena organización y reutilización de código.</p>
@@ -576,13 +536,20 @@ Los controladores se ejecutan rápidamente y promueven la buena organización y 
 Debido a que el contenido integrado proviene de otra página (o controlador para el caso), <em>Symfony2</em> utiliza el ayudante <tt class="docutils literal"><span class="pre">render</span></tt> estándar para configurar las etiquetas <tt class="docutils literal"><span class="pre">hinclude</span></tt>:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">render</span> <span class="nv">url</span><span class="o">(</span><span class="s1">&#39;...&#39;</span><span class="o">),</span> <span class="o">{</span><span class="s1">&#39;standalone&#39;</span><span class="o">:</span> <span class="s1">&#39;js&#39;</span><span class="o">}</span> <span class="cp">%}</span><span class="x"></span>
+<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">render_hinclude</span><span class="o">(</span><span class="nv">controller</span><span class="o">(</span><span class="s1">&#39;...&#39;</span><span class="o">))</span> <span class="cp">}}</span><span class="x"></span>
+
+<span class="cp">{{</span> <span class="nv">render_hinclude</span><span class="o">(</span><span class="nv">url</span><span class="o">(</span><span class="s1">&#39;...&#39;</span><span class="o">))</span> <span class="cp">}}</span><span class="x"></span>
 </pre></div>
 </div>
 </li>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">ControllerReference</span><span class="p">(</span><span class="s1">&#39;...&#39;</span><span class="p">),</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;strategy&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;hinclude&#39;</span><span class="p">)</span>
+<span class="p">)</span> <span class="cp">?&gt;</span><span class="x"></span>
+
+<span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span>
     <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">generate</span><span class="p">(</span><span class="s1">&#39;...&#39;</span><span class="p">),</span>
-    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;standalone&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;js&#39;</span><span class="p">)</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;strategy&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;hinclude&#39;</span><span class="p">)</span>
 <span class="p">)</span> <span class="cp">?&gt;</span><span class="x"></span>
 </pre></div>
 </div>
@@ -624,22 +591,18 @@ Debido a que el contenido integrado proviene de otra página (o controlador para
 </ul>
 </div>
 <p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.2: </span>Las plantillas para etiquetas <tt class="docutils literal"><span class="pre">render</span></tt> se añadieron en <em>Symfony 2.2</em></p>
-<p>Puedes definir plantillas predefinidas para etiquetas <tt class="docutils literal"><span class="pre">render</span></tt> (las cuáles sustituyen cualquier plantilla global predeterminada que esté definida):</p>
+<span class="versionmodified">Nuevo en la versión 2.2: </span>Las plantillas <tt class="docutils literal"><span class="pre">default</span></tt> para la función <tt class="docutils literal"><span class="pre">render</span></tt> se añadieron en <em>Symfony 2.2</em></p>
+<p>Puedes definir plantillas <tt class="docutils literal"><span class="pre">default</span></tt> para la función <tt class="docutils literal"><span class="pre">render</span></tt> (lo cuál sustituye cualquier plantilla <tt class="docutils literal"><span class="pre">default</span></tt> global que esté definida):</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">render</span> <span class="s1">&#39;...:news&#39;</span> <span class="k">with</span>
-    <span class="o">{},</span>
-    <span class="o">{</span><span class="s1">&#39;standalone&#39;</span><span class="o">:</span> <span class="s1">&#39;js&#39;</span><span class="o">,</span> <span class="s1">&#39;default&#39;</span><span class="o">:</span> <span class="s1">&#39;AcmeDemoBundle:Default:content.html.twig&#39;</span><span class="o">}</span>
-<span class="cp">%}</span><span class="x"></span>
+<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">render_hinclude</span><span class="o">(</span><span class="nv">controller</span><span class="o">(</span><span class="s1">&#39;...&#39;</span><span class="o">),</span>  <span class="o">{</span><span class="s1">&#39;default&#39;</span><span class="o">:</span> <span class="s1">&#39;AcmeDemoBundle:Default:content.html.twig&#39;</span><span class="o">})</span> <span class="cp">}}</span><span class="x"></span>
 </pre></div>
 </div>
 </li>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span>
-    <span class="s1">&#39;...:news&#39;</span><span class="p">,</span>
-    <span class="k">array</span><span class="p">(),</span>
+    <span class="k">new</span> <span class="nx">ControllerReference</span><span class="p">(</span><span class="s1">&#39;...&#39;</span><span class="p">),</span>
     <span class="k">array</span><span class="p">(</span>
-        <span class="s1">&#39;standalone&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;js&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;strategy&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;hinclude&#39;</span><span class="p">,</span>
         <span class="s1">&#39;default&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;AcmeDemoBundle:Default:content.html.twig&#39;</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span> <span class="cp">?&gt;</span><span class="x"></span>
@@ -651,18 +614,14 @@ Debido a que el contenido integrado proviene de otra página (o controlador para
 <p>O puedes especificar además, una cadena que se mostrará como el contenido predefinido:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">render</span> <span class="s1">&#39;...:news&#39;</span> <span class="k">with</span>
-    <span class="o">{},</span>
-    <span class="o">{</span><span class="s1">&#39;standalone&#39;</span><span class="o">:</span> <span class="s1">&#39;js&#39;</span><span class="o">,</span> <span class="s1">&#39;default&#39;</span><span class="o">:</span> <span class="s1">&#39;Loading...&#39;</span><span class="o">}</span>
-<span class="cp">%}</span><span class="x"></span>
+<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">render_hinclude</span><span class="o">(</span><span class="nv">controller</span><span class="o">(</span><span class="s1">&#39;...&#39;</span><span class="o">),</span> <span class="o">{</span><span class="s1">&#39;default&#39;</span><span class="o">:</span> <span class="s1">&#39;Loading...&#39;</span><span class="o">})</span> <span class="cp">}}</span><span class="x"></span>
 </pre></div>
 </div>
 </li>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span>
-    <span class="s1">&#39;...:news&#39;</span><span class="p">,</span>
-    <span class="k">array</span><span class="p">(),</span>
+    <span class="k">new</span> <span class="nx">ControllerReference</span><span class="p">(</span><span class="s1">&#39;...&#39;</span><span class="p">),</span>
     <span class="k">array</span><span class="p">(</span>
-        <span class="s1">&#39;standalone&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;js&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;strategy&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;hinclude&#39;</span><span class="p">,</span>
         <span class="s1">&#39;default&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;Loading...&#39;</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span> <span class="cp">?&gt;</span><span class="x"></span>
@@ -1230,7 +1189,7 @@ Y aunque las plantillas son una manera común de generar contenido en un control
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 11, 2013.
+      Actualizado por última vez en Jan 14, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
