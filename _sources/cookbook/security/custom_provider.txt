@@ -13,8 +13,13 @@ En este artículo varás cómo puedes crear un proveedor de usuarios propio, el 
 Creando una clase usuario
 -------------------------
 
-En primer lugar, independientemente de *donde* vienen los datos de tu usuario, tendrás que crear una clase ``User`` que represente esos datos. El ``usuario`` se puede ver como te apetezca y contener los datos que quieras. El único requisito es que implemente la clase :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.
-Los métodos de esta interfaz por lo tanto, se deben definir en la clase usuario personalizada: ``getRoles()``, ``getPassword()``, ``getSalt()``, ``getUsername()``, ``eraseCredentials()``, ``equals()``.
+En primer lugar, independientemente de *dónde* vengan los datos de tu usuario, tendrás que crear una clase ``User`` que represente esos datos. El ``usuario`` se puede ver como te apetezca y contener los datos que quieras. El único requisito es que implemente la clase :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.
+Los métodos de esta interfaz por lo tanto, se deben definir en la clase usuario personalizada: :method:`Symfony\\Component\\Security\\Core\\User\\UserInterface::getRoles`,
+:method:`Symfony\\Component\\Security\\Core\\User\\UserInterface::getPassword`,
+:method:`Symfony\\Component\\Security\\Core\\User\\UserInterface::getSalt`,
+:method:`Symfony\\Component\\Security\\Core\\User\\UserInterface::getUsername`,
+:method:`Symfony\\Component\\Security\\Core\\User\\UserInterface::eraseCredentials`.
+También puede ser útil implementar la interfaz :class:`Symfony\\Component\\Security\\Core\\User\\EquatableInterface`, la cual define un método para comprobar si el usuario es igual al usuario actual. Esta interfaz requiere un método :method:`Symfony\\Component\\Security\\Core\\User\\EquatableInterface::isEqualTo`.
 
 Veamos esto en acción::
 
@@ -22,8 +27,9 @@ Veamos esto en acción::
     namespace Acme\WebserviceUserBundle\Security\User;
 
     use Symfony\Component\Security\Core\User\UserInterface;
+    use Symfony\Component\Security\Core\User\EquatableInterface;
 
-    class WebserviceUser implements UserInterface
+    class WebserviceUser implements UserInterface, EquatableInterface
     {
         private $username;
         private $password;
@@ -62,7 +68,7 @@ Veamos esto en acción::
         {
         }
 
-        public function equals(UserInterface $user)
+        public function isEqualTo(UserInterface $user)
         {
             if (!$user instanceof WebserviceUser) {
                     return false;
@@ -84,14 +90,15 @@ Veamos esto en acción::
         }
     }
 
-Si tienes más información sobre tus usuarios ---como un "nombre"--- entonces puedes agregar un campo ``"first_name"`` para almacenar esos datos.
+.. versionadded:: 2.1
+    La ``EquatableInterface`` se añadió en *Symfony 2.1*. En *Symfony 2.0*, Usa el método ``equals()`` de la ``UserInterface``.
 
-Para más detalles sobre cada uno de los métodos, consulta la :class:`Symfony\\Component\\Security\\Core\\User\\UserInterface`.
+Si tienes más información sobre tus usuarios ---como un «nombre»--- entonces puedes agregar un campo ``«first_name»`` para almacenar esos datos.
 
 Creando un proveedor de usuario
 -------------------------------
 
-Ahora que tienes una clase ``Usuario``, debes crear un proveedor de usuarios, el cual toma información del usuario desde algún servicio web, crea un objeto ``WebserviceUser`` y lo rellena con datos.
+Ahora que tienes una clase ``Usuario``, debes crear un proveedor de usuarios, el cual toma información del usuario desde algún servicio *web*, crea un objeto ``WebserviceUser`` y lo rellena con datos.
 
 El proveedor de usuarios sólo es una simple clase *PHP* que debe implementar la :class:`Symfony\\Component\\Security\\Core\\User\\UserProviderInterface`, la cual requiere que se definan tres métodos: ``loadUserByUsername($username)``, ``refreshUser(UserInterface $user)`` y ``supportsClass($class)``. para más detalles, consulta la :class:`Symfony\\Component\\Security\\Core\\User\\UserProviderInterface`.
 

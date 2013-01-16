@@ -83,15 +83,21 @@ Fuera de la caja, <em>Symfony</em> tiene un proveedor de usuario «en memoria» 
 En este artículo varás cómo puedes crear un proveedor de usuarios propio, el cual te podría ser útil si tus usuarios se acceden a través de una base de datos personalizada, un archivo, o &#8212;como muestra este ejemplo&#8212; un servicio web.</p>
 <div class="section" id="creando-una-clase-usuario">
 <h2>Creando una clase usuario<a class="headerlink" href="#creando-una-clase-usuario" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>En primer lugar, independientemente de <em>donde</em> vienen los datos de tu usuario, tendrás que crear una clase <tt class="docutils literal"><span class="pre">User</span></tt> que represente esos datos. El <tt class="docutils literal"><span class="pre">usuario</span></tt> se puede ver como te apetezca y contener los datos que quieras. El único requisito es que implemente la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserInterface</span></tt>.
-Los métodos de esta interfaz por lo tanto, se deben definir en la clase usuario personalizada: <tt class="docutils literal"><span class="pre">getRoles()</span></tt>, <tt class="docutils literal"><span class="pre">getPassword()</span></tt>, <tt class="docutils literal"><span class="pre">getSalt()</span></tt>, <tt class="docutils literal"><span class="pre">getUsername()</span></tt>, <tt class="docutils literal"><span class="pre">eraseCredentials()</span></tt>, <tt class="docutils literal"><span class="pre">equals()</span></tt>.</p>
+<p>En primer lugar, independientemente de <em>dónde</em> vengan los datos de tu usuario, tendrás que crear una clase <tt class="docutils literal"><span class="pre">User</span></tt> que represente esos datos. El <tt class="docutils literal"><span class="pre">usuario</span></tt> se puede ver como te apetezca y contener los datos que quieras. El único requisito es que implemente la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserInterface</span></tt>.
+Los métodos de esta interfaz por lo tanto, se deben definir en la clase usuario personalizada: <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/User/UserInterface.html#method_getRoles" title="Symfony\Component\Security\Core\User\UserInterface::getRoles()"><span class="pre">getRoles()</span></a></tt>,
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/User/UserInterface.html#method_getPassword" title="Symfony\Component\Security\Core\User\UserInterface::getPassword()"><span class="pre">getPassword()</span></a></tt>,
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/User/UserInterface.html#method_getSalt" title="Symfony\Component\Security\Core\User\UserInterface::getSalt()"><span class="pre">getSalt()</span></a></tt>,
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/User/UserInterface.html#method_getUsername" title="Symfony\Component\Security\Core\User\UserInterface::getUsername()"><span class="pre">getUsername()</span></a></tt>,
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/User/UserInterface.html#method_eraseCredentials" title="Symfony\Component\Security\Core\User\UserInterface::eraseCredentials()"><span class="pre">eraseCredentials()</span></a></tt>.
+También puede ser útil implementar la interfaz <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\EquatableInterface</span></tt>, la cual define un método para comprobar si el usuario es igual al usuario actual. Esta interfaz requiere un método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Security/Core/User/EquatableInterface.html#method_isEqualTo" title="Symfony\Component\Security\Core\User\EquatableInterface::isEqualTo()"><span class="pre">isEqualTo()</span></a></tt>.</p>
 <p>Veamos esto en acción:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/WebserviceUserBundle/Security/User/WebserviceUser.php</span>
 <span class="k">namespace</span> <span class="nx">Acme\WebserviceUserBundle\Security\User</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\User\UserInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Security\Core\User\EquatableInterface</span><span class="p">;</span>
 
-<span class="k">class</span> <span class="nc">WebserviceUser</span> <span class="k">implements</span> <span class="nx">UserInterface</span>
+<span class="k">class</span> <span class="nc">WebserviceUser</span> <span class="k">implements</span> <span class="nx">UserInterface</span><span class="p">,</span> <span class="nx">EquatableInterface</span>
 <span class="p">{</span>
     <span class="k">private</span> <span class="nv">$username</span><span class="p">;</span>
     <span class="k">private</span> <span class="nv">$password</span><span class="p">;</span>
@@ -130,7 +136,7 @@ Los métodos de esta interfaz por lo tanto, se deben definir en la clase usuario
     <span class="p">{</span>
     <span class="p">}</span>
 
-    <span class="k">public</span> <span class="k">function</span> <span class="nf">equals</span><span class="p">(</span><span class="nx">UserInterface</span> <span class="nv">$user</span><span class="p">)</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">isEqualTo</span><span class="p">(</span><span class="nx">UserInterface</span> <span class="nv">$user</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$user</span> <span class="nx">instanceof</span> <span class="nx">WebserviceUser</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
@@ -153,12 +159,13 @@ Los métodos de esta interfaz por lo tanto, se deben definir en la clase usuario
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Si tienes más información sobre tus usuarios &#8212;como un &#8220;nombre&#8221;&#8212; entonces puedes agregar un campo <tt class="docutils literal"><span class="pre">&quot;first_name&quot;</span></tt> para almacenar esos datos.</p>
-<p>Para más detalles sobre cada uno de los métodos, consulta la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserInterface</span></tt>.</p>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>La <tt class="docutils literal"><span class="pre">EquatableInterface</span></tt> se añadió en <em>Symfony 2.1</em>. En <em>Symfony 2.0</em>, Usa el método <tt class="docutils literal"><span class="pre">equals()</span></tt> de la <tt class="docutils literal"><span class="pre">UserInterface</span></tt>.</p>
+<p>Si tienes más información sobre tus usuarios &#8212;como un «nombre»&#8212; entonces puedes agregar un campo <tt class="docutils literal"><span class="pre">«first_name»</span></tt> para almacenar esos datos.</p>
 </div>
 <div class="section" id="creando-un-proveedor-de-usuario">
 <h2>Creando un proveedor de usuario<a class="headerlink" href="#creando-un-proveedor-de-usuario" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Ahora que tienes una clase <tt class="docutils literal"><span class="pre">Usuario</span></tt>, debes crear un proveedor de usuarios, el cual toma información del usuario desde algún servicio web, crea un objeto <tt class="docutils literal"><span class="pre">WebserviceUser</span></tt> y lo rellena con datos.</p>
+<p>Ahora que tienes una clase <tt class="docutils literal"><span class="pre">Usuario</span></tt>, debes crear un proveedor de usuarios, el cual toma información del usuario desde algún servicio <em>web</em>, crea un objeto <tt class="docutils literal"><span class="pre">WebserviceUser</span></tt> y lo rellena con datos.</p>
 <p>El proveedor de usuarios sólo es una simple clase <em>PHP</em> que debe implementar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserProviderInterface</span></tt>, la cual requiere que se definan tres métodos: <tt class="docutils literal"><span class="pre">loadUserByUsername($username)</span></tt>, <tt class="docutils literal"><span class="pre">refreshUser(UserInterface</span> <span class="pre">$user)</span></tt> y <tt class="docutils literal"><span class="pre">supportsClass($class)</span></tt>. para más detalles, consulta la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Security\Core\User\UserProviderInterface</span></tt>.</p>
 <p>Aquí tienes un ejemplo de cómo lo podrías hacer:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/WebserviceUserBundle/Security/User/WebserviceUserProvider.php</span>
@@ -322,7 +329,7 @@ Para evitarlo, esto se configura en <tt class="file docutils literal"><span clas
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 15, 2013.
+      Actualizado por última vez en Jan 16, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
