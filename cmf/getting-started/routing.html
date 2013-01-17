@@ -75,6 +75,7 @@
             
   <div class="section" id="el-sistema-de-enrutado-del-cmf-de-symfony">
 <h1>El sistema de enrutado del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em><a class="headerlink" href="#el-sistema-de-enrutado-del-cmf-de-symfony" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>Esta es una introducción para entender los conceptos detrás del enrutado del <em>CMF</em>. Para la documentación de referencia por favor ve <a class="reference internal" href="../components/routing.html"><em>El componente Routing</em></a> y <a class="reference internal" href="../bundles/routing-extra.html"><em>RoutingExtraBundle</em></a>.</p>
 <div class="section" id="concepto">
 <h2>Concepto<a class="headerlink" href="#concepto" title="Enlazar permanentemente con este título">¶</a></h2>
 <div class="section" id="por-que-un-nuevo-mecanismo-de-enrutado">
@@ -110,8 +111,8 @@ Esta se utiliza como sustituta para el sistema de enrutado predefinido de <em>Sy
             <span class="c1"># el enrutador configurado con contenido</span>
             <span class="l-Scalar-Plain">symfony_cmf_routing_extra.dynamic_router</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">200</span>
 
-            <span class="c1"># habilita el enrutador predefinido de symfony</span>
-            <span class="c1"># con baja prioridad</span>
+            <span class="c1"># activa el enrutador predefinido de symfony con</span>
+            <span class="c1"># baja prioridad</span>
             <span class="l-Scalar-Plain">router.default</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">100</span>
 </pre></div>
 </div>
@@ -160,11 +161,16 @@ por omisión. Para activarlo, sólo añade lo siguiente a tu archivo de configur
 </ul>
 </div>
 <p>Esta es la configuración mínima requirida para cargar el <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> como servicio, esta lo capacita para realizar cualquier enrutamiento. De hecho, cuándo exploras las páginas predefinidas que vienen con la <em>EE</em> del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em>, el <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> es el que empareja tus peticiones con los Controladores y Plantillas.</p>
-<div class="section" id="consiguiendo-la-ruta">
-<h3>Consiguiendo la <tt class="docutils literal"><span class="pre">Ruta</span></tt><a class="headerlink" href="#consiguiendo-la-ruta" title="Enlazar permanentemente con este título">¶</a></h3>
-<p>Puedes configurar el proveedor a usar para adaptarlo a las necesidades de cada implementación, y debe implementar la <tt class="docutils literal"><span class="pre">RouteProviderInterface</span></tt>. Como parte de este paquete, se proporciona una implementación para el <a class="reference external" href="https://github.com/doctrine/phpcr-odm">PHPCR-ODM</a>, pero fácilmente puedes crear una propia, puesto que el <tt class="docutils literal"><span class="pre">Enrutador</span></tt> es de almacenamiento agnóstico. El proveedor predefinido carga la ruta como el camino en la petición y todas las rutas padre permiten que algunos segmentos de la ruta sean parámetros.</p>
+<div class="section" id="consiguiendo-el-objeto-route">
+<h3>Consiguiendo el objeto <tt class="docutils literal"><span class="pre">Route</span></tt><a class="headerlink" href="#consiguiendo-el-objeto-route" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Puedes configurar el proveedor a usar para adaptarlo a las necesidades de cada implementación, este debe implementar la <tt class="docutils literal"><span class="pre">RouteProviderInterface</span></tt>. Como parte de este paquete, se proporciona una implementación para el <a class="reference external" href="https://github.com/doctrine/phpcr-odm">PHPCR-ODM</a>, pero fácilmente puedes crear una propia, puesto que el <tt class="docutils literal"><span class="pre">Enrutador</span></tt> es de almacenamiento agnóstico. El proveedor predefinido carga la ruta como el camino en la petición y todas las rutas padre permiten que algunos segmentos de la ruta sean parámetros.</p>
 <p>Para información más detallada sobre esta implementación y cómo la puedes personalizar o extender, consulta el <a class="reference internal" href="../bundles/routing-extra.html"><em>RoutingExtraBundle</em></a>.</p>
 <p>El <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> es capaz de emparejar la petición entrante con un objeto <tt class="docutils literal"><span class="pre">Ruta</span></tt> del proveedor subyacente. Los detalles sobre cómo se lleva a cabo el proceso de emparejamiento se pueden encontrar en <a class="reference internal" href="../components/routing.html"><em>El componente Routing</em></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>Para hacer que el proveedor de rutas encuentre rutas, también necesitas proporcionar los datos en tu almacenamiento. Con <em>PHPCR-ODM</em>, esto se hace a través de la interfaz de admininistración (ve más adelante) o con accesorios.</p>
+<p class="last">No obstante, antes de poder explicar cómo hacerlo, necesitas entender cómo trabaja el <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt>. Más adelante en este documento hay un ejemplo.</p>
+</div>
 </div>
 <div class="section" id="consiguiendo-el-controlador-y-la-plantilla">
 <h3>Consiguiendo el controlador y la plantilla<a class="headerlink" href="#consiguiendo-el-controlador-y-la-plantilla" title="Enlazar permanentemente con este título">¶</a></h3>
@@ -176,7 +182,7 @@ El <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> util
 <li>Por clase: Requiere que la instancia de la <tt class="docutils literal"><span class="pre">Ruta</span></tt> implemente la <tt class="docutils literal"><span class="pre">RouteObjectInterface</span></tt> y <tt class="docutils literal"><span class="pre">getRouteContent()</span></tt> regrese un objeto. El tipo de la clase devuelta luego se empareja contra la configuración proporcionada en el archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt>.</li>
 <li>Predefinido: Si está configurado, utilizará un controlador predefinido.</li>
 </ul>
-<p>Aparte de esto, el <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> también es capaz de especificar dinámicamente qué plantilla será utilizada, de manera similar a la utilizada para determinar el <tt class="docutils literal"><span class="pre">controlador</span></tt> (por orden de precedencia):</p>
+<p>Aparte de este, el <tt class="docutils literal"><span class="pre">DynamicRouter</span></tt> también es capaz de especificar dinámicamente qué plantilla será utilizada, en una manera similar a la utilizada para determinar el controlador (en orden de precedencia):</p>
 <ul class="simple">
 <li>Explicito: El documento <tt class="docutils literal"><span class="pre">Ruta</span></tt> almacenado en sí mismo puede declarar explícitamente la plantilla destino en <tt class="docutils literal"><span class="pre">getRouteDefaults()</span></tt>.</li>
 <li>Por clase: Requiere que la instancia de la <tt class="docutils literal"><span class="pre">Ruta</span></tt> implemente la <tt class="docutils literal"><span class="pre">RouteObjectInterface</span></tt> y <tt class="docutils literal"><span class="pre">getRouteContent()</span></tt> regrese un objeto. El tipo de la clase devuelta luego se empareja contra la configuración proporcionada en el archivo <tt class="file docutils literal"><span class="pre">config.yml</span></tt>.</li>
@@ -242,6 +248,32 @@ Si estás utilizando el proveedor de ruta <tt class="docutils literal"><span cla
 <li>O suministra una implementación de la <tt class="docutils literal"><span class="pre">ContentRepositoryInterface</span></tt> y el <tt class="docutils literal"><span class="pre">id</span></tt> de la instancia del modelo como el parámetro <tt class="docutils literal"><span class="pre">content_id</span></tt></li>
 </ul>
 </div>
+<div class="section" id="el-documento-de-ruta-phpcr-odm">
+<h2>El documento de ruta <em>PHPCR-ODM</em><a class="headerlink" href="#el-documento-de-ruta-phpcr-odm" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Como se mencionó arriba, puedes utilizar cualquier proveedor de rutas. El ejemplo en esta sección aplica si utilizas el proveedor de rutas <em>PHPCR-ODM</em> predefinido.</p>
+<p>Todas las  rutas están localizadas bajo una ruta configurada como la raíz, por ejemplo <tt class="docutils literal"><span class="pre">'/cms/rutas'</span></tt>.
+Puedes crear una nueva ruta en código <em>PHP</em> de la siguiente manera:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Cmf\Bundle\RoutingExtraBundle\Document\Route</span><span class="p">;</span>
+<span class="nv">$route</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">;</span>
+<span class="nv">$route</span><span class="o">-&gt;</span><span class="na">setParent</span><span class="p">(</span><span class="nv">$dm</span><span class="o">-&gt;</span><span class="na">find</span><span class="p">(</span><span class="k">null</span><span class="p">,</span> <span class="s1">&#39;/routes&#39;</span><span class="p">));</span>
+<span class="nv">$route</span><span class="o">-&gt;</span><span class="na">setName</span><span class="p">(</span><span class="s1">&#39;projects&#39;</span><span class="p">);</span>
+
+<span class="c1">// enlaza un contenido a la ruta</span>
+<span class="nv">$content</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Content</span><span class="p">(</span><span class="s1">&#39;my content&#39;</span><span class="p">);</span>
+<span class="nv">$route</span><span class="o">-&gt;</span><span class="na">setRouteContent</span><span class="p">(</span><span class="nv">$content</span><span class="p">);</span>
+
+<span class="c1">// ahora configura algún parámetro, no olvides la barra inclinada inicial si</span>
+<span class="c1">// quieres /proyectos/{id} y no /proyectos{id}</span>
+<span class="nv">$route</span><span class="o">-&gt;</span><span class="na">setVariablePattern</span><span class="p">(</span><span class="s1">&#39;/{id}&#39;</span><span class="p">);</span>
+<span class="nv">$route</span><span class="o">-&gt;</span><span class="na">setRequirement</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;\d+&#39;</span><span class="p">);</span>
+<span class="nv">$route</span><span class="o">-&gt;</span><span class="na">setDefault</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>Esto te dará un documento que empareje con la <em>URL</em> <tt class="docutils literal"><span class="pre">/proyectos/&lt;número&gt;</span></tt> pero también con <tt class="docutils literal"><span class="pre">/proyectos</span></tt> puesto que hay un valor predefinido para el parámetro <tt class="docutils literal"><span class="pre">id</span></tt>.</p>
+<p>Tu controlador puede esperar el parámetro <tt class="docutils literal"><span class="pre">$id</span></tt> así como el <tt class="docutils literal"><span class="pre">$contentDocument</span></tt> tal como se
+puso un contenido en la ruta. El contenido se podría usar para definir una sección de introducción que sea igual en cada proyecto u otro dato compartido. Si no necesitas contenido, puedes simplemente no ponerlo en el documento.</p>
+<p>Para más detalles, ve la <a class="reference internal" href="../bundles/routing-extra.html#bundles-routingextra-document"><em>sección del documento de ruta en la documentación del RoutingExtraBundle</em></a>.</p>
+</div>
 <div class="section" id="integrando-con-sonataadmin">
 <h2>Integrando con <em>SonataAdmin</em><a class="headerlink" href="#integrando-con-sonataadmin" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Si en la sección <tt class="docutils literal"><span class="pre">require</span></tt> del archivo <tt class="file docutils literal"><span class="pre">composer.json</span></tt> añades el <tt class="docutils literal"><span class="pre">sonata-project/doctrine-phpcr-admin-bundle</span></tt>, los documentos de ruta serán expuestos en el <tt class="docutils literal"><span class="pre">SonataDoctrinePhpcrAdminBundle</span></tt>.
@@ -280,9 +312,9 @@ Para instrucciones sobre cómo configurar este paquete ve <a class="reference in
 <h2>Notas adicionales<a class="headerlink" href="#notas-adicionales" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Para más información sobre el componente <tt class="docutils literal"><span class="pre">Routing</span></tt> del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em>, por favor, consulta:</p>
 <ul class="simple">
-<li><a class="reference internal" href="../components/routing.html"><em>El componente Routing</em></a> para más información sobre la funcionalidad real de la implementación</li>
-<li><a class="reference internal" href="../bundles/routing-extra.html"><em>RoutingExtraBundle</em></a> para la integración del paquete <tt class="docutils literal"><span class="pre">Routing</span></tt> con <em>Symfony2</em></li>
-<li>La página del componente <a class="reference external" href="http://symfony.com/doc/current/components/routing/introduction.html">Routing</a> de <em>Symfony</em></li>
+<li><a class="reference internal" href="../components/routing.html"><em>El componente Routing</em></a> para la mayoría de la funcionalidad implementada actualmente</li>
+<li><a class="reference internal" href="../bundles/routing-extra.html"><em>RoutingExtraBundle</em></a> para el paquete de integración del componente <tt class="docutils literal"><span class="pre">Routing</span></tt> con <em>Symfony2</em></li>
+<li>La página del componente <a class="reference external" href="http://gitnacho.github.com/symfony-docs-es/components/routing/introduction.html">Routing</a> de <em>Symfony2</em></li>
 </ul>
 </div>
 </div>
@@ -320,7 +352,7 @@ Para instrucciones sobre cómo configurar este paquete ve <a class="reference in
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 15, 2013.
+      Actualizado por última vez en Jan 17, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

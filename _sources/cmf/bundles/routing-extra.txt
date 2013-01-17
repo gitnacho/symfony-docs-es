@@ -7,7 +7,7 @@ La ``ChainRouter`` pretende reemplazar el enrutador predefinido de *Symfony*. To
 
 Además, este paquete entrega útiles implementaciones de enrutado. Actualmente, existe el ``DynamicRouter`` que enruta basándose en una lógica de cargador personalizada para los objetos ``Ruta`` de *Symfony2*. Puedes implementar el proveedor usando una base de datos, por ejemplo con el `PHPCR-ODM`_ de *Doctrine* o el *ORM* de *Doctrine*. Este paquete proporciona una implementación predefinida para el `PHPCR-ODM`_ de *Doctrine*.
 
-El servicio *DynamicRouter* sólo está disponible cuándo se habilita explícitamente en la configuración de la aplicación.
+El servicio ``DynamicRouter`` sólo está disponible cuándo se habilita explícitamente en la configuración de la aplicación.
 
 Finalmente estos paquetes proporcionan documentos de ruta para el `PHPCR-ODM`_ de *Doctrine* y un controlador para redirigir rutas.
 
@@ -173,12 +173,63 @@ Los posibles potenciadores son (en orden de precedencia):
                 # tu propio servicio
 
 
-
 Para ver algunos ejemplos, por favor ve en el `recinto de seguridad del CMF`_, específicamente la carga de accesorios de enrutado.
+
+.. _bundles_routingextra_document:
+
+Usando el documento de ruta *PHPCR-ODM*
+---------------------------------------
+
+Todas las clases de ruta deben extender la clase ``Route`` del núcleo de *Symfony*. Los documentos tampoco se pueden crear por código (por ejemplo un guión de accesorios) o con una interfaz *web* como la proporcionada para la administración *PHPCR-ODM* de Sonata (ve abajo).
+
+*PHPCR-ODM* asocia todas las características de la ruta del núcleo al almacenamiento, así que  puedes utilizar normalmente los métodos ``setDefault``, ``setRequirement``, ``setOption`` y ``setHostnamePattern``.
+Además cuándo creas una ruta, puedes definir si ``.{_format}`` se debería anexar al patrón y configurar con requisitos el ``_format`` requerido.
+La otra opción del constructor te permite controlar si la ruta debería anexar una barra inclinada final porque esto no se puede expresar con un nombre *PHPCR*. El predefinido es que no tenga ninguna barra inclinada final.
+
+Todas las  rutas están localizadas bajo una ruta configurada como la raíz, por ejemplo ``'/cms/rutas'``.
+Puedes crear una nueva ruta en código *PHP* de la siguiente manera:
+
+.. code-block:: php
+
+    use Symfony\Cmf\Bundle\RoutingExtraBundle\Document\Route;
+    $route = new Route;
+    $route->setParent($dm->find(null, '/routes'));
+    $route->setName('projects');
+    // establece el controlador explícitamente (ambas sintaxis trabajan
+    // servicio y Paquete:Nombre:acción)
+    $route->setDefault('_controller', 'sandbox_main.controller:specialAction');
+
+Sin embargo, el ejemplo anterior probablemente se debería haber hecho como una ruta configurada en un archivo ``xml/yml`` de *Symfony*, a no ser que se suponga que el usuario final cambie la *URL* o el controlador.
+
+Para enlazar un contenido a esta ruta, sencillamente pon lo siguiente en el documento.
+
+.. code-block:: php
+
+    $content = new Content('my content'); // el contenido se debe asociar a una clase
+    $route->setRouteContent($content);
+
+Esto pondrá el documento en los parámetros de la petición y si tu controlador especifica un parámetro llamado ``$contentDocument``, le será pasado este documento.
+
+También puedes utilizar patrones variables para la *URL* y definir requisitos y predeterminados.
+
+.. code-block:: php
+
+    // No olvides la barra inclinada inicial si quieres /proyectos/{id} y no /proyectos{id}
+    $route->setVariablePattern('/{id}');
+    $route->setRequirement('id', '\d+');
+    $route->setDefault('id', 1);
+
+Esto te dará una ruta que empareja con la *URL* ``/proyectos/<número>`` pero también con ``/proyectos`` ya que es el predefinido para el parámetro ``id``. Esta emparejará con ``/proyectos/7`` así como con ``/proyectos`` pero no con ``/proyectos/x-4``.
+El documento todavía será almacenado en ``/rutas/proyectos``. Esto trabajará porque, como se mencionó anteriormente, el proveedor de ruta buscará documentos de ruta en todas las rutas posibles y elegirá la primera que coincida. En este ejemplo, si hay un documento de ruta en ``/rutas/proyectos/7`` que coincida (sin más parámetros) será seleccionado. De lo contrario comprobará si ``/rutas/proyectos`` tiene un patrón que coincida. Si no, el documento superior en ``/rutas`` será comprobado.
+
+Naturalmente también puedes tener varios parámetros, como es normal en las rutas de *Symfony*. La semántica y reglas para patrones, predefinidos y requisitos son exactamente iguales que en las rutas del núcleo.
+
+Tu controlador puede esperar el parámetro ``$id`` así como el ``$contentDocument`` tal como se
+puso un contenido en la ruta. El contenido se podría usar para definir una sección de introducción que sea igual en cada proyecto u otro dato compartido. Si no necesitas contenido, puedes simplemente no ponerlo en el documento.
 
 
 Configurando la administración de ``Sonata``
-""""""""""""""""""""""""""""""""""""""""""""
+--------------------------------------------
 
 Si añades ``sonata-project/doctrine-phpcr-admin-bundle`` en la sección ``require`` de tu archivo :file:`composer.json` y el ``SonataDoctrinePhpcrAdminBundle`` es cargado en el núcleo de la aplicación, los documentos de ruta son expuestos en el ``SonataDoctrinePhpcrAdminBundle``.
 Para instrucciones sobre cómo configurar este paquete ve :doc:`doctrine_phpcr_admin`.
@@ -262,4 +313,4 @@ Para más información sobre el componente ``Routing`` del ``CMF`` de *Symfony*,
 
 - :doc:`../getting-started/routing` para una guía introductoria al paquete ``Routing``
 - :doc:`../components/routing` para la mayoría de la funcionalidad implementada actualmente
-- La página del componente `Routing <http://gitnacho.github.com/symfony-docs-es/components/routing/introduction.html>` de *Symfony2*.
+- La página del componente `Routing <http://gitnacho.github.com/symfony-docs-es/components/routing/introduction.html>`_ de *Symfony2*.

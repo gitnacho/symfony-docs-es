@@ -1,0 +1,42 @@
+.. index::
+   single: Petición; Delegados confiables
+
+Delegados confiables
+====================
+
+Si te encuentras detrás de alguna clase de delegado ---tal como un balanceador de carga--- entonces cierta información de las cabeceras se te puede enviar usando cabeceras ``X-Forwarded-*`` especiales. Por ejemplo, la cabecera *HTTP* ``Host`` normalmente se utiliza para regresar el servidor solicitado. Pero cuándo estás detrás de un delegado, el verdadero servidor se puede almacenar en una cabecera ``X-Forwarded-Host``.
+
+Debido a que las cabeceras *HTTP* se pueden suplantar, de manera predeterminada *Symfony2* *no* confía en estas cabeceras de delegados. Si estás detrás de un delegado, tienes que enumerar manualmente tu delegado en una lista blanca::
+
+    use Symfony\Component\HttpFoundation\Request;
+
+    $request = Request::createFromGlobals();
+    // únicamente confía en las cabeceras de delegados que vienen
+    // de esta dirección IP
+    $request->setTrustedProxies(array(192.0.0.1));
+
+Configurando nombres de cabeceras
+---------------------------------
+
+De manera predeterminada, las siguientes cabeceras de delegados son confiables:
+
+* ``X-Forwarded-For`` Usada en :method:`Symfony\\Component\\HttpFoundation\\Request::getClientIp`;
+* ``X-Forwarded-Host`` Usada en :method:`Symfony\\Component\\HttpFoundation\\Request::getHost`;
+* ``X-Forwarded-Port`` Usada en :method:`Symfony\\Component\\HttpFoundation\\Request::getPort`;
+* ``X-Forwarded-Proto`` Usada en :method:`Symfony\\Component\\HttpFoundation\\Request::getScheme` y :method:`Symfony\\Component\\HttpFoundation\\Request::isSecure`;
+
+Si tu delegado inverso utiliza un nombre de cabecera diferente para cualquiera de estas, puedes configurar el nombre de la cabecera a través del método :method:`Symfony\\Component\\HttpFoundation\\Request::setTrustedHeaderName`::
+
+    $request->setTrustedHeaderName(Request::HEADER_CLIENT_IP, 'X-Proxy-For');
+    $request->setTrustedHeaderName(Request::HEADER_CLIENT_HOST, 'X-Proxy-Host');
+    $request->setTrustedHeaderName(Request::HEADER_CLIENT_PORT, 'X-Proxy-Port');
+    $request->setTrustedHeaderName(Request::HEADER_CLIENT_PROTO, 'X-Proxy-Proto');
+
+Determinadas cabeceras no confiables
+------------------------------------
+
+De manera predeterminada, si pones en una lista blanca tus direcciones *IP* delegadas, entonces todas tus cabeceras enumeradas arriba serán confiables. Si necesitas confiar en algunas de esas cabeceras pero no en otras, también lo puedes hacer::
+
+    // desactiva la confianza en la cabecera ``X-Forwarded-Proto``, usa
+    // la cabecera predefinida
+    $request->setTrustedHeaderName(Request::HEADER_CLIENT_PROTO, '');
