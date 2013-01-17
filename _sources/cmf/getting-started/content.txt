@@ -1,0 +1,67 @@
+Contenido
+=========
+
+Concepto
+--------
+
+El corazón de cada *CMS* está en el contenido, una abstracción que los editores pueden manipular y que más tarde será presentado a los usuarios de la página. La estructura del contenido depende mucho de las necesidades del proyecto, y este debe tener un significativo impacto en el futuro uso y desarrollo de la plataforma.
+
+La *EE* del ``CMF`` de *Symfony*  viene con el ``ContentBundle``: una implementación básica de una estructura de contenido, incluyendo el soporte para múltiples idiomas y el almacenamiento de ``Rutas`` en la base de datos.
+
+Contenido estático
+------------------
+
+El ``StaticContent`` declara la estructura básica del contenido. Su estructura es muy similar a las utilizadas en los sistemas *ORM* de *Symfony2*, y la mayoría de sus campos son autoexplicativos, ya que son lo que esperarías de un *CMS* básico:
+título, cuerpo, información de publicación y una referencia al padre, para organizar un árbol jerárquico. Este también incluye un bloque de referencia (más sobre esto más adelante).
+
+Las dos interfaces implementadas revelan dos de las características incluidas en esta implementación:
+
+- ``RouteAwareInterface`` significa que el contenido tiene ``Rutas`` asociadas.
+
+- ``PublishWorkflowInterface`` significa que el contenido tiene fechas de publicación y despublicación, las cuales serán manejadas por el núcleo del ``CMF`` de *Symfony* para determinar el acceso.
+
+
+Contenido multilingüe estático
+------------------------------
+
+El ``MultilangStaticContent`` extiende a ``StaticContent``, ofreciendo la misma
+funcionalidad con soporte multilingüe. Este especifica qué campos son traducidos (``title``, ``body`` y ``tags``) así como una variable para declarar la región.
+
+También especifica la estrategia de traducción:
+
+.. configuration-block::
+
+    .. code-block:: php
+
+       /**
+       * @PHPCRODM\Document(translator="child", referenceable=true)
+       */
+
+Para información sobre las estrategias de traducción disponibles, consulta la página
+de *Doctrine* relacionada con el `Soporte multilingüe en el PHPCR-ODM <http://docs.doctrine-project.org/projects/doctrine-phpcr-odm/en/latest/reference/multilang.html>`_
+
+
+Controlador de contenido
+------------------------
+
+Para manejar ambos tipos de contenido, también incluye un ``Controlador``. Su trabajo interno es bastante sencillo: acepta una instancia de ``contenido`` y opcionalmente una plantilla a dibujar. Si ninguna es proporcionada, utiliza una preconfigurada por omisión.
+También tiene en cuenta el estado de publicación y multilingüe del documento.
+Ambas instancias de contenido y la plantilla opcional son proporcionadas al ``Controlador``
+por el ``DynamicRouter`` del ``RoutingExtraBundle``. Más información sobre esto está disponible en la página del :ref:`Sistema de enrutado  <routing-linking-a-route-with-a-model-instance>`.
+
+Soporte para la administración
+------------------------------
+
+El último componente necesario para manejar los tipos de contenido incluidos es una interfaz de administración. El ``CMF`` de *Symfony* opcionalmente puede apoyar al `SonataDoctrinePHPCRAdminBundle <https://github.com/sonata-project/SonataDoctrinePhpcrAdminBundle>`_, una herramienta para la generación de la interfaz de administración. Para más información sobre esta, por favor consulta la sección de documentación del `paquete <https://github.com/sonata-project/SonataDoctrinePhpcrAdminBundle/tree/master/Resources/doc>`_.
+
+En ``ContentBundle``, las nterfaces de administración requeridas ya están declaradas en el directorio ``Admin`` y configuradas en el archivo :file:`Resources/config/admin.xml`, y serán cargadas automáticamente si instalas el ``SonataDoctrinePHPCRAdminBundle`` (ve :doc:`../tutorials/creating-cms-using-cmf-and-sonata` para instrucciones sobre esto).
+
+Configurando
+------------
+
+El paquete también apoya un conjunto opcional de parámetros de configuración. Consulta :doc:`../bundles/content` para la referencia de configuración completa.
+
+Consideraciones finales
+-----------------------
+
+Si bien este pequeño paquete incluye algunos componentes vitales para un *CMS* completamente funcional, a menudo no proporciona todo lo que necesitas. La idea principal detrás de esto es proporcionar a los desarrolladores pequeños y fáciles de entender puntos de partida que pueden extender o usar como inspiración para desarrollar sus propios tipos de contenido, ``Controladores`` e interfaces de administración.
