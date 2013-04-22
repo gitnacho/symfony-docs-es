@@ -25,8 +25,8 @@
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
     <link rel="up" title="Documentación del CMF de Symfony" href="../index.html" />
-    <link rel="next" title="ContentBundle" href="content.html" />
-    <link rel="prev" title="Usando BlockBundle y ContentBundle con PHPCR" href="../tutorials/using-blockbundle-and-contentbundle.html" /> 
+    <link rel="next" title="1. Tipos de bloque" href="block/types.html" />
+    <link rel="prev" title="Gestionando documentos multilingües" href="../tutorials/handling-multilang-documents.html" /> 
   </head>
   <body>
   <div class="imalogo">
@@ -56,10 +56,10 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="content.html" title="ContentBundle"
+          <a href="block/types.html" title="1. Tipos de bloque"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
-          <a href="../tutorials/using-blockbundle-and-contentbundle.html" title="Usando BlockBundle y ContentBundle con PHPCR"
+          <a href="../tutorials/handling-multilang-documents.html" title="Gestionando documentos multilingües"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Documentación del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
@@ -84,7 +84,7 @@ Además, el <tt class="docutils literal"><span class="pre">BlockBundle</span></t
 <p>Este paquete está basado en el <a class="reference external" href="https://github.com/sonata-project/SonataBlockBundle">SonataBlockBundle</a></p>
 </div>
 <div class="section" id="configurando">
-<h2>Configurando<a class="headerlink" href="#configurando" title="Enlazar permanentemente con este título">¶</a></h2>
+<span id="configuration"></span><h2>Configurando<a class="headerlink" href="#configurando" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>La clave de configuración para este paquete es <tt class="docutils literal"><span class="pre">symfony_cmf_block</span></tt></p>
 <div class="configuration-block">
 <ul class="simple">
@@ -97,8 +97,8 @@ Además, el <tt class="docutils literal"><span class="pre">BlockBundle</span></t
 </ul>
 </div>
 </div>
-<div class="section" id="dibujando-el-bloque">
-<h2>Dibujando el bloque<a class="headerlink" href="#dibujando-el-bloque" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="bloque-documento">
+<span id="block-document"></span><h2>Bloque documento<a class="headerlink" href="#bloque-documento" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Antes de que puedas dibujar un bloque, necesitas crear un objeto que represente los datos de tu bloque en el repositorio.
 Lo puedes conseguir con el siguiente fragmento de código (ten en cuenta que <tt class="docutils literal"><span class="pre">$parentPage</span></tt> necesita ser una instancia de una página definida por el <a class="reference external" href="https://github.com/symfony-cmf/ContentBundle">ContentBundle</a>):</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="nv">$myBlock</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">SimpleBlock</span><span class="p">();</span>
@@ -110,46 +110,155 @@ Lo puedes conseguir con el siguiente fragmento de código (ten en cuenta que <tt
 <span class="nv">$documentManager</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$myBlock</span><span class="p">);</span>
 </pre></div>
 </div>
-<p>Ten en cuenta que el <tt class="docutils literal"><span class="pre">sidebarBlock</span></tt> es el identificador que escogimos para el bloque. Junto con el documento padre del bloque, esto hace único al bloque. Las otras propiedades son específicas a <tt class="docutils literal"><span class="pre">Simpleblock</span></tt>.
-Ahora para realmente dibujar este bloque, justo añade el siguiente código a tu plantilla de <em>Twig</em>:</p>
+<p>Ten en cuenta que <tt class="docutils literal"><span class="pre">sidebarBlock</span></tt> es el identificador que escogimos para el bloque. Junto con el documento padre del bloque, esto hace único al bloque. Las otras propiedades son específicas de <tt class="docutils literal"><span class="pre">Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">El bloque simple ahora está listo para dibujarse, ve <a class="reference internal" href="#block-rendering"><em>Dibujando el bloque</em></a>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Siempre asegúrate de implementar la interfaz <tt class="docutils literal"><span class="pre">Sonata\BlockBundle\Model\BlockInterface</span></tt> o un bloque de documento existengte tal como <tt class="docutils literal"><span class="pre">Symfony\Cmf\Bundle\BlockBundle\Document\BaseBlock</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="bloque-de-servicio">
+<span id="block-service"></span><h2>Bloque de servicio<a class="headerlink" href="#bloque-de-servicio" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Si miras dentro de la clase <tt class="docutils literal"><span class="pre">SimpleBlock</span></tt>, notarás el método <tt class="docutils literal"><span class="pre">getType</span></tt>. Este define el nombre del servicio de bloque que procesa el bloque al dibujarlo.</p>
+<p>Un bloque de servicio contiene:</p>
+<ul class="simple">
+<li>Un método <tt class="docutils literal"><span class="pre">execute</span></tt></li>
+<li>configuración predefinida</li>
+<li>configuración de formulario</li>
+<li>configuración de caché</li>
+<li>activos <em>js</em> y <em>css</em> por cargar</li>
+<li>un método <tt class="docutils literal"><span class="pre">load</span></tt></li>
+</ul>
+<p>Échale un vistazo a los bloques de servicio en <tt class="docutils literal"><span class="pre">Symfony\Cmf\Bundle\BlockBundle\Block</span></tt> para ver algunos ejemplos.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Asegúrate de implementar siempre la interfaz <tt class="docutils literal"><span class="pre">Sonata\BlockBundle\Block\BlockServiceInterface</span></tt> o un bloque de servicio existente tal como el <tt class="docutils literal"><span class="pre">Sonata\BlockBundle\Block\BaseBlockService</span></tt>.</p>
+</div>
+<div class="section" id="el-metodo-execute">
+<span id="block-execute"></span><h3>El método <tt class="docutils literal"><span class="pre">execute</span></tt><a class="headerlink" href="#el-metodo-execute" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Este contiene el <tt class="docutils literal"><span class="pre">controlador</span></tt> lógico. Combina las opciones predefinidas en este método si lo quieres utilizar:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// ...</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$block</span><span class="o">-&gt;</span><span class="na">getEnabled</span><span class="p">())</span> <span class="p">{</span>
+    <span class="c1">// combina las opciones</span>
+    <span class="nv">$settings</span> <span class="o">=</span> <span class="nb">array_merge</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getDefaultSettings</span><span class="p">(),</span> <span class="nv">$block</span><span class="o">-&gt;</span><span class="na">getSettings</span><span class="p">());</span>
+
+    <span class="nv">$feed</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$settings</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">])</span> <span class="p">{</span>
+        <span class="nv">$feed</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">feedReader</span><span class="o">-&gt;</span><span class="na">import</span><span class="p">(</span><span class="nv">$block</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">renderResponse</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getTemplate</span><span class="p">(),</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;feed&#39;</span> <span class="o">=&gt;</span> <span class="nv">$feed</span><span class="p">,</span>
+        <span class="s1">&#39;block&#39;</span> <span class="o">=&gt;</span> <span class="nv">$block</span><span class="p">,</span>
+        <span class="s1">&#39;settings&#39;</span> <span class="o">=&gt;</span> <span class="nv">$settings</span>
+    <span class="p">),</span> <span class="nv">$response</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="c1">// ...</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Si tienes que usar mucha lógica, la puedes mover a un servicio específico e inyectarlo en el bloque de servicio. Luego usar ese servicio específico en el método <tt class="docutils literal"><span class="pre">execute</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="configuracion-predefinida">
+<h3>configuración predefinida<a class="headerlink" href="#configuracion-predefinida" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El método <tt class="docutils literal"><span class="pre">getDefaultSettings</span></tt> contiene las opciones predefinidas de un bloque. Las opciones después se pueden alterar en múltiples sitios, reflejándose en una cascada como esta:</p>
+<ul>
+<li><p class="first">las opciones predefinidas se almacenan en el bloque de servicio</p>
+</li>
+<li><p class="first">las opciones se pueden alterar a través de los ayudantes de plantilla:</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">sonata_block_render</span><span class="o">({</span>
+  <span class="s1">&#39;type&#39;</span><span class="o">:</span> <span class="s1">&#39;acme_main.block.rss&#39;</span><span class="o">,</span>
+  <span class="s1">&#39;settings&#39;</span><span class="o">:</span> <span class="o">{</span>
+      <span class="s1">&#39;title&#39;</span><span class="o">:</span> <span class="s1">&#39;Symfony2 CMF news&#39;</span><span class="o">,</span>
+      <span class="s1">&#39;url&#39;</span><span class="o">:</span> <span class="s1">&#39;http://cmf.symfony.com/news.rss&#39;</span>
+  <span class="o">}</span>
+<span class="o">})</span> <span class="cp">}}</span><span class="x"></span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">y las opciones también se pueden alterar en un bloque de documento, la ventaja es que las opciones están almacenadas en <em>PHPCR</em> y te permiten implementar una interfaz de usuario final o de administración para cambiar algunas o todas las opciones.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="configuracion-de-formulario">
+<h3>configuración de formulario<a class="headerlink" href="#configuracion-de-formulario" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Los métodos <tt class="docutils literal"><span class="pre">buildEditForm</span></tt> y <tt class="docutils literal"><span class="pre">buildCreateForm</span></tt> contienen configuración de formulario para editar utilizando una interfaz de usuario final o de administración. El método <tt class="docutils literal"><span class="pre">validateBlock</span></tt> contiene la configuración de validación.</p>
+</div>
+<div class="section" id="configuracion-de-cache">
+<h3>configuración de caché<a class="headerlink" href="#configuracion-de-cache" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>El método <tt class="docutils literal"><span class="pre">getCacheKeys</span></tt> contiene las claves utilizadas para el bloque de la memoria caché.</p>
+</div>
+<div class="section" id="js-y-css">
+<h3><em>js</em> y <em>css</em><a class="headerlink" href="#js-y-css" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Puedes usar los métodos <tt class="docutils literal"><span class="pre">getJavascripts</span></tt> y <tt class="docutils literal"><span class="pre">getStylesheets</span></tt> para definir activos <em>js</em> y <em>css</em>. Usa los ayudantes de <em>Twig</em> <tt class="docutils literal"><span class="pre">sonata_block_include_javascripts</span></tt> y <tt class="docutils literal"><span class="pre">sonata_block_include_stylesheets</span></tt> para reproducirlos.</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">sonata_block_include_javascripts</span><span class="o">()</span> <span class="cp">}}</span><span class="x"></span>
+<span class="cp">{{</span> <span class="nv">sonata_block_include_stylesheets</span><span class="o">()</span> <span class="cp">}}</span><span class="x"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Esto reproducirá los bloques <em>js</em> y <em>css*</em> de todos los bloques cargados en el contenedor de servicios de tu aplicación.</p>
+</div>
+</div>
+<div class="section" id="el-metodo-load">
+<h3>El método <tt class="docutils literal"><span class="pre">load</span></tt><a class="headerlink" href="#el-metodo-load" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Puedes usar el método <tt class="docutils literal"><span class="pre">load</span></tt> para cargar datos adicionales. Este se invoca cada vez que se reproduce un bloque y antes de llamar al método <tt class="docutils literal"><span class="pre">execute</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="dibujando-el-bloque">
+<span id="block-rendering"></span><h2>Dibujando el bloque<a class="headerlink" href="#dibujando-el-bloque" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Para realmente reproducir el bloque del ejemplo de la sección del bloque documento, solo añade el siguiente código a tu plantilla <em>Twig</em>:</p>
 <div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">sonata_block_render</span><span class="o">({</span><span class="s1">&#39;name&#39;</span><span class="o">:</span> <span class="s1">&#39;sidebarBlock&#39;</span><span class="o">})</span> <span class="cp">}}</span><span class="x"></span>
 </pre></div>
 </div>
-<p>Esto hará que se dibuje el <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> según el bloque en cada página que tenga un bloque llamado <tt class="docutils literal"><span class="pre">'sidebarBlock'</span></tt>. Naturalmente, es necesario que la página real sea reproducida por la plantilla que contiene el fragmento anterior.</p>
+<p>Esto hará que se dibuje el <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> según el bloque en cada página que tenga un bloque llamado <tt class="docutils literal"><span class="pre">'sidebarBlock'</span></tt>.
+Naturalmente, es necesario que la página real sea reproducida por la plantilla que contiene el fragmento anterior.</p>
+<p>Esto pasa al reproducir un bloque, ve las siguientes secciones para más detalles:</p>
+<ul class="simple">
+<li>se carga un documento basándose en el nombre</li>
+<li>si está configurada la memorización en caché, se revisa la caché y si el contenido se encuentra se devuelve</li>
+<li>Cada bloque documento también tiene un servicio <tt class="docutils literal"><span class="pre">block</span></tt>, se invoca al método execute:<ul>
+<li>aquí puedes poner lógica como en un controlador</li>
+<li>esta llama a una plantilla</li>
+<li>el resultado es un objeto Respuesta</li>
+</ul>
+</li>
+</ul>
 </div>
 <div class="section" id="tipos-de-bloque">
 <h2>Tipos de bloque<a class="headerlink" href="#tipos-de-bloque" title="Enlazar permanentemente con este título">¶</a></h2>
-<dl class="docutils">
-<dt>El <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> viene con cuatro bloques de propósito general:</dt>
-<dd><ul class="first last simple">
+<p>El <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> viene con cuatro bloques de propósito general:</p>
+<ul class="simple">
 <li>SimpleBlock: Un bloque sencillo con nada más que un título y un campo de hipertexto. Este normalmente sería el que un editor modificaría directamente, por ejemplo, la información de contacto</li>
 <li><tt class="docutils literal"><span class="pre">ContainerBlock</span></tt>: Un bloque que contiene de <tt class="docutils literal"><span class="pre">0</span></tt> a <tt class="docutils literal"><span class="pre">n</span></tt> bloques descendientes</li>
-<li><tt class="docutils literal"><span class="pre">ReferenceBlock</span></tt>: Un bloque que hace referencia a un bloque almacenado en algún otro lugar en el árbol de contenido. Por ejemplo, podrías querer referir partes de la información de contacto desde la página inicial</li>
-<li><tt class="docutils literal"><span class="pre">ActionBlock</span></tt>: Un bloque que invoca acciones de <em>Symfony2</em>. «¿Por qué utilizar esto en vez de llamar a la acción directamente desde mi plantilla?», te podrías preguntar. Bien, imagina el siguiente caso: Provees un bloque que dibuja reflexiones de tus últimas noticias. Sin embargo, no hay ninguna regla de en dónde tendría que aparecer. En cambio, tu cliente quiere decidir en qué páginas sería mostrado este bloque. Proporcionando un <tt class="docutils literal"><span class="pre">ActionBlock</span></tt> acorde, tu cliente te permite hacerlo sin llamarle (¡una y otra vez!) para cambiar algunas plantillas.</li>
+<li><tt class="docutils literal"><span class="pre">ReferenceBlock</span></tt>: Un bloque que hace referencia a un bloque almacenado en algún otro lugar en el árbol de contenido. Por ejemplo, podrías desear referir partes de la información de contacto desde la página inicial</li>
+<li><tt class="docutils literal"><span class="pre">ActionBlock</span></tt>: Un bloque que invoca acciones de <em>Symfony2</em>. «¿Por qué utilizar esto en vez de llamar a la acción directamente desde mi plantilla?», te podrías preguntar. Bien, imagina el siguiente caso: Provees un bloque que dibuja reflexiones de tus últimas noticias. Sin embargo, no hay ninguna regla de en dónde debería aparecer. En su lugar, tu cliente quiere decidir en qué páginas se mostraría este bloque. Proporcionando un <tt class="docutils literal"><span class="pre">ActionBlock</span></tt> acorde, permites a tu cliente hacerlo sin llamarte (¡una y otra vez!) para cambiar algunas plantillas.</li>
 </ul>
-</dd>
-</dl>
-</div>
-<div class="section" id="crea-tus-propios-bloques">
-<h2>Crea tus propios bloques<a class="headerlink" href="#crea-tus-propios-bloques" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Digamos que estás trabajando en un proyecto donde tienes que integrar los datos recibidos de varios alimentadores <tt class="docutils literal"><span class="pre">RSS</span></tt>.
-Por supuesto podrías crear un <tt class="docutils literal"><span class="pre">ActionBlock</span></tt> para cada uno de estos alimentadores, ¿pero no es tonto esto? De hecho todas estas acciones se verían similares: Recibes los datos desde un alimentador, los saneas y pasas los datos a una plantilla. De este modo decides crear tu propio bloque, el <tt class="docutils literal"><span class="pre">RSSBlock</span></tt>.</p>
-<p>Lo primero que necesitas es una entidad que contenga los datos. Es recomendable extender el contenido desde el <tt class="docutils literal"><span class="pre">BaseBlock</span></tt> de este paquete (aun así no es forzoso hacerlo, siempre y cuando implementes la <tt class="docutils literal"><span class="pre">Sonata\BlockBundle\Model\BlockInterface</span></tt>). En tu entidad, añades dos propiedades, <tt class="docutils literal"><span class="pre">'feedURL'</span></tt> y <tt class="docutils literal"><span class="pre">'templateName'</span></tt>, así como captadores y definidores para ellas. Además, necesitas definir el método <tt class="docutils literal"><span class="pre">getType</span></tt> que sólo regresa el <tt class="docutils literal"><span class="pre">'my_bundle.block.rss'</span></tt>.</p>
-<p>La segunda cosa necesaria es un servicio que <tt class="docutils literal"><span class="pre">RSSBlocks</span></tt> sabe cómo manejar. En el caso del <tt class="docutils literal"><span class="pre">RSSBlock</span></tt> sería esto: Recuperar los datos desde dónde estén almacenados en <tt class="docutils literal"><span class="pre">'feedURL'</span></tt>, sanearlos, y pasarlos a la plantilla almacenada en <tt class="docutils literal"><span class="pre">'templateName'</span></tt>. De nuevo, puedes extender el <tt class="docutils literal"><span class="pre">Sonata\BlockBundle\Block\BaseBlockService</span></tt>.
-Es importante, denominar la propiedad <tt class="docutils literal"><span class="pre">'name'</span></tt> del servicio <tt class="docutils literal"><span class="pre">'my_bundle.block.rss'</span></tt> (Esto garantiza que se pueda encontrar la relación entre la entidad y el servicio).</p>
-<p>La última cosa que necesitas para definir el servicio es un archivo <tt class="file docutils literal"><span class="pre">config</span></tt>. Es importante etiquetar tu <tt class="docutils literal"><span class="pre">BlockService</span></tt> con  <tt class="docutils literal"><span class="pre">'sonata.block'</span></tt>, de lo contrario no lo reconocerá el paquete.</p>
+<p>Además el <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> tiene bloques más específicos:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">RssBlock</span></tt>: Este bloque extiende el <tt class="docutils literal"><span class="pre">ActionBlock</span></tt>: El bloque documento guarda la <em>url</em> del alimentador y la acción del controlador recupera elmentos del alimentador. La implementación predefinida utiliza el <a class="reference external" href="https://github.com/eko/FeedBundle">EkoFeedBundle</a> para leer elementos del alimentador.</li>
+</ul>
 </div>
 <div class="section" id="ejemplos">
 <h2>Ejemplos<a class="headerlink" href="#ejemplos" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Puedes encontrar ejemplos de uso de este paquete en el <a class="reference external" href="https://github.com/symfony-cmf/cmf-sandbox">Recinto de seguridad del CMF de Symfony</a>.
 Dale un vistazo en el <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> del recinto de seguridad. También te muestra cómo hacer editables los bloques usando el <a class="reference external" href="https://github.com/symfony-cmf/CreateBundle">CreateBundle</a>.</p>
 </div>
-<div class="section" id="relacion-al-paquete-block">
-<h2>Relación al paquete <tt class="docutils literal"><span class="pre">Block</span></tt><a class="headerlink" href="#relacion-al-paquete-block" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>El <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> está basado en el <a class="reference external" href="https://github.com/sonata-project/SonataBlockBundle">SonataBlockBundle</a>.
-Este reemplaza componentes del paquete dónde sea necesario que sea compatible con <em>PHPCR</em>.</p>
-<p>La siguiente imagen muestra dónde utilizamos nuestros propios componentes (azules):</p>
-<img alt="../../_images/classdiagram.jpg" class="align-center" src="../../_images/classdiagram.jpg" />
+<div class="section" id="referencia">
+<h2>Referencia<a class="headerlink" href="#referencia" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="block/types.html">1. Tipos de bloque</a></li>
+<li class="toctree-l1"><a class="reference internal" href="block/create_your_own_blocks.html">2. Creando tus propios bloques</a></li>
+<li class="toctree-l1"><a class="reference internal" href="block/cache.html">3. Almacenando en caché</a></li>
+<li class="toctree-l1"><a class="reference internal" href="block/relation_to_sonata_block_bundle.html">4. Relación al paquete <tt class="docutils literal"><span class="pre">Block</span></tt> de <tt class="docutils literal"><span class="pre">Sonata</span></tt></a></li>
+</ul>
+</div>
 </div>
 </div>
 
@@ -169,10 +278,10 @@ Este reemplaza componentes del paquete dónde sea necesario que sea compatible c
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="content.html" title="ContentBundle"
+          <a href="block/types.html" title="1. Tipos de bloque"
              >siguiente</a> |</li>
         <li class="right" >
-          <a href="../tutorials/using-blockbundle-and-contentbundle.html" title="Usando BlockBundle y ContentBundle con PHPCR"
+          <a href="../tutorials/handling-multilang-documents.html" title="Gestionando documentos multilingües"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
           <li><a href="../index.html" >Documentación del <tt class="docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
@@ -186,7 +295,7 @@ Este reemplaza componentes del paquete dónde sea necesario que sea compatible c
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

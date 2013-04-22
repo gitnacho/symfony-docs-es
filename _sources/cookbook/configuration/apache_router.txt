@@ -12,29 +12,65 @@ Cambiando los parámetros de configuración del enrutador
 
 Para volcar las rutas de *Apache*, primero debes modificar algunos parámetros de configuración para decirle a *Symfony2* que utilice el ``ApacheUrlMatcher`` en lugar de la opción predeterminada.
 
-.. code-block:: yaml
+.. configuration-block::
 
-    # app/config/config_prod.yml
+    .. code-block:: yaml
+
+        # app/config/config_prod.yml
     parameters:
-        router.options.matcher.cache_class: ~ # desactiva la caché de enrutado
-        router.options.matcher_class: Symfony\Component\Routing\Matcher\ApacheUrlMatcher
+            router.options.matcher.cache_class: ~ # desactiva la caché de enrutado
+            router.options.matcher_class: Symfony\Component\Routing\Matcher\ApacheUrlMatcher
+
+    .. code-block:: xml
+
+        <!-- app/config/config_prod.xml -->
+        <parameters>
+            <parameter key="router.options.matcher.cache_class">null</parameter> <!-- disable router cache -->
+            <parameter key="router.options.matcher_class">
+                Symfony\Component\Routing\Matcher\ApacheUrlMatcher
+            </parameter>
+        </parameters>
+
+    .. code-block:: php
+
+        // app/config/config_prod.php
+        $container->setParameter('router.options.matcher.cache_class', null); // desactuva la caché de enrutado
+        $container->setParameter(
+            'router.options.matcher_class',
+            'Symfony\Component\Routing\Matcher\ApacheUrlMatcher'
+        );
 
 .. tip::
 
-    Ten en cuenta que :class:`Symfony\\Component\\Routing\\Matcher\\ApacheUrlMatcher` extiende a :class:`Symfony\\Component\\Routing\\Matcher\\UrlMatcher` por lo que incluso si no se regeneran las reglas ``url_rewrite``, todo saldrá bien (porque al final ``ApacheUrlMatcher::match()`` hace una llamado a ``parent::match()``).
+    Ten en cuenta que :class:`Symfony\\Component\\Routing\\Matcher\\ApacheUrlMatcher` extiende a :class:`Symfony\\Component\\Routing\\Matcher\\UrlMatcher` por lo que incluso si no se regeneran las reglas ``url_rewrite``, todo saldrá bien (porque al final ``ApacheUrlMatcher::match()`` hace una llamada a ``parent::match()``).
 
 Generando reglas para ``mod_rewrite``
 -------------------------------------
 
 Para comprobar que está funcionando, vamos a crear una ruta muy básica para el paquete de demostración:
 
-.. code-block:: yaml
+.. configuration-block::
 
-    # app/config/routing.yml
-    hello:
-        pattern:  /hello/{name}
-        defaults: { _controller: AcmeDemoBundle:Demo:hello }
+    .. code-block:: yaml
 
+        # app/config/routing.yml
+        hello:
+            path:  /hello/{name}
+            defaults: { _controller: AcmeDemoBundle:Demo:hello }
+
+    .. code-block:: xml
+
+        <!-- app/config/routing.xml -->
+        <route id="hello" path="/hello/{name}">
+            <default key="_controller">AcmeDemoBundle:Demo:hello</default>
+        </route>
+
+    .. code-block:: php
+
+        // app/config/routing.php
+        $collection->add('hello', new Route('/hello/{name}', array(
+            '_controller' => 'AcmeDemoBundle:Demo:hello',
+        )));
 
 Ahora genera las reglas **url_rewrite**:
 

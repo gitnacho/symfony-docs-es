@@ -1,32 +1,32 @@
 .. index::
-   single: Enrutando; _method
+   single: Enrutando; métodos
 
 Cómo utilizar métodos *HTTP* además de ``GET`` y ``POST`` en rutas
 ==================================================================
 
-El método *HTTP* de la petición es uno de los requisitos que se pueden comprobar al ver si coincide con una ruta. Este se introduce en el capítulo de enrutado del libro «:doc:`/book/routing`», con ejemplos del uso de ``GET`` y ``POST``. También puedes utilizar otros verbos *HTTP* de esta manera. Por ejemplo, si tienes una entrada de blog, entonces podrías utilizar el mismo patrón de dirección URL para mostrarlo, realizar cambios y eliminarlo, haciéndolo coincidir con ``GET``, ``PUT`` y ``DELETE``.
+.. versionadded:: 2.2
+    Esta funcionalidad se desactivo por omisión en *Symfony 2.2*. Para activarla, tienes que llamar al método :method:`Request::enableHttpMethodParameterOverride <Symfony\\Component\\HttpFoundation\\Request::enableHttpMethodParameterOverride>` antes de manejar la petición.
+
+El método *HTTP* de la petición es uno de los requisitos que se pueden comprobar al ver si coincide con una ruta. Este se introduce en el capítulo de enrutado del libro «:doc:`/book/routing`», con ejemplos del uso de ``GET`` y ``POST``. También puedes utilizar otros verbos *HTTP* de esta manera. Por ejemplo, si tienes una entrada del blog entonces podrías usar la misma ruta *URL* para mostrarla, hacerle cambios y eliminarla emparejándola con ``GET``, ``POST`` y ``DELETE``.
 
 .. configuration-block::
 
     .. code-block:: yaml
 
         blog_show:
-            pattern:  /blog/{slug}
+            path:     /blog/{slug}
             defaults: { _controller: AcmeDemoBundle:Blog:show }
-            requirements:
-                _method:  GET
+            methods:   [GET]
 
         blog_update:
-            pattern:  /blog/{slug}
+            path:     /blog/{slug}
             defaults: { _controller: AcmeDemoBundle:Blog:update }
-            requirements:
-                _method:  PUT
+            methods:   [PUT]
 
         blog_delete:
-            pattern:  /blog/{slug}
+            path:     /blog/{slug}
             defaults: { _controller: AcmeDemoBundle:Blog:delete }
-            requirements:
-                _method:  DELETE
+            methods:   [DELETE]
 
     .. code-block:: xml
 
@@ -36,19 +36,16 @@ El método *HTTP* de la petición es uno de los requisitos que se pueden comprob
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
 
-            <route id="blog_show" pattern="/blog/{slug}">
+            <route id="blog_show" path="/blog/{slug}" methods="GET">
                 <default key="_controller">AcmeDemoBundle:Blog:show</default>
-                <requirement key="_method">GET</requirement>
             </route>
 
-            <route id="blog_update" pattern="/blog/{slug}">
+            <route id="blog_update" path="/blog/{slug}" methods="PUT">
                 <default key="_controller">AcmeDemoBundle:Blog:update</default>
-                <requirement key="_method">PUT</requirement>
             </route>
 
-            <route id="blog_delete" pattern="/blog/{slug}">
+            <route id="blog_delete" path="/blog/{slug}" methods="DELETE">
                 <default key="_controller">AcmeDemoBundle:Blog:delete</default>
-                <requirement key="_method">DELETE</requirement>
             </route>
         </routes>
 
@@ -60,21 +57,15 @@ El método *HTTP* de la petición es uno de los requisitos que se pueden comprob
         $collection = new RouteCollection();
         $collection->add('blog_show', new Route('/blog/{slug}', array(
             '_controller' => 'AcmeDemoBundle:Blog:show',
-        ), array(
-            '_method' => 'GET',
-        )));
+        ), array(), array(), '', array(), array('GET')));
 
         $collection->add('blog_update', new Route('/blog/{slug}', array(
             '_controller' => 'AcmeDemoBundle:Blog:update',
-        ), array(
-            '_method' => 'PUT',
-        )));
+        ), array(), array(), '', array(), array('PUT')));
 
         $collection->add('blog_delete', new Route('/blog/{slug}', array(
             '_controller' => 'AcmeDemoBundle:Blog:delete',
-        ), array(
-            '_method' => 'DELETE',
-        )));
+        ), array(), array(), '', array('DELETE')));
 
         return $collection;
 

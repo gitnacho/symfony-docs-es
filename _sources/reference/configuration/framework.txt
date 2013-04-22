@@ -22,7 +22,15 @@ Configurando
     * `enabled`
     * `field_name`
 * `session`_
-    * `lifetime`_
+    * `cookie_lifetime`_
+    * `cookie_path`_
+    * `cookie_domain`_
+    * `cookie_secure`_
+    * `cookie_httponly`_
+    * `gc_divisor`_
+    * `gc_probability`_
+    * `gc_maxlifetime`_
+    * `save_path`_
 * `templating`_
     * `assets_base_urls`_
     * `assets_version`_
@@ -116,12 +124,93 @@ Debes habilitar esta opción si tu aplicación está detrás de un servidor dele
 ``session``
 ~~~~~~~~~~~
 
-``lifetime``
-............
+``cookie_lifetime``
+...................
+
+.. versionadded:: 2.1
+    Esta opción anteriormente era conocida como ``lifetime``
 
 **tipo**: ``integer`` **predeterminado**: ``0``
 
 Esta determina la duración de la sesión --- en segundos. De manera predeterminada se utiliza ``0``, lo cual significa que la :dfn:`cookie` es válida para la duración de la sesión del navegador.
+
+``cookie_path``
+...............
+
+.. versionadded:: 2.1
+    Esta opción anteriormente fue conocida como ``path``
+
+**tipo**: ``string`` **predefinido**: ``/``
+
+Esto determina la ruta a poner en la galleta de sesión. De manera predeterminada utiliza ``/``.
+
+``cookie_domain``
+.................
+
+.. versionadded:: 2.1
+    Esta opción anteriormente era conocida como ``domain``
+
+**tipo**: ``string`` **predefinido**: ``''``
+
+Esta determina el domino a poner en la galleta de sesión. De manera predeterminada es un espacio en blanco, el cual significa el nombre del servidor que generó la galleta acorde a la especificación de la galleta.
+
+``cookie_secure``
+.................
+
+.. versionadded:: 2.1
+    Esta opción anteriormente era conocida como ``secure``
+
+**tipo**: ``Boolean`` **predeterminado**: ``false``
+
+Esta determina si las galletas sólo se deberían enviar sobre conexiones seguras.
+
+``cookie_httponly``
+...................
+
+.. versionadded:: 2.1
+    Esta opción anteriormente era conocida como ``httponly``
+
+**tipo**: ``Boolean`` **predeterminado**: ``false``
+
+Esta determina si las galletas sólo deben ser accesibles a través del protocolo *HTTP*.
+Lo cual significa que la galleta no será accesible por lenguajes de programación, tal como *JavaScript*. Esta opción efectivamente te puede ayudar para reducir el robo de identidad a través de ataques *XSS*.
+
+``gc_probability``
+..................
+
+.. versionadded:: 2.1
+    La opción ``gc_probability`` es nueva en la versión 2.1
+
+**tipo**: ``integer`` **predeterminado**: ``1``
+
+Esta define la probabilidad que empiece el proceso del recolector de basura (*GC* por *«Garbage Colector»*) en cada inicio de sesión. La probabilidad se calcula utilizando ``gc_probability`` / ``gc_divisor``, p. ej. 1/100 significa que hay un 1% de posibilidad que el proceso del recolector de basura empiece en cada petición.
+
+``gc_divisor``
+..............
+
+.. versionadded:: 2.1
+    La opción ``gc_divisor`` es nueva en la versión 2.1
+
+**tipo**: ``integer`` **predeterminado**: ``100``
+
+Ve `gc_probability`_.
+
+``gc_maxlifetime``
+..................
+
+.. versionadded:: 2.1
+    La opción ``gc_maxlifetime`` es nueva en la versión 2.1
+
+**tipo**: ``integer`` **predeterminado**: ``14400``
+
+Esta determina el número de segundos después de que los datos se han visto como «basura» y potencialmente limpiarlos. La recolección de basura puede ocurrir durante el inicio de sesión y depende de `gc_divisor`_ y `gc_probability`_.
+
+``save_path``
+.............
+
+**tipo**: ``string`` **predefinido**: ``%kernel.cache.dir%/sessions``
+
+Esta determina el argumento a pasar al salvar el manejador. Si escoges el manejador de archivos predeterminado, esta es la ruta a dónde serán creados los archivos.
 
 ``templating``
 ~~~~~~~~~~~~~~
@@ -184,9 +273,9 @@ Ahora, activa la opción ``assets_version``:
 
         // app/config/config.php
         $container->loadFromExtension('framework', array(
-            // ...
+            ...,
             'templating'      => array(
-                'engines' => array('twig'),
+                'engines'        => array('twig'),
                 'assets_version' => 'v2',
             ),
         ));
@@ -200,7 +289,7 @@ También puedes controlar cómo funciona la cadena de consulta a través de la o
 
 **tipo**: ``string`` **predefinido**: ``%%s?%%s``
 
-Esto especifica un patrón `sprintf()`_ que se debe utilizar con la opción `assets_version`_ para construir la ruta de un activo. Por omisión, el patrón añade la versión del activo como una cadena de consulta. Por ejemplo, si ``assets_version_format`` está establecido en ``%%s?version=%%s`` y ``assets_version`` está establecida en ``5``, la ruta del activo sería ``/images/logo.png?version=5``.
+Esta especifica un patrón :phpfunction:`sprintf` que será utilizado con la opción `assets_version`_ para construir la ruta de un activo. Por omisión, el patrón añade la versión del activo como una cadena de consulta. Por ejemplo, si ``assets_version_format`` está establecido en ``%%s?version=%%s`` y ``assets_version`` está establecida en ``5``, la ruta del activo sería ``/images/logo.png?version=5``.
 
 .. note::
 
@@ -223,27 +312,33 @@ Configuración predeterminada completa
     .. code-block:: yaml
 
         framework:
-
-            # configuración general
+            charset:              ~
+            secret:               ~
             trust_proxy_headers:  false
-            secret:               ~ # Requerido
+            trusted_proxies:      []
             ide:                  ~
             test:                 ~
             default_locale:       en
 
             # configuración de formulario
             form:
-                enabled:              true
+                enabled:              false
             csrf_protection:
-                enabled:              true
+                enabled:              false
                 field_name:           _token
 
             # configuración esi
             esi:
-                enabled:              true
+                enabled:              false
+
+            # configuración de fragmentos
+            fragments:
+                enabled:              false
+                path:                 /_fragment
 
             # configuración del perfilador
             profiler:
+                enabled:              false
                 only_exceptions:      false
                 only_master_requests:  false
                 dsn:                  file:%kernel.cache_dir%/profiler
@@ -263,12 +358,16 @@ Configuración predeterminada completa
                 type:                 ~
                 http_port:            80
                 https_port:           443
-                # si es false, se generará una URL vacía de faltar un
-                # parámetro ruta requerido
-                strict_requirements:  %kernel.debug%
+
+                # ponlo a true para lanzar una excepción cuando un parámetro no coincida con los requisitos
+                # ponlo a false para desactivar las excepcións cuando un parámetro no coincida con los requisitos (y en su lugar devuelve null)
+                # ponlo a null para desactivar el parámetro contra el cual comparar los requisitos
+                # 'true' es la configuración predefinida en modo de desarrollo, mientras que 'false' o 'null' pueden ser preferibles en producción
+                strict_requirements:  true
 
             # configuración de sesión
             session:
+                # ¡DEPRECIADO! Inicia la sesión bajo demanda
                 auto_start:           false
                 storage_id:           session.storage.native
                 handler_id:           session.handler.native_file
@@ -319,8 +418,8 @@ Configuración predeterminada completa
                 loaders:              []
                 packages:
 
-                    # Una colección de nombres de paquete
-                    un_nombre_de_paquete:
+                    # Prototipo
+                    name:
                         version:              ~
                         version_format:       %%s?%%s
                         base_urls:
@@ -329,20 +428,24 @@ Configuración predeterminada completa
 
             # configuración del traductor
             translator:
-                enabled:              true
+                enabled:              false
                 fallback:             en
 
             # configuración de validación
             validation:
-                enabled:              true
+                enabled:              false
                 cache:                ~
                 enable_annotations:   false
+                translation_domain:   validators
 
             # configuración de anotaciones
             annotations:
                 caché:                file
-                file_cache_dir:       "%kernel.cache_dir%/annotations"
-                debug:                true
+                file_cache_dir:       %kernel.cache_dir%/annotations
+                debug:                %kernel.debug%
+
+
+.. versionadded:: 2.1
+    La opción ``framework.session.auto_start`` se quitó en *Symfony2.1*, ahora empieza bajo demanda.
 
 .. _`relacionada al protocolo`: http://tools.ietf.org/html/rfc3986#section-4.2
-.. _`sprintf()`: http://www.php.net/manual/es/function.sprintf.php

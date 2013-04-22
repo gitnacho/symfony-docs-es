@@ -1,0 +1,313 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Configurando servicios con un configurador de servicio &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Inyección de dependencias" href="index.html" />
+    <link rel="next" title="Gestionando dependencias comunes con servicios padre" href="parentservices.html" />
+    <link rel="prev" title="Usando el patrón factoría para crear servicios" href="factories.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="parentservices.html" title="Gestionando dependencias comunes con servicios padre"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="factories.html" title="Usando el patrón factoría para crear servicios"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="configurando-servicios-con-un-configurador-de-servicio">
+<span id="index-0"></span><h1>Configurando servicios con un configurador de servicio<a class="headerlink" href="#configurando-servicios-con-un-configurador-de-servicio" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>El configurador de servicios es una característica del contenedor de inyección de dependencias que te permite utilizar una función ejecutable para configurar un servicio después de su creación.</p>
+<p>Puedes especificar un método en otro servicio, una función <em>PHP</em> o un método estático en una clase. El servicio <tt class="docutils literal"><span class="pre">instance</span></tt> se pasa al ejecutable, permitiendo al configurador hacer cualquier cosa necesaria para configurar el servicio después de su creación.</p>
+<p>Puedes utilizar un configurador de servicio, por ejemplo, cuándo tienes un servicio que requiere una configuración compleja basada en opciones de configuración que provienen de diferentes fuentes/servicios. Usando un configurador externo, puedes mantener limpia la implementación del servicio y mantenerla desacoplada de los otros objetos que proporcionan la configuración necesaria.</p>
+<p>Otro interesante caso de uso es cuándo tienes múltiples objetos que comparten una configuración común o que se deberían configurar de manera similar en en tiempo de ejecución.</p>
+<p>Por ejemplo, supón que tienes una aplicación donde envías diferentes tipos de correo electrónico a los usuarios. Los mensajes de correo electrónico se pasan a través de diferentes formateadores que podrían estar habilitados o no dependiendo de algunas opciones dinámicas de la aplicación. Empiezas definiedo una clase <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt> como esta:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">NewsletterManager</span> <span class="k">implements</span> <span class="nx">EmailFormatterAwareInterface</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="k">protected</span> <span class="nv">$enabledFormatters</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setMailer</span><span class="p">(</span><span class="nx">Mailer</span> <span class="nv">$mailer</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">mailer</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEnabledFormatters</span><span class="p">(</span><span class="k">array</span> <span class="nv">$enabledFormatters</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">enabledFormatters</span> <span class="o">=</span> <span class="nv">$enabledFormatters</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>y además una clase <tt class="docutils literal"><span class="pre">GreetingCardManager</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">GreetingCardManager</span> <span class="k">implements</span> <span class="nx">EmailFormatterAwareInterface</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="k">protected</span> <span class="nv">$enabledFormatters</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setMailer</span><span class="p">(</span><span class="nx">Mailer</span> <span class="nv">$mailer</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">mailer</span> <span class="o">=</span> <span class="nv">$mailer</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setEnabledFormatters</span><span class="p">(</span><span class="k">array</span> <span class="nv">$enabledFormatters</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">enabledFormatters</span> <span class="o">=</span> <span class="nv">$enabledFormatters</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Como se mencionó antes, el objetivo es configurar los formateadores en tiempo de ejecución dependiendo de la configuración de la aplicación. Para ello, también tienes una clase <tt class="docutils literal"><span class="pre">EmailFormatterManager</span></tt> que es la responsable de cargar y validar los formateadores habilitados en la aplicación:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">EmailFormatterManager</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$enabledFormatters</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">loadFormatters</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// código para configurar cuales formateadores usar</span>
+        <span class="nv">$enabledFormatters</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+        <span class="c1">// ...</span>
+
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">enabledFormatters</span> <span class="o">=</span> <span class="nv">$enabledFormatters</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getEnabledFormatters</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">enabledFormatters</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Si tu objetivo es evitar el tener un par de <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt> y <tt class="docutils literal"><span class="pre">GreetingCardManager</span></tt> con <tt class="docutils literal"><span class="pre">EmailFormatterManager</span></tt>, entonces podrías desear crear una clase configuradora para ajustar estos casos:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">EmailConfigurator</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$formatterManager</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nx">EmailFormatterManager</span> <span class="nv">$formatterManager</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">formatterManager</span> <span class="o">=</span> <span class="nv">$formatterManager</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">configure</span><span class="p">(</span><span class="nx">EmailFormatterAwareInterface</span> <span class="nv">$emailManager</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$emailManager</span><span class="o">-&gt;</span><span class="na">setEnabledFormatters</span><span class="p">(</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">formatterManager</span><span class="o">-&gt;</span><span class="na">getEnabledFormatters</span><span class="p">()</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>El trabajo del <tt class="docutils literal"><span class="pre">EmailConfigurator</span></tt> es inyectar los filtros habilitados en el <tt class="docutils literal"><span class="pre">NewsletterManager</span></tt> y <tt class="docutils literal"><span class="pre">GreetingCardManager</span></tt> porque no están conscientes de donde provienen los filtros habilitados. Por otro lado, el <tt class="docutils literal"><span class="pre">EmailFormatterManager</span></tt> mantiene el conocimiento sobre los formateadores habilitados y cómo cargarlos, únicamente manteniendo el principio de responsabilidad.</p>
+<div class="section" id="configurador-del-servicio-config">
+<h2>Configurador del servicio <tt class="docutils literal"><span class="pre">Config</span></tt><a class="headerlink" href="#configurador-del-servicio-config" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>El servicio <tt class="docutils literal"><span class="pre">config</span></tt> de las clases anteriores se vería algo así:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">my_mailer</span><span class="p-Indicator">:</span>
+        <span class="c1"># ...</span>
+
+    <span class="l-Scalar-Plain">email_formatter_manager</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">EmailFormatterManager</span>
+        <span class="c1"># ...</span>
+
+    <span class="l-Scalar-Plain">email_configurator</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">EmailConfigurator</span>
+        <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&quot;@email_formatter_manager&quot;</span><span class="p-Indicator">]</span>
+        <span class="c1"># ...</span>
+
+    <span class="l-Scalar-Plain">newsletter_manager</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">NewsletterManager</span>
+        <span class="l-Scalar-Plain">calls</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="nv">setMailer</span><span class="p-Indicator">,</span> <span class="p-Indicator">[</span><span class="s">&quot;@my_mailer&quot;</span><span class="p-Indicator">]]</span>
+        <span class="l-Scalar-Plain">configurator</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&quot;@email_configurator&quot;</span><span class="p-Indicator">,</span> <span class="nv">configure</span><span class="p-Indicator">]</span>
+
+    <span class="l-Scalar-Plain">greeting_card_manager</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">GreetingCardManager</span>
+        <span class="l-Scalar-Plain">calls</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="nv">setMailer</span><span class="p-Indicator">,</span> <span class="p-Indicator">[</span><span class="s">&quot;@my_mailer&quot;</span><span class="p-Indicator">]]</span>
+        <span class="l-Scalar-Plain">configurator</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&quot;@email_configurator&quot;</span><span class="p-Indicator">,</span> <span class="nv">configure</span><span class="p-Indicator">]</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;services&gt;
+&lt;service id="my_mailer" ...&gt;
+  &lt;!-- ... --&gt;
+&lt;/service&gt;
+&lt;service id="email_formatter_manager" class="EmailFormatterManager"&gt;
+  &lt;!-- ... --&gt;
+&lt;/service&gt;
+&lt;service id="email_configurator" class="EmailConfigurator"&gt;
+    &lt;argument type="service" id="email_formatter_manager" /&gt;
+  &lt;!-- ... --&gt;
+&lt;/service&gt;
+&lt;service id="newsletter_manager" class="NewsletterManager"&gt;
+    &lt;call method="setMailer"&gt;
+         &lt;argument type="service" id="my_mailer" /&gt;
+    &lt;/call&gt;
+    &lt;configurator service="email_configurator" method="configure" /&gt;
+&lt;/service&gt;
+&lt;service id="greeting_card_manager" class="GreetingCardManager"&gt;
+    &lt;call method="setMailer"&gt;
+         &lt;argument type="service" id="my_mailer" /&gt;
+    &lt;/call&gt;
+    &lt;configurator service="email_configurator" method="configure" /&gt;
+&lt;/service&gt;
+&lt;/services&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;email_formatter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;EmailFormatterManager&#39;</span>
+<span class="p">));</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;email_configurator&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;EmailConfigurator&#39;</span>
+<span class="p">));</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;newsletter_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;NewsletterManager&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">),</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setConfigurator</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;email_configurator&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;configure&#39;</span><span class="p">,</span>
+<span class="p">)));</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;greeting_card_manager&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+    <span class="s1">&#39;GreetingCardManager&#39;</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setMailer&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;my_mailer&#39;</span><span class="p">),</span>
+<span class="p">))</span><span class="o">-&gt;</span><span class="na">setConfigurator</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;email_configurator&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;configure&#39;</span><span class="p">,</span>
+<span class="p">)));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="parentservices.html" title="Gestionando dependencias comunes con servicios padre"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="factories.html" title="Usando el patrón factoría para crear servicios"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Componentes</a> &raquo;</li>
+          <li><a href="index.html" >Inyección de dependencias</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 19, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

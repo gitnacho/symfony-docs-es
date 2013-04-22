@@ -4,7 +4,7 @@
 Cómo crear un proveedor de usuario personalizado
 ================================================
 
-Parte del proceso de autenticación estándar de *Symfony* depende del "proveedor de usuarios".
+Parte del proceso de autenticación estándar de *Symfony* depende del «proveedor de usuarios».
 Cuando un usuario envía un nombre de usuario y una contraseña, la capa de autenticación solicita al proveedor de usuarios configurado devuelva un objeto usuario para un nombre de usuario dado.
 *Symfony* comprueba si la contraseña de este usuario es correcta y genera un indicador de seguridad para que el usuario quede autenticado durante la sesión actual.
 Fuera de la caja, *Symfony* tiene un proveedor de usuario «en memoria» y una «entidad».
@@ -196,22 +196,62 @@ Ahora has disponible el proveedor de usuarios como un servicio:
 Modificando :file:`security.yml`
 --------------------------------
 
-En ``/app/config/security.yml`` se junta todo. Añade el proveedor de usuario a la lista de proveedores en la sección de "seguridad". Elige un nombre para el proveedor de usuarios (p. ej. ``«webservice»``) y menciona el ``id`` del servicio que acabas de definir.
+Todo viene junto en tu configuración de seguridad. Añade el proveedor de usuario a la lista de proveedores en la sección de «seguridad». Elige un nombre para el proveedor de usuarios (p. ej. ``«webservice»``) y menciona el ``id`` del servicio que acabas de definir.
 
-.. code-block:: yaml
+.. configuration-block::
 
-    security:
-        providers:
-            webservice:
-                id: webservice_user_provider
+    .. code-block:: yaml
 
-*Symfony* también necesita saber cómo codificar las contraseñas suministradas por los usuarios del sitio web, por ejemplo, mediante la cumplimentación de un formulario de acceso. Lo puedes hacer añadiendo una línea a la opción ``«encoders»`` en ``/app/config/security.yml``.
+        // app/config/security.yml
+        security:
+            providers:
+                webservice:
+                    id: webservice_user_provider
 
-.. code-block:: yaml
+    .. code-block:: xml
 
-    security:
-        encoders:
-            Acme\WebserviceUserBundle\Security\User\WebserviceUser: sha512
+        <!-- app/config/security.xml -->
+        <config>
+            <provider name="webservice" id="webservice_user_provider" />
+        </config>
+
+    .. code-block:: php
+
+        // app/config/security.php
+        $container->loadFromExtension('security', array(
+            'providers' => array(
+                'webservice' => array(
+                    'id' => 'webservice_user_provider',
+                ),
+            ),
+        ));
+
+*Symfony* también necesita saber cómo codificar las contraseñas suministradas por los usuarios del sitio web, por ejemplo, rellenando un formulario de acceso. Lo puedes hacer añadiendo una línea a la sección ``«encoders»`` en tu configuración de seguridad:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/security.yml
+        security:
+            encoders:
+                Acme\WebserviceUserBundle\Security\User\WebserviceUser: sha512
+
+    .. code-block:: xml
+
+        <!-- app/config/security.xml -->
+        <config>
+            <encoder class="Acme\WebserviceUserBundle\Security\User\WebserviceUser">sha512</encoder>
+        </config>
+
+    .. code-block:: php
+
+        // app/config/security.php
+        $container->loadFromExtension('security', array(
+            'encoders' => array(
+                'Acme\WebserviceUserBundle\Security\User\WebserviceUser' => 'sha512',
+            ),
+        ));
 
 El valor aquí debe corresponder con cualquiera de las contraseñas que fueron codificadas originalmente al crear a los usuarios (cuando se crearon los usuarios). cuando un usuario envía su contraseña, se añade el valor de sal a la contraseña y entonces se codifica utilizando el algoritmo antes de comparar la contraseña con algoritmo ``hash`` devuelto por el método ``getPassword()``. Además, dependiendo de tus opciones, la contraseña se puede codificar varias veces y codificar a ``base64``.
 
@@ -223,16 +263,43 @@ El valor aquí debe corresponder con cualquiera de las contraseñas que fueron c
 
     Si tus usuarios externos tienen sus contraseñas saladas por medio de un método diferente, entonces tendrás que trabajar un poco más para que *Symfony* codifique correctamente la contraseña. Eso está fuera del alcance de este artículo, pero incluimos la subclase ``MessageDigestPasswordEncoder`` y reemplazamos el método ``mergePasswordAndSalt``.
 
-    Además, la codificación predeterminada, está codificada en múltiples ocasiones y finalmente codificada a ``base64``. Para detalles más específicos, consulta `MessageDigestPasswordEncoder`_.
-    Para evitarlo, esto se configura en :file:`security.yml`:
+    Además, la codificación predeterminada, se codifica en múltiples ocasiones y finalmente es codificada en ``base64``. Para detalles más específicos, consulta `MessageDigestPasswordEncoder`_.
+    Para impedir esto, especifícalo en tu archivo de configuración:
 
-    .. code-block:: yaml
+    .. configuration-block::
 
-        security:
-            encoders:
-                Acme\WebserviceUserBundle\Security\User\WebserviceUser:
-                    algorithm: sha512
-                    encode_as_base64: false
-                    iterations: 1
+        .. code-block:: yaml
+
+            # app/config/security.yml
+            security:
+                encoders:
+                    Acme\WebserviceUserBundle\Security\User\WebserviceUser:
+                        algorithm: sha512
+                        encode_as_base64: false
+                        iterations: 1
+
+        .. code-block:: xml
+
+            <!-- app/config/security.xml -->
+            <config>
+                <encoder class="Acme\WebserviceUserBundle\Security\User\WebserviceUser"
+                    algorithm="sha512"
+                    encode-as-base64="false"
+                    iterations="1"
+                />
+            </config>
+
+        .. code-block:: php
+
+            // app/config/security.php
+            $container->loadFromExtension('security', array(
+                'encoders' => array(
+                    'Acme\WebserviceUserBundle\Security\User\WebserviceUser' => array(
+                        'algorithm'         => 'sha512',
+                        'encode_as_base64'  => false,
+                        'iterations'        => 1,
+                    ),
+                ),
+            ));
 
 .. _MessageDigestPasswordEncoder: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Security/Core/Encoder/MessageDigestPasswordEncoder.php

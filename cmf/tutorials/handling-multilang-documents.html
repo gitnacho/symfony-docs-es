@@ -1,0 +1,305 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Gestionando documentos multilingües &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Documentación del CMF de Symfony" href="../index.html" />
+    <link rel="next" title="BlockBundle" href="../bundles/block.html" />
+    <link rel="prev" title="Usando BlockBundle y ContentBundle con PHPCR" href="using-blockbundle-and-contentbundle.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="../bundles/block.html" title="BlockBundle"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="using-blockbundle-and-contentbundle.html" title="Usando BlockBundle y ContentBundle con PHPCR"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="gestionando-documentos-multilingues">
+<h1>Gestionando documentos multilingües<a class="headerlink" href="#gestionando-documentos-multilingues" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>The goal of the tutorial is to describe all the steps that are needed
+to be taken to use multi-language documents as clearly as possible.</p>
+<div class="section" id="por-favor-primero-lee-esto">
+<h2>Por favor, primero lee esto<a class="headerlink" href="#por-favor-primero-lee-esto" title="Enlazar permanentemente con este título">¶</a></h2>
+<ul class="simple">
+<li>Necesitas entender cómo utilizar el <em>PHPCR-ODM</em>. Ve la introducción en <a class="reference internal" href="../bundles/phpcr-odm.html"><em>Documentación del paquete PHPCR-ODM de Doctrine</em></a></li>
+</ul>
+</div>
+<div class="section" id="lunetics-localebundle">
+<h2>Lunetics LocaleBundle<a class="headerlink" href="#lunetics-localebundle" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>The CMF recommends to rely on the <a class="reference external" href="https://github.com/lunetics/LocaleBundle/">LuneticsLocaleBundle</a>
+to handle initial locale selection when a user first visits the site,
+and to provide a locale switcher.</p>
+<p>To install the bundle, require it in your project with <tt class="docutils literal"><span class="pre">./composer.phar</span> <span class="pre">require</span> <span class="pre">lunetics/locale-bundle</span></tt>
+and then instantiate <tt class="docutils literal"><span class="pre">Lunetics\LocaleBundle\LuneticsLocaleBundle</span></tt> in your AppKernel.php.</p>
+<p>You also need the <tt class="docutils literal"><span class="pre">intl</span></tt> php extension installed and enabled. (Otherwise
+composer will tell you it can&#8217;t find ext-intl.) If you get issues that some
+locales can not be loaded, have a look at <a class="reference external" href="https://github.com/symfony/symfony/issues/5279#issuecomment-11710480">this discussion about ICU</a>.</p>
+<p>Then configure it in the main application configuration file. As
+there are several CMF bundles wanting the list of allowed locales,
+we recommend putting them into a parameter <tt class="docutils literal"><span class="pre">%locales%</span></tt>, see the
+<a class="reference external" href="https://github.com/symfony-cmf/cmf-sandbox/blob/master/app/config/config.yml">cmf-sandbox config.yml file</a> for an example.</p>
+</div>
+<div class="section" id="phpcr-odm-multi-language-documents">
+<h2>PHPCR-ODM multi-language Documents<a class="headerlink" href="#phpcr-odm-multi-language-documents" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>You can mark any properties as being translatable and have the document manager
+store and load the correct language for you. Note that translation always happens
+on a document level, not on the individual translatable fields.</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+<span class="sd">/**</span>
+<span class="sd"> * @PHPCRODM\Document(translator=&quot;attribute&quot;)</span>
+<span class="sd"> */</span>
+<span class="k">class</span> <span class="nc">MyPersistentClass</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * Translated property</span>
+<span class="sd">     * @String(translated=true)</span>
+<span class="sd">     */</span>
+    <span class="k">private</span> <span class="nv">$topic</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Read more about multi-language documents in the <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-phpcr-odm/en/latest/reference/multilang.html">PHPCR-ODM documentation on multi-language</a>
+and see <a class="reference internal" href="../bundles/phpcr-odm.html#phpcr-odm-multilang-config"><em>Configuración de traducción</em></a> to configure PHPCR-ODM correctly.</p>
+<p>Most of the CMF bundles provide multi-language documents, for example MultilangStaticContent,
+MultilangMenuNode or MultilangSimpleBlock. The routing is different, as explained in the next
+section.</p>
+</div>
+<div class="section" id="enrutado">
+<h2>Enrutado<a class="headerlink" href="#enrutado" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>The DynamicRouter uses a route source to get routes that could match a
+request. The concept of the default PHPCR-ODM source is to map the request URL
+onto an id, which in PHPCR terms is the repository path to a node. This
+allows for a very efficient lookup without needing a full search over the
+repository. But a PHPCR node has exactly one path, therefore we need a separate
+route document for each locale. The cool thing with this is that we can localize
+the URL for each language. Simply create one route document per locale, and
+set a default value for _locale to point to the locale of that route.</p>
+<p>As all routes point to the same content, the route generator can handle picking
+the correct route for you when you generate the route from the content.
+See also <a class="reference internal" href="../components/routing.html#route-generator-and-locales"><em>ContentAwareGenerator y regiones</em></a>.</p>
+</div>
+<div class="section" id="sonata-phpcr-odm-admin">
+<h2>Sonata PHPCR-ODM Admin<a class="headerlink" href="#sonata-phpcr-odm-admin" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>This section explains how to make Sonata Admin handle multi-language documents. You should
+already have set up Sonata PHPCR-ODM Admin and understand how it works, see
+<a class="reference internal" href="creating-cms-using-cmf-and-sonata.html"><em>Creating a CMS using the CMF and Sonata</em></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">The following assumes that you installed the LuneticsLocaleBundle as explained above.
+If you want to use something else or write your own locale handling, first think if
+it would not make sense to give the Lunetics bundle a try. If you are still convinced
+you will need to adapt the following template examples to your way of building a
+locale switcher.</p>
+</div>
+<p>The first step is to configure sonata admin. We are going to place the LuneticsLocaleBundle
+language switcher in the <tt class="docutils literal"><span class="pre">topnav</span></tt> bar.
+To do this we need to configure the template for the &#8220;user_block&#8221; as shown below:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">sonata_admin</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">...</span>
+    <span class="l-Scalar-Plain">templates</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">user_block</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">AcmeCoreBundle:Admin:admin_topnav.html.twig</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Y la plantilla se ve como esta</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="c">{# src/Acme/CoreBundle/Resources/views/Admin/admin_topnav.html.twig #}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">extends</span> <span class="s1">&#39;SonataAdminBundle:Core:user_block.html.twig&#39;</span> <span class="cp">%}</span><span class="x"></span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">user_block</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    </span><span class="cp">{{</span> <span class="nv">locale_switcher</span><span class="o">(</span><span class="nv">null</span><span class="o">,</span> <span class="nv">null</span><span class="o">,</span> <span class="s1">&#39;AcmeCoreBundle:Admin:switcher_links.html.twig&#39;</span><span class="o">)</span> <span class="cp">}}</span><span class="x"></span>
+<span class="x">    </span><span class="cp">{{</span> <span class="nv">parent</span><span class="o">()</span> <span class="cp">}}</span><span class="x"></span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span><span class="x"></span>
+</pre></div>
+</div>
+<p>We tell the <tt class="docutils literal"><span class="pre">locale_switcher</span></tt> to use a custom template to display the links, which looks like this:</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="c">{# src/Acme/CoreBundle/Resources/views/Admin/switcher_links.html.twig #}</span><span class="x"></span>
+<span class="x">Switch to :</span>
+<span class="cp">{%</span> <span class="k">for</span> <span class="nv">locale</span> <span class="k">in</span> <span class="nv">locales</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    </span><span class="cp">{%</span> <span class="k">if</span> <span class="nb">loop</span><span class="nv">.index</span> <span class="o">&gt;</span> <span class="m">1</span> <span class="cp">%}</span><span class="x"> | </span><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x">&lt;a href=&quot;</span><span class="cp">{{</span> <span class="nv">locale.link</span> <span class="cp">}}</span><span class="x">&quot; title=&quot;</span><span class="cp">{{</span> <span class="nv">locale.locale_target_language</span> <span class="cp">}}</span><span class="x">&quot;&gt;</span><span class="cp">{{</span> <span class="nv">locale.locale_target_language</span> <span class="cp">}}</span><span class="x">&lt;/a&gt;</span>
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span><span class="x"></span>
+</pre></div>
+</div>
+<p>Now what is left to do is to update the sonata routes to become locale aware:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/routing.yml</span>
+
+<span class="l-Scalar-Plain">admin_dashboard</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/{_locale}/admin/</span>
+    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">_controller</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FrameworkBundle:Redirect:redirect</span>
+        <span class="l-Scalar-Plain">route</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">sonata_admin_dashboard</span>
+        <span class="l-Scalar-Plain">permanent</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span> <span class="c1"># este para 301</span>
+
+<span class="l-Scalar-Plain">admin</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">resource</span><span class="p-Indicator">:</span> <span class="s">&#39;@SonataAdminBundle/Resources/config/routing/sonata_admin.xml&#39;</span>
+    <span class="l-Scalar-Plain">prefix</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/{_locale}/admin</span>
+
+<span class="l-Scalar-Plain">sonata_admin</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">resource</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">.</span>
+    <span class="l-Scalar-Plain">type</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">sonata_admin</span>
+    <span class="l-Scalar-Plain">prefix</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/{_locale}/admin</span>
+
+<span class="c1"># redirige las rutas a las rutas no regionales</span>
+<span class="l-Scalar-Plain">admin_without_locale</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/admin</span>
+    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">_controller</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FrameworkBundle:Redirect:redirect</span>
+        <span class="l-Scalar-Plain">route</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">sonata_admin_dashboard</span>
+        <span class="l-Scalar-Plain">permanent</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span> <span class="c1"># este para 301</span>
+
+<span class="l-Scalar-Plain">admin_dashboard_without_locale</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/admin/dashboard</span>
+    <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">_controller</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FrameworkBundle:Redirect:redirect</span>
+        <span class="l-Scalar-Plain">route</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">sonata_admin_dashboard</span>
+        <span class="l-Scalar-Plain">permanent</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span> <span class="c1"># este para 301</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>When we now reload the admin dashboard, the url should be prefixed with our
+default locale, for example <tt class="docutils literal"><span class="pre">/de/admin/dashboard</span></tt>. When clicking on the
+language switcher the page reloads and displays the correct content for the
+requested language.</p>
+<p>The provided sonata admin classes map the locale field of the multi-language
+documents to the form. You need to do the same in your admins, in order
+to create new translations. Otherwise the language fallback of PHPCR-ODM will
+make you update the original language, even when you request a different locale.
+With the mapped locale field, the editor can chose if he needs to create a new
+language version or updates the loaded one.</p>
+<p>Happy editing.</p>
+</div>
+<div class="section" id="frontend-editing-and-multi-language">
+<h2>Frontend editing and multi-language<a class="headerlink" href="#frontend-editing-and-multi-language" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>When using the CreateBundle, you do not need to do anything at all to get
+multi-language support. PHPCR-ODM will deliver the document in the requested
+language, and the callback URL is generated in the request locale,
+leading to save the edited document in the same language as it was loaded.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>If a translation is missing, language fallback kicks in, both when viewing the
+page but also when saving the changes, so you always update the current locale.</p>
+<p class="last">It would make sense to offer the user the choice whether he wants to create
+a new translation or update the existing one. There is this <a class="reference external" href="https://github.com/symfony-cmf/CreateBundle/issues/39">issue</a>
+in the CreateBundle issue tracker.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="../bundles/block.html" title="BlockBundle"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="using-blockbundle-and-contentbundle.html" title="Usando BlockBundle y ContentBundle con PHPCR"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Mar 19, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

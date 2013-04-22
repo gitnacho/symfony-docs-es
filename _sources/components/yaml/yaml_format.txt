@@ -1,0 +1,251 @@
+.. index::
+    single: Yaml; Formato YAML
+
+El formato *YAML*
+=================
+
+El sitio *web* de `YAML`_ dice que es «un estándar para la serialización de datos humanamente legibles para todos los lenguajes de programación».
+
+Si bien el formato *YAML* puede describir complejas estructuras de datos anidadas, este capítulo sólo describe el conjunto mínimo de características necesarias para usar *YAML* como un formato de archivo de configuración.
+
+*YAML* es un lenguaje simple que describe datos. Como *PHP*, que tiene una sintaxis para tipos simples, como cadenas, booleanos, números en punto flotante, o enteros. Pero a diferencia de *PHP*, este distingue entre arreglos (secuencias) y ``hashes`` (asignaciones).
+
+Escalares
+---------
+
+La sintaxis para escalares es similar a la sintaxis de *PHP*.
+
+Cadenas
+~~~~~~~
+
+.. code-block:: yaml
+
+    Una cadena en YAML
+
+.. code-block:: yaml
+
+    'Una cadena entre comillas simples en YAML'
+
+.. tip::
+
+    En una cadena entre comillas simples, una comilla simple ``'`` debe ser doble:
+
+    .. code-block:: yaml
+
+        'Una comilla simple '' en una cadena entre comillas simples'
+
+.. code-block:: yaml
+
+    "Una cadena entre comillas dobles en YAML\n"
+
+Los estilos de citado son útiles cuando una cadena empieza o termina con uno o más espacios relevantes.
+
+.. tip::
+
+    El estilo entre comillas dobles proporciona una manera de expresar cadenas arbitrarias, utilizando secuencias de escape ``\``. Es muy útil cuando se necesita incrustar un ``\n`` o un carácter Unicode en una cadena.
+
+Cuando una cadena contiene saltos de línea, puedes usar el estilo literal, indicado por la línea vertical (``|``), para indicar que la cadena abarcará varias líneas. En literales, se conservan los saltos de línea:
+
+.. code-block:: yaml
+
+    |
+      \/ /| |\/| |
+      / / | |  | |__
+
+Alternativamente, puedes escribir cadenas con el estilo de plegado, denotado por ``>``, en el cual cada salto de línea es sustituido por un espacio:
+
+.. code-block:: yaml
+
+    >
+      Esta es una oración muy larga
+      que se extiende por varias líneas en el YAML
+      pero que se reproduce como una cadena
+      sin retornos de carro.
+
+.. note::
+
+    Observa los dos espacios antes de cada línea en los ejemplos anteriores. Ellos no aparecen en las cadenas *PHP* resultantes.
+
+Números
+~~~~~~~
+
+.. code-block:: yaml
+
+    # un entero
+    12
+
+.. code-block:: yaml
+
+    # un octal
+    014
+
+.. code-block:: yaml
+
+    # un hexadecimal
+    0xC
+
+.. code-block:: yaml
+
+    # un float
+    13.4
+
+.. code-block:: yaml
+
+    # un número exponencial
+    1.2e+34
+
+.. code-block:: yaml
+
+    # infinito
+    .inf
+
+Nulos
+~~~~~
+
+Los nulos en *YAML* se pueden expresar con ``null`` o ``~``.
+
+Booleanos
+~~~~~~~~~
+
+Los booleanos en *YAML* se expresan con ``true`` y ``false``.
+
+Fechas
+~~~~~~
+
+*YAML* utiliza la norma ISO-8601 para expresar fechas:
+
+.. code-block:: yaml
+
+    2001-12-14t21:59:43.10-05:00
+
+.. code-block:: yaml
+
+    # fecha simple
+    2002-12-14
+
+Colecciones
+~~~~~~~~~~~
+
+Rara vez se utiliza un archivo *YAML* para describir un simple escalar. La mayoría de las veces, describe una colección. Una colección puede ser una secuencia o una asignación de elementos. Ambas, secuencias y asignaciones se convierten en arreglos *PHP*.
+
+Las secuencias usan un guión seguido por un espacio:
+
+.. code-block:: yaml
+
+    - PHP
+    - Perl
+    - Python
+
+El archivo *YAML* anterior es equivalente al siguiente código *PHP*:
+
+.. code-block:: php
+
+    array('PHP', 'Perl', 'Python');
+
+La asignación utiliza dos puntos seguidos por un espacio (``:`` ) para marcar cada par clave/valor:
+
+.. code-block:: yaml
+
+    PHP: 5.2
+    MySQL: 5.1
+    Apache: 2.2.20
+
+el cual es equivalente a este código *PHP*:
+
+.. code-block:: php
+
+    array('PHP' => 5.2, 'MySQL' => 5.1, 'Apache' => '2.2.20');
+
+.. note::
+
+    En una asignación, una clave puede ser cualquier escalar válido.
+
+El número de espacios entre los dos puntos y el valor no importa:
+
+.. code-block:: yaml
+
+    PHP:    5.2
+    MySQL:  5.1
+    Apache: 2.2.20
+
+*YAML* utiliza sangría con uno o más espacios para describir colecciones anidadas:
+
+.. code-block:: yaml
+
+    "symfony 1.0":
+      PHP:    5.0
+      Propel: 1.2
+    "symfony 1.2":
+      PHP:    5.2
+      Propel: 1.3
+
+El *YAML* anterior es equivalente al siguiente código *PHP*:
+
+.. code-block:: php
+
+    array(
+      'symfony 1.0' => array(
+        'PHP'    => 5.0,
+        'Propel' => 1.2,
+      ),
+      'symfony 1.2' => array(
+        'PHP'    => 5.2,
+        'Propel' => 1.3,
+      ),
+    );
+
+Hay una cosa importante que tienes que recordar cuando utilices sangría en un archivo *YAML*: *La sangría se debe hacer con uno o más espacios, pero nunca con tabulaciones*.
+
+Puedes anidar secuencias y asignaciones a tu gusto:
+
+.. code-block:: yaml
+
+    'Chapter 1':
+      - Introduction
+      - Event Types
+    'Chapter 2':
+      - Introduction
+      - Helpers
+
+*YAML* también puede utilizar estilos de flujo para colecciones, utilizando indicadores explícitos en lugar de sangría para denotar el alcance.
+
+Puedes escribir una secuencia como una lista separada por comas entre corchetes (``[]``):
+
+.. code-block:: yaml
+
+    [PHP, Perl, Python]
+
+Una asignación se puede escribir como una lista separada por comas de clave/valores dentro de llaves (``{}``):
+
+.. code-block:: yaml
+
+    { PHP: 5.2, MySQL: 5.1, Apache: 2.2.20 }
+
+Puedes mezclar y combinar estilos para conseguir mejor legibilidad:
+
+.. code-block:: yaml
+
+    'Chapter 1': [Introduction, Event Types]
+    'Chapter 2': [Introduction, Helpers]
+
+.. code-block:: yaml
+
+    "symfony 1.0": { PHP: 5.0, Propel: 1.2 }
+    "symfony 1.2": { PHP: 5.2, Propel: 1.3 }
+
+Comentarios
+-----------
+
+En *YAML* puedes añadir comentarios anteponiendo una almohadilla (``#``):
+
+.. code-block:: yaml
+
+    # Comentario en una línea
+    "symfony 1.0": { PHP: 5.0, Propel: 1.2 } # Comentario al final de una línea
+    "symfony 1.2": { PHP: 5.2, Propel: 1.3 }
+
+.. note::
+
+    Los comentarios simplemente son ignorados por el analizador de *YAML* y no es necesario sangrarlos de acuerdo al nivel de anidamiento actual de una colección.
+
+.. _YAML: http://yaml.org/

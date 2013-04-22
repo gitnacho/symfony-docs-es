@@ -1,0 +1,76 @@
+.. index::
+   single: Plantillas; Rutas Twig con espacios de nombres
+
+Cómo utilizar y rutas *Twig* con espacios de nombres
+====================================================
+
+.. versionadded:: 2.2
+    El soporte para las rutas con espacios de nombres se añadió en 2.2.
+
+Normalmente, cuándo te refieres a una plantilla, utilizas el formato ``MiBundle:Subdirectorio:nombrearchivo.html.twig`` (consulta :ref:`template-naming-locations`).
+
+Además nativamente *Twig* ofrece una característica llamada «rutas con espacios de nombres», y el soporte se integra automáticamente en todos tus paquetes.
+
+Toma como ejemplo las siguientes rutas:
+
+.. code-block:: jinja
+
+    {% extends "AcmeDemoBundle::layout.html.twig" %}
+    {% include "AcmeDemoBundle:Foo:bar.html.twig" %}
+
+Con rutas en espacios de nombres, las siguientes también trabajan:
+
+.. code-block:: jinja
+
+    {% extends "@AcmeDemo/layout.html.twig" %}
+    {% include "@AcmeDemo/Foo/bar.html.twig" %}
+
+Ambas rutas de manera predeterminada son válidas y operacionales en *Symfony2*.
+
+.. tip::
+
+    Como bono adicional, la sintaxis del espacio de nombres es más rápida.
+
+Registrando tus propios espacios de nombres
+-------------------------------------------
+
+También puedes registrar tus propios espacios de nombres. Supón que estás utilizando alguna biblioteca de terceros que incluye plantillas *Twig* que viven en ``acme/vendor/foo-project/templates``. Primero, registra un espacio de nombres para ese directorio:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        twig:
+            # ...
+            paths:
+                "%kernel.root_dir%/../vendor/acme/foo-bar/templates": foo_bar
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <?xml version="1.0" ?>
+        <container xmlns="http://symfony.com/schema/dic/services"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns:twig="http://symfony.com/schema/dic/twig"
+        >
+
+            <twig:config debug="%kernel.debug%" strict-variables="%kernel.debug%">
+                <twig:path namespace="foo_bar">%kernel.root_dir%/../vendor/acme/foo-bar/templates</twig:path>
+            </twig:config>
+        </container>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('twig', array(
+            'paths' => array(
+                '%kernel.root_dir%/../vendor/acme/foo-bar/templates' => 'foo_bar',
+            );
+        ));
+
+El espacio de nombres registrado se llama ``foo_bar``, el cual se refiere al directorio ``acme/vendor/foo-project/templates``. Suponiendo que en ese directorio existe un archivo llamado ``sidebar.twig``, lo puedes utilizar fácilmente:
+
+.. code-block:: jinja
+
+    {% include '@foo_bar/side.bar.twig` %}

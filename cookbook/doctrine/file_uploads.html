@@ -166,10 +166,24 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>A continuación, crea esta propiedad en tu clase <tt class="docutils literal"><span class="pre">Documento</span></tt> y agrega algunas reglas de validación:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Entity/Document.php</span>
+<p>A continuación, crea esta propiedad en tu clase <tt class="docutils literal"><span class="pre">Documento</span></tt> y añade algunas reglas de validación:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/DemoBundle/Resources/config/validation.yml</span>
+<span class="l-Scalar-Plain">Acme\DemoBundle\Entity\Document</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">properties</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">file</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">File</span><span class="p-Indicator">:</span>
+                <span class="l-Scalar-Plain">maxSize</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">6000000</span>
+</pre></div>
+</div>
+</li>
+<li><em>Annotations</em><div class="highlight-php-annotations"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Entity/Document.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Entity</span><span class="p">;</span>
 
 <span class="c1">// ...</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+
 <span class="k">class</span> <span class="nc">Document</span>
 <span class="p">{</span>
     <span class="sd">/**</span>
@@ -181,12 +195,48 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="p">}</span>
 </pre></div>
 </div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/DemoBundle/Resources/config/validation.yml --&gt;</span>
+<span class="nt">&lt;class</span> <span class="na">name=</span><span class="s">&quot;Acme\DemoBundle\Entity\Document&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">&quot;file&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;constraint</span> <span class="na">name=</span><span class="s">&quot;File&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;option</span> <span class="na">name=</span><span class="s">&quot;maxSize&quot;</span><span class="nt">&gt;</span>6000000<span class="nt">&lt;/option&gt;</span>
+        <span class="nt">&lt;/constraint&gt;</span>
+    <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/class&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Entity/Document.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Entity</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Mapping\ClassMetadata</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Document</span>
+<span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">loadValidatorMetadata</span><span class="p">(</span><span class="nx">ClassMetadata</span> <span class="nv">$metadata</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$metadata</span><span class="o">-&gt;</span><span class="na">addPropertyConstraint</span><span class="p">(</span><span class="s1">&#39;file&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Assert\File</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;maxSize&#39;</span> <span class="o">=&gt;</span> <span class="mi">6000000</span><span class="p">,</span>
+        <span class="p">)));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
 <p class="last">Debido a que estás utilizando la restricción <tt class="docutils literal"><span class="pre">File</span></tt>, <em>Symfony2</em> automáticamente supone que el campo del formulario es una entrada para cargar un archivo. Es por eso que no lo tienes que establecer explícitamente al crear el formulario anterior (<tt class="docutils literal"><span class="pre">-&gt;add('file')</span></tt>).</p>
 </div>
 <p>El siguiente controlador muestra cómo manipular todo el proceso:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Acme\DemoBundle\Entity\Document</span><span class="p">;</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// ...</span>
+<span class="k">use</span> <span class="nx">Acme\DemoBundle\Entity\Document</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Sensio\Bundle\FrameworkExtraBundle\Configuration\Template</span><span class="p">;</span>
 <span class="c1">// ...</span>
 
@@ -210,7 +260,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
             <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
             <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
 
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">generateUrl</span><span class="p">(</span><span class="o">...</span><span class="p">));</span>
+            <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">generateUrl</span><span class="p">(</span><span class="o">...</span><span class="p">));</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -221,7 +271,9 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
 <p>Al escribir la plantilla, no olvides fijar el atributo <tt class="docutils literal"><span class="pre">enctype</span></tt>:</p>
-<div class="last highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;h1&gt;</span>Upload File<span class="nt">&lt;/h1&gt;</span>
+<div class="last configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;h1&gt;</span>Upload File<span class="nt">&lt;/h1&gt;</span>
 
 <span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;#&quot;</span> <span class="na">method=</span><span class="s">&quot;post&quot;</span> <span class="cp">{{</span> <span class="nv">form_enctype</span><span class="o">(</span><span class="nv">form</span><span class="o">)</span> <span class="cp">}}</span><span class="nt">&gt;</span>
     <span class="cp">{{</span> <span class="nv">form_widget</span><span class="o">(</span><span class="nv">form</span><span class="o">)</span> <span class="cp">}}</span>
@@ -229,6 +281,19 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
     <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span> <span class="na">value=</span><span class="s">&quot;Upload Document&quot;</span> <span class="nt">/&gt;</span>
 <span class="nt">&lt;/form&gt;</span>
 </pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="nt">&lt;h1&gt;</span>Upload File<span class="nt">&lt;/h1&gt;</span>
+
+<span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;#&quot;</span> <span class="na">method=</span><span class="s">&quot;post&quot;</span> <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">enctype</span><span class="p">(</span><span class="nv">$form</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="nt">&gt;</span>
+    <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">widget</span><span class="p">(</span><span class="nv">$form</span><span class="p">)</span> <span class="cp">?&gt;</span>
+
+    <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span> <span class="na">value=</span><span class="s">&quot;Upload Document&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/form&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
 </div>
 </div>
 <p>El controlador anterior automáticamente persistirá la entidad <tt class="docutils literal"><span class="pre">Documento</span></tt> con el nombre presentado, pero no hará nada sobre el archivo y la propiedad <tt class="docutils literal"><span class="pre">path</span></tt> quedará en blanco.</p>
@@ -241,7 +306,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
     <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
     <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
 
-    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -346,7 +411,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
     <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">persist</span><span class="p">(</span><span class="nv">$document</span><span class="p">);</span>
     <span class="nv">$em</span><span class="o">-&gt;</span><span class="na">flush</span><span class="p">();</span>
 
-    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">redirect</span><span class="p">(</span><span class="o">...</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -470,7 +535,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

@@ -206,6 +206,8 @@ La cabecera ``Cache-Control`` es la única que no contiene una, sino varias piez
 
     // ...
 
+    use Symfony\Component\HttpFoundation\Response;
+
     $response = new Response();
 
     // marca la respuesta como pública o privada
@@ -417,7 +419,7 @@ Por ejemplo, puedes utilizar la última fecha de actualización de todos los obj
             return $response;
         }
 
-        // ... hace más trabajo para poblar la respuesta  con el contenido completo
+        // ... hace más trabajo para poblar la respuesta con el contenido completo
 
         return $response;
     }
@@ -440,6 +442,8 @@ Optimizando tu código con validación
 
 El objetivo principal de cualquier estrategia de memoria caché es aligerar la carga de la aplicación.
 Dicho de otra manera, cuanto menos hagas en tu aplicación para devolver una respuesta 304, mejor. El método ``Response::isNotModified()`` hace exactamente eso al exponer un patrón simple y eficiente::
+
+    use Symfony\Component\HttpFoundation\Response;
 
     public function showAction($articleSlug)
     {
@@ -603,7 +607,7 @@ Primero, para usar *ESI*, asegúrate de activarlo en la configuración de tu apl
 
         // app/config/config.php
         $container->loadFromExtension('framework', array(
-            // ...
+            ...,
             'esi'    => array('enabled' => true),
         ));
 
@@ -640,18 +644,17 @@ Como el contenido integrado viene de otra página (o controlador en este caso), 
 
         <?php echo $view['actions']->render(
             new ControllerReference('...:news', array('max' => 5)),
-            array('strategy' => 'esi'))
+            array('renderer' => 'esi'))
         ?>
 
         <?php echo $view['actions']->render(
             $view['router']->generate('latest_news', array('max' => 5), true),
-            array('strategy' => 'esi')
+            array('renderer' => 'esi'),
         ) ?>
 
-Al usar la estrategia de reproducción ``esi`` (vía la función ``render_esi`` de *Twig*), le dices a *Symfony2* que la acción debería ser dibujada como una etiqueta *ESI*.
-Tal vez te preguntes por qué querrías usar un ayudante en vez de escribir la etiqueta *ESI* tú mismo. Esto es porque utilizar un ayudante hace que tu aplicación trabaje incluso si no hay instalada ninguna pasarela de caché.
+Al utilizar el ``esi`` reproducido (vía la función ``render_esi`` de *Twig*), le dices a *Symfony2* que la acción se debería reproducir como una etiqueta *ESI*. Te podrías estar preguntando por qué querrías utilizar un ayudante en vez de sólo escribir la etiqueta *ESI* directamente. Esto se debe a que al utilizar un ayudante haces que tu aplicación trabaje incluso si no tienes instalada ninguna pasarela de caché.
 
-Al utilizar la función ``render`` predefinida (o configurar la estrategia a ``default``), *Symfony2* fusiona el contenido de la página incluida con la principal antes de enviar la respuesta al cliente. Pero si utilizas la estrategia ``esi`` (es decir, llamas a ``render_esi``), *y* si *Symfony2* detecta que está hablando a una pasarela de caché que cuente con soporte *ESI*, genera una etiqueta que incluya *ESI*. Pero si no hay ninguna pasarela de caché o si no cuenta con soporte *ESI*, *Symfony2* sólo fusionará el contenido de la página incluida dentro de la principal tal como lo haría si hubieras utilizado ``render``.
+Al utilizar la función ``render`` predefinida (o configurar la estrategia a ``inline``), *Symfony2* fusiona el contenido de la página incluida con la principal antes de enviar la respuesta al cliente. Pero si utilizas la estrategia ``esi`` (es decir, llamas a ``render_esi``), *y* si *Symfony2* detecta que está hablando con una pasarela de caché que cuenta con soporte *ESI*, genera una etiqueta que incluye *ESI*. Pero si no hay ninguna pasarela de caché o si no cuenta con soporte *ESI*, *Symfony2* sólo fusionará el contenido de la página incluida dentro de la principal tal como lo haría si hubieras utilizado ``render``.
 
 .. note::
 
@@ -670,44 +673,37 @@ La acción integrada ahora puede especificar sus propias reglas de caché, total
 
 Con *ESI*, la caché de la página completa será válida durante 600 segundos, pero la caché del componente de noticias sólo dura 60 segundos.
 
-Cuándo utilizas una referencia al controlador, la etiqueta *ESI* se debe referir a la acción incorporada como una *URL* accesible a modo de que la pasarela de caché la pueda recuperar independientemente del resto de la página. Naturalmente, no puedes acceder a una acción vía una *URL* a no ser que tengas una ruta que apunte a ella. *Symfony2* cuida de esto a través de una ruta genérica. Para que trabaje correctamente la etiqueta que incluye *ESI*, tienes que definir la ruta ``_proxy``:
+Cuándo utilizas una referencia al controlador, la etiqueta *ESI* se debe referir a la acción incorporada como una *URL* accesible a modo de que la pasarela de caché la pueda recuperar independientemente del resto de la página. *Symfony2* cuida de generar una *URL* única para cualquier referencia de controlador y es capaz de enrutarla correctamente gracias a un escucha que debes habilitar en tu configuración:
 
 .. configuration-block::
 
     .. code-block:: yaml
 
-        # app/config/routing.yml
-        _proxy:
-            resource: "@FrameworkBundle/Resources/config/routing/proxy.xml"
-            prefix:   /proxy
+        # app/config/config.yml
+        framework:
+            # ...
+            fragments: { path: /_fragment }
 
     .. code-block:: xml
 
-        <!-- app/config/routing.xml -->
-        <?xml version="1.0" encoding="UTF-8" ?>
-
-        <routes xmlns="http://symfony.com/schema/routing"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
-
-            <import resource="@FrameworkBundle/Resources/config/routing/proxy.xml" prefix="/proxy" />
-        </routes>
+        <!-- app/config/config.xml -->
+        <framework:config>
+            <framework:fragments path="/_fragment" />
+        </framework:config>
 
     .. code-block:: php
 
-        // app/config/routing.php
-        use Symfony\Component\Routing\RouteCollection;
-        use Symfony\Component\Routing\Route;
+        // app/config/config.php
+        $container->loadFromExtension('framework', array(
+            // ...
+            'fragments' => array('path' => '/_fragment'),
+        ));
 
-        $collection->addCollection($loader->import('@FrameworkBundle/Resources/config/routing/proxy.xml', '/proxy'));
-
-        return $collection;
-
-Una gran ventaja de esta estrategia de memoria caché es que puedes hacer tu aplicación tan dinámica como sea necesario y al mismo tiempo, tocar la aplicación lo menos posible.
+Una gran ventaja de estrategia *ESI* es que puedes hacer tu aplicación tan dinámica como sea necesario y al mismo tiempo, tocar la aplicación lo menos posible.
 
 .. tip::
 
-    La ruta delegada no apunta a un controlador real. En cambio, es manejada por una clase :class:`Symfony\\Component\\HttpKernel\\EventListener\\RouterProxyListener` interna. Este escucha sólo responde a direcciones *IP* locales o delegados confiables.
+    El escucha sólo responde a direcciones *IP* locales o a delegados inversos confiables.
 
 .. note::
 
@@ -743,6 +739,8 @@ Aquí está cómo puedes configurar la caché del delegado inverso de *Symfony2*
 
     // ...
     use Symfony\Bundle\FrameworkBundle\HttpCache\HttpCache;
+    use Symfony\Component\HttpFoundation\Request;
+    use Symfony\Component\HttpFoundation\Response;
 
     class AppCache extends HttpCache
     {

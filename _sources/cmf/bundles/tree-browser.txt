@@ -1,8 +1,7 @@
 ``TreeBrowserBundle``
 =====================
 
-El `TreeBrowserBundle <https://github.com/symfony-cmf/TreeBrowserBundle#readme>`_
-proporciona integración con :doc:`tree` para proporcionar un árbol de navegación en lo alto de un repositorio *PHPCR*.
+El `TreeBrowserBundle <https://github.com/symfony-cmf/TreeBrowserBundle#readme>`_ proporciona un árbol de navegación en lo alto de un repositorio *PHPCR*.
 
 Este paquete consta de dos partes:
 
@@ -14,7 +13,8 @@ Este paquete consta de dos partes:
 Dependencias
 ------------
 
-* `TreeBundle <https://github.com/symfony-cmf/TreeBundle#readme>`_
+* `FOSJsRoutingBundle <https://github.com/FriendsOfSymfony/FOSJsRoutingBundle>`_
+* Instala *jQuery*. `SonatajQueryBundle <https://github.com/sonata-project/SonatajQueryBundle>`_ fuertemente recomendado.
 
 Configurando
 ------------
@@ -29,33 +29,50 @@ La clave de configuración para este paquete es ``symfony_cmf_tree_browser``
         symfony_cmf_tree_browser:
             session:  default
 
+Enrutado
+--------
+
+El paquete creará las rutas para cada implementación del árbol encontrado. Para activar esas rutas necesitas incluir lo siguiente en tu configuración de enrutado: 
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/routing.yml
+        symfony_cmf_tree:
+            resource: .
+            type: 'symfony_cmf_tree'
+
 Usando
 ------
 
 Tienes :file:`select.js` e :file:`init.js` los cuáles son una envoltura para construir un árbol *jQuery*. Úsalos con ``SelectTree.initTree`` ``resp.`` ``AdminTree.initTree``
 
- * ``SelectTree`` en :file:`select.js` es un árbol para seleccionar un nodo para poner su ID a un campo
+ * ``SelectTree`` en :file:`select.js` es un árbol para seleccionar un nodo para poner el ``id`` a un campo
  * ``AdminTree`` en :file:`init.js` es para crear un árbol, mover y editar nodos
 
 Ambos tienen las siguientes opciones al crearlos:
 
- * config.rootNode: id para el nodo raíz de tu árbol, predefinido a "/"
- * config.path.expanded: ruta de árbol donde el árbol se tendría que expandir al momento
- * config.path.preloaded: ruta del árbol hacia qué nodo se tendría que precargar para una experiencia de usuario más rápida
+ * config.selector: selector *jQuery* dónde enganchar en el árbol *js*
+ * config.rootNode: id para el nodo raíz de tu árbol, predefinido a «/»
+ * config.selected: id del nodo seleccionado
  * config.ajax.children_url: *URL* al controlador que proporciona los hijos de un nodo
- * config.selector: Selector *jQuery* dónde enganchar en el árbol *js*
+ * config.routing_defaults: arreglo para parámetros de ruta (tal como ``_locale``, etc.) 
+ * config.path.expanded: ruta de árbol donde el árbol se tendría que expandir al momento
+ * config.path.preloaded: árbol de rutas en el cual se debería precargar el nodo para acelerar la experiencia del usuario
 
 Solo :file:`select.js`
 ~~~~~~~~~~~~~~~~~~~~~~
 
- * config.output: Dónde escribir el Id del nodo seleccionado
+ * config.output: Dónde escribir el ``id`` del nodo seleccionado
 
 Solo :file:`init.js`
 ~~~~~~~~~~~~~~~~~~~~
 
- * config.ajax.move_url: *URL* al controlador que maneja la operación de movimiento
- * config.doctypes: arreglo para manejar la creación de nuevos nodos
- * config.routecollection: arreglo indexado con el atributo ``className`` de los nodos más ``.routes.edit`` y ``.routes.delete`` asociadas a rutas para las operaciones de edición y remoción.
+ * config.labels: arreglo conteniendo la traducción para las etiquetas del contexto menú (claves ``'createItem'`` y ``'deleteItem'``)
+ * config.ajax.move_url: *URL* al controlador para mover un hijo (es decir, asignarle un nuevo nodo padre)
+ * config.ajax.reorder_url: *URL* al controlador para reorganizar hermanos
+ * config.types: arreglo indexado con los tipos de nodo conteniendo información sobre ``valid_children``, iconos y rutas disponibles, utilizados para crear el contexto del menú y para comprobación durante las operaciones de movimiento.
 
 Ejemplos
 --------
@@ -64,3 +81,126 @@ Ve en las plantillas del paquete de administración de ``Sonata`` los ejemplos s
 
 * `init.js <https://github.com/sonata-project/SonataDoctrinePhpcrAdminBundle/blob/master/Resources/views/Tree/tree.html.twig>`_
 * `select.js <https://github.com/sonata-project/SonataDoctrinePhpcrAdminBundle/blob/master/Resources/views/Form/form_admin_fields.html.twig>`_ (busca ``doctrine_phpcr_type_tree_model_widget``)
+
+En el mismo paquete el `PhpcrOdmTree <https://github.com/sonata-project/SonataDoctrinePhpcrAdminBundle/blob/master/Tree/PhpcrOdmTree.php>`_ implementa la interfaz de árbol y da un ejemplo sobre cómo implementar los métodos.
+
+Aquí tienes algunos consejos comunes sobre la utilización del ``TreeBrowser``:
+
+Define tree elements
+~~~~~~~~~~~~~~~~~~~~
+The first step, is to define all the elements allowed in the tree and their children.
+Have a look at the `cmf-sandbox configuration <https://github.com/symfony-cmf/cmf-sandbox/blob/master/app/config/config.yml>`_, the section document_tree in sonata_doctrine_phpcr_admin.
+
+This configuration is set for all your application trees regardless their type (admin or select).
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        sonata_doctrine_phpcr_admin:
+            document_tree_defaults: [locale]
+            document_tree:
+                Doctrine\PHPCR\Odm\Document\Generic:
+                    valid_children:
+                        - all
+                Symfony\Cmf\Bundle\ContentBundle\Document\MultilangStaticContent:
+                    valid_children:
+                        - Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock
+                        - Symfony\Cmf\Bundle\BlockBundle\Document\ContainerBlock
+                        - Symfony\Cmf\Bundle\BlockBundle\Document\ReferenceBlock
+                        - Symfony\Cmf\Bundle\BlockBundle\Document\ActionBlock
+                Symfony\Cmf\Bundle\BlockBundle\Document\ReferenceBlock:
+                    valid_children: []
+                ...
+
+
+How to add an admin tree to your page
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This can be done either in an action template or in a custom block.
+
+You have to specify the tree root and the selected item, this allows you to have different type of content in your tree.
+
+In this example, we will have the menu elements :
+
+.. configuration-block::
+
+    .. code-block:: jinja
+
+        {% render 'sonata.admin.doctrine_phpcr.tree_controller:treeAction' with { 'root': websiteId~"/menu", 'selected': menuNodeId } %}
+
+
+How to customize the tree behaviour
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The TreeBrowserBundle is based on `jsTree <http://www.jstree.com/documentation>`_. jsTree works with events, dispatched everytime the user does an action.
+
+A simple way to customize the tree behavior is to bind your actions to those events.
+
+If you have a look at init.js and select.js, you will notice that actions are already bound to some of the tree events. If the default behavior is not
+what you need, JQuery provide the unbind function to solve the problem.
+
+Here is a simple way to remove the context menu from the admin tree :
+
+.. configuration-block::
+
+    .. code-block:: jinja
+
+        {% render 'sonata.admin.doctrine_phpcr.tree_controller:treeAction' with { 'root': websiteId~"/menu", 'selected': menuNodeId } %}
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $('#tree').bind("before.jstree", function (e, data) {
+                    if (data.plugin === "contextmenu") {
+                        e.stopImmediatePropagation();
+                            return false;
+                    }
+                });
+            });
+        </script>
+
+
+By default, the item selection open the edit route of the admin class of the element. This action is bind to the "select_node.jstree".
+
+If you want to remove it, you just need to call the unbind function on this event :
+
+.. configuration-block::
+
+    .. code-block:: jinja
+
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $('#tree').unbind('select_node.jstree');
+            });
+        </script>
+
+Then you can bind it on another action.
+
+For example, if your want to open a custom action :
+
+.. configuration-block::
+
+    .. code-block:: jinja
+
+        $('#tree').bind("select_node.jstree", function (event, data) {
+            if ((data.rslt.obj.attr("rel") == 'Symfony_Cmf_Bundle_MenuBundle_Document_MenuNode'
+                || data.rslt.obj.attr("rel") == 'Symfony_Cmf_Bundle_MenuBundle_Document_MultilangMenuNode')
+                && data.rslt.obj.attr("id") != '{{ menuNodeId }}'
+            ) {
+                var routing_defaults = {'locale': '{{ locale }}', '_locale': '{{ _locale }}'};
+                routing_defaults["id"] = data.rslt.obj.attr("url_safe_id");
+                window.location = Routing.generate('presta_cms_page_edit', routing_defaults);
+            }
+        });
+
+Don't forget to add your custom route to the fos_js_routing.routes_to_expose configuration :
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        fos_js_routing:
+            routes_to_expose:
+                - symfony_cmf_tree_browser.phpcr_children
+                - symfony_cmf_tree_browser.phpcr_move
+                - sonata.admin.doctrine_phpcr.phpcrodm_children
+                - sonata.admin.doctrine_phpcr.phpcrodm_move
+                - presta_cms_page_edit
+

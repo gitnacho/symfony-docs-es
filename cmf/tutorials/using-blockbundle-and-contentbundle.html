@@ -25,7 +25,7 @@
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
     <link rel="up" title="Documentación del CMF de Symfony" href="../index.html" />
-    <link rel="next" title="BlockBundle" href="../bundles/block.html" />
+    <link rel="next" title="Gestionando documentos multilingües" href="handling-multilang-documents.html" />
     <link rel="prev" title="Creando un CMS con CMF y Sonata" href="creating-cms-using-cmf-and-sonata.html" /> 
   </head>
   <body>
@@ -56,13 +56,13 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="../bundles/block.html" title="BlockBundle"
+          <a href="handling-multilang-documents.html" title="Gestionando documentos multilingües"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
           <a href="creating-cms-using-cmf-and-sonata.html" title="Creando un CMS con CMF y Sonata"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" accesskey="U">Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+          <li><a href="../index.html" accesskey="U">Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -370,8 +370,8 @@ php app/console doctrine:phpcr:register-system-node-types
 <div class="section" id="usando-el-contentbundle-del-cmf">
 <h2>Usando el <tt class="docutils literal"><span class="pre">ContentBundle</span></tt> del <tt class="docutils literal"><span class="pre">CMF</span></tt><a class="headerlink" href="#usando-el-contentbundle-del-cmf" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Sigue este ejemplo para utilizar ambos componentes <tt class="docutils literal"><span class="pre">Block</span></tt> y <tt class="docutils literal"><span class="pre">Content</span></tt>.</p>
-<p>El paquete <tt class="docutils literal"><span class="pre">ContentBundle</span></tt> también requiere del <tt class="docutils literal"><span class="pre">RoutingExtraBundle</span></tt>, así que para ahorrar tiempo puedes instalar ambos.
-Añade lo siguiente al archivo <tt class="file docutils literal"><span class="pre">composer.json</span></tt>:</p>
+<p>The ContentBundle is best used together with the RoutingExtraBundle. Add the
+following to <tt class="docutils literal"><span class="pre">composer.json</span></tt>:</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span class="s2">&quot;require&quot;</span><span class="o">:</span> <span class="p">{</span>
     <span class="p">...</span>
     <span class="s2">&quot;symfony-cmf/content-bundle&quot;</span><span class="o">:</span> <span class="s2">&quot;dev-master&quot;</span><span class="p">,</span>
@@ -400,7 +400,7 @@ Añade lo siguiente al archivo <tt class="file docutils literal"><span class="pr
 <p>Ahora deberías tener todo lo necesario para cargar una página de contenido con un bloque de ejemplo, así que crea la clase <tt class="docutils literal"><span class="pre">LoadBlockWithCmfParent.php</span></tt>:</p>
 <div class="highlight-html+php"><div class="highlight"><pre><span class="cp">&lt;?php</span>
 <span class="c1">// src/Acme/Bundle/MainBundle/DataFixtures/PHPCR/LoadBlockWithCmfParent.php</span>
-<span class="k">namespace</span> <span class="nx">Acme\MainBundle\DataFixtures\ORM</span><span class="p">;</span>
+<span class="k">namespace</span> <span class="nx">Acme\MainBundle\DataFixtures\PHPCR</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Doctrine\Common\DataFixtures\AbstractFixture</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Doctrine\Common\Persistence\ObjectManager</span><span class="p">;</span>
@@ -524,6 +524,23 @@ CMF BlockBundle and ContentBundle
 Block from CMF BlockBundle, parent from CMF ContentBundle (StaticContent).
 </pre></div>
 </div>
+<p>Esto sucede al dibujar un bloque, ve el... index:: <tt class="docutils literal"><span class="pre">BlockBundle</span></tt> para más detalles:</p>
+<ul class="simple">
+<li>un documento se carga basándose en el nombre</li>
+<li>si está configurada la caché, se comprueba la caché y si se encuentra devuelve el contenido</li>
+<li>cada bloque de documento también tiene un servicio de bloque, llama al método <tt class="docutils literal"><span class="pre">execute</span></tt>:<ul>
+<li>puedes poner aquí la lógica que quieras tal como lo harías en un controlador</li>
+<li>esta llama a una plantilla</li>
+<li>el resultado es un objeto <tt class="docutils literal"><span class="pre">Respuesta</span></tt></li>
+</ul>
+</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Un bloque también se puede configurar usando opciones, estas te permiten crear bloques más avanzados y reutilizables. Las opciones predefinidas se configuran en el bloque del servicio y se pueden alterar en el ayudante de <em>Twig</em> y el bloque del documento.
+Un ejemplo es un bloque lector de <em>RSS</em>, la <em>URL</em> y el título se almacenan en las opciones del bloque del documento, la cantidad</p>
+</div>
+<p>máxima de elementos a mostrar se especifica al llamar a <tt class="docutils literal"><span class="pre">sonata_block_render</span></tt>.</p>
 </div>
 <div class="section" id="siguientes-pasos">
 <h2>Siguientes pasos<a class="headerlink" href="#siguientes-pasos" title="Enlazar permanentemente con este título">¶</a></h2>
@@ -639,13 +656,13 @@ La clase &#39;Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock&#39; no se enc
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="../bundles/block.html" title="BlockBundle"
+          <a href="handling-multilang-documents.html" title="Gestionando documentos multilingües"
              >siguiente</a> |</li>
         <li class="right" >
           <a href="creating-cms-using-cmf-and-sonata.html" title="Creando un CMS con CMF y Sonata"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
-          <li><a href="../index.html" >Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+          <li><a href="../index.html" >Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
       </ul>
     </div>
   </div>
@@ -656,7 +673,7 @@ La clase &#39;Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock&#39; no se enc
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

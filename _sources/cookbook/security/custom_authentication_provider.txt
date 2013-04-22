@@ -178,6 +178,11 @@ Es decir, el proveedor verificará si es válido el valor de la cabecera ``Creat
 
         protected function validateDigest($digest, $nonce, $created, $secret)
         {
+            // Verifica que el momento de la creación no está en el futuro
+            if (strtotime($created) > time()) {
+                    return false;
+            }
+
             // la marca de tiempo caduca después de 5 minutos
             if (time() - strtotime($created) > 300) {
                     return false;
@@ -286,13 +291,13 @@ Es hora de ver en acción tu proveedor de autenticación. Tendrás que hacer alg
 
         # src/Acme/DemoBundle/Resources/config/services.yml
         services:
-          wsse.security.authentication.provider:
-            class:  Acme\DemoBundle\Security\Authentication\Provider\WsseProvider
-            arguments: ['', %kernel.cache_dir%/security/nonces]
+            wsse.security.authentication.provider:
+                class:  Acme\DemoBundle\Security\Authentication\Provider\WsseProvider
+                arguments: ['', %kernel.cache_dir%/security/nonces]
 
-          wsse.security.authentication.listener:
-            class:  Acme\DemoBundle\Security\Firewall\WsseListener
-            arguments: [@security.context, @security.authentication.manager]
+            wsse.security.authentication.listener:
+                class:  Acme\DemoBundle\Security\Firewall\WsseListener
+                arguments: [@security.context, @security.authentication.manager]
 
 
     .. code-block:: xml
@@ -302,19 +307,19 @@ Es hora de ver en acción tu proveedor de autenticación. Tendrás que hacer alg
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
-               <services>
-               <service id="wsse.security.authentication.provider"
-                 class="Acme\DemoBundle\Security\Authentication\Provider\WsseProvider" public="false">
-                   <argument /> <!-- User Provider -->
-                   <argument>%kernel.cache_dir%/security/nonces</argument>
-               </service>
+                <services>
+                <service id="wsse.security.authentication.provider"
+                    class="Acme\DemoBundle\Security\Authentication\Provider\WsseProvider" public="false">
+                    <argument /> <!-- User Provider -->
+                    <argument>%kernel.cache_dir%/security/nonces</argument>
+                </service>
 
-               <service id="wsse.security.authentication.listener"
-                 class="Acme\DemoBundle\Security\Firewall\WsseListener" public="false">
-                   <argument type="service" id="security.context"/>
-                   <argument type="service" id="security.authentication.manager" />
-               </service>
-               </services>
+                <service id="wsse.security.authentication.listener"
+                    class="Acme\DemoBundle\Security\Firewall\WsseListener" public="false">
+                    <argument type="service" id="security.context"/>
+                    <argument type="service" id="security.authentication.manager" />
+                </service>
+                </services>
         </container>
 
     .. code-block:: php
@@ -324,17 +329,22 @@ Es hora de ver en acción tu proveedor de autenticación. Tendrás que hacer alg
         use Symfony\Component\DependencyInjection\Reference;
 
         $container->setDefinition('wsse.security.authentication.provider',
-          new Definition(
-            'Acme\DemoBundle\Security\Authentication\Provider\WsseProvider',
-            array('', '%kernel.cache_dir%/security/nonces')
-        ));
+            new Definition(
+                'Acme\DemoBundle\Security\Authentication\Provider\WsseProvider', array(
+                    '',
+                    '%kernel.cache_dir%/security/nonces',
+                )
+            )
+        );
 
         $container->setDefinition('wsse.security.authentication.listener',
-          new Definition(
-            'Acme\DemoBundle\Security\Firewall\WsseListener', array(
-              new Reference('security.context'),
-              new Reference('security.authentication.manager'))
-        ));
+            new Definition(
+                'Acme\DemoBundle\Security\Firewall\WsseListener', array(
+                    new Reference('security.context'),
+                    new Reference('security.authentication.manager'),
+                )
+            )
+        );
 
 Ahora que están definidos tus servicios, informa de tu factoría al contexto de seguridad en tu clase ``Bundle``.
 
@@ -363,13 +373,35 @@ Ahora que están definidos tus servicios, informa de tu factoría al contexto de
 
 ¡Y está listo! Ahora puedes definir las partes de tu aplicación como bajo la protección del *WSSE*.
 
-.. code-block:: yaml
+.. configuration-block::
 
-    security:
-        firewalls:
-            wsse_secured:
-                pattern:   /api/.*
-                wsse:      true
+    .. code-block:: yaml
+
+        security:
+            firewalls:
+                wsse_secured:
+                    pattern:   /api/.*
+                    wsse:      true
+
+    .. code-block:: xml
+
+        <config>
+            <firewall name="wsse_secured" pattern="/api/.*">
+                <wsse />
+            </firewall>
+        </config>
+
+    .. code-block:: php
+
+        $container->loadFromExtension('security', array(
+            'firewalls' => array(
+                'wsse_secured' => array(
+                    'pattern' => '/api/.*',
+                    'wsse'    => true,
+                ),
+            ),
+        ));
+    
 
 ¡Enhorabuena!  ¡Has escrito tu propio proveedor de autenticación de seguridad!
 
@@ -401,7 +433,7 @@ En primer lugar, tendrás que editar ``WsseFactory`` y definir la nueva opción 
         }
     }
 
-Ahora, en el método ``create`` de la factoría, el argumento ``$config`` contendrá una clave "lifetime", establecida en 5 minutos (300 segundos) a menos que se establezca en la configuración. Pasa este argumento a tu proveedor de autenticación a fin de utilizarlo.
+Ahora, en el método ``create`` de la factoría, el argumento ``$config`` contendrá una clave ``'lifetime'``, establecida en 5 minutos (300 segundos) a menos que se establezca en la configuración. Pasa este argumento a tu proveedor de autenticación a fin de utilizarlo.
 
 .. code-block:: php
 
@@ -427,13 +459,38 @@ Ahora, en el método ``create`` de la factoría, el argumento ``$config`` conten
 
 La vida útil de cada petición *WSSE* ahora es configurable y se puede ajustar a cualquier valor deseado por el cortafuegos.
 
-.. code-block:: yaml
+.. configuration-block::
 
-    security:
-        firewalls:
-            wsse_secured:
-                pattern:   /api/.*
-                wsse:      { lifetime: 30 }
+    .. code-block:: yaml
+
+        security:
+            firewalls:
+                wsse_secured:
+                    pattern:   /api/.*
+                    wsse:      { lifetime: 30 }
+
+    .. code-block:: xml
+
+        <config>
+            <firewall name="wsse_secured"
+                pattern="/api/.*"
+            >
+                <wsse lifetime="30" />
+            </firewall>
+        </config>
+
+    .. code-block:: php
+
+        $container->loadFromExtension('security', array(
+            'firewalls' => array(
+                'wsse_secured' => array(
+                    'pattern' => '/api/.*',
+                    'wsse'    => array(
+                        'lifetime' => 30,
+                    ),
+                ),
+            ),
+        ));
 
 ¡El resto depende de ti! Todos los elementos de configuración correspondientes se pueden definir en la factoría y consumirse o pasarse a las otras clases en el contenedor.
 

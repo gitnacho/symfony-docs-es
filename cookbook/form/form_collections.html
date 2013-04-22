@@ -26,7 +26,7 @@
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
     <link rel="up" title="Formularios" href="index.html" />
     <link rel="next" title="Cómo crear un tipo de campo personalizado para formulario" href="create_custom_field_type.html" />
-    <link rel="prev" title="Cómo generar formularios dinámicamente usando eventos del formulario" href="dynamic_form_generation.html" /> 
+    <link rel="prev" title="Cómo modificar formularios dinámicamente usando eventos de formulario" href="dynamic_form_modification.html" /> 
   </head>
   <body>
   <div class="imalogo">
@@ -59,7 +59,7 @@
           <a href="create_custom_field_type.html" title="Cómo crear un tipo de campo personalizado para formulario"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
-          <a href="dynamic_form_generation.html" title="Cómo generar formularios dinámicamente usando eventos del formulario"
+          <a href="dynamic_form_modification.html" title="Cómo modificar formularios dinámicamente usando eventos de formulario"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
           <li><a href="../index.html" >Recetario</a> &raquo;</li>
@@ -316,8 +316,8 @@ Esto se hará a través de un poco de <em>JavaScript</em>.</p>
     <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">);</span>
 
     <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;tags&#39;</span><span class="p">,</span> <span class="s1">&#39;collection&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">TagType</span><span class="p">(),</span>
-        <span class="s1">&#39;allow_add&#39;</span> <span class="o">=&gt;</span> <span class="k">true</span><span class="p">,</span>
+        <span class="s1">&#39;type&#39;</span>         <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">TagType</span><span class="p">(),</span>
+        <span class="s1">&#39;allow_add&#39;</span>    <span class="o">=&gt;</span> <span class="k">true</span><span class="p">,</span>
         <span class="s1">&#39;by_reference&#39;</span> <span class="o">=&gt;</span> <span class="k">false</span><span class="p">,</span>
     <span class="p">));</span>
 <span class="p">}</span>
@@ -361,7 +361,7 @@ Esto significa que allí puedes llamar a <tt class="docutils literal"><span clas
 Para simplificar las cosas, este ejemplo usa <em>jQuery</em> y supone que lo has incluido en algún lugar de tu página.</p>
 <p>Añade un elemento <tt class="docutils literal"><span class="pre">&lt;script&gt;</span></tt> en algún lugar de tu página para que puedas empezar escribir algún <em>JavaScript</em>.</p>
 <p>En primer lugar, añade un enlace a la parte inferior de la lista de <tt class="docutils literal"><span class="pre">«tags»</span></tt> a través de <em>JavaScript</em>. En segundo lugar, vincula el evento <tt class="docutils literal"><span class="pre">click</span></tt> de ese enlace para que puedas añadir una nueva etiqueta al formulario (con <tt class="docutils literal"><span class="pre">addTagForm</span></tt> tal como se muestra a continuación):</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span class="c1">// Obtiene el div que contiene la colección de etiquetas</span>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="c1">// Obtiene la ul que contiene la colección de etiquetas</span>
 <span class="kd">var</span> <span class="nx">collectionHolder</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;ul.tags&#39;</span><span class="p">);</span>
 
 <span class="c1">// configura una enlace &quot;Agregar una etiqueta&quot;</span>
@@ -371,6 +371,10 @@ Para simplificar las cosas, este ejemplo usa <em>jQuery</em> y supone que lo has
 <span class="nx">jQuery</span><span class="p">(</span><span class="nb">document</span><span class="p">).</span><span class="nx">ready</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
     <span class="c1">// Añade el ancla &quot;Agregar una etiqueta&quot; y las etiquetas li y ul</span>
     <span class="nx">collectionHolder</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="nx">$newLinkLi</span><span class="p">);</span>
+
+    <span class="c1">// cuenta las entradas actuales en el formulario (p. ej. 2),</span>
+    <span class="c1">// la usa como índice al insertar un nuevo elemento (p. ej. 2)</span>
+    <span class="nx">collectionHolder</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="s1">&#39;index&#39;</span><span class="p">,</span> <span class="nx">collectionHolder</span><span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="s1">&#39;:input&#39;</span><span class="p">).</span><span class="nx">length</span><span class="p">);</span>
 
     <span class="nx">$addTagLink</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;click&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
         <span class="c1">// evita crear el enlace con una &quot;#&quot; en la URL</span>
@@ -387,16 +391,18 @@ Para simplificar las cosas, este ejemplo usa <em>jQuery</em> y supone que lo has
 <span class="versionmodified">Nuevo en la versión 2.1: </span>El marcador de posición cambió de nombre de <tt class="docutils literal"><span class="pre">$$name$$</span></tt> a <tt class="docutils literal"><span class="pre">__name__</span></tt> en <em>Symfony 2.1</em></p>
 <p>El código real necesario para hacer que todo esto trabaje puede variar un poco, pero aquí está un ejemplo:</p>
 <div class="highlight-javascript"><pre>function addTagForm(collectionHolder, $newLinkLi) {
-    // Obtiene el data-prototype explicado anteriormente
-    var prototype = collectionHolder.attr('data-prototype');
+    // Obtiene los datos del prototipo explicado anteriormente
+    var prototype = collectionHolder.data('prototype');
 
-    // cuenta las entradas actuales en el formulario (p. ej. 2),
-    // lo usa como el nuevo índice (p. ej. 2)
-    var newIndex = collectionHolder.find(':input').length;
+    // Consigue el nuevo índice
+    var index = collectionHolder.data('index');
 
-    // Reemplaza el '__name__' en el prototipo HTML para que
+    // Sustituye el '__name__' en el prototipo HTML para que
     // en su lugar sea un número basado en cuántos elementos hay
-    var newForm = prototype.replace(/__name__/g, newIndex);
+    var newForm = prototype.replace(/__name__/g, index);
+
+    // Incrementa en uno el índice para el siguiente elemento
+    collectionHolder.data('index', index + 1);
 
     // Muestra el formulario en la página en un elemento li,
     \\ antes del enlace 'Agregar una etiqueta'
@@ -437,6 +443,23 @@ Para simplificar las cosas, este ejemplo usa <em>jQuery</em> y supone que lo has
             <span class="l-Scalar-Plain">targetEntity</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Tag</span>
             <span class="l-Scalar-Plain">cascade</span><span class="p-Indicator">:</span>      <span class="p-Indicator">[</span><span class="nv">persist</span><span class="p-Indicator">]</span>
 </pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;!-- src/Acme/TaskBundle/Resources/config/doctrine/Task.orm.xml --&gt;
+&lt;doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                    http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd"&gt;
+
+    &lt;entity name="Acme\TaskBundle\Entity\Task" ...&gt;
+        &lt;!-- ... --&gt;
+        &lt;one-to-many field="tags" target-entity="Tag"&gt;
+            &lt;cascade&gt;
+                &lt;cascade-persist /&gt;
+            &lt;/cascade&gt;
+        &lt;/one-to-many&gt;
+    &lt;/entity&gt;
+&lt;/doctrine-mapping&gt;</pre>
 </div>
 </li>
 </ul>
@@ -489,8 +512,8 @@ La solución es similar a permitir la adición de etiquetas.</p>
     <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">);</span>
 
     <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;tags&#39;</span><span class="p">,</span> <span class="s1">&#39;collection&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">TagType</span><span class="p">(),</span>
-        <span class="s1">&#39;allow_add&#39;</span> <span class="o">=&gt;</span> <span class="k">true</span><span class="p">,</span>
+        <span class="s1">&#39;type&#39;</span>         <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">TagType</span><span class="p">(),</span>
+        <span class="s1">&#39;allow_add&#39;</span>    <span class="o">=&gt;</span> <span class="k">true</span><span class="p">,</span>
         <span class="s1">&#39;allow_delete&#39;</span> <span class="o">=&gt;</span> <span class="k">true</span><span class="p">,</span>
         <span class="s1">&#39;by_reference&#39;</span> <span class="o">=&gt;</span> <span class="k">false</span><span class="p">,</span>
     <span class="p">));</span>
@@ -630,7 +653,7 @@ A menos que tengas una relación <tt class="docutils literal"><span class="pre">
           <a href="create_custom_field_type.html" title="Cómo crear un tipo de campo personalizado para formulario"
              >siguiente</a> |</li>
         <li class="right" >
-          <a href="dynamic_form_generation.html" title="Cómo generar formularios dinámicamente usando eventos del formulario"
+          <a href="dynamic_form_modification.html" title="Cómo modificar formularios dinámicamente usando eventos de formulario"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
           <li><a href="../index.html" >Recetario</a> &raquo;</li>
@@ -645,7 +668,7 @@ A menos que tengas una relación <tt class="docutils literal"><span class="pre">
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

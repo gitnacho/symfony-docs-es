@@ -224,6 +224,8 @@ La caché del navegador es una caché <em>privada</em>, los recursos memorizados
 <p><em>Symfony</em> proporciona una abstracción de la cabecera <tt class="docutils literal"><span class="pre">Cache-Control</span></tt> para hacer más manejable su creación:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// ...</span>
 
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Response</span><span class="p">;</span>
+
 <span class="nv">$response</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Response</span><span class="p">();</span>
 
 <span class="c1">// marca la respuesta como pública o privada</span>
@@ -381,7 +383,7 @@ En otras palabras, esta ahorra ancho de banda, pero no ciclos de la <em>CPU</em>
         <span class="k">return</span> <span class="nv">$response</span><span class="p">;</span>
     <span class="p">}</span>
 
-    <span class="c1">// ... hace más trabajo para poblar la respuesta  con el contenido completo</span>
+    <span class="c1">// ... hace más trabajo para poblar la respuesta con el contenido completo</span>
 
     <span class="k">return</span> <span class="nv">$response</span><span class="p">;</span>
 <span class="p">}</span>
@@ -398,7 +400,9 @@ Así es como se comunican el cliente y el servidor entre ellos y deciden si el r
 <span id="optimizing-cache-validation"></span><span id="index-13"></span><h3>Optimizando tu código con validación<a class="headerlink" href="#optimizando-tu-codigo-con-validacion" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>El objetivo principal de cualquier estrategia de memoria caché es aligerar la carga de la aplicación.
 Dicho de otra manera, cuanto menos hagas en tu aplicación para devolver una respuesta 304, mejor. El método <tt class="docutils literal"><span class="pre">Response::isNotModified()</span></tt> hace exactamente eso al exponer un patrón simple y eficiente:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">showAction</span><span class="p">(</span><span class="nv">$articleSlug</span><span class="p">)</span>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Response</span><span class="p">;</span>
+
+<span class="k">public</span> <span class="k">function</span> <span class="nf">showAction</span><span class="p">(</span><span class="nv">$articleSlug</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="c1">// Obtiene la mínima información para calcular la ETag</span>
     <span class="c1">// o el valor de Last-Modified (basado en la petición,</span>
@@ -532,7 +536,7 @@ Una etiqueta <em>ESI</em> representa un fragmento de página que se puede recupe
 </li>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-    <span class="c1">// ...</span>
+    <span class="o">...</span><span class="p">,</span>
     <span class="s1">&#39;esi&#39;</span>    <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;enabled&#39;</span> <span class="o">=&gt;</span> <span class="k">true</span><span class="p">),</span>
 <span class="p">));</span>
 </pre></div>
@@ -567,21 +571,20 @@ Esto se hace a través del ayudante <tt class="docutils literal"><span class="pr
 </li>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span>
     <span class="k">new</span> <span class="nx">ControllerReference</span><span class="p">(</span><span class="s1">&#39;...:news&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;max&#39;</span> <span class="o">=&gt;</span> <span class="mi">5</span><span class="p">)),</span>
-    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;strategy&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;esi&#39;</span><span class="p">))</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;renderer&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;esi&#39;</span><span class="p">))</span>
 <span class="cp">?&gt;</span><span class="x"></span>
 
 <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span>
     <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;router&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">generate</span><span class="p">(</span><span class="s1">&#39;latest_news&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;max&#39;</span> <span class="o">=&gt;</span> <span class="mi">5</span><span class="p">),</span> <span class="k">true</span><span class="p">),</span>
-    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;strategy&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;esi&#39;</span><span class="p">)</span>
+    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;renderer&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;esi&#39;</span><span class="p">),</span>
 <span class="p">)</span> <span class="cp">?&gt;</span><span class="x"></span>
 </pre></div>
 </div>
 </li>
 </ul>
 </div>
-<p>Al usar la estrategia de reproducción <tt class="docutils literal"><span class="pre">esi</span></tt> (vía la función <tt class="docutils literal"><span class="pre">render_esi</span></tt> de <em>Twig</em>), le dices a <em>Symfony2</em> que la acción debería ser dibujada como una etiqueta <em>ESI</em>.
-Tal vez te preguntes por qué querrías usar un ayudante en vez de escribir la etiqueta <em>ESI</em> tú mismo. Esto es porque utilizar un ayudante hace que tu aplicación trabaje incluso si no hay instalada ninguna pasarela de caché.</p>
-<p>Al utilizar la función <tt class="docutils literal"><span class="pre">render</span></tt> predefinida (o configurar la estrategia a <tt class="docutils literal"><span class="pre">default</span></tt>), <em>Symfony2</em> fusiona el contenido de la página incluida con la principal antes de enviar la respuesta al cliente. Pero si utilizas la estrategia <tt class="docutils literal"><span class="pre">esi</span></tt> (es decir, llamas a <tt class="docutils literal"><span class="pre">render_esi</span></tt>), <em>y</em> si <em>Symfony2</em> detecta que está hablando a una pasarela de caché que cuente con soporte <em>ESI</em>, genera una etiqueta que incluya <em>ESI</em>. Pero si no hay ninguna pasarela de caché o si no cuenta con soporte <em>ESI</em>, <em>Symfony2</em> sólo fusionará el contenido de la página incluida dentro de la principal tal como lo haría si hubieras utilizado <tt class="docutils literal"><span class="pre">render</span></tt>.</p>
+<p>Al utilizar el <tt class="docutils literal"><span class="pre">esi</span></tt> reproducido (vía la función <tt class="docutils literal"><span class="pre">render_esi</span></tt> de <em>Twig</em>), le dices a <em>Symfony2</em> que la acción se debería reproducir como una etiqueta <em>ESI</em>. Te podrías estar preguntando por qué querrías utilizar un ayudante en vez de sólo escribir la etiqueta <em>ESI</em> directamente. Esto se debe a que al utilizar un ayudante haces que tu aplicación trabaje incluso si no tienes instalada ninguna pasarela de caché.</p>
+<p>Al utilizar la función <tt class="docutils literal"><span class="pre">render</span></tt> predefinida (o configurar la estrategia a <tt class="docutils literal"><span class="pre">inline</span></tt>), <em>Symfony2</em> fusiona el contenido de la página incluida con la principal antes de enviar la respuesta al cliente. Pero si utilizas la estrategia <tt class="docutils literal"><span class="pre">esi</span></tt> (es decir, llamas a <tt class="docutils literal"><span class="pre">render_esi</span></tt>), <em>y</em> si <em>Symfony2</em> detecta que está hablando con una pasarela de caché que cuenta con soporte <em>ESI</em>, genera una etiqueta que incluye <em>ESI</em>. Pero si no hay ninguna pasarela de caché o si no cuenta con soporte <em>ESI</em>, <em>Symfony2</em> sólo fusionará el contenido de la página incluida dentro de la principal tal como lo haría si hubieras utilizado <tt class="docutils literal"><span class="pre">render</span></tt>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
 <p class="last"><em>Symfony2</em> detecta si una pasarela caché admite <em>ESI</em> a través de otra especificación Akamaï que fuera de la caja es compatible con el delegado inverso de <em>Symfony2</em>.</p>
@@ -596,44 +599,37 @@ Tal vez te preguntes por qué querrías usar un ayudante en vez de escribir la e
 </pre></div>
 </div>
 <p>Con <em>ESI</em>, la caché de la página completa será válida durante 600 segundos, pero la caché del componente de noticias sólo dura 60 segundos.</p>
-<p>Cuándo utilizas una referencia al controlador, la etiqueta <em>ESI</em> se debe referir a la acción incorporada como una <em>URL</em> accesible a modo de que la pasarela de caché la pueda recuperar independientemente del resto de la página. Naturalmente, no puedes acceder a una acción vía una <em>URL</em> a no ser que tengas una ruta que apunte a ella. <em>Symfony2</em> cuida de esto a través de una ruta genérica. Para que trabaje correctamente la etiqueta que incluye <em>ESI</em>, tienes que definir la ruta <tt class="docutils literal"><span class="pre">_proxy</span></tt>:</p>
+<p>Cuándo utilizas una referencia al controlador, la etiqueta <em>ESI</em> se debe referir a la acción incorporada como una <em>URL</em> accesible a modo de que la pasarela de caché la pueda recuperar independientemente del resto de la página. <em>Symfony2</em> cuida de generar una <em>URL</em> única para cualquier referencia de controlador y es capaz de enrutarla correctamente gracias a un escucha que debes habilitar en tu configuración:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/routing.yml</span>
-<span class="l-Scalar-Plain">_proxy</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">resource</span><span class="p-Indicator">:</span> <span class="s">&quot;@FrameworkBundle/Resources/config/routing/proxy.xml&quot;</span>
-    <span class="l-Scalar-Plain">prefix</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">/proxy</span>
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">framework</span><span class="p-Indicator">:</span>
+    <span class="c1"># ...</span>
+    <span class="l-Scalar-Plain">fragments</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">path</span><span class="p-Indicator">:</span> <span class="nv">/_fragment</span> <span class="p-Indicator">}</span>
 </pre></div>
 </div>
 </li>
-<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/routing.xml --&gt;</span>
-<span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; ?&gt;</span>
-
-<span class="nt">&lt;routes</span> <span class="na">xmlns=</span><span class="s">&quot;http://symfony.com/schema/routing&quot;</span>
-    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
-    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd&quot;</span><span class="nt">&gt;</span>
-
-    <span class="nt">&lt;import</span> <span class="na">resource=</span><span class="s">&quot;@FrameworkBundle/Resources/config/routing/proxy.xml&quot;</span> <span class="na">prefix=</span><span class="s">&quot;/proxy&quot;</span> <span class="nt">/&gt;</span>
-<span class="nt">&lt;/routes&gt;</span>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;framework:config&gt;</span>
+    <span class="nt">&lt;framework:fragments</span> <span class="na">path=</span><span class="s">&quot;/_fragment&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/framework:config&gt;</span>
 </pre></div>
 </div>
 </li>
-<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/routing.php</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Routing\RouteCollection</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\Routing\Route</span><span class="p">;</span>
-
-<span class="nv">$collection</span><span class="o">-&gt;</span><span class="na">addCollection</span><span class="p">(</span><span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">import</span><span class="p">(</span><span class="s1">&#39;@FrameworkBundle/Resources/config/routing/proxy.xml&#39;</span><span class="p">,</span> <span class="s1">&#39;/proxy&#39;</span><span class="p">));</span>
-
-<span class="k">return</span> <span class="nv">$collection</span><span class="p">;</span>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="c1">// ...</span>
+    <span class="s1">&#39;fragments&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;path&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;/_fragment&#39;</span><span class="p">),</span>
+<span class="p">));</span>
 </pre></div>
 </div>
 </li>
 </ul>
 </div>
-<p>Una gran ventaja de esta estrategia de memoria caché es que puedes hacer tu aplicación tan dinámica como sea necesario y al mismo tiempo, tocar la aplicación lo menos posible.</p>
+<p>Una gran ventaja de estrategia <em>ESI</em> es que puedes hacer tu aplicación tan dinámica como sea necesario y al mismo tiempo, tocar la aplicación lo menos posible.</p>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
-<p class="last">La ruta delegada no apunta a un controlador real. En cambio, es manejada por una clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\EventListener\RouterProxyListener</span></tt> interna. Este escucha sólo responde a direcciones <em>IP</em> locales o delegados confiables.</p>
+<p class="last">El escucha sólo responde a direcciones <em>IP</em> locales o a delegados inversos confiables.</p>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
@@ -661,6 +657,8 @@ Tal vez te preguntes por qué querrías usar un ayudante en vez de escribir la e
 
 <span class="c1">// ...</span>
 <span class="k">use</span> <span class="nx">Symfony\Bundle\FrameworkBundle\HttpCache\HttpCache</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Request</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Response</span><span class="p">;</span>
 
 <span class="k">class</span> <span class="nc">AppCache</span> <span class="k">extends</span> <span class="nx">HttpCache</span>
 <span class="p">{</span>
@@ -732,7 +730,7 @@ Tal vez te preguntes por qué querrías usar un ayudante en vez de escribir la e
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

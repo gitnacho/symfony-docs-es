@@ -71,39 +71,80 @@ Cada tipo de campo está representado por un fragmento de la plantilla, el cual 
 
 En este caso, debido a que el campo padre es ``choice``, no *necesitas* hacer ningún trabajo debido a que el tipo de campo personalizado automáticamente lo dibuja como el tipo ``choice``. Pero por el bien de este ejemplo, supón que al «expandir» tu campo (es decir, botones de radio o casillas de verificación, en vez de un campo de selección), lo quieres dibujar siempre en un elemento ``ul``. En la plantilla del tema de tu formulario (consulta el enlace de arriba para más detalles), crea un bloque ``gender_widget`` para manejar esto:
 
-.. code-block:: html+jinja
+.. configuration-block::
 
-    {# src/Acme/DemoBundle/Resources/views/Form/fields.html.twig #}
-    {% block gender_widget %}
-        {% spaceless %}
-            {% if expanded %}
-                <ul {{ block('widget_container_attributes') }}>
-                {% for child in form %}
-                    <li>
-                        {{ form_widget(child) }}
-                        {{ form_label(child) }}
-                    </li>
-                {% endfor %}
-                </ul>
-            {% else %}
-                {# simplemente deja que el elemento gráfico 'choice' reproduzca la etiqueta select #}
-                {{ block('choice_widget') }}
-            {% endif %}
-        {% endspaceless %}
-    {% endblock %}
+    .. code-block:: html+jinja
+
+        {# src/Acme/DemoBundle/Resources/views/Form/fields.html.twig #}
+        {% block gender_widget %}
+            {% spaceless %}
+                {% if expanded %}
+                    <ul {{ block('widget_container_attributes') }}>
+                    {% for child in form %}
+                        <li>
+                            {{ form_widget(child) }}
+                            {{ form_label(child) }}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    {# simplemente deja que el elemento gráfico 'choice' reproduzca la etiqueta select #}
+                    {{ block('choice_widget') }}
+                {% endif %}
+            {% endspaceless %}
+        {% endblock %}
+
+    .. code-block:: html+php
+
+        <!-- src/Acme/DemoBundle/Resources/views/Form/gender_widget.html.twig -->
+        <?php if ($expanded) : ?>
+            <ul <?php $view['form']->block($form, 'widget_container_attributes') ?>>
+            <?php foreach ($form as $child) : ?>
+                <li>
+                    <?php echo $view['form']->widget($child) ?>
+                    <?php echo $view['form']->label($child) ?>
+                </li>
+            <?php endforeach ?>
+            </ul>
+        <?php else : ?>
+            <!-- simplemente deja que el elemento gráfico 'choice' reproduzca la etiqueta select -->
+            <?php echo $view['form']->renderBlock('choice_widget') ?>
+        <?php endif ?>
 
 .. note::
 
     Asegúrate que utilizas el prefijo correcto para el elemento gráfico. En este ejemplo, el nombre debe set ``gender_widget``, de acuerdo con el valor devuelto por ``getName``.
     Además, el archivo de configuración principal debe apuntar a la plantilla del formulario personalizado de modo que este se utilice al reproducir todos los formularios.
 
-    .. code-block:: yaml
+    .. configuration-block::
 
-        # app/config/config.yml
-        twig:
-            form:
-                resources:
-                    - 'AcmeDemoBundle:Form:fields.html.twig'
+        .. code-block:: yaml
+
+            # app/config/config.yml
+            twig:
+                form:
+                    resources:
+                        - 'AcmeDemoBundle:Form:fields.html.twig'
+
+        .. code-block:: xml
+
+            <!-- app/config/config.xml -->
+            <twig:config>
+                <twig:form>
+                    <twig:resource>AcmeDemoBundle:Form:fields.html.twig</twig:resource>
+                </twig:form>
+            </twig:config>
+
+        .. code-block:: php
+
+            // app/config/config.php
+            $container->loadFromExtension('twig', array(
+                'form' => array(
+                    'resources' => array(
+                        'AcmeDemoBundle:Form:fields.html.twig',
+                    ),
+                ),
+            ));
 
 Usando el tipo de campo
 -----------------------
@@ -154,6 +195,12 @@ Pero si necesitas acceder a la configuración de una conexión base de datos, o 
             </parameter>
         </parameters>
 
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->setParameter('genders.m', 'Male');
+        $container->setParameter('genders.f', 'Female');
+
 Para utilizar el parámetro, define tu tipo de campo personalizado como un servicio, inyectando el valor del parámetro ``genders`` como el primer argumento de la función ``__construct`` que vas a crear:
 
 .. configuration-block::
@@ -177,11 +224,26 @@ Para utilizar el parámetro, define tu tipo de campo personalizado como un servi
             <tag name="form.type" alias="gender" />
         </service>
 
+    .. code-block:: php
+
+        // src/Acme/DemoBundle/Resources/config/services.php
+        use Symfony\Component\DependencyInjection\Definition;
+
+        $container
+            ->setDefinition('acme_demo.form.type.gender', new Definition(
+                'Acme\DemoBundle\Form\Type\GenderType',
+                array('%genders%')
+            ))
+            ->addTag('form.type', array(
+                'alias' => 'gender',
+            ))
+        ;
+
 .. tip::
 
     Asegúrate de que estás importando el archivo de servicios. Consulta :ref:`service-container-imports-directive` para más detalles.
 
-Asegúrate de que la etiqueta del atributo ``alias`` corresponde con el valor devuelto por el método ``getName`` definido anteriormente. Verás la importancia de esto en un momento cuando utilices el tipo de campo personalizado. Pero en primer lugar, agrega un argumento ``GenderType`` al ``__construct``, el cual recibe la configuración del género::
+Asegúrate de que la etiqueta del atributo ``alias`` corresponde con el valor devuelto por el método ``getName`` definido anteriormente. Verás la importancia de esto en un momento cuando utilices el tipo de campo personalizado. Pero primero, agrega un método ``__construct``, el cual recibe la configuración del género::
 
     // src/Acme/DemoBundle/Form/Type/GenderType.php
     namespace Acme\DemoBundle\Form\Type;
@@ -190,6 +252,7 @@ Asegúrate de que la etiqueta del atributo ``alias`` corresponde con el valor de
 
     // ...
 
+    // ...
     class GenderType extends AbstractType
     {
         private $genderChoices;

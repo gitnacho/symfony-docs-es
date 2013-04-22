@@ -57,30 +57,35 @@ Además de tu arreglo de variables personalizadas, se añade una clave ``_route`
 Definiendo rutas
 ~~~~~~~~~~~~~~~~
 
-Una definición de ruta completa como máximo puede contener cinco partes:
+Una definición de ruta completa puede contener hasta siete partes:
 
-1. El patrón de la ruta *URL*. Este se compara con la *URL* pasada al ``RequestContext``, y puede contener comodines marcadores de posición nombrados (por ejemplo, ``{placeholders}``) para que coincidan con elementos dinámicos en la *URL*.
+1. El trayecto a la *URL* de la ruta. Este se compara con la *URL* pasada al ``RequestContext``, y puede contener comodines marcadores de posición nombrados (por ejemplo, ``{placeholders}``) para que coincidan con elementos dinámicos en la *URL*.
 
-2. Un arreglo de valores predeterminados. Esta contiene un conjunto de valores arbitrarios que serán devueltos cuando la petición coincide con la ruta.
+2. Un arreglo de valores predeterminados. Esta contiene un conjunto de valores arbitrarios que serán devueltos cuando la petición coincida con la ruta.
 
 3. Un arreglo de requisitos. Estos definen las restricciones para los valores de los marcadores de posición como las expresiones regulares.
 
-4. Un arreglo de opciones. Estas contienen la configuración interna de la ruta y son las menos necesarias comúnmente.
+4. Un arreglo de opciones. Estas contienen la configuración interna de la ruta y comúnmente son las menos necesarias.
 
-5. Un patrón «nombre del servidor». Este se emparejará contra el nombre del servidor de la petición.
-Ve :doc:`/components/routing/hostname_pattern` para más detalles.
+5. Un servidor. Este se empareja contra el servidor de la petición.  Ve :doc:`/components/routing/hostname_pattern` para más detalles.
+
+6. Un arreglo de esquemas. Estos imponen un determinado esquema *HTTP* (``http``, ``https``).
+
+7. Un arreglo de métodos. Estos fuerzan un determinado método de petición *HTTP* (``HEAD``, ``GET``, ``POST``, ...).
 
 .. versionadded:: 2.2
-    El el patrón «nombre del servidor» se añadió en *Symfony 2.2*.
+    El soporte necesario para emparejar con el servidor se añadió en *Symfony* 2.2
 
 Veamos la siguiente ruta, que combina varias de estas ideas::
 
    $route = new Route(
-       '/archive/{month}', // path
-       array('controller' => 'showArchive'), // default values
-       array('month' => '[0-9]{4}-[0-9]{2}', 'subdomain' => 'www|m'), // requirements
-       array(), // options
-       '{subdomain}.example.com' // hostname
+       '/archive/{month}', // ruta
+       array('controller' => 'showArchive'), // valores predefinidos
+       array('month' => '[0-9]{4}-[0-9]{2}', 'subdomain' => 'www|m'), // requisitos
+       array(), // opciones
+       '{subdomain}.example.com', // servidor
+       array(), // esquemas
+       array() // métodos
    );
 
    // ...
@@ -98,19 +103,6 @@ Veamos la siguiente ruta, que combina varias de estas ideas::
 
 En este caso, la ruta coincide con ``/archive/2012-01``, porque el comodín ``{month}`` coincide con el comodín de la expresión regular suministrada. Sin embargo, ``/archive/f oo`` *no* coincide, porque el comodín del mes «foo» no concuerda.
 
-Además de las restricciones de la expresión regular, hay dos requisitos especiales que puedes definir:
-
-* el ``_method`` impone un determinado método de la petición *HTTP* (``HEAD``, ``GET``, ``POST``, ...)
-* ``_scheme`` impone un determinado esquema *HTTP* (``http``, ``https``)
-
-Por ejemplo, la siguiente ruta sólo acepta peticiones a ``/foo`` con el método ``POST`` y una conexión segura::
-
-   $route = new Route(
-       '/foo',
-       array(),
-       array('_method' => 'post', '_scheme' => 'https' )
-   );
-
 .. tip::
 
     Si quieres hacer coincidir todas las *URL* que comiencen con una cierta ruta y terminan en un sufijo arbitrario puedes utilizar la siguiente definición de ruta::
@@ -125,22 +117,25 @@ Usando prefijos
 ~~~~~~~~~~~~~~~
 
 Puedes agregar rutas u otras instancias de :class:`Symfony\\Component\\Routing\\RouteCollection` a *otra* colección.
-De esta manera puedes construir un árbol de rutas. Adicionalmente puedes definir un prefijo, predeterminar requisitos y/u opciones, y el patrón de nombre del servidor a todas las rutas de un subárbol::
+De esta manera puedes construir un árbol de rutas. Además, puedes definir un prefijo, requisitos predeterminados, opciones predefinidas y servidores a todas las rutas de un subárbol con el método :method:`Symfony\\Component\\Routing\\RouteCollection::addPrefix`::
 
     $rootCollection = new RouteCollection();
 
     $subCollection = new RouteCollection();
     $subCollection->add(...);
     $subCollection->add(...);
-
-    $rootCollection->addCollection(
-        $subCollection,
-        '/prefix', // prefix
-        array('_scheme' => 'https'), // defaults
-        array(), // requirements
-        array(), // options
-        'admin.example.com', // hostname
+    $subCollection->addPrefix(
+        '/prefix', // prefijo
+        array(), // requisitos
+        array(), // opciones
+        'admin.example.com', // servidor
+        array('https') // esquemas
     );
+
+    $rootCollection->addCollection($subCollection);
+
+.. versionadded:: 2.2
+    El método ``addPrefix`` se añadió en *Symfony* 2.2. Este era parte del método ``addCollection`` en versiones anteriores.
 
 Configurando los parámetros de la Petición
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -180,13 +175,13 @@ Si bien la :class:`Symfony\\Component\\Routing\\Matcher\\UrlMatcher` trata de en
     $generator = new UrlGenerator($routes, $context);
 
     $url = $generator->generate('show_post', array(
-        'slug' => 'my-blog-post'
+        'slug' => 'my-blog-post',
     ));
     // /show/my-blog-post
 
 .. note::
 
-    Si has definido el requisito ``_scheme``, se genera una *URL* absoluta si el esquema del :class:`Symfony\\Component\\Routing\\RequestContext` actual no coincide con el requisito.
+    Si definiste un esquema, se genera una *URL* absoluta si el esquema de la clase :class:`Symfony\\Component\\Routing\\RequestContext` actual no concuerda con el requisito.
 
 Cargando rutas desde un archivo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -203,11 +198,11 @@ Si estás usando el ``YamlFileLoader``, entonces las definiciones de ruta tienen
 
     # routes.yml
     route1:
-        pattern: /foo
+        path:     /foo
         defaults: { _controller: 'MyController::fooAction' }
 
     route2:
-        pattern: /foo/bar
+        path:     /foo/bar
         defaults: { _controller: 'MyController::foobarAction' }
 
 Para cargar este archivo, puedes utilizar el siguiente código. Este asume que tu archivo :file:`routes.yml` está en el mismo directorio que el código de abajo::

@@ -1,0 +1,250 @@
+.. index::
+    single: PropertyAccess
+    single: Componentes; PropertyAccess
+
+El componente ``PropertyAccess``
+================================
+
+    El componente ``PropertyAccess`` proporciona una función para leer y escribir de/a un objeto o arreglo usando una sencilla notación de cadena.
+
+.. versionadded:: 2.2
+    El componente ``PropertyAccess`` es nuevo para *Symfony 2.2*. Anteriormente, la clase ``PropertyPath`` se localizaba en el componente ``Form``.
+
+Instalando
+----------
+
+Puedes instalar el componente en dos diferentes maneras:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/propertyaccess);
+* :doc:`Instalándolo vía Composer </components/using_components>` (``symfony/property-access`` en `Packagist`_).
+
+Usando
+------
+
+El punto de entrada de este componente es el método fábrica :method:`PropertyAccess::getPropertyAccessor<Symfony\\Component\\PropertyAccess\\PropertyAccess::getPropertyAccessor>`. Esta fábrica creará una nueva instancia de la clase :class:`Symfony\\Component\\PropertyAccess\\PropertyAccessor` con la configuración predefinida::
+
+    use Symfony\Component\PropertyAccess\PropertyAccess;
+
+    $accessor = PropertyAccess::getPropertyAccessor();
+
+Leyendo desde arreglos
+----------------------
+
+Puedes leer un arreglo con el método :method:`PropertyAccessor::getValue <Symfony\\Component\\PropertyAccess\\PropertyAccessor::getValue>`. Esto se hace utilizando la notación de índice utilizada en *PHP*::
+
+    // ...
+    $person = array(
+        'first_name' => 'Wouter',
+    );
+
+    echo $accessor->getValue($person, '[first_name]'); // 'Wouter'
+    echo $accessor->getValue($person, '[age]'); // null
+
+Como puedes ver, el método regresará ``null`` si el índice no existe.
+
+También puedes utilizar arreglos multidimensionales::
+
+    // ...
+    $persons = array(
+        array(
+            'first_name' => 'Wouter',
+        ),
+        array(
+            'first_name' => 'Ryan',
+        )
+    );
+
+    echo $accessor->getValue($persons, '[0][first_name]'); // 'Wouter'
+    echo $accessor->getValue($persons, '[1][first_name]'); // 'Ryan'
+
+Leyendo Objetos
+---------------
+
+El método ``getValue`` es un método muy robusto, y puedes ver todas sus características al trabajar con objetos.
+
+Accediendo a propiedades públicas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Para leer propiedades, usa la notación de «punto»::
+
+    // ...
+    $person = new Person();
+    $person->firstName = 'Wouter';
+
+    echo $accessor->getValue($person, 'firstName'); // 'Wouter'
+
+    $child = new Person();
+    $child->firstName = 'Bar';
+    $person->children = array($child);
+
+    echo $accessor->getValue($person, 'children[0].firstName'); // 'Bar'
+
+.. caution::
+
+    Acceder a las propiedades públicas es la última opción utilizada por ``PropertyAccessor``.
+    Este intenta acceder al valor utilizando los siguientes métodos primero antes de utilizar la propiedad directamente. Por ejemplo, si tienes una propiedad pública que tiene un método captador, lo utiliza.
+
+Usando Captadores
+~~~~~~~~~~~~~~~~~
+
+El método ``getValue`` también apoya la lectura utilizando captadores. El método será creado utilizando convenciones de nomenclatura comunes para los captadores. Este intercala mayúsculas en el nombre de la propiedad (``first_name`` se convierte en ``FirstName``) y lo prefija con ``get``. Por lo tanto el método real es ``getFirstName``::
+
+    // ...
+    class Person
+    {
+        private $firstName = 'Wouter';
+
+        public function getFirstName()
+        {
+            return $this->firstName;
+        }
+    }
+
+    $person = new Person();
+
+    echo $accessor->getValue($person, 'first_name'); // 'Wouter'
+
+Using Hassers/Issers
+~~~~~~~~~~~~~~~~~~~~
+
+And it doesn't even stop there. If there is no getter found, the accessor will
+look for an isser or hasser. This method is created using the same way as
+getters, this means that you can do something like this::
+
+    // ...
+    class Person
+    {
+        private $author = true;
+        private $children = array();
+
+        public function isAuthor()
+        {
+            return $this->author;
+        }
+
+        public function hasChildren()
+        {
+            return 0 !== count($this->children);
+        }
+    }
+
+    $person = new Person();
+
+    if ($accessor->getValue($person, 'author')) {
+        echo 'He is an author';
+    }
+    if ($accessor->getValue($person, 'children')) {
+        echo 'He has children';
+    }
+
+Esto producirá: ``He is an author``
+
+Magic Methods
+~~~~~~~~~~~~~
+
+At last, ``getValue`` can use the magic ``__get`` method too::
+
+    // ...
+    class Person
+    {
+        private $children = array(
+            'wouter' => array(...),
+        );
+
+        public function __get($id)
+        {
+            return $this->children[$id];
+        }
+    }
+
+    $person = new Person();
+
+    echo $accessor->getValue($person, 'Wouter'); // array(...)
+
+Writing to Arrays
+-----------------
+
+The ``PropertyAccessor`` class can do more than just read an array, it can
+also write to an array. This can be achieved using the
+:method:`PropertyAccessor::setValue<Symfony\\Component\\PropertyAccess\\PropertyAccessor::setValue>`
+method::
+
+    // ...
+    $person = array();
+
+    $accessor->setValue($person, '[first_name]', 'Wouter');
+
+    echo $accessor->getValue($person, '[first_name]'); // 'Wouter'
+    // o
+    // echo $person['first_name']; // 'Wouter'
+
+Writing to Objects
+------------------
+
+The ``setValue`` method has the same features as the ``getValue`` method. You
+can use setters, the magic ``__set`` or properties to set values::
+
+    // ...
+    class Person
+    {
+        public $firstName;
+        private $lastName;
+        private $children = array();
+
+        public function setLastName($name)
+        {
+            $this->lastName = $name;
+        }
+
+        public function __set($property, $value)
+        {
+            $this->$property = $value;
+        }
+
+        // ...
+    }
+
+    $person = new Person();
+    
+    $accessor->setValue($person, 'firstName', 'Wouter');
+    $accessor->setValue($person, 'lastName', 'de Jong');
+    $accessor->setValue($person, 'children', array(new Person()));
+
+    echo $person->firstName; // 'Wouter'
+    echo $person->getLastName(); // 'de Jong'
+    echo $person->children; // array(Person());
+
+Mezclando objetos y arreglos
+----------------------------
+
+también puedes mezcla objetos y arreglos::
+
+    // ...
+    class Person
+    {
+        public $firstName;
+        private $children = array();
+
+        public function setChildren($children)
+        {
+            return $this->children;
+        }
+
+        public function getChildren()
+        {
+            return $this->children;
+        }
+    }
+
+    $person = new Person();
+
+    $accessor->setValue($person, 'children[0]', new Person);
+    // igual que $person->getChildren()[0] = new Person()
+
+    $accessor->setValue($person, 'children[0].firstName', 'Wouter');
+    // igual a $person->getChildren()[0]->firstName = 'Wouter'
+
+    echo 'Hello '.$accessor->getValue($person, 'children[0].firstName'); // 'Wouter'
+    // igual a $person->getChildren()[0]->firstName
+
+.. _`Packagist`: https://packagist.org/packages/symfony/property-access

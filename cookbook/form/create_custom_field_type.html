@@ -135,7 +135,9 @@ Además, si necesitas modificar la «vista» de cualquiera de tus tipos descendi
 <h2>Creando una plantilla para el campo<a class="headerlink" href="#creando-una-plantilla-para-el-campo" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Cada tipo de campo está representado por un fragmento de la plantilla, el cual se determina en parte por el valor de su método <tt class="docutils literal"><span class="pre">getName()</span></tt>. Para más información, consulta <a class="reference internal" href="form_customization.html#cookbook-form-customization-form-themes"><em>¿Qué son los temas de formulario?</em></a>.</p>
 <p>En este caso, debido a que el campo padre es <tt class="docutils literal"><span class="pre">choice</span></tt>, no <em>necesitas</em> hacer ningún trabajo debido a que el tipo de campo personalizado automáticamente lo dibuja como el tipo <tt class="docutils literal"><span class="pre">choice</span></tt>. Pero por el bien de este ejemplo, supón que al «expandir» tu campo (es decir, botones de radio o casillas de verificación, en vez de un campo de selección), lo quieres dibujar siempre en un elemento <tt class="docutils literal"><span class="pre">ul</span></tt>. En la plantilla del tema de tu formulario (consulta el enlace de arriba para más detalles), crea un bloque <tt class="docutils literal"><span class="pre">gender_widget</span></tt> para manejar esto:</p>
-<div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/DemoBundle/Resources/views/Form/fields.html.twig #}</span>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre><span class="c">{# src/Acme/DemoBundle/Resources/views/Form/fields.html.twig #}</span>
 <span class="cp">{%</span> <span class="k">block</span> <span class="nv">gender_widget</span> <span class="cp">%}</span>
     <span class="cp">{%</span> <span class="k">spaceless</span> <span class="cp">%}</span>
         <span class="cp">{%</span> <span class="k">if</span> <span class="nv">expanded</span> <span class="cp">%}</span>
@@ -155,16 +157,61 @@ Además, si necesitas modificar la «vista» de cualquiera de tus tipos descendi
 <span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
 </pre></div>
 </div>
+</li>
+<li><em>PHP</em><div class="highlight-html+php"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/DemoBundle/Resources/views/Form/gender_widget.html.twig --&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">if</span> <span class="p">(</span><span class="nv">$expanded</span><span class="p">)</span> <span class="o">:</span> <span class="cp">?&gt;</span>
+    <span class="nt">&lt;ul</span> <span class="cp">&lt;?php</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">block</span><span class="p">(</span><span class="nv">$form</span><span class="p">,</span> <span class="s1">&#39;widget_container_attributes&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="nt">&gt;</span>
+    <span class="cp">&lt;?php</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$form</span> <span class="k">as</span> <span class="nv">$child</span><span class="p">)</span> <span class="o">:</span> <span class="cp">?&gt;</span>
+        <span class="nt">&lt;li&gt;</span>
+            <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">widget</span><span class="p">(</span><span class="nv">$child</span><span class="p">)</span> <span class="cp">?&gt;</span>
+            <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">label</span><span class="p">(</span><span class="nv">$child</span><span class="p">)</span> <span class="cp">?&gt;</span>
+        <span class="nt">&lt;/li&gt;</span>
+    <span class="cp">&lt;?php</span> <span class="k">endforeach</span> <span class="cp">?&gt;</span>
+    <span class="nt">&lt;/ul&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">else</span> <span class="o">:</span> <span class="cp">?&gt;</span>
+    <span class="c">&lt;!-- simplemente deja que el elemento gráfico &#39;choice&#39; reproduzca la etiqueta select --&gt;</span>
+    <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;form&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">renderBlock</span><span class="p">(</span><span class="s1">&#39;choice_widget&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">endif</span> <span class="cp">?&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
 <p>Asegúrate que utilizas el prefijo correcto para el elemento gráfico. En este ejemplo, el nombre debe set <tt class="docutils literal"><span class="pre">gender_widget</span></tt>, de acuerdo con el valor devuelto por <tt class="docutils literal"><span class="pre">getName</span></tt>.
 Además, el archivo de configuración principal debe apuntar a la plantilla del formulario personalizado de modo que este se utilice al reproducir todos los formularios.</p>
-<div class="last highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<div class="last configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
 <span class="l-Scalar-Plain">twig</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">form</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">resources</span><span class="p-Indicator">:</span>
             <span class="p-Indicator">-</span> <span class="s">&#39;AcmeDemoBundle:Form:fields.html.twig&#39;</span>
 </pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;twig:config&gt;</span>
+    <span class="nt">&lt;twig:form&gt;</span>
+        <span class="nt">&lt;twig:resource&gt;</span>AcmeDemoBundle:Form:fields.html.twig<span class="nt">&lt;/twig:resource&gt;</span>
+    <span class="nt">&lt;/twig:form&gt;</span>
+<span class="nt">&lt;/twig:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;twig&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;form&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;resources&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;AcmeDemoBundle:Form:fields.html.twig&#39;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -214,6 +261,12 @@ Pero si necesitas acceder a la configuración de una conexión base de datos, o 
 </pre></div>
 </div>
 </li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;genders.m&#39;</span><span class="p">,</span> <span class="s1">&#39;Male&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;genders.f&#39;</span><span class="p">,</span> <span class="s1">&#39;Female&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
 </ul>
 </div>
 <p>Para utilizar el parámetro, define tu tipo de campo personalizado como un servicio, inyectando el valor del parámetro <tt class="docutils literal"><span class="pre">genders</span></tt> como el primer argumento de la función <tt class="docutils literal"><span class="pre">__construct</span></tt> que vas a crear:</p>
@@ -238,13 +291,28 @@ Pero si necesitas acceder a la configuración de una conexión base de datos, o 
 </pre></div>
 </div>
 </li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Resources/config/services.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+
+<span class="nv">$container</span>
+    <span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;acme_demo.form.type.gender&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+        <span class="s1">&#39;Acme\DemoBundle\Form\Type\GenderType&#39;</span><span class="p">,</span>
+        <span class="k">array</span><span class="p">(</span><span class="s1">&#39;%genders%&#39;</span><span class="p">)</span>
+    <span class="p">))</span>
+    <span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;form.type&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;alias&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;gender&#39;</span><span class="p">,</span>
+    <span class="p">))</span>
+<span class="p">;</span>
+</pre></div>
+</div>
+</li>
 </ul>
 </div>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
 <p class="last">Asegúrate de que estás importando el archivo de servicios. Consulta <a class="reference internal" href="../../book/service_container.html#service-container-imports-directive"><em>Importando configuración con imports</em></a> para más detalles.</p>
 </div>
-<p>Asegúrate de que la etiqueta del atributo <tt class="docutils literal"><span class="pre">alias</span></tt> corresponde con el valor devuelto por el método <tt class="docutils literal"><span class="pre">getName</span></tt> definido anteriormente. Verás la importancia de esto en un momento cuando utilices el tipo de campo personalizado. Pero en primer lugar, agrega un argumento <tt class="docutils literal"><span class="pre">GenderType</span></tt> al <tt class="docutils literal"><span class="pre">__construct</span></tt>, el cual recibe la configuración del género:</p>
+<p>Asegúrate de que la etiqueta del atributo <tt class="docutils literal"><span class="pre">alias</span></tt> corresponde con el valor devuelto por el método <tt class="docutils literal"><span class="pre">getName</span></tt> definido anteriormente. Verás la importancia de esto en un momento cuando utilices el tipo de campo personalizado. Pero primero, agrega un método <tt class="docutils literal"><span class="pre">__construct</span></tt>, el cual recibe la configuración del género:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Form/Type/GenderType.php</span>
 <span class="k">namespace</span> <span class="nx">Acme\DemoBundle\Form\Type</span><span class="p">;</span>
 
@@ -252,6 +320,7 @@ Pero si necesitas acceder a la configuración de una conexión base de datos, o 
 
 <span class="c1">// ...</span>
 
+<span class="c1">// ...</span>
 <span class="k">class</span> <span class="nc">GenderType</span> <span class="k">extends</span> <span class="nx">AbstractType</span>
 <span class="p">{</span>
     <span class="k">private</span> <span class="nv">$genderChoices</span><span class="p">;</span>
@@ -330,7 +399,7 @@ por el alias utilizado en tu configuración del servicio, <tt class="docutils li
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

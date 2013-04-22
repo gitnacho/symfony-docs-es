@@ -50,16 +50,44 @@ Antes de comenzar realmente, tendrás que configurar tu información de conexió
     Definir la configuración a través de :file:`parameters.yml` sólo es una convención.
     Los parámetros definidos en este archivo son referidos en el archivo de configuración principal al configurar *Doctrine*:
 
-    .. code-block:: yaml
+    .. configuration-block::
 
-        # app/config/config.yml
-        doctrine:
-            dbal:
-                driver:   "%database_driver%"
-                host:     "%database_host%"
-                dbname:   "%database_name%"
-                user:     "%database_user%"
-                password: "%database_password%"
+        .. code-block:: yaml
+
+            # app/config/config.yml
+            doctrine:
+                dbal:
+                    driver:   "%database_driver%"
+                    host:     "%database_host%"
+                    dbname:   "%database_name%"
+                    user:     "%database_user%"
+                    password: "%database_password%"
+
+        .. code-block:: xml
+
+            <!-- app/config/config.xml -->
+            <doctrine:config>
+                <doctrine:dbal
+                    driver="%database_driver%"
+                    host="%database_host%"
+                    dbname="%database_name%"
+                    user="%database_user%"
+                    password="%database_password%"
+                >
+            </doctrine:config>
+
+        .. code-block:: php
+        
+            // app/config/config.php
+            $configuration->loadFromExtension('doctrine', array(
+                'dbal' => array(
+                    'driver'   => '%database_driver%',
+                    'host'     => '%database_host%',
+                    'dbname'   => '%database_name%',
+                    'user'     => '%database_user%',
+                    'password' => '%database_password%',
+                ),
+            ));
 
     Al separar la información de la base de datos en un archivo independiente, puedes mantener fácilmente diferentes versiones del archivo en cada servidor. Además, fácilmente puedes almacenar la configuración de la base de datos (o cualquier otra información sensible) fuera de tu proyecto, posiblemente dentro de tu configuración de *Apache*, por ejemplo. Para más información, consulta :doc:`/cookbook/configuration/external_parameters`.
 
@@ -69,9 +97,9 @@ Ahora que *Doctrine* conoce tu base de datos, posiblemente tenga que crear la ba
 
     $ php app/console doctrine:database:create
 
-.. sidebar:: Instalando la base de datos
+.. sidebar:: Configura la base de datos para que sea *UTF8*
 
-    Una equivocación incluso condimentada que los desarrolladores cometen cuándo empiezan un proyecto *Symfony2* es olvidar configurar el código de caracteres y la colación en su base de datos, terminando con colaciones de tipo latin, las cuales están predefinidas en la mayoría de las bases de datos.
+    Una equivocación en la cual caen incluso los desarrolladores más experimentados cuándo empiezan un proyecto *Symfony2* es olvidar configurar el código de caracteres y cotejamiento en su base de datos, terminando con cotejamientos de tipo latin, los cuales están predefinidos en la mayoría de las bases de datos.
     Incluso podrían recordar hacerlo al principio, pero olvidan que todo esto se hace después de ejecutar una orden relativamente común durante el desarrollo:
 
     .. code-block:: bash
@@ -88,6 +116,44 @@ Ahora que *Doctrine* conoce tu base de datos, posiblemente tenga que crear la ba
         [mysqld]
         collation-server = utf8_general_ci
         character-set-server = utf8
+
+Usando ``SQLite``
+~~~~~~~~~~~~~~~~~
+
+Si quieres usar ``SQLite`` como tu base de datos, debes especificar la ruta a donde se tendría que almacenar tu archivo de base de datos:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        doctrine:
+            dbal:
+                driver: pdo_sqlite
+                path: "%kernel.root_dir%/sqlite.db"
+                charset: UTF8
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <doctrine:config
+            driver="pdo_sqlite"
+            path="%kernel.root_dir%/sqlite.db"
+            charset="UTF-8"
+        >
+            <!-- ... -->
+        </doctrine:config>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('doctrine', array(
+            'dbal' => array(
+                'driver'  => 'pdo_sqlite',
+                'path'    => '%kernel.root_dir%/sqlite.db',
+                'charset' => 'UTF-8',
+            ),
+        ));
 
 Creando una clase Entidad
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,21 +177,21 @@ La clase ---a menudo llamada «entidad», es decir, *una clase básica que conti
 
 .. tip::
 
-    Una vez que aprendas los conceptos de *Doctrine*, puedes dejar que *Doctrine* cree por ti la entidad para esta clase:
+    Una vez que aprendas los conceptos detrás de *Doctrine*, puedes dejar que *Doctrine* cree clases de entidad simples por ti:
 
     .. code-block:: bash
 
         $ php app/console doctrine:generate:entity --entity="AcmeStoreBundle:Product" --fields="name:string(255) price:float description:text"
 
 .. index::
-    single: Doctrine; Agregando metadatos de asignación
+    single: Doctrine; Agregando metadatos de asociación
 
 .. _book-doctrine-adding-mapping:
 
 Agregando información de asignación
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*Doctrine* te permite trabajar con bases de datos de una manera mucho más interesante que solo recuperar filas de una tabla basada en columnas de un arreglo. En cambio, *Doctrine* te permite persistir *objetos* completos a la base de datos y recuperar objetos completos desde la base de datos. Esto funciona asignando una clase *PHP* a una tabla de la base de datos, y las propiedades de esa clase *PHP* a las columnas de la tabla:
+*Doctrine* te permite trabajar con bases de datos de una manera mucho más interesante que solo recuperar filas de una tabla basada en columnas de un arreglo. En cambio, *Doctrine* te permite persistir *objetos* completos a la base de datos y recuperar objetos completos desde la base de datos. Esto funciona asociando una clase *PHP* a una tabla de la base de datos, y las propiedades de esa clase *PHP* a las columnas de la tabla:
 
 .. image:: /images/book/doctrine_image_1_es.png
    :align: center
@@ -220,14 +286,11 @@ Para que *Doctrine* sea capaz de hacer esto, sólo hay que crear «metadatos», 
 
 .. seealso::
 
-    También puedes consultar la `Documentación de asignación básica`_ de *Doctrine* para todos los detalles sobre la información de asignación. Si utilizas anotaciones, tendrás que prefijar todas las anotaciones con ``ORM\`` (por ejemplo, ``ORM\Column(..)``), lo cual no se muestra en la documentación de *Doctrine*. También tendrás que incluir la declaración ``use Doctrine\ORM\Mapping as ORM;`` la cual *importa* el prefijo ``ORM`` de las anotaciones.
+    También puedes consultar la `Documentación de asociación básica`_ de *Doctrine* para todos los detalles sobre la información de asignación. Si utilizas anotaciones, tendrás que prefijar todas las anotaciones con ``ORM\`` (por ejemplo, ``ORM\Column(..)``), lo cual no se muestra en la documentación de *Doctrine*. También tendrás que incluir la declaración ``use Doctrine\ORM\Mapping as ORM;`` la cual *importa* el prefijo ``ORM`` de las anotaciones.
 
 .. caution::
 
-    Ten cuidado de que tu nombre de clase y propiedades no estén asignados a un área protegida por palabras clave de *SQL* (tal como ``group`` o ``user``). Por ejemplo, si el nombre de clase de tu entidad es ``group``, entonces, de manera predeterminada, el nombre de la tabla será ``group``, lo cual provocará un error en algunos motores *SQL*. Consulta la `Documentación de palabras clave reservadas por SQL`_ para que sepas cómo escapar correctamente estos nombres. Alternativamente, si estás en libertad de elegir el esquema
-    de tu base de datos, simplemente asigna un diferente nombre
-    de tabla o columna. Ve las `Clases persistentes`_ y la `Asignación de propiedades`_
-    en la documentación de *Doctrine*.
+    Ten cuidado de que tu nombre de clase y propiedades no estén asignados a un área protegida por palabras clave de *SQL* (tal como ``group`` o ``user``). Por ejemplo, si el nombre de clase de tu entidad es ``group``, entonces, de manera predeterminada, el nombre de la tabla será ``group``, lo cual provocará un error en algunos motores *SQL*. Consulta la `Documentación de palabras clave reservadas por SQL`_ para que sepas cómo escapar correctamente estos nombres. Alternativamente, si estás en libertad de elegir el esquema de tu base de datos, simplemente asigna un diferente nombre de tabla o columna. Ve las `Clases persistentes`_ y la `Asignación de propiedades`_ en la documentación de *Doctrine*.
 
 .. note::
 
@@ -251,6 +314,11 @@ A pesar de que *Doctrine* ahora sabe cómo persistir en la base de datos un obje
     $ php app/console doctrine:generate:entities Acme/StoreBundle/Entity/Product
 
 Esta orden se asegura de que se generen todos los captadores y definidores para la clase ``Producto``. Esta es una orden segura --- la puedes ejecutar una y otra vez: sólo genera captadores y definidores que no existen (es decir, no sustituye métodos existentes).
+
+.. caution::
+
+    Ten en cuenta que el generador de entidades de *Doctrine* produce captadores/definidores sencillos.
+    Debes revisar las entidades generadas y ajustar a tus propias necesidades la lógica de los captadores/definidores.
 
 .. sidebar:: Más sobre ``doctrine:generate:entities``
 
@@ -294,7 +362,7 @@ Ahora tienes una clase ``Producto`` utilizable con información de asignación d
 
     Una forma aún mejor para tomar ventaja de esta funcionalidad es a través de las :doc:`migraciones </bundles/DoctrineMigrationsBundle/index>`, las cuales te permiten generar estas instrucciones *SQL* y almacenarlas en las clases de la migración, mismas que puedes ejecutar sistemáticamente en tu servidor en producción con el fin de seguir la pista y migrar el esquema de la base de datos segura y fiablemente.
 
-Tu base de datos ahora cuenta con una tabla ``producto`` completamente funcional, con columnas que coinciden con los metadatos que has especificado.
+Tu base de datos ahora cuenta con una tabla ``producto`` completamente operativa, con columnas que coinciden con los metadatos que has especificado.
 
 Persistiendo objetos a la base de datos
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -695,6 +763,24 @@ Para relacionar las entidades ``Categoría`` y ``Producto``, empieza por crear u
                     mappedBy: category
             # no olvides iniciar la colección en el método __construct() de la entidad
 
+    .. code-block:: xml
+
+        <!-- src/Acme/StoreBundle/Resources/config/doctrine/Category.orm.xml -->
+        <doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                            http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+            <entity name="Acme\StoreBundle\Entity\Category">
+                <!-- ... -->
+                <one-to-many field="products"
+                    target-entity="product"
+                    mapped-by="category"
+                />
+
+                <!-- no olvides iniciar la colección en el método __construct() de la entidad -->
+            </entity>
+        </doctrine-mapping>
 
 En primer lugar, ya que un objeto ``Categoría`` debe relacionar muchos objetos ``Producto``, agregamos una propiedad ``Productos`` para contener esos objetos ``Producto``.
 Una vez más, esto no se hace porque lo necesite *Doctrine*, sino porque tiene sentido en la aplicación para que cada ``Categoría`` mantenga una gran variedad de objetos ``Producto``.
@@ -741,6 +827,28 @@ Después, ya que cada clase ``Producto`` se puede relacionar exactamente a un ob
                     joinColumn:
                         name: category_id
                         referencedColumnName: id
+
+    .. code-block:: xml
+
+        <!-- src/Acme/StoreBundle/Resources/config/doctrine/Product.orm.xml -->
+        <doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                            http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+            <entity name="Acme\StoreBundle\Entity\Product">
+                <!-- ... -->
+                <many-to-one field="category"
+                    target-entity="products"
+                    join-column="category"
+                >
+                    <join-column
+                        name="category_id"
+                        referenced-column-name="id"
+                    />
+                </many-to-one>
+            </entity>
+        </doctrine-mapping>
 
 Por último, ahora que agregaste una nueva propiedad a ambas clases ``Categoría`` y ``Producto``, le dices a *Doctrine* que genere por ti los métodos captadores y definidores omitidos:
 
@@ -1084,6 +1192,20 @@ Cada campo puede tener un conjunto de opciones aplicables. Las opciones disponib
                 length: 150
                 unique: true
 
+    .. code-block:: xml
+
+        # Un campo de tipo «string» de longitud 255 que no puede ser nulo
+            # (reflejando los valores predefinidos para las opciones «length» y «nullable»)
+            # el atributo «type» es necesario en las definiciones yaml
+            name:
+        <field name="name" type="string" />
+        <field name="email"
+            type="string"
+            column="email_address"
+            length="150"
+            unique="true"
+        />
+
 .. note::
 
     Hay algunas opciones más que no figuran en esta lista. Para más detalles, consulta la sección `Asignando propiedades`_ de la documentación de *Doctrine*.
@@ -1101,7 +1223,7 @@ La integración del *ORM* de *Doctrine2* ofrece varias ordenes de consola bajo e
 
     $ php app/console
 
-Mostrará una lista de ordenes disponibles, muchas de las cuales comienzan con el prefijo ``doctrine:``. Puedes encontrar más información sobre cualquiera de estas ordenes (o cualquier orden de *Symfony*) ejecutando la orden ``help``. Por ejemplo, para obtener detalles acerca de la tarea ``doctrine:database:create``, ejecuta:
+Mostrará una lista con las ordenes disponibles, muchas de las cuales comienzan con el prefijo ``doctrine:``. Puedes encontrar más información sobre cualquiera de estas ordenes (o cualquier orden de *Symfony*) ejecutando la orden ``help``. Por ejemplo, para obtener detalles acerca de la tarea ``doctrine:database:create``, ejecuta:
 
 .. code-block:: bash
 
@@ -1124,6 +1246,10 @@ Algunas tareas notables o interesantes son:
 .. note::
 
    Para poder cargar accesorios a tu base de datos, en su lugar, necesitas tener instalado el paquete ``DoctrineFixturesBundle``. Para aprender cómo hacerlo, lee el artículo «:doc:`/bundles/DoctrineFixturesBundle/index`» en la documentación.
+
+.. tip::
+
+    Esta página muestra cómo trabajar con *Doctrine* dentro de un controlador. Posiblemente también quieras trabajar con *Doctrine* en algún otro lugar en tu aplicación. El método :method:`Symfony\\Bundle\\FrameworkBundle\\Controller\\Controller::getDoctrine` del controlador regresa el servicio ``doctrine``, puedes trabajar con este de la misma manera que en cualquier otro lugar inyectándolo en tus propios servicios. Consulta :doc:`/book/service_container` para más sobre la creación de tus propios servicios.
 
 Resumen
 -------

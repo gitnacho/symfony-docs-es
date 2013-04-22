@@ -11,13 +11,13 @@ Utilizando el enfoque de abajo, es posible eliminar la desventaja del enfoque de
 
 Por ejemplo, esto lo podrías utilizar para configurar el nombre del gestor de entidades a utilizar en múltiples paquetes. O se puede utilizar para activar una función opcional que depende de que otro paquete se cargue también.
 
-Para posibilitar esto en una extensión, es necesario implementar la :class:`Symfony\\Component\\DependencyInjection\\Compiler\\PrependExtensionInterface`::
+Para dotar a una Extensión con el poder de hacer esto, necesitas implementar la clase :class:`Symfony\\Component\\DependencyInjection\\Extension\\PrependExtensionInterface`::
 
     // src/Acme/HelloBundle/DependencyInjection/AcmeHelloExtension.php
     namespace Acme\HelloBundle\DependencyInjection;
 
     use Symfony\Component\HttpKernel\DependencyInjection\Extension;
-    use Symfony\Component\DependencyInjection\PrependExtensionInterface;
+    use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
     use Symfony\Component\DependencyInjection\ContainerBuilder;
 
     class AcmeHelloExtension extends Extension implements PrependExtensionInterface
@@ -30,7 +30,7 @@ Para posibilitar esto en una extensión, es necesario implementar la :class:`Sym
         }
     }
 
-Dentro del método :method:`Symfony\\Component\\DependencyInjection\\Compiler\\PrependExtensionInterface::prepend`, los desarrolladores tienen acceso completo a la instancia de la clase :class:`Symfony\\Component\\DependencyInjection\\ContainerBuilder` justo antes de llamar al método :method:`Symfony\\Component\\DependencyInjection\\Extension\\ExtensionInterface::load` en cada una de las extensiones registradas en el paquete. Para añadir al principio una configuración los desarrolladores de la extensión del paquete pueden utilizar el método :method:`Symfony\\Component\\DependencyInjection\\ContainerBuilder::prependExtensionConfig` de la instancia de :class:`Symfony\\Component\\DependencyInjection\\ContainerBuilder`. Dado que este método sólo añade la configuracion al principio, cualquier otra opción colocada explícitamente dentro del archivo :file:`app/config/config.yml` debería reemplazar esta configuración antepuesta.
+Dentro del método :method:`Symfony\\Component\\DependencyInjection\\Extension\\PrependExtensionInterface::prepend`, los desarrolladores tienen acceso completo a la instancia de la clase :class:`Symfony\\Component\\DependencyInjection\\ContainerBuilder` justo antes de llamar al método :method:`Symfony\\Component\\DependencyInjection\\Extension\\ExtensionInterface::load` en cada una de las extensiones registradas en el paquete. Para añadir al principio una configuración los desarrolladores de la extensión del paquete pueden utilizar el método :method:`Symfony\\Component\\DependencyInjection\\ContainerBuilder::prependExtensionConfig` de la instancia de :class:`Symfony\\Component\\DependencyInjection\\ContainerBuilder`. Dado que este método sólo añade la configuracion al principio, cualquier otra opción colocada explícitamente dentro del archivo :file:`app/config/config.yml` debería reemplazar esta configuración antepuesta.
 
 El siguiente ejemplo muestra cómo añadir al principio una opción de configuración en múltiples paquetes, así como desactivar una bandera en múltiples paquetes en el caso de que otro paquete específico no esté registrado::
 

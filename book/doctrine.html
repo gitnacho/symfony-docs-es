@@ -112,7 +112,9 @@ En esta sección, configurarás tu base de datos, crearás un objeto <tt class="
 <p class="first admonition-title">Nota</p>
 <p>Definir la configuración a través de <tt class="file docutils literal"><span class="pre">parameters.yml</span></tt> sólo es una convención.
 Los parámetros definidos en este archivo son referidos en el archivo de configuración principal al configurar <em>Doctrine</em>:</p>
-<div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
 <span class="l-Scalar-Plain">doctrine</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">dbal</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">driver</span><span class="p-Indicator">:</span>   <span class="s">&quot;%database_driver%&quot;</span>
@@ -122,6 +124,35 @@ Los parámetros definidos en este archivo son referidos en el archivo de configu
         <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="s">&quot;%database_password%&quot;</span>
 </pre></div>
 </div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;doctrine:config&gt;</span>
+    <span class="nt">&lt;doctrine:dbal</span>
+        <span class="na">driver=</span><span class="s">&quot;%database_driver%&quot;</span>
+        <span class="na">host=</span><span class="s">&quot;%database_host%&quot;</span>
+        <span class="na">dbname=</span><span class="s">&quot;%database_name%&quot;</span>
+        <span class="na">user=</span><span class="s">&quot;%database_user%&quot;</span>
+        <span class="na">password=</span><span class="s">&quot;%database_password%&quot;</span>
+    <span class="nt">&gt;</span>
+<span class="nt">&lt;/doctrine:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$configuration</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;doctrine&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;dbal&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;driver&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;%database_driver%&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;host&#39;</span>     <span class="o">=&gt;</span> <span class="s1">&#39;%database_host%&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;dbname&#39;</span>   <span class="o">=&gt;</span> <span class="s1">&#39;%database_name%&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;user&#39;</span>     <span class="o">=&gt;</span> <span class="s1">&#39;%database_user%&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;password&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;%database_password%&#39;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
 <p class="last">Al separar la información de la base de datos en un archivo independiente, puedes mantener fácilmente diferentes versiones del archivo en cada servidor. Además, fácilmente puedes almacenar la configuración de la base de datos (o cualquier otra información sensible) fuera de tu proyecto, posiblemente dentro de tu configuración de <em>Apache</em>, por ejemplo. Para más información, consulta <a class="reference internal" href="../cookbook/configuration/external_parameters.html"><em>Cómo configurar parámetros externos en el contenedor de servicios</em></a>.</p>
 </div>
 <p>Ahora que <em>Doctrine</em> conoce tu base de datos, posiblemente tenga que crear la base de datos para ti:</p>
@@ -129,8 +160,8 @@ Los parámetros definidos en este archivo son referidos en el archivo de configu
 </pre></div>
 </div>
 <div class="sidebar">
-<p class="first sidebar-title">Instalando la base de datos</p>
-<p>Una equivocación incluso condimentada que los desarrolladores cometen cuándo empiezan un proyecto <em>Symfony2</em> es olvidar configurar el código de caracteres y la colación en su base de datos, terminando con colaciones de tipo latin, las cuales están predefinidas en la mayoría de las bases de datos.
+<p class="first sidebar-title">Configura la base de datos para que sea <em>UTF8</em></p>
+<p>Una equivocación en la cual caen incluso los desarrolladores más experimentados cuándo empiezan un proyecto <em>Symfony2</em> es olvidar configurar el código de caracteres y cotejamiento en su base de datos, terminando con cotejamientos de tipo latin, los cuales están predefinidos en la mayoría de las bases de datos.
 Incluso podrían recordar hacerlo al principio, pero olvidan que todo esto se hace después de ejecutar una orden relativamente común durante el desarrollo:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>php app/console doctrine:database:drop --force
 <span class="nv">$ </span>php app/console doctrine:database:create
@@ -143,6 +174,45 @@ Incluso podrían recordar hacerlo al principio, pero olvidan que todo esto se ha
 <span class="l-Scalar-Plain">character-set-server = utf8</span>
 </pre></div>
 </div>
+</div>
+</div>
+<div class="section" id="usando-sqlite">
+<h3>Usando <tt class="docutils literal"><span class="pre">SQLite</span></tt><a class="headerlink" href="#usando-sqlite" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Si quieres usar <tt class="docutils literal"><span class="pre">SQLite</span></tt> como tu base de datos, debes especificar la ruta a donde se tendría que almacenar tu archivo de base de datos:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<span class="l-Scalar-Plain">doctrine</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">dbal</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">driver</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">pdo_sqlite</span>
+        <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span> <span class="s">&quot;%kernel.root_dir%/sqlite.db&quot;</span>
+        <span class="l-Scalar-Plain">charset</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">UTF8</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config.xml --&gt;</span>
+<span class="nt">&lt;doctrine:config</span>
+    <span class="na">driver=</span><span class="s">&quot;pdo_sqlite&quot;</span>
+    <span class="na">path=</span><span class="s">&quot;%kernel.root_dir%/sqlite.db&quot;</span>
+    <span class="na">charset=</span><span class="s">&quot;UTF-8&quot;</span>
+<span class="nt">&gt;</span>
+    <span class="c">&lt;!-- ... --&gt;</span>
+<span class="nt">&lt;/doctrine:config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;doctrine&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;dbal&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;driver&#39;</span>  <span class="o">=&gt;</span> <span class="s1">&#39;pdo_sqlite&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;path&#39;</span>    <span class="o">=&gt;</span> <span class="s1">&#39;%kernel.root_dir%/sqlite.db&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;charset&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;UTF-8&#39;</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
 </div>
 </div>
 <div class="section" id="creando-una-clase-entidad">
@@ -165,7 +235,7 @@ Sin siquiera pensar en <em>Doctrine</em> o en una base de datos, ya sabes que ne
 <p>La clase &#8212;a menudo llamada «entidad», es decir, <em>una clase básica que contiene datos</em>&#8212; es simple y ayuda a cumplir con el requisito del negocio de productos que necesita tu aplicación. Sin embargo, esta clase no se puede guardar en una base de datos &#8212;es sólo una clase <em>PHP</em> simple.</p>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
-<p>Una vez que aprendas los conceptos de <em>Doctrine</em>, puedes dejar que <em>Doctrine</em> cree por ti la entidad para esta clase:</p>
+<p>Una vez que aprendas los conceptos detrás de <em>Doctrine</em>, puedes dejar que <em>Doctrine</em> cree clases de entidad simples por ti:</p>
 <div class="last highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>php app/console doctrine:generate:entity --entity<span class="o">=</span><span class="s2">&quot;AcmeStoreBundle:Product&quot;</span> --fields<span class="o">=</span><span class="s2">&quot;name:string(255) price:float description:text&quot;</span>
 </pre></div>
 </div>
@@ -173,7 +243,7 @@ Sin siquiera pensar en <em>Doctrine</em> o en una base de datos, ya sabes que ne
 </div>
 <div class="section" id="agregando-informacion-de-asignacion">
 <span id="book-doctrine-adding-mapping"></span><span id="index-1"></span><h3>Agregando información de asignación<a class="headerlink" href="#agregando-informacion-de-asignacion" title="Enlazar permanentemente con este título">¶</a></h3>
-<p><em>Doctrine</em> te permite trabajar con bases de datos de una manera mucho más interesante que solo recuperar filas de una tabla basada en columnas de un arreglo. En cambio, <em>Doctrine</em> te permite persistir <em>objetos</em> completos a la base de datos y recuperar objetos completos desde la base de datos. Esto funciona asignando una clase <em>PHP</em> a una tabla de la base de datos, y las propiedades de esa clase <em>PHP</em> a las columnas de la tabla:</p>
+<p><em>Doctrine</em> te permite trabajar con bases de datos de una manera mucho más interesante que solo recuperar filas de una tabla basada en columnas de un arreglo. En cambio, <em>Doctrine</em> te permite persistir <em>objetos</em> completos a la base de datos y recuperar objetos completos desde la base de datos. Esto funciona asociando una clase <em>PHP</em> a una tabla de la base de datos, y las propiedades de esa clase <em>PHP</em> a las columnas de la tabla:</p>
 <img alt="../_images/doctrine_image_1_es.png" class="align-center" src="../_images/doctrine_image_1_es.png" />
 <p>Para que <em>Doctrine</em> sea capaz de hacer esto, sólo hay que crear «metadatos», o la configuración que le dice a <em>Doctrine</em> exactamente cómo debe <em>asociar</em> la clase <tt class="docutils literal"><span class="pre">Producto</span></tt> y sus propiedades a la base de datos. Estos metadatos se pueden especificar en una serie de diferentes formatos, incluyendo <em>YAML</em>, <em>XML</em> o directamente dentro de la clase <tt class="docutils literal"><span class="pre">Producto</span></tt> a través de anotaciones:</p>
 <div class="configuration-block">
@@ -265,14 +335,11 @@ Sin siquiera pensar en <em>Doctrine</em> o en una base de datos, ya sabes que ne
 <p><em>Doctrine</em> te permite elegir entre una amplia variedad de diferentes tipos de campo, cada uno con sus propias opciones. Para obtener información sobre los tipos de campo disponibles, consulta la sección <a class="reference internal" href="#book-doctrine-field-types"><em>Referencia de tipos de campo Doctrine</em></a>.</p>
 <div class="admonition-ver-tambien admonition seealso">
 <p class="first admonition-title">Ver también</p>
-<p class="last">También puedes consultar la <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html">Documentación de asignación básica</a> de <em>Doctrine</em> para todos los detalles sobre la información de asignación. Si utilizas anotaciones, tendrás que prefijar todas las anotaciones con <tt class="docutils literal"><span class="pre">ORM\</span></tt> (por ejemplo, <tt class="docutils literal"><span class="pre">ORM\Column(..)</span></tt>), lo cual no se muestra en la documentación de <em>Doctrine</em>. También tendrás que incluir la declaración <tt class="docutils literal"><span class="pre">use</span> <span class="pre">Doctrine\ORM\Mapping</span> <span class="pre">as</span> <span class="pre">ORM;</span></tt> la cual <em>importa</em> el prefijo <tt class="docutils literal"><span class="pre">ORM</span></tt> de las anotaciones.</p>
+<p class="last">También puedes consultar la <a href="#id1"><span class="problematic" id="id2">`Documentación de asociación básica`_</span></a> de <em>Doctrine</em> para todos los detalles sobre la información de asignación. Si utilizas anotaciones, tendrás que prefijar todas las anotaciones con <tt class="docutils literal"><span class="pre">ORM\</span></tt> (por ejemplo, <tt class="docutils literal"><span class="pre">ORM\Column(..)</span></tt>), lo cual no se muestra en la documentación de <em>Doctrine</em>. También tendrás que incluir la declaración <tt class="docutils literal"><span class="pre">use</span> <span class="pre">Doctrine\ORM\Mapping</span> <span class="pre">as</span> <span class="pre">ORM;</span></tt> la cual <em>importa</em> el prefijo <tt class="docutils literal"><span class="pre">ORM</span></tt> de las anotaciones.</p>
 </div>
 <div class="admonition caution">
 <p class="first admonition-title">Prudencia</p>
-<p class="last">Ten cuidado de que tu nombre de clase y propiedades no estén asignados a un área protegida por palabras clave de <em>SQL</em> (tal como <tt class="docutils literal"><span class="pre">group</span></tt> o <tt class="docutils literal"><span class="pre">user</span></tt>). Por ejemplo, si el nombre de clase de tu entidad es <tt class="docutils literal"><span class="pre">group</span></tt>, entonces, de manera predeterminada, el nombre de la tabla será <tt class="docutils literal"><span class="pre">group</span></tt>, lo cual provocará un error en algunos motores <em>SQL</em>. Consulta la <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#quoting-reserved-words">Documentación de palabras clave reservadas por SQL</a> para que sepas cómo escapar correctamente estos nombres. Alternativamente, si estás en libertad de elegir el esquema
-de tu base de datos, simplemente asigna un diferente nombre
-de tabla o columna. Ve las <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#persistent-classes">Clases persistentes</a> y la <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#property-mapping">Asignación de propiedades</a>
-en la documentación de <em>Doctrine</em>.</p>
+<p class="last">Ten cuidado de que tu nombre de clase y propiedades no estén asignados a un área protegida por palabras clave de <em>SQL</em> (tal como <tt class="docutils literal"><span class="pre">group</span></tt> o <tt class="docutils literal"><span class="pre">user</span></tt>). Por ejemplo, si el nombre de clase de tu entidad es <tt class="docutils literal"><span class="pre">group</span></tt>, entonces, de manera predeterminada, el nombre de la tabla será <tt class="docutils literal"><span class="pre">group</span></tt>, lo cual provocará un error en algunos motores <em>SQL</em>. Consulta la <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#quoting-reserved-words">Documentación de palabras clave reservadas por SQL</a> para que sepas cómo escapar correctamente estos nombres. Alternativamente, si estás en libertad de elegir el esquema de tu base de datos, simplemente asigna un diferente nombre de tabla o columna. Ve las <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#persistent-classes">Clases persistentes</a> y la <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/basic-mapping.html#property-mapping">Asignación de propiedades</a> en la documentación de <em>Doctrine</em>.</p>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
@@ -294,6 +361,11 @@ en la documentación de <em>Doctrine</em>.</p>
 </pre></div>
 </div>
 <p>Esta orden se asegura de que se generen todos los captadores y definidores para la clase <tt class="docutils literal"><span class="pre">Producto</span></tt>. Esta es una orden segura &#8212; la puedes ejecutar una y otra vez: sólo genera captadores y definidores que no existen (es decir, no sustituye métodos existentes).</p>
+<div class="admonition caution">
+<p class="first admonition-title">Prudencia</p>
+<p class="last">Ten en cuenta que el generador de entidades de <em>Doctrine</em> produce captadores/definidores sencillos.
+Debes revisar las entidades generadas y ajustar a tus propias necesidades la lógica de los captadores/definidores.</p>
+</div>
 <div class="sidebar">
 <p class="first sidebar-title">Más sobre <tt class="docutils literal"><span class="pre">doctrine:generate:entities</span></tt></p>
 <p>con la orden <tt class="docutils literal"><span class="pre">doctrine:generate:entities</span></tt> puedes:</p>
@@ -330,7 +402,7 @@ Aquí, los captadores y definidores se generan sólo porque los necesitarás par
 <p>En realidad, esta orden es increíblemente poderosa. Esta compara cómo se <em>debe</em> ver tu base de datos (en base a la información de asignación de tus entidades) con la forma en que <em>realmente</em> se ve, y genera las declaraciones <em>SQL</em> necesarias para <em>actualizar</em> la base de datos a su verdadera forma. En otras palabras, si agregas una nueva propiedad asignando metadatos a <tt class="docutils literal"><span class="pre">Producto</span></tt> y ejecutas esta tarea de nuevo, vas a generar la declaración <tt class="docutils literal"><span class="pre">alter</span> <span class="pre">table</span></tt> necesaria para añadir la nueva columna a la tabla <tt class="docutils literal"><span class="pre">Producto</span></tt> existente.</p>
 <p class="last">Una forma aún mejor para tomar ventaja de esta funcionalidad es a través de las <a class="reference internal" href="../bundles/DoctrineMigrationsBundle/index.html"><em>migraciones</em></a>, las cuales te permiten generar estas instrucciones <em>SQL</em> y almacenarlas en las clases de la migración, mismas que puedes ejecutar sistemáticamente en tu servidor en producción con el fin de seguir la pista y migrar el esquema de la base de datos segura y fiablemente.</p>
 </div>
-<p>Tu base de datos ahora cuenta con una tabla <tt class="docutils literal"><span class="pre">producto</span></tt> completamente funcional, con columnas que coinciden con los metadatos que has especificado.</p>
+<p>Tu base de datos ahora cuenta con una tabla <tt class="docutils literal"><span class="pre">producto</span></tt> completamente operativa, con columnas que coinciden con los metadatos que has especificado.</p>
 </div>
 <div class="section" id="persistiendo-objetos-a-la-base-de-datos">
 <h3>Persistiendo objetos a la base de datos<a class="headerlink" href="#persistiendo-objetos-a-la-base-de-datos" title="Enlazar permanentemente con este título">¶</a></h3>
@@ -716,6 +788,25 @@ Ya sabes que tarde o temprano tendrás que persistir la clase a través de <em>D
 </pre></div>
 </div>
 </li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/StoreBundle/Resources/config/doctrine/Category.orm.xml --&gt;</span>
+<span class="nt">&lt;doctrine-mapping</span> <span class="na">xmlns=</span><span class="s">&quot;http://doctrine-project.org/schemas/orm/doctrine-mapping&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://doctrine-project.org/schemas/orm/doctrine-mapping</span>
+<span class="s">                    http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;entity</span> <span class="na">name=</span><span class="s">&quot;Acme\StoreBundle\Entity\Category&quot;</span><span class="nt">&gt;</span>
+        <span class="c">&lt;!-- ... --&gt;</span>
+        <span class="nt">&lt;one-to-many</span> <span class="na">field=</span><span class="s">&quot;products&quot;</span>
+            <span class="na">target-entity=</span><span class="s">&quot;product&quot;</span>
+            <span class="na">mapped-by=</span><span class="s">&quot;category&quot;</span>
+        <span class="nt">/&gt;</span>
+
+        <span class="c">&lt;!-- no olvides iniciar la colección en el método __construct() de la entidad --&gt;</span>
+    <span class="nt">&lt;/entity&gt;</span>
+<span class="nt">&lt;/doctrine-mapping&gt;</span>
+</pre></div>
+</div>
+</li>
 </ul>
 </div>
 <p>En primer lugar, ya que un objeto <tt class="docutils literal"><span class="pre">Categoría</span></tt> debe relacionar muchos objetos <tt class="docutils literal"><span class="pre">Producto</span></tt>, agregamos una propiedad <tt class="docutils literal"><span class="pre">Productos</span></tt> para contener esos objetos <tt class="docutils literal"><span class="pre">Producto</span></tt>.
@@ -759,6 +850,28 @@ Este objeto se ve y actúa casi <em>exactamente</em> como un arreglo, pero tiene
             <span class="l-Scalar-Plain">joinColumn</span><span class="p-Indicator">:</span>
                 <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">category_id</span>
                 <span class="l-Scalar-Plain">referencedColumnName</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">id</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/StoreBundle/Resources/config/doctrine/Product.orm.xml --&gt;</span>
+<span class="nt">&lt;doctrine-mapping</span> <span class="na">xmlns=</span><span class="s">&quot;http://doctrine-project.org/schemas/orm/doctrine-mapping&quot;</span>
+    <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+    <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://doctrine-project.org/schemas/orm/doctrine-mapping</span>
+<span class="s">                    http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd&quot;</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;entity</span> <span class="na">name=</span><span class="s">&quot;Acme\StoreBundle\Entity\Product&quot;</span><span class="nt">&gt;</span>
+        <span class="c">&lt;!-- ... --&gt;</span>
+        <span class="nt">&lt;many-to-one</span> <span class="na">field=</span><span class="s">&quot;category&quot;</span>
+            <span class="na">target-entity=</span><span class="s">&quot;products&quot;</span>
+            <span class="na">join-column=</span><span class="s">&quot;category&quot;</span>
+        <span class="nt">&gt;</span>
+            <span class="nt">&lt;join-column</span>
+                <span class="na">name=</span><span class="s">&quot;category_id&quot;</span>
+                <span class="na">referenced-column-name=</span><span class="s">&quot;id&quot;</span>
+            <span class="nt">/&gt;</span>
+        <span class="nt">&lt;/many-to-one&gt;</span>
+    <span class="nt">&lt;/entity&gt;</span>
+<span class="nt">&lt;/doctrine-mapping&gt;</span>
 </pre></div>
 </div>
 </li>
@@ -1076,6 +1189,20 @@ Estas incluyen cosas tales como <tt class="docutils literal"><span class="pre">S
 </pre></div>
 </div>
 </li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre># Un campo de tipo «string» de longitud 255 que no puede ser nulo
+    # (reflejando los valores predefinidos para las opciones «length» y «nullable»)
+    # el atributo «type» es necesario en las definiciones yaml
+    name:
+<span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&quot;name&quot;</span> <span class="na">type=</span><span class="s">&quot;string&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&quot;email&quot;</span>
+    <span class="na">type=</span><span class="s">&quot;string&quot;</span>
+    <span class="na">column=</span><span class="s">&quot;email_address&quot;</span>
+    <span class="na">length=</span><span class="s">&quot;150&quot;</span>
+    <span class="na">unique=</span><span class="s">&quot;true&quot;</span>
+<span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</li>
 </ul>
 </div>
 <div class="admonition note">
@@ -1090,7 +1217,7 @@ Estas incluyen cosas tales como <tt class="docutils literal"><span class="pre">S
 <div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>php app/console
 </pre></div>
 </div>
-<p>Mostrará una lista de ordenes disponibles, muchas de las cuales comienzan con el prefijo <tt class="docutils literal"><span class="pre">doctrine:</span></tt>. Puedes encontrar más información sobre cualquiera de estas ordenes (o cualquier orden de <em>Symfony</em>) ejecutando la orden <tt class="docutils literal"><span class="pre">help</span></tt>. Por ejemplo, para obtener detalles acerca de la tarea <tt class="docutils literal"><span class="pre">doctrine:database:create</span></tt>, ejecuta:</p>
+<p>Mostrará una lista con las ordenes disponibles, muchas de las cuales comienzan con el prefijo <tt class="docutils literal"><span class="pre">doctrine:</span></tt>. Puedes encontrar más información sobre cualquiera de estas ordenes (o cualquier orden de <em>Symfony</em>) ejecutando la orden <tt class="docutils literal"><span class="pre">help</span></tt>. Por ejemplo, para obtener detalles acerca de la tarea <tt class="docutils literal"><span class="pre">doctrine:database:create</span></tt>, ejecuta:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>php app/console <span class="nb">help </span>doctrine:database:create
 </pre></div>
 </div>
@@ -1111,6 +1238,10 @@ Estas incluyen cosas tales como <tt class="docutils literal"><span class="pre">S
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
 <p class="last">Para poder cargar accesorios a tu base de datos, en su lugar, necesitas tener instalado el paquete <tt class="docutils literal"><span class="pre">DoctrineFixturesBundle</span></tt>. Para aprender cómo hacerlo, lee el artículo «<a class="reference internal" href="../bundles/DoctrineFixturesBundle/index.html"><em>DoctrineFixturesBundle</em></a>» en la documentación.</p>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Esta página muestra cómo trabajar con <em>Doctrine</em> dentro de un controlador. Posiblemente también quieras trabajar con <em>Doctrine</em> en algún otro lugar en tu aplicación. El método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Bundle/FrameworkBundle/Controller/Controller.html#method_getDoctrine" title="Symfony\Bundle\FrameworkBundle\Controller\Controller::getDoctrine()"><span class="pre">getDoctrine()</span></a></tt> del controlador regresa el servicio <tt class="docutils literal"><span class="pre">doctrine</span></tt>, puedes trabajar con este de la misma manera que en cualquier otro lugar inyectándolo en tus propios servicios. Consulta <a class="reference internal" href="service_container.html"><em>Contenedor de servicios</em></a> para más sobre la creación de tus propios servicios.</p>
 </div>
 </div>
 <div class="section" id="resumen">
@@ -1158,7 +1289,7 @@ Estas incluyen cosas tales como <tt class="docutils literal"><span class="pre">S
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

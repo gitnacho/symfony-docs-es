@@ -76,6 +76,7 @@ Incluso, puedes validar la respuesta. Por ejemplo, en el último fragmento de c�
                     'The name of the bundle should be suffixed with \'Bundle\''
                 );
             }
+            return $answer;
         },
         false,
         'AcmeDemoBundle'
@@ -91,7 +92,7 @@ Estos métodos tienen 2 nuevos argumentos, la firma completa es::
         string $default = null
     )
 
-El ``$validator`` es una retrollamada que maneja la validación. Este debe lanzar una excepción si hay algo incorrecto. El mensaje de excepción es mostrado en la consola, por lo tanto es una buena práctica poner alguna información útil en él.
+El ``$validator`` es una retrollamada que maneja la validación. Este debe lanzar una excepción si hay algo incorrecto. El mensaje de la excepción se muestra en la consola, por lo tanto es una buena práctica poner alguna información útil en él. La función retrollamada también debería regresar el valor ingresado por el usuario si la validación fue satisfactoria.
 
 Puedes poner el número máximo de veces a preguntar en el argumento ``$attempts``.
 Si alcanzas este número máximo utilizas el valor predeterminado, el cual es dado en el último argumento. Utilizar ``false`` significa que la cantidad de intentos es infinita.
@@ -122,3 +123,30 @@ También puedes hacer una pregunta y validar una respuesta oculta::
     );
 
 Si quieres permitir que la respuesta sea visible si ---por alguna razón--- no se puede ocultar, pasa ``true`` como quinto argumento.
+
+Permitiendo al usuario escoger de una lista de Respuestas
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.2
+    El método :method:`Symfony\\Component\\Console\\Helper\\DialogHelper::select` se añadió en *Symfony* 2.2.
+
+Si tienes un conjunto de respuestas predefinido del cual pueda escoger el usuario, podrías utilizar el método ``ask`` descrito anteriormente o, asegurarte de que el usuario proporcionó una respuesta correcta, el método ``askAndValidate``. Ambos tienen la desventaja de que necesitas manejar los valores incorrectos.
+
+En su lugar, puedes utilizar el método :method:`Symfony\\Component\\Console\\Helper\\DialogHelper::select`, el cual se asegura de que el usuario sólo puede introducir una cadena válida de una lista predefinida::
+
+    $dialog = $app->getHelperSet()->get('dialog');
+    $colors = array('red', 'blue', 'yellow');
+    
+    $color = $dialog->select(
+        $output, 
+        'Please select your favorite color (default to red)', 
+        $colors, 
+        0
+    );
+    $output->writeln('You have just selected: ' . $colors[$color]);
+    
+    // ...  hace algo con el color
+
+La opción que se debería seleccionar por omisión la proporciona el cuarto argumento. El valor predefinido es ``null``, lo cual significa que ninguna opción es la predefinida.
+
+Si el usuario introduce una cadena no válida, un mensaje de error será mostrado instando al usuario a proporcionar la respuesta de nuevo, hasta que introduzca una cadena válida o alcance el máximo de intentos (el cuál puedes definir con el quinto argumento). El valor predefinido para los intentos es ``false``, lo cual significa que no hay límite en los intentos. Puedes definir tu propio mensaje de error en el sexto argumento.

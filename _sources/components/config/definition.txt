@@ -7,7 +7,7 @@ Definiendo y procesando valores de configuración
 Validando valores de configuración
 ----------------------------------
 
-Después de cargar los valores de configuración de todo tipo de recursos, los valores y su estructura se pueden validar usando la parte "Definición" del componente ``Config``. Generalmente, se espera que los valores de configuración muestren algún tipo de jerarquía. Además, los valores deben ser de un determinado tipo, estar limitados en número o ser uno de un determinado conjunto de valores. Por ejemplo, la siguiente configuración (en *YAML*) muestra una clara jerarquía y algunas reglas de validación que se deben aplicar (como: "el valor de ``auto_connect`` debe ser un valor booleano"):
+Después de cargar los valores de configuración de todo tipo de recursos, los valores y su estructura se pueden validar usando la parte «Definición» del componente ``Config``. Generalmente, se espera que los valores de configuración muestren algún tipo de jerarquía. Además, los valores deben ser de un determinado tipo, estar limitados en número o ser uno de un determinado conjunto de valores. Por ejemplo, la siguiente configuración (en *YAML*) muestra una clara jerarquía y algunas reglas de validación que se deben aplicar (como: «el valor de ``auto_connect`` debe ser un valor booleano»):
 
 .. code-block:: yaml
 
@@ -28,10 +28,10 @@ Después de cargar los valores de configuración de todo tipo de recursos, los v
 
 Al cargar varios archivos de configuración, debería ser posible combinar y sobrescribir algunos valores. Otros valores no se deben fusionar y quedarse como estaban cuando se encontraron por primera vez. Además, algunas claves sólo están disponibles cuando otra clave tiene un valor específico (en la configuración del ejemplo anterior: la clave ``memory`` sólo tiene sentido cuando ``driver`` es ``sqlite``).
 
-Definiendo una jerarquía de valores de configuración usando el `TreeBuilder`
-----------------------------------------------------------------------------
+Definiendo una jerarquía de valores configuración usando el ``TreeBuilder``
+---------------------------------------------------------------------------
 
-Todas las normas relativas a los valores de configuración se pueden definir usando el :class:`Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder`.
+Puedes definir todas las normas relativas a los valores de configuración usando el :class:`Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder`.
 
 Debes devolver una instancia de :class:`Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder` desde una clase  ``Configuration`` personalizada que implemente la :class:`Symfony\\Component\\Config\\Definition\\ConfigurationInterface`::
 
@@ -146,7 +146,6 @@ O puedes definir un prototipo para cada nodo dentro del arreglo de nodos::
                     ->scalarNode('host')->end()
                     ->scalarNode('username')->end()
                     ->scalarNode('password')->end()
-                    ->end()
                 ->end()
             ->end()
         ->end()
@@ -160,9 +159,11 @@ Opciones del arreglo de nodos
 Antes de definir los hijos de un arreglo de nodos, puedes proveer opciones como:
 
 ``useAttributeAsKey()``
-    Proporciona el nombre de un nodo secundario, cuyo valor se debe usar como la clave en el arreglo resultante
+    Provee el nombre de un nodo hijo, dónde se debe usar el valor como la clave en el arreglo resultante.
 ``requiresAtLeastOneElement()``
-    Debe haber por lo menos un elemento en el arreglo (sólo funciona cuando además se llama a ``isRequired()``).
+    Cuando menos debe haber un elemento en el arreglo (únicamente trabaja cuando también se invoca a ``isRequired()``).
+``addDefaultsIfNotSet()``
+    Si algún nodo hijo tiene valores predefinidos, se utilizan si no proporcionas valores explícitos.
 
 Un ejemplo de esto::
 
@@ -226,6 +227,16 @@ Para todos los tipos de nodo, es posible definir valores predeterminados y valor
                     ->scalarNode('password')->end()
                     ->booleanNode('memory')
                         ->defaultFalse()
+                    ->end()
+                ->end()
+            ->end()
+            ->arrayNode('settings')
+                ->addDefaultsIfNotSet()
+                ->children()
+                    ->scalarNode('name')
+                        ->isRequired()
+                        ->cannotBeEmpty()
+                        ->defaultValue('value')
                     ->end()
                 ->end()
             ->end()
@@ -375,7 +386,7 @@ segundo argumento::
     ;
 
 Así como se corrigió este, ``fixXmlConfig`` garantiza que solo los elementos
-*XML* todavía se convierten en un arreglo. Por lo tanto que puedes tener:
+*XML* todavía se convierten en un arreglo. Por lo tanto puedes tener:
 
 .. code-block:: xml
 

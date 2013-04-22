@@ -159,7 +159,10 @@ Al escuchar el ``kernel.controller``, le estas diciendo a *Symfony* que deseas q
         use Symfony\Component\DependencyInjection\Definition;
 
         $listener = new Definition('Acme\DemoBundle\EventListener\TokenListener', array('%tokens%'));
-        $listener->addTag('kernel.event_listener', array('event' => 'kernel.controller', 'method' => 'onKernelController'));
+        $listener->addTag('kernel.event_listener', array(
+            'event'  => 'kernel.controller',
+            'method' => 'onKernelController'
+        ));
         $container->setDefinition('demo.tokens.action_listener', $listener);
 
 Con esta configuración, tu método ``TokenListener`` del ``onKernelController`` será ejecutado en cada petición. Si el controlador que está a punto de ejecutarse implementa el ``TokenAuthenticatedController``, se aplica la autenticación. Esto te permite tener un filtro «antes» en cualquier controlador que desees.
@@ -238,8 +241,14 @@ Finalmente, es necesaria una segunda «etiqueta» en la definición del servicio
         use Symfony\Component\DependencyInjection\Definition;
 
         $listener = new Definition('Acme\DemoBundle\EventListener\TokenListener', array('%tokens%'));
-        $listener->addTag('kernel.event_listener', array('event' => 'kernel.controller', 'method' => 'onKernelController'));
-        $listener->addTag('kernel.event_listener', array('event' => 'kernel.response', 'method' => 'onKernelResponse'));
+        $listener->addTag('kernel.event_listener', array(
+            'event'  => 'kernel.controller',
+            'method' => 'onKernelController'
+        ));
+        $listener->addTag('kernel.event_listener', array(
+            'event'  => 'kernel.response',
+            'method' => 'onKernelResponse'
+        ));
         $container->setDefinition('demo.tokens.action_listener', $listener);
 
 ¡Eso es todo! El evento ``TokenListener`` ahora es notificado antes de ejecutar cada controlador (``onKernelController``) y después de que cada controlador regrese una respuesta (``onKernelResponse``). Al hacer que controladores específicos implementen la interfaz ``TokenAuthenticatedController``, tu escucha sabe cuales controladores deben tomar una acción.

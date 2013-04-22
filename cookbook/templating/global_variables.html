@@ -25,7 +25,7 @@
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
     <link rel="up" title="Plantillas" href="index.html" />
-    <link rel="next" title="Cómo usar plantillas PHP en lugar de Twig" href="PHP.html" />
+    <link rel="next" title="Cómo utilizar y rutas Twig con espacios de nombres" href="namespaced_paths.html" />
     <link rel="prev" title="Plantillas" href="index.html" /> 
   </head>
   <body>
@@ -56,7 +56,7 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="PHP.html" title="Cómo usar plantillas PHP en lugar de Twig"
+          <a href="namespaced_paths.html" title="Cómo utilizar y rutas Twig con espacios de nombres"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
           <a href="index.html" title="Plantillas"
@@ -78,15 +78,37 @@
 <span id="index-0"></span><h1>Cómo inyectar variables en todas las plantillas (es decir, Variables globales)<a class="headerlink" href="#como-inyectar-variables-en-todas-las-plantillas-es-decir-variables-globales" title="Enlazar permanentemente con este título">¶</a></h1>
 <p>En ocasiones desearás que una variable sea accesible en todas las plantillas que usas.
 Esto es posible en tu archivo <tt class="file docutils literal"><span class="pre">app/config/config.yml</span></tt>:</p>
-<div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
 <span class="l-Scalar-Plain">twig</span><span class="p-Indicator">:</span>
     <span class="c1"># ...</span>
     <span class="l-Scalar-Plain">globals</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">ga_tracking</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">UA-xxxxx-x</span>
 </pre></div>
 </div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;!-- app/config/config.xml --&gt;
+&lt;twig:config ...&gt;
+    &lt;!-- ... --&gt;
+    &lt;twig:global key="ga_tracking"&gt;UA-xxxxx-x&lt;/twig:global&gt;
+&lt;/twig:config&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;twig&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+     <span class="c1">// ...</span>
+     <span class="s1">&#39;globals&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+         <span class="s1">&#39;ga_tracking&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;UA-xxxxx-x&#39;</span><span class="p">,</span>
+     <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
 <p>Ahora, la variable <tt class="docutils literal"><span class="pre">ga_tracking</span></tt> está disponible en todas las plantillas <em>Twig</em>:</p>
-<div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;p&gt;</span>The google tracking code is: <span class="cp">{{</span> <span class="nv">ga_tracking</span> <span class="cp">}}</span> <span class="nt">&lt;/p&gt;</span>
+<div class="highlight-html+jinja"><div class="highlight"><pre><span class="nt">&lt;p&gt;</span>The google tracking code is: <span class="cp">{{</span> <span class="nv">ga_tracking</span> <span class="cp">}}</span><span class="nt">&lt;/p&gt;</span>
 </pre></div>
 </div>
 <p>¡Así de fácil! También puedes tomar ventaja de los <a class="reference internal" href="../../book/service_container.html#book-service-container-parameters"><em>Parámetros del servicio</em></a> integrados en el sistema, lo cual te permite aislar o reutilizar el valor:</p>
@@ -95,11 +117,31 @@ Esto es posible en tu archivo <tt class="file docutils literal"><span class="pre
     <span class="l-Scalar-Plain">ga_tracking</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">UA-xxxxx-x</span>
 </pre></div>
 </div>
-<div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config.yml</span>
 <span class="l-Scalar-Plain">twig</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">globals</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">ga_tracking</span><span class="p-Indicator">:</span> <span class="s">&quot;%ga_tracking%&quot;</span>
 </pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><pre>&lt;!-- app/config/config.xml --&gt;
+&lt;twig:config ...&gt;
+    &lt;twig:global key="ga_tracking"&gt;%ga_tracking%&lt;/twig:global&gt;
+&lt;/twig:config&gt;</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;twig&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+     <span class="s1">&#39;globals&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+         <span class="s1">&#39;ga_tracking&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;%ga_tracking%&#39;</span><span class="p">,</span>
+     <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
 </div>
 <p>La misma variable está disponible como antes.</p>
 <div class="section" id="variables-globales-mas-complejas">
@@ -124,7 +166,7 @@ Esto es posible en tu archivo <tt class="file docutils literal"><span class="pre
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="PHP.html" title="Cómo usar plantillas PHP en lugar de Twig"
+          <a href="namespaced_paths.html" title="Cómo utilizar y rutas Twig con espacios de nombres"
              >siguiente</a> |</li>
         <li class="right" >
           <a href="index.html" title="Plantillas"
@@ -142,7 +184,7 @@ Esto es posible en tu archivo <tt class="file docutils literal"><span class="pre
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

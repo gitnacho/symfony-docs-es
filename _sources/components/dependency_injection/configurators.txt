@@ -1,0 +1,193 @@
+.. index::
+   single: Inyección de dependencias; Configuradores de servicio
+
+Configurando servicios con un configurador de servicio
+======================================================
+
+El configurador de servicios es una característica del contenedor de inyección de dependencias que te permite utilizar una función ejecutable para configurar un servicio después de su creación.
+
+Puedes especificar un método en otro servicio, una función *PHP* o un método estático en una clase. El servicio ``instance`` se pasa al ejecutable, permitiendo al configurador hacer cualquier cosa necesaria para configurar el servicio después de su creación.
+
+Puedes utilizar un configurador de servicio, por ejemplo, cuándo tienes un servicio que requiere una configuración compleja basada en opciones de configuración que provienen de diferentes fuentes/servicios. Usando un configurador externo, puedes mantener limpia la implementación del servicio y mantenerla desacoplada de los otros objetos que proporcionan la configuración necesaria.
+
+Otro interesante caso de uso es cuándo tienes múltiples objetos que comparten una configuración común o que se deberían configurar de manera similar en en tiempo de ejecución.
+
+Por ejemplo, supón que tienes una aplicación donde envías diferentes tipos de correo electrónico a los usuarios. Los mensajes de correo electrónico se pasan a través de diferentes formateadores que podrían estar habilitados o no dependiendo de algunas opciones dinámicas de la aplicación. Empiezas definiedo una clase ``NewsletterManager`` como esta::
+
+    class NewsletterManager implements EmailFormatterAwareInterface
+    {
+        protected $mailer;
+        protected $enabledFormatters;
+
+        public function setMailer(Mailer $mailer)
+        {
+            $this->mailer = $mailer;
+        }
+
+        public function setEnabledFormatters(array $enabledFormatters)
+        {
+            $this->enabledFormatters = $enabledFormatters;
+        }
+
+        // ...
+    }
+
+
+y además una clase ``GreetingCardManager``::
+
+    class GreetingCardManager implements EmailFormatterAwareInterface
+    {
+        protected $mailer;
+        protected $enabledFormatters;
+
+        public function setMailer(Mailer $mailer)
+        {
+            $this->mailer = $mailer;
+        }
+
+        public function setEnabledFormatters(array $enabledFormatters)
+        {
+            $this->enabledFormatters = $enabledFormatters;
+        }
+
+        // ...
+    }
+
+
+Como se mencionó antes, el objetivo es configurar los formateadores en tiempo de ejecución dependiendo de la configuración de la aplicación. Para ello, también tienes una clase ``EmailFormatterManager`` que es la responsable de cargar y validar los formateadores habilitados en la aplicación::
+
+    class EmailFormatterManager
+    {
+        protected $enabledFormatters;
+
+        public function loadFormatters()
+        {
+            // código para configurar cuales formateadores usar
+            $enabledFormatters = array();
+            // ...
+
+            $this->enabledFormatters = $enabledFormatters;
+        }
+
+        public function getEnabledFormatters()
+        {
+            return $this->enabledFormatters;
+        }
+
+        // ...
+    }
+
+Si tu objetivo es evitar el tener un par de ``NewsletterManager`` y ``GreetingCardManager`` con ``EmailFormatterManager``, entonces podrías desear crear una clase configuradora para ajustar estos casos::
+
+    class EmailConfigurator
+    {
+        private $formatterManager;
+
+        public function __construct(EmailFormatterManager $formatterManager)
+        {
+            $this->formatterManager = $formatterManager;
+        }
+
+        public function configure(EmailFormatterAwareInterface $emailManager)
+        {
+            $emailManager->setEnabledFormatters(
+                $this->formatterManager->getEnabledFormatters()
+            );
+        }
+
+        // ...
+    }
+
+El trabajo del ``EmailConfigurator`` es inyectar los filtros habilitados en el ``NewsletterManager`` y ``GreetingCardManager`` porque no están conscientes de donde provienen los filtros habilitados. Por otro lado, el ``EmailFormatterManager`` mantiene el conocimiento sobre los formateadores habilitados y cómo cargarlos, únicamente manteniendo el principio de responsabilidad.
+
+Configurador del servicio ``Config``
+------------------------------------
+
+El servicio ``config`` de las clases anteriores se vería algo así:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        services:
+            my_mailer:
+                # ...
+
+            email_formatter_manager:
+                class:     EmailFormatterManager
+                # ...
+
+            email_configurator:
+                class:     EmailConfigurator
+                arguments: ["@email_formatter_manager"]
+                # ...
+
+            newsletter_manager:
+                class:     NewsletterManager
+                calls:
+                    - [setMailer, ["@my_mailer"]]
+                configurator: ["@email_configurator", configure]
+
+            greeting_card_manager:
+                class:     GreetingCardManager
+                calls:
+                    - [setMailer, ["@my_mailer"]]
+                configurator: ["@email_configurator", configure]
+
+
+    .. code-block:: xml
+
+            <services>
+            <service id="my_mailer" ...>
+              <!-- ... -->
+            </service>
+            <service id="email_formatter_manager" class="EmailFormatterManager">
+              <!-- ... -->
+            </service>
+            <service id="email_configurator" class="EmailConfigurator">
+                <argument type="service" id="email_formatter_manager" />
+              <!-- ... -->
+            </service>
+            <service id="newsletter_manager" class="NewsletterManager">
+                <call method="setMailer">
+                     <argument type="service" id="my_mailer" />
+                </call>
+                <configurator service="email_configurator" method="configure" />
+            </service>
+            <service id="greeting_card_manager" class="GreetingCardManager">
+                <call method="setMailer">
+                     <argument type="service" id="my_mailer" />
+                </call>
+                <configurator service="email_configurator" method="configure" />
+            </service>
+            </services>
+
+    .. code-block:: php
+
+        use Symfony\Component\DependencyInjection\Definition;
+        use Symfony\Component\DependencyInjection\Reference;
+
+        // ...
+        $container->setDefinition('my_mailer', ...);
+        $container->setDefinition('email_formatter_manager', new Definition(
+            'EmailFormatterManager'
+        ));
+        $container->setDefinition('email_configurator', new Definition(
+            'EmailConfigurator'
+        ));
+        $container->setDefinition('newsletter_manager', new Definition(
+            'NewsletterManager'
+        ))->addMethodCall('setMailer', array(
+            new Reference('my_mailer'),
+        ))->setConfigurator(array(
+            new Reference('email_configurator'),
+            'configure',
+        )));
+        $container->setDefinition('greeting_card_manager', new Definition(
+            'GreetingCardManager'
+        ))->addMethodCall('setMailer', array(
+            new Reference('my_mailer'),
+        ))->setConfigurator(array(
+            new Reference('email_configurator'),
+            'configure',
+        )));

@@ -81,25 +81,65 @@ Una de esas maneras es dejando que <em>Apache</em> maneje el enrutado directamen
 <div class="section" id="cambiando-los-parametros-de-configuracion-del-enrutador">
 <h2>Cambiando los parámetros de configuración del enrutador<a class="headerlink" href="#cambiando-los-parametros-de-configuracion-del-enrutador" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Para volcar las rutas de <em>Apache</em>, primero debes modificar algunos parámetros de configuración para decirle a <em>Symfony2</em> que utilice el <tt class="docutils literal"><span class="pre">ApacheUrlMatcher</span></tt> en lugar de la opción predeterminada.</p>
-<div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config_prod.yml</span>
-<span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">router.options.matcher.cache_class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">~</span> <span class="c1"># desactiva la caché de enrutado</span>
-    <span class="l-Scalar-Plain">router.options.matcher_class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Symfony\Component\Routing\Matcher\ApacheUrlMatcher</span>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/config_prod.yml</span>
 </pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/config_prod.xml --&gt;</span>
+<span class="nt">&lt;parameters&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;router.options.matcher.cache_class&quot;</span><span class="nt">&gt;</span>null<span class="nt">&lt;/parameter&gt;</span> <span class="c">&lt;!-- disable router cache --&gt;</span>
+    <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;router.options.matcher_class&quot;</span><span class="nt">&gt;</span>
+        Symfony\Component\Routing\Matcher\ApacheUrlMatcher
+    <span class="nt">&lt;/parameter&gt;</span>
+<span class="nt">&lt;/parameters&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/config_prod.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span><span class="s1">&#39;router.options.matcher.cache_class&#39;</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span> <span class="c1">// desactuva la caché de enrutado</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setParameter</span><span class="p">(</span>
+    <span class="s1">&#39;router.options.matcher_class&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Symfony\Component\Routing\Matcher\ApacheUrlMatcher&#39;</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
 </div>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
-<p class="last">Ten en cuenta que <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Matcher\ApacheUrlMatcher</span></tt> extiende a <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Matcher\UrlMatcher</span></tt> por lo que incluso si no se regeneran las reglas <tt class="docutils literal"><span class="pre">url_rewrite</span></tt>, todo saldrá bien (porque al final <tt class="docutils literal"><span class="pre">ApacheUrlMatcher::match()</span></tt> hace una llamado a <tt class="docutils literal"><span class="pre">parent::match()</span></tt>).</p>
+<p class="last">Ten en cuenta que <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Matcher\ApacheUrlMatcher</span></tt> extiende a <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Matcher\UrlMatcher</span></tt> por lo que incluso si no se regeneran las reglas <tt class="docutils literal"><span class="pre">url_rewrite</span></tt>, todo saldrá bien (porque al final <tt class="docutils literal"><span class="pre">ApacheUrlMatcher::match()</span></tt> hace una llamada a <tt class="docutils literal"><span class="pre">parent::match()</span></tt>).</p>
 </div>
 </div>
 <div class="section" id="generando-reglas-para-mod-rewrite">
 <h2>Generando reglas para <tt class="docutils literal"><span class="pre">mod_rewrite</span></tt><a class="headerlink" href="#generando-reglas-para-mod-rewrite" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Para comprobar que está funcionando, vamos a crear una ruta muy básica para el paquete de demostración:</p>
-<div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/routing.yml</span>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># app/config/routing.yml</span>
 <span class="l-Scalar-Plain">hello</span><span class="p-Indicator">:</span>
-    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">/hello/{name}</span>
+    <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">/hello/{name}</span>
     <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">_controller</span><span class="p-Indicator">:</span> <span class="nv">AcmeDemoBundle</span><span class="p-Indicator">:</span><span class="nv">Demo</span><span class="p-Indicator">:</span><span class="nv">hello</span> <span class="p-Indicator">}</span>
 </pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/routing.xml --&gt;</span>
+<span class="nt">&lt;route</span> <span class="na">id=</span><span class="s">&quot;hello&quot;</span> <span class="na">path=</span><span class="s">&quot;/hello/{name}&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;default</span> <span class="na">key=</span><span class="s">&quot;_controller&quot;</span><span class="nt">&gt;</span>AcmeDemoBundle:Demo:hello<span class="nt">&lt;/default&gt;</span>
+<span class="nt">&lt;/route&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/routing.php</span>
+<span class="nv">$collection</span><span class="o">-&gt;</span><span class="na">add</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Route</span><span class="p">(</span><span class="s1">&#39;/hello/{name}&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;_controller&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;AcmeDemoBundle:Demo:hello&#39;</span><span class="p">,</span>
+<span class="p">)));</span>
+</pre></div>
+</div>
+</li>
+</ul>
 </div>
 <p>Ahora genera las reglas <strong>url_rewrite</strong>:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span class="nv">$ </span>php app/console router:dump-apache -e<span class="o">=</span>prod --no-debug
@@ -190,7 +230,7 @@ Ahora estás listo para usar las reglas de enrutado de <em>Apache</em>.</p>
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

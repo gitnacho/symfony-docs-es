@@ -1,0 +1,63 @@
+.. index::
+   single: Correo electrónico; Probando
+
+Cómo verificar que se envía un mensaje de correo electrónico en una prueba funcional
+====================================================================================
+
+Enviar correos electrónicos con *Symfony2* es bastante sencillo gracias al ``SwiftmailerBundle``, el cual aprovecha el poder de la biblioteca `Swiftmailer`_.
+
+A probar funcionalmente que se envió un correo electrónico, e incluso acertar el asunto del correo electrónico, contenido o cualquiera otra cabecera, puedes utilizar el :ref:`Generador de perfiles de Symfony2 <internals-profiler>`.
+
+Empieza con una fácil acción del controlador que envía un correo electrónico::
+
+    public function sendEmailAction($name)
+    {
+        $message = \Swift_Message::newInstance()
+            ->setSubject('Hello Email')
+            ->setFrom('send@example.com')
+            ->setTo('recipient@example.com')
+            ->setBody('You should see me from the profiler!')
+        ;
+
+        $this->get('mailer')->send($message);
+
+        return $this->render(...);
+    }
+
+.. note::
+
+    No olvides habilitar el generador de perfiles como se explica en :doc:`/cookbook/testing/profiling`.
+
+En tu prueba funcional, usa el recolector ``swiftmailer`` en el generador de perfiles para conseguir la información sobre los mensajes enviados en la petición anterior::
+
+    // src/Acme/DemoBundle/Tests/Controller/MailControllerTest.php
+    use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+
+    class MailControllerTest extends WebTestCase
+    {
+        public function testMailIsSentAndContentIsOk()
+        {
+            $client = static::createClient();
+            $crawler = $client->request('POST', '/path/to/above/action');
+
+            $mailCollector = $client->getProfile()->getCollector('swiftmailer');
+
+            // Comprueba que se envió un mensaje de correo electrónico
+            $this->assertEquals(1, $mailCollector->getMessageCount());
+
+            $collectedMessages = $mailCollector->getMessages();
+            $message = $collectedMessages[0];
+
+            // Acierta los datos del correo electrónico
+            $this->assertInstanceOf('Swift_Message', $message);
+            $this->assertEquals('Hello Email', $message->getSubject());
+            $this->assertEquals('send@example.com', key($message->getFrom()));
+            $this->assertEquals('recipient@example.com', key($message->getTo()));
+            $this->assertEquals(
+                'You should see me from the profiler!',
+                $message->getBody()
+            );
+        }
+    }
+
+.. _Swiftmailer: http://swiftmailer.org/

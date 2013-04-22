@@ -222,7 +222,7 @@ Si necesitas sustituir la implementación predeterminada de la lógica de compar
 
 <span class="k">public</span> <span class="k">function</span> <span class="nf">isEqualTo</span><span class="p">(</span><span class="nx">UserInterface</span> <span class="nv">$user</span><span class="p">)</span>
 <span class="p">{</span>
-    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">username</span> <span class="o">===</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getUsername</span><span class="p">();</span>
+    <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span> <span class="o">===</span> <span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getId</span><span class="p">();</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -278,10 +278,68 @@ estados. La segunda parte se centrará en cómo autenticar uno de estos usuarios
 </pre></div>
 </div>
 </li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/security.xml --&gt;</span>
+<span class="nt">&lt;config&gt;</span>
+    <span class="nt">&lt;encoder</span> <span class="na">class=</span><span class="s">&quot;Acme\UserBundle\Entity\User&quot;</span>
+        <span class="na">algorithm=</span><span class="s">&quot;sha1&quot;</span>
+        <span class="na">encode-as-base64=</span><span class="s">&quot;false&quot;</span>
+        <span class="na">iterations=</span><span class="s">&quot;1&quot;</span>
+    <span class="nt">/&gt;</span>
+
+    <span class="nt">&lt;role</span> <span class="na">id=</span><span class="s">&quot;ROLE_ADMIN&quot;</span><span class="nt">&gt;</span>ROLE_USER<span class="nt">&lt;/role&gt;</span>
+    <span class="nt">&lt;role</span> <span class="na">id=</span><span class="s">&quot;ROLE_SUPER_ADMIN&quot;</span><span class="nt">&gt;</span>ROLE_USER, ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH<span class="nt">&lt;/role&gt;</span>
+
+    <span class="nt">&lt;provider</span> <span class="na">name=</span><span class="s">&quot;administrators&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;entity</span> <span class="na">class=</span><span class="s">&quot;AcmeUserBundle:User&quot;</span> <span class="na">property=</span><span class="s">&quot;username&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/provider&gt;</span>
+
+    <span class="nt">&lt;firewall</span> <span class="na">name=</span><span class="s">&quot;admin_area&quot;</span> <span class="na">pattern=</span><span class="s">&quot;^/admin&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;http-basic</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/firewall&gt;</span>
+
+    <span class="nt">&lt;rule</span> <span class="na">path=</span><span class="s">&quot;^/admin&quot;</span> <span class="na">role=</span><span class="s">&quot;ROLE_ADMIN&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/security.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;encoders&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;Acme\UserBundle\Entity\User&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;algorithm&#39;</span>         <span class="o">=&gt;</span> <span class="s1">&#39;sha1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;encode_as_base64&#39;</span>  <span class="o">=&gt;</span> <span class="k">false</span><span class="p">,</span>
+            <span class="s1">&#39;iterations&#39;</span>        <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+    <span class="s1">&#39;role_hierarchy&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;ROLE_ADMIN&#39;</span>       <span class="o">=&gt;</span> <span class="s1">&#39;ROLE_USER&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ROLE_SUPER_ADMIN&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;ROLE_USER&#39;</span><span class="p">,</span> <span class="s1">&#39;ROLE_ADMIN&#39;</span><span class="p">,</span> <span class="s1">&#39;ROLE_ALLOWED_TO_SWITCH&#39;</span><span class="p">),</span>
+    <span class="p">),</span>
+    <span class="s1">&#39;providers&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;administrator&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;entity&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+                <span class="s1">&#39;class&#39;</span>    <span class="o">=&gt;</span> <span class="s1">&#39;AcmeUserBundle:User&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;property&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;username&#39;</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+    <span class="s1">&#39;firewalls&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;admin_area&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;pattern&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;^/admin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;http_basic&#39;</span> <span class="o">=&gt;</span> <span class="k">null</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+    <span class="s1">&#39;access_control&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="k">array</span><span class="p">(</span><span class="s1">&#39;path&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;^/admin&#39;</span><span class="p">,</span> <span class="s1">&#39;role&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;ROLE_ADMIN&#39;</span><span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
 </ul>
 </div>
 <p>La sección <tt class="docutils literal"><span class="pre">encoders</span></tt> asocia el codificador de contraseña <tt class="docutils literal"><span class="pre">sha1</span></tt> a la clase entidad. Esto significa que <em>Symfony</em> espera que la contraseña en la base de datos esté cifrada usando este algoritmo. Para más información sobre cómo crear un nuevo objeto <tt class="docutils literal"><span class="pre">usuario</span></tt> con una contraseña cifrada correctamente, consulta la sección <a class="reference internal" href="../../book/security.html#book-security-encoding-user-password"><em>Codificando la contraseña del usuario</em></a> del capítulo de seguridad.</p>
-<p>La sección  <tt class="docutils literal"><span class="pre">proveedores</span></tt> define un proveedor de usuario <tt class="docutils literal"><span class="pre">administradores</span></tt>. A proveedor de usuario es una &#8220;fuente&#8221; de donde se cargan los usuarios durante la autenticación.
+<p>La sección  <tt class="docutils literal"><span class="pre">proveedores</span></tt> define un proveedor de usuario <tt class="docutils literal"><span class="pre">administradores</span></tt>. A proveedor de usuario es la «fuente» de donde se cargan los usuarios durante la autenticación.
 En este caso, la palabra clave <tt class="docutils literal"><span class="pre">entidad</span></tt> significa que <em>Symfony</em> utilizará la entidad proveedor de usuarios de <em>Doctrine</em> para cargar los objetos entidad de usuario desde la base de datos usando el campo único <tt class="docutils literal"><span class="pre">username</span></tt>. En otras palabras, esto le dice a <em>Symfony</em> cómo buscar al usuario en la base de datos antes de comprobar la validez de la contraseña.</p>
 <p>Este código y configuración funciona, pero no es suficiente para asegurar la aplicación para usuarios <strong>activos</strong>. A partir de ahora, todavía puedes autenticar con <tt class="docutils literal"><span class="pre">maxime</span></tt>. La siguiente sección explica cómo negar el acceso a usuarios no activos.</p>
 </div>
@@ -366,7 +424,11 @@ La buena noticia es que un objeto repositorio de <em>Doctrine</em> puede actuar 
             <span class="c1">// si no hay algún registro que coincida con los criterios.</span>
             <span class="nv">$user</span> <span class="o">=</span> <span class="nv">$q</span><span class="o">-&gt;</span><span class="na">getSingleResult</span><span class="p">();</span>
         <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="nx">NoResultException</span> <span class="nv">$e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">UsernameNotFoundException</span><span class="p">(</span><span class="nb">sprintf</span><span class="p">(</span><span class="s1">&#39;Unable to find an active admin AcmeUserBundle:User object identified by &quot;%s&quot;.&#39;</span><span class="p">,</span> <span class="nv">$username</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="nv">$e</span><span class="p">);</span>
+            <span class="nv">$message</span> <span class="o">=</span> <span class="nb">sprintf</span><span class="p">(</span>
+                <span class="s1">&#39;Unable to find an active admin AcmeUserBundle:User object identified by &quot;%s&quot;.&#39;</span><span class="p">,</span>
+                <span class="nv">$username</span>
+            <span class="p">);</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">UsernameNotFoundException</span><span class="p">(</span><span class="nv">$message</span><span class="p">,,</span> <span class="mi">0</span><span class="p">,</span> <span class="nv">$e</span><span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="nv">$user</span><span class="p">;</span>
@@ -376,7 +438,12 @@ La buena noticia es que un objeto repositorio de <em>Doctrine</em> puede actuar 
     <span class="p">{</span>
         <span class="nv">$class</span> <span class="o">=</span> <span class="nb">get_class</span><span class="p">(</span><span class="nv">$user</span><span class="p">);</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">supportsClass</span><span class="p">(</span><span class="nv">$class</span><span class="p">))</span> <span class="p">{</span>
-            <span class="k">throw</span> <span class="k">new</span> <span class="nx">UnsupportedUserException</span><span class="p">(</span><span class="nb">sprintf</span><span class="p">(</span><span class="s1">&#39;Instances of &quot;%s&quot; are not supported.&#39;</span><span class="p">,</span> <span class="nv">$class</span><span class="p">));</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nx">UnsupportedUserException</span><span class="p">(</span>
+                <span class="nb">sprintf</span><span class="p">(</span>
+                    <span class="s1">&#39;Instances of &quot;%s&quot; are not supported.&#39;</span><span class="p">,</span>
+                    <span class="nv">$class</span>
+                <span class="p">)</span>
+            <span class="p">);</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">find</span><span class="p">(</span><span class="nv">$user</span><span class="o">-&gt;</span><span class="na">getId</span><span class="p">());</span>
@@ -384,7 +451,8 @@ La buena noticia es que un objeto repositorio de <em>Doctrine</em> puede actuar 
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">supportsClass</span><span class="p">(</span><span class="nv">$class</span><span class="p">)</span>
     <span class="p">{</span>
-        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getEntityName</span><span class="p">()</span> <span class="o">===</span> <span class="nv">$class</span> <span class="o">||</span> <span class="nb">is_subclass_of</span><span class="p">(</span><span class="nv">$class</span><span class="p">,</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getEntityName</span><span class="p">());</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getEntityName</span><span class="p">()</span> <span class="o">===</span> <span class="nv">$class</span>
+            <span class="o">||</span> <span class="nb">is_subclass_of</span><span class="p">(</span><span class="nv">$class</span><span class="p">,</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getEntityName</span><span class="p">());</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -399,6 +467,34 @@ La buena noticia es que un objeto repositorio de <em>Doctrine</em> puede actuar 
         <span class="l-Scalar-Plain">administrators</span><span class="p-Indicator">:</span>
             <span class="l-Scalar-Plain">entity</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">class</span><span class="p-Indicator">:</span> <span class="nv">AcmeUserBundle</span><span class="p-Indicator">:</span><span class="nv">User</span> <span class="p-Indicator">}</span>
     <span class="c1"># ...</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- app/config/security.xml --&gt;</span>
+<span class="nt">&lt;config&gt;</span>
+    <span class="c">&lt;!-- ... --&gt;</span>
+
+    <span class="nt">&lt;provider</span> <span class="na">name=</span><span class="s">&quot;administrator&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;entity</span> <span class="na">class=</span><span class="s">&quot;AcmeUserBundle:User&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/provider&gt;</span>
+
+    <span class="c">&lt;!-- ... --&gt;</span>
+<span class="nt">&lt;/config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// app/config/security.php</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="o">...</span><span class="p">,</span>
+    <span class="s1">&#39;providers&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;administrator&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;entity&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+                <span class="s1">&#39;class&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;AcmeUserBundle:User&#39;</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+    <span class="o">...</span><span class="p">,</span>
+<span class="p">));</span>
 </pre></div>
 </div>
 </li>
@@ -580,7 +676,7 @@ Si no devuelves ningún rol, puede aparentar como si el usuario no estuviera aut
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

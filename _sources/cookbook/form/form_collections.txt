@@ -257,8 +257,8 @@ Lo primero que tienes que hacer es darle a conocer la colección del formulario 
         $builder->add('description');
 
         $builder->add('tags', 'collection', array(
-            'type' => new TagType(),
-            'allow_add' => true,
+            'type'         => new TagType(),
+            'allow_add'    => true,
             'by_reference' => false,
         ));
     }
@@ -309,7 +309,7 @@ En primer lugar, añade un enlace a la parte inferior de la lista de ``«tags»`
 
 .. code-block:: javascript
 
-    // Obtiene el div que contiene la colección de etiquetas
+    // Obtiene la ul que contiene la colección de etiquetas
     var collectionHolder = $('ul.tags');
 
     // configura una enlace "Agregar una etiqueta"
@@ -319,6 +319,10 @@ En primer lugar, añade un enlace a la parte inferior de la lista de ``«tags»`
     jQuery(document).ready(function() {
         // Añade el ancla "Agregar una etiqueta" y las etiquetas li y ul
         collectionHolder.append($newLinkLi);
+
+        // cuenta las entradas actuales en el formulario (p. ej. 2),
+        // la usa como índice al insertar un nuevo elemento (p. ej. 2)
+        collectionHolder.data('index', collectionHolder.find(':input').length);
 
         $addTagLink.on('click', function(e) {
             // evita crear el enlace con una "#" en la URL
@@ -339,16 +343,18 @@ El código real necesario para hacer que todo esto trabaje puede variar un poco,
 .. code-block:: javascript
 
     function addTagForm(collectionHolder, $newLinkLi) {
-        // Obtiene el data-prototype explicado anteriormente
-        var prototype = collectionHolder.attr('data-prototype');
+        // Obtiene los datos del prototipo explicado anteriormente
+        var prototype = collectionHolder.data('prototype');
 
-        // cuenta las entradas actuales en el formulario (p. ej. 2),
-        // lo usa como el nuevo índice (p. ej. 2)
-        var newIndex = collectionHolder.find(':input').length;
+        // Consigue el nuevo índice
+        var index = collectionHolder.data('index');
 
-        // Reemplaza el '__name__' en el prototipo HTML para que
+        // Sustituye el '__name__' en el prototipo HTML para que
         // en su lugar sea un número basado en cuántos elementos hay
-        var newForm = prototype.replace(/__name__/g, newIndex);
+        var newForm = prototype.replace(/__name__/g, index);
+
+        // Incrementa en uno el índice para el siguiente elemento
+        collectionHolder.data('index', index + 1);
 
         // Muestra el formulario en la página en un elemento li,
         \\ antes del enlace 'Agregar una etiqueta'
@@ -393,6 +399,24 @@ Ahora, cada vez que un usuario haga clic en el enlace ``Agregar una etiqueta``, 
                     tags:
                         targetEntity: Tag
                         cascade:      [persist]
+
+        .. code-block:: xml
+
+            <!-- src/Acme/TaskBundle/Resources/config/doctrine/Task.orm.xml -->
+            <doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                http://doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+                <entity name="Acme\TaskBundle\Entity\Task" ...>
+                    <!-- ... -->
+                    <one-to-many field="tags" target-entity="Tag">
+                        <cascade>
+                            <cascade-persist />
+                        </cascade>
+                    </one-to-many>
+                </entity>
+            </doctrine-mapping>
 
     El segundo problema potencial trata con el `Lado propietario y lado inverso`_ de las relaciones de *Doctrine*. En este ejemplo, si el lado «propietario» de la relación es la ``Tarea``, entonces la persistencia no tendrá ningún problema puesto que las etiquetas se añaden correctamente a la tarea. Sin embargo, si el lado propietario es ``«Tag»``, entonces tendrás que trabajar un poco más para asegurarte de modificar el lado correcto de la relación.
 
@@ -447,8 +471,8 @@ Comienza agregando la opción ``allow_delete`` en el ``Tipo`` del formulario::
         $builder->add('description');
 
         $builder->add('tags', 'collection', array(
-            'type' => new TagType(),
-            'allow_add' => true,
+            'type'         => new TagType(),
+            'allow_add'    => true,
             'allow_delete' => true,
             'by_reference' => false,
         ));

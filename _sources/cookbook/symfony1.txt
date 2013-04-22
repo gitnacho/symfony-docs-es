@@ -81,7 +81,7 @@ Como puedes ver, la ubicación del archivo sigue el espacio de nombres de la cla
 Específicamente, el espacio de nombres, ``Sensio\Bundle\FrameworkExtraBundle``, explica el directorio en que el archivo debe vivir (``vendor/sensio/framework-extra-bundle/Sensio/Bundle/FrameworkExtraBundle/``).
 ``Composer`` entonces puede buscar el archivo en ese sitio específico y cargarlo muy rápidamente.
 
-Si el archivo *no* vive en ese lugar exacto, recibirás un error ``La clase "Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle" no existe.`` En *Symfony2*, una "clase no existe" significa que el espacio de nombres de la clase sospechosa y la ubicación física no coinciden. Básicamente, *Symfony2* está buscando en una ubicación exacta dicha clase, pero ese lugar no existe (o contiene una clase diferente). Para que una clase se cargue automáticamente, en *Symfony2* **nunca necesitas vaciar la caché**.
+Si el archivo *no* vive en ese lugar exacto, recibirás un error ``La clase "Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle" no existe.`` En *Symfony2*, una «clase no existe» significa que el espacio de nombres de la clase sospechosa y la ubicación física no coinciden. Básicamente, *Symfony2* está buscando en una ubicación exacta dicha clase, pero ese lugar no existe (o contiene una clase diferente). Para que una clase se cargue automáticamente, en *Symfony2* **nunca necesitas vaciar la caché**.
 
 Como se mencionó anteriormente, para que trabaje el cargador automático, este necesita saber que el espacio de nombres ``Sensio`` vive en el directorio :file:`vendor/sensio` y que, por ejemplo, el espacio de nombres ``Doctrine`` vive en el directorio :file:`vendor/doctrine/orm/lib/`. Esta asociación es controlada enteramente por ``Composer``. Cada biblioteca de terceros que cargues a través de ``composer`` tiene sus ajustes definidos y el ``Composer`` cuida de todo por ti.
 
@@ -128,14 +128,15 @@ Por supuesto, no hay nada malo en tener varias aplicaciones en el proyecto, lo c
 Paquetes y complementos
 -----------------------
 
-En un proyecto *Symfony1*, un complemento puede contener configuración, módulos, bibliotecas *PHP*, activos y cualquier otra cosa relacionada con tu proyecto. En *Symfony2*, la idea de un complemento es reemplazada por el "paquete". Un paquete es aún más poderoso que un complemento porque el núcleo de la plataforma *Symfony2* consta de una serie de paquetes. En *Symfony2*, los paquetes son ciudadanos de primera clase y son tan flexibles que incluso el código del núcleo en sí es un paquete.
+En un proyecto *Symfony1*, un complemento puede contener configuración, módulos, bibliotecas *PHP*, activos y cualquier otra cosa relacionada con tu proyecto. En *Symfony2*, la idea de un complemento es reemplazada por el «paquete». Un paquete es más poderoso aún que un complemento porque el núcleo de la plataforma *Symfony2* consta de una serie de paquetes. En *Symfony2*, los paquetes son ciudadanos de primera clase y son tan flexibles que incluso el código del núcleo en sí es un paquete.
 
 En *Symfony1*, un complemento se debe activar dentro de la clase ``ProjectConfiguration``::
 
     // config/ProjectConfiguration.class.php
     public function setup()
     {
-        $this->enableAllPluginsExcept(array(... some plugins here));
+        // aquí algunos complementos
+        $this->enableAllPluginsExcept(array(...));
     }
 
 En *Symfony2*, los paquetes se activan en el interior del núcleo de la aplicación::
@@ -158,21 +159,59 @@ Enrutando (:file:`routing.yml`) y configurando (:file:`config.yml`)
 
 En *Symfony1*, los archivos de configuración :file:`routing.yml` y :file:`app.yml` cargan cualquier complemento automáticamente. En *Symfony2*, la configuración de enrutado y de la aplicación dentro de un paquete se debe incluir manualmente. Por ejemplo, para incluir un recurso de enrutado de un paquete llamado ``AcmeDemoBundle``, puedes hacer lo siguiente:
 
-.. code-block:: yaml
+.. configuration-block::
 
-    # app/config/routing.yml
-    _hello:
-        resource: "@AcmeDemoBundle/Resources/config/routing.yml"
+    .. code-block:: yaml
+
+        # app/config/routing.yml
+        _hello:
+            resource: "@AcmeDemoBundle/Resources/config/routing.yml"
+
+    .. code-block:: xml
+
+        <!-- app/config/routing.yml -->
+        <?xml version="1.0" encoding="UTF-8" ?>
+
+        <routes xmlns="http://symfony.com/schema/routing"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
+
+            <import resource="@AcmeDemoBundle/Resources/config/routing.xml" />
+        </routes>
+
+    .. code-block:: php
+
+        // app/config/routing.php
+        use Symfony\Component\Routing\RouteCollection;
+
+        $collection = new RouteCollection();
+        $collection->addCollection($loader->import("@AcmeHelloBundle/Resources/config/routing.php"));
+
+        return $collection;
 
 Esto cargará las rutas que se encuentren en el archivo ``Resources/config/routing.yml`` del ``AcmeDemoBundle``. La sintaxis especial ``@AcmeDemoBundle`` es un atajo que, internamente, resuelve la ruta al directorio del paquete.
 
 Puedes utilizar esta misma estrategia en la configuración de un paquete:
 
-.. code-block:: yaml
+.. configuration-block::
 
-    # app/config/config.yml
-    imports:
-        - { resource: "@AcmeDemoBundle/Resources/config/config.yml" }
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        imports:
+            - { resource: "@AcmeDemoBundle/Resources/config/config.yml" }
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <imports>
+            <import resource="@AcmeDemoBundle/Resources/config/config.xml" />
+        </imports>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $this->import('@AcmeDemoBundle/Resources/config/config.php')
 
 En *Symfony2*, la configuración es un poco como :file:`app.yml` en  *Symfony1*, salvo que mucho más sistemática. Con :file:`app.yml`, simplemente puedes crear las claves que quieras.
 Por omisión, estas entradas no tenían sentido y dependían completamente de cómo se utilizaban en tu aplicación:
@@ -186,10 +225,22 @@ Por omisión, estas entradas no tenían sentido y dependían completamente de c�
 
 En *Symfony2*, también puedes crear entradas arbitrarias bajo la clave ``parameters`` de tu configuración:
 
-.. code-block:: yaml
+.. configuration-block::
 
-    parameters:
-        email.from_address: foo.bar@example.com
+    .. code-block:: yaml
+
+        parameters:
+            email.from_address: foo.bar@example.com
+
+    .. code-block:: xml
+
+        <parameters>
+            <parameter key="email.from_address">foo.bar@example.com</parameter>
+        </parameters>
+
+    .. code-block:: php
+
+        $container->setParameter('email.from_address', 'foo.bar@example.com');
 
 Ahora puedes acceder a ella desde un controlador, por ejemplo::
 

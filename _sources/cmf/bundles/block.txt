@@ -14,6 +14,7 @@ Dependencias
 
 Este paquete está basado en el `SonataBlockBundle <https://github.com/sonata-project/SonataBlockBundle>`_
 
+.. _configuration:
 
 Configurando
 ------------
@@ -28,8 +29,10 @@ La clave de configuración para este paquete es ``symfony_cmf_block``
         symfony_cmf_block:
             document_manager_name:  default
 
-Dibujando el bloque
--------------------
+.. _block-document:
+
+Bloque documento
+----------------
 
 Antes de que puedas dibujar un bloque, necesitas crear un objeto que represente los datos de tu bloque en el repositorio.
 Lo puedes conseguir con el siguiente fragmento de código (ten en cuenta que ``$parentPage`` necesita ser una instancia de una página definida por el `ContentBundle <https://github.com/symfony-cmf/ContentBundle>`_):
@@ -44,36 +47,155 @@ Lo puedes conseguir con el siguiente fragmento de código (ten en cuenta que ``$
 
     $documentManager->persist($myBlock);
 
-Ten en cuenta que el ``sidebarBlock`` es el identificador que escogimos para el bloque. Junto con el documento padre del bloque, esto hace único al bloque. Las otras propiedades son específicas a ``Simpleblock``.
-Ahora para realmente dibujar este bloque, justo añade el siguiente código a tu plantilla de *Twig*:
+Ten en cuenta que ``sidebarBlock`` es el identificador que escogimos para el bloque. Junto con el documento padre del bloque, esto hace único al bloque. Las otras propiedades son específicas de ``Symfony\Cmf\Bundle\BlockBundle\Document\SimpleBlock``.
+
+.. note::
+
+    El bloque simple ahora está listo para dibujarse, ve :ref:`block-rendering`.
+
+.. note::
+
+    Siempre asegúrate de implementar la interfaz ``Sonata\BlockBundle\Model\BlockInterface`` o un bloque de documento existengte tal como ``Symfony\Cmf\Bundle\BlockBundle\Document\BaseBlock``.
+
+.. _block-service:
+
+Bloque de servicio
+------------------
+
+Si miras dentro de la clase ``SimpleBlock``, notarás el método ``getType``. Este define el nombre del servicio de bloque que procesa el bloque al dibujarlo.
+
+Un bloque de servicio contiene:
+
+* Un método ``execute``
+* configuración predefinida
+* configuración de formulario
+* configuración de caché
+* activos *js* y *css* por cargar
+* un método ``load``
+
+Échale un vistazo a los bloques de servicio en ``Symfony\Cmf\Bundle\BlockBundle\Block`` para ver algunos ejemplos.
+
+.. note::
+
+    Asegúrate de implementar siempre la interfaz ``Sonata\BlockBundle\Block\BlockServiceInterface`` o un bloque de servicio existente tal como el ``Sonata\BlockBundle\Block\BaseBlockService``.
+
+.. _block-execute:
+
+El método ``execute``
+^^^^^^^^^^^^^^^^^^^^^
+
+Este contiene el ``controlador`` lógico. Combina las opciones predefinidas en este método si lo quieres utilizar:
+
+.. code-block:: php
+
+    // ...
+    if ($block->getEnabled()) {
+        // combina las opciones
+        $settings = array_merge($this->getDefaultSettings(), $block->getSettings());
+
+        $feed = false;
+        if ($settings['url']) {
+            $feed = $this->feedReader->import($block);
+        }
+
+        return $this->renderResponse($this->getTemplate(), array(
+            'feed' => $feed,
+            'block' => $block,
+            'settings' => $settings
+        ), $response);
+    }
+    // ...
+
+.. note::
+
+    Si tienes que usar mucha lógica, la puedes mover a un servicio específico e inyectarlo en el bloque de servicio. Luego usar ese servicio específico en el método ``execute``.
+
+configuración predefinida
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+El método ``getDefaultSettings`` contiene las opciones predefinidas de un bloque. Las opciones después se pueden alterar en múltiples sitios, reflejándose en una cascada como esta:
+
+* las opciones predefinidas se almacenan en el bloque de servicio
+* las opciones se pueden alterar a través de los ayudantes de plantilla:
+
+  .. code-block:: jinja
+
+      {{ sonata_block_render({
+        'type': 'acme_main.block.rss',
+        'settings': {
+            'title': 'Symfony2 CMF news',
+            'url': 'http://cmf.symfony.com/news.rss'
+        }
+      }) }}
+
+* y las opciones también se pueden alterar en un bloque de documento, la ventaja es que las opciones están almacenadas en *PHPCR* y te permiten implementar una interfaz de usuario final o de administración para cambiar algunas o todas las opciones.
+
+configuración de formulario
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Los métodos ``buildEditForm`` y ``buildCreateForm`` contienen configuración de formulario para editar utilizando una interfaz de usuario final o de administración. El método ``validateBlock`` contiene la configuración de validación.
+
+configuración de caché
+^^^^^^^^^^^^^^^^^^^^^^
+
+El método ``getCacheKeys`` contiene las claves utilizadas para el bloque de la memoria caché.
+
+*js* y *css*
+^^^^^^^^^^^^
+
+Puedes usar los métodos ``getJavascripts`` y ``getStylesheets`` para definir activos *js* y *css*. Usa los ayudantes de *Twig* ``sonata_block_include_javascripts`` y ``sonata_block_include_stylesheets`` para reproducirlos.
+
+.. code-block:: jinja
+
+    {{ sonata_block_include_javascripts() }}
+    {{ sonata_block_include_stylesheets() }}
+
+.. note::
+
+    Esto reproducirá los bloques *js* y *css** de todos los bloques cargados en el contenedor de servicios de tu aplicación.
+
+El método ``load``
+^^^^^^^^^^^^^^^^^^
+
+Puedes usar el método ``load`` para cargar datos adicionales. Este se invoca cada vez que se reproduce un bloque y antes de llamar al método ``execute``.
+
+.. _block-rendering:
+
+Dibujando el bloque
+-------------------
+
+Para realmente reproducir el bloque del ejemplo de la sección del bloque documento, solo añade el siguiente código a tu plantilla *Twig*:
 
 .. code-block:: jinja
 
     {{ sonata_block_render({'name': 'sidebarBlock'}) }}
 
-Esto hará que se dibuje el ``BlockBundle`` según el bloque en cada página que tenga un bloque llamado ``'sidebarBlock'``. Naturalmente, es necesario que la página real sea reproducida por la plantilla que contiene el fragmento anterior.
+Esto hará que se dibuje el ``BlockBundle`` según el bloque en cada página que tenga un bloque llamado ``'sidebarBlock'``.
+Naturalmente, es necesario que la página real sea reproducida por la plantilla que contiene el fragmento anterior.
+
+Esto pasa al reproducir un bloque, ve las siguientes secciones para más detalles:
+
+* se carga un documento basándose en el nombre
+* si está configurada la memorización en caché, se revisa la caché y si el contenido se encuentra se devuelve
+* Cada bloque documento también tiene un servicio ``block``, se invoca al método execute:
+
+  * aquí puedes poner lógica como en un controlador
+  * esta llama a una plantilla
+  * el resultado es un objeto Respuesta
 
 Tipos de bloque
 ---------------
 
 El ``BlockBundle`` viene con cuatro bloques de propósito general:
- * SimpleBlock: Un bloque sencillo con nada más que un título y un campo de hipertexto. Este normalmente sería el que un editor modificaría directamente, por ejemplo, la información de contacto
- * ``ContainerBlock``: Un bloque que contiene de ``0`` a ``n`` bloques descendientes
- * ``ReferenceBlock``: Un bloque que hace referencia a un bloque almacenado en algún otro lugar en el árbol de contenido. Por ejemplo, podrías querer referir partes de la información de contacto desde la página inicial
- * ``ActionBlock``: Un bloque que invoca acciones de *Symfony2*. «¿Por qué utilizar esto en vez de llamar a la acción directamente desde mi plantilla?», te podrías preguntar. Bien, imagina el siguiente caso: Provees un bloque que dibuja reflexiones de tus últimas noticias. Sin embargo, no hay ninguna regla de en dónde tendría que aparecer. En cambio, tu cliente quiere decidir en qué páginas sería mostrado este bloque. Proporcionando un ``ActionBlock`` acorde, tu cliente te permite hacerlo sin llamarle (¡una y otra vez!) para cambiar algunas plantillas.
 
-Crea tus propios bloques
-------------------------
+* SimpleBlock: Un bloque sencillo con nada más que un título y un campo de hipertexto. Este normalmente sería el que un editor modificaría directamente, por ejemplo, la información de contacto
+* ``ContainerBlock``: Un bloque que contiene de ``0`` a ``n`` bloques descendientes
+* ``ReferenceBlock``: Un bloque que hace referencia a un bloque almacenado en algún otro lugar en el árbol de contenido. Por ejemplo, podrías desear referir partes de la información de contacto desde la página inicial
+* ``ActionBlock``: Un bloque que invoca acciones de *Symfony2*. «¿Por qué utilizar esto en vez de llamar a la acción directamente desde mi plantilla?», te podrías preguntar. Bien, imagina el siguiente caso: Provees un bloque que dibuja reflexiones de tus últimas noticias. Sin embargo, no hay ninguna regla de en dónde debería aparecer. En su lugar, tu cliente quiere decidir en qué páginas se mostraría este bloque. Proporcionando un ``ActionBlock`` acorde, permites a tu cliente hacerlo sin llamarte (¡una y otra vez!) para cambiar algunas plantillas.
 
-Digamos que estás trabajando en un proyecto donde tienes que integrar los datos recibidos de varios alimentadores ``RSS``.
-Por supuesto podrías crear un ``ActionBlock`` para cada uno de estos alimentadores, ¿pero no es tonto esto? De hecho todas estas acciones se verían similares: Recibes los datos desde un alimentador, los saneas y pasas los datos a una plantilla. De este modo decides crear tu propio bloque, el ``RSSBlock``.
+Además el ``BlockBundle`` tiene bloques más específicos:
 
-Lo primero que necesitas es una entidad que contenga los datos. Es recomendable extender el contenido desde el ``BaseBlock`` de este paquete (aun así no es forzoso hacerlo, siempre y cuando implementes la ``Sonata\BlockBundle\Model\BlockInterface``). En tu entidad, añades dos propiedades, ``'feedURL'`` y ``'templateName'``, así como captadores y definidores para ellas. Además, necesitas definir el método ``getType`` que sólo regresa el ``'my_bundle.block.rss'``.
-
-La segunda cosa necesaria es un servicio que ``RSSBlocks`` sabe cómo manejar. En el caso del ``RSSBlock`` sería esto: Recuperar los datos desde dónde estén almacenados en ``'feedURL'``, sanearlos, y pasarlos a la plantilla almacenada en ``'templateName'``. De nuevo, puedes extender el ``Sonata\BlockBundle\Block\BaseBlockService``.
-Es importante, denominar la propiedad ``'name'`` del servicio ``'my_bundle.block.rss'`` (Esto garantiza que se pueda encontrar la relación entre la entidad y el servicio).
-
-La última cosa que necesitas para definir el servicio es un archivo :file:`config`. Es importante etiquetar tu ``BlockService`` con  ``'sonata.block'``, de lo contrario no lo reconocerá el paquete.
+* ``RssBlock``: Este bloque extiende el ``ActionBlock``: El bloque documento guarda la *url* del alimentador y la acción del controlador recupera elmentos del alimentador. La implementación predefinida utiliza el `EkoFeedBundle <https://github.com/eko/FeedBundle>`_ para leer elementos del alimentador.
 
 Ejemplos
 --------
@@ -81,13 +203,14 @@ Ejemplos
 Puedes encontrar ejemplos de uso de este paquete en el `Recinto de seguridad del CMF de Symfony <https://github.com/symfony-cmf/cmf-sandbox>`_.
 Dale un vistazo en el ``BlockBundle`` del recinto de seguridad. También te muestra cómo hacer editables los bloques usando el `CreateBundle <https://github.com/symfony-cmf/CreateBundle>`_.
 
-Relación al paquete ``Block``
------------------------------
+Referencia
+----------
 
-El ``BlockBundle`` está basado en el `SonataBlockBundle <https://github.com/sonata-project/SonataBlockBundle>`_.
-Este reemplaza componentes del paquete dónde sea necesario que sea compatible con *PHPCR*.
+.. toctree::
+   :maxdepth: 1
+   :numbered:
 
-La siguiente imagen muestra dónde utilizamos nuestros propios componentes (azules):
-
-.. image:: ../images/bundles/classdiagram.jpg
-   :align: center
+   block/types
+   block/create_your_own_blocks
+   block/cache
+   block/relation_to_sonata_block_bundle

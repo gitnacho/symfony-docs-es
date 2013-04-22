@@ -4,15 +4,16 @@
 Valida que un campo en particular (o campos) en una entidad *Doctrine* sea único. Este se utiliza comúnmente, por ejemplo, para prevenir que un nuevo usuario se registre con una dirección de correo electrónico existente en el sistema.
 
 +----------------+-------------------------------------------------------------------------------------+
-| Aplica a       | :ref:`class<validation-class-target>`                                               |
+| Applies to     | :ref:`class<validation-class-target>`                                               |
 +----------------+-------------------------------------------------------------------------------------+
-| Opciones       | - `fields`_                                                                         |
+| Options        | - `fields`_                                                                         |
 |                | - `message`_                                                                        |
 |                | - `em`_                                                                             |
+|                | - `repositoryMethod`_                                                               |
 +----------------+-------------------------------------------------------------------------------------+
-| Clase          | :class:`Symfony\\Bridge\\Doctrine\\Validator\\Constraints\\UniqueEntity`            |
+| Class          | :class:`Symfony\\Bridge\\Doctrine\\Validator\\Constraints\\UniqueEntity`            |
 +----------------+-------------------------------------------------------------------------------------+
-| Validador      | :class:`Symfony\\Bridge\\Doctrine\\Validator\\Constraints\\UniqueEntityValidator`   |
+| Validator      | :class:`Symfony\\Bridge\\Doctrine\\Validator\\Constraints\\UniqueEntityValidator`   |
 +----------------+-------------------------------------------------------------------------------------+
 
 Uso básico
@@ -21,6 +22,16 @@ Uso básico
 Supongamos que tienes un ``AcmeUserBundle`` con una entidad ``User`` que tiene un campo ``email``. Puedes utilizar la restricción ``UniqueEntity`` para garantizar que el campo ``email`` siga siendo único en toda tu tabla ``User``:
 
 .. configuration-block::
+
+    .. code-block:: yaml
+
+        # src/Acme/UserBundle/Resources/config/validation.yml
+        Acme\UserBundle\Entity\Author:
+            constraints:
+                - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: email
+            properties:
+                email:
+                    - Email: ~
 
     .. code-block:: php-annotations
 
@@ -50,16 +61,6 @@ Supongamos que tienes un ``AcmeUserBundle`` con una entidad ``User`` que tiene u
             // ...
         }
 
-    .. code-block:: yaml
-
-        # src/Acme/UserBundle/Resources/config/validation.yml
-        Acme\UserBundle\Entity\Author:
-            constraints:
-                - Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity: email
-            properties:
-                email:
-                    - Email: ~
-
     .. code-block:: xml
 
         <class name="Acme\UserBundle\Entity\Author">
@@ -67,10 +68,34 @@ Supongamos que tienes un ``AcmeUserBundle`` con una entidad ``User`` que tiene u
                 <option name="fields">email</option>
                 <option name="message">This email already exists.</option>
             </constraint>
-             <property name="email">
+            <property name="email">
                 <constraint name="Email" />
             </property>
         </class>
+
+    .. code-block:: php
+
+
+        // Acme/UserBundle/Entity/User.php
+        namespace Acme\UserBundle\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        // ¡NO OLVIDES usar esta declaración!
+        use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+        
+        class Autor
+        {
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addConstraint(new UniqueEntity(array(
+                    'fields'  => 'email',
+                    'message' => 'This email already exists.',
+                )));
+
+                $metadata->addPropertyConstraint(new Assert\Email());
+            }
+        }
 
 Opciones
 --------
@@ -97,3 +122,16 @@ El mensaje a mostrar cuando esta restricción falla.
 **tipo**: ``string``
 
 El nombre del gestor de entidades que hará la consulta para determinar la unicidad. Si lo dejas en blanco, el gestor de entidades correcto será determinado por esta clase. Por esa razón, probablemente no será necesario utilizar esta opción.
+
+repositoryMethod
+~~~~~~~~~~~~~~~~
+
+**tipo**: ``string`` **predefinido**: ``findBy``
+
+.. versionadded:: 2.1
+    The ``repositoryMethod`` option was added in Symfony 2.1. Before, it
+    always used the ``findBy`` method.
+
+The name of the repository method to use for making the query to determine the
+uniqueness. If it's left blank, the ``findBy`` method will be used. This
+method should return a countable result.

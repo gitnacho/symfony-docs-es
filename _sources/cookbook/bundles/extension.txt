@@ -15,7 +15,7 @@ Por ejemplo, el siguiente fragmento le dice al ``FrameworkBundle`` que habilite 
 
         framework:
             # ...
-            form:            true
+            form: true
 
     .. code-block:: xml
 
@@ -27,7 +27,7 @@ Por ejemplo, el siguiente fragmento le dice al ``FrameworkBundle`` que habilite 
 
         $container->loadFromExtension('framework', array(
             // ...
-            'form'            => true,
+            'form' => true,
             // ...
         ));
 
@@ -61,7 +61,7 @@ El segundo método tiene varias ventajas específicas:
 
 .. index::
    single: Paquete; Extensión
-   single: Inyección de dependencia; Extensión
+   single: Inyección de dependencias; Extensión
 
 Creando una clase ``Extension``
 -------------------------------
@@ -178,7 +178,7 @@ El arreglo pasado a tu método ``load()`` se verá así::
         array(
             'foo' => 'fooValue',
             'bar' => 'barValue',
-        )
+        ),
     )
 
 Ten en cuenta que se trata de un *arreglo de arreglos*, y no sólo un único arreglo plano con los valores de configuración. Esto es intencional. Por ejemplo, si ``acme_hello`` aparece en otro archivo de configuración ---digamos en :file:`config_dev.yml`--- con diferentes valores bajo él, entonces el arreglo entrante puede tener este aspecto::
@@ -231,7 +231,10 @@ Una de las cosas comunes por hacer es cargar un archivo de configuración extern
     {
         // ... prepara tu variable $config
 
-        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader = new XmlFileLoader(
+            $container,
+            new FileLocator(__DIR__.'/../Resources/config')
+        );
         $loader->load('services.xml');
     }
 
@@ -242,7 +245,10 @@ Por ejemplo, supongamos que sólo deseas cargar un conjunto de servicios si una 
     {
         // ... prepara tu variable $config
 
-        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader = new XmlFileLoader(
+            $container,
+            new FileLocator(__DIR__.'/../Resources/config')
+        );
 
         if (isset($config['enabled']) && $config['enabled']) {
             $loader->load('services.xml');
@@ -280,14 +286,22 @@ Para hacerlo agrega lo siguiente al método ``load()``::
     {
         // ... prepara tu variable $config
 
-        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader = new XmlFileLoader(
+            $container,
+            new FileLocator(__DIR__.'/../Resources/config')
+        );
         $loader->load('services.xml');
 
         if (!isset($config['my_type'])) {
-            throw new \InvalidArgumentException('The "my_type" option must be set');
+            throw new \InvalidArgumentException(
+                'The "my_type" option must be set'
+            );
         }
 
-        $container->setParameter('acme_hello.my_service_type', $config['my_type']);
+        $container->setParameter(
+            'acme_hello.my_service_type',
+            $config['my_type']
+        );
     }
 
 Ahora, el usuario puede configurar eficientemente el servicio especificando el valor de configuración ``my_type``:
@@ -322,7 +336,7 @@ Ahora, el usuario puede configurar eficientemente el servicio especificando el v
         // app/config/config.php
         $container->loadFromExtension('acme_hello', array(
             'my_type' => 'foo',
-            // ...
+            ...,
         ));
 
 Parámetros globales
@@ -409,9 +423,9 @@ Volcando la configuración predefinida
 .. versionadded:: 2.1
     La orden ``config:dump-reference`` se añadió en *Symfony 2.1*
 
-La orden ``config:dump-reference`` permite volcar a la consola en *YAML* la configuración predefinida de un paquete.
+La orden ``config:dump-reference`` permite volcar a la consola la configuración predefinida de un paquete en formato *YAML*.
 
-Mientras que la configuración de tu paquete se encuentre en la ubicación estándar (``TuPaquete\DependencyInjection\Configuration``) y no tenga un ``__construct()`` esto funcionará automáticamente.  Si tienes algo diferente en tu clase ``Extension`` tendrás que sobrescribir el método ``Extension::getConfiguration()``.  Para que devuelva una instancia de tu ``Configuración``.
+Siempre y cuando la configuración de tu paquete se encuentre en la ubicación estándar (``TuPaquete\DependencyInjection\Configuration``) y no tenga un ``__construct()`` esto funcionará automáticamente.  Si tienes algo diferente en tu clase ``Extension`` tendrás que sobrescribir el método :method:`Extension::getConfiguration() <Symfony\\Component\\HttpKernel\\DependencyInjection\\Extension::getConfiguration>` y devolver una instancia de tu ``Configuration``.
 
 Puedes añadir comentarios y ejemplos a los nodos de tu configuración usando los métodos
 ``->info()`` y ``->example()``::
@@ -459,7 +473,7 @@ Al crear una extensión, sigue estas simples convenciones:
 
 * La extensión debe proporcionar un esquema *XSD*.
 
-Si sigues estas simples convenciones, *Symfony2* registrará automáticamente las extensiones. Si no es así, sustituye el método :method:`Symfony\\Component\\HttpKernel\\Bundle\\Bundle::build` en tu paquete::
+Si sigues estas simples convenciones, *Symfony2* registrará automáticamente las extensiones. De no ser así, sustituye el método :method:`Bundle::build() <Symfony\\Component\\HttpKernel\\Bundle\\Bundle::build>` en tu paquete::
 
     // ...
     use Acme\HelloBundle\DependencyInjection\UnconventionalExtensionClass;

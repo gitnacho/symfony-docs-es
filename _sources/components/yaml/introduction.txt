@@ -1,0 +1,187 @@
+.. index::
+   single: Yaml
+   single: Componentes; Yaml
+
+El componente *YAML*
+====================
+
+    El componente *YAML* carga y vuelca archivos *YAML*.
+
+¿Qué es entonces?
+-----------------
+
+El componente *YAML* de *Symfony2* analiza cadenas *YAML* para convertirlas en arreglos *PHP*.
+También es capaz de convertir arreglos *PHP* a cadenas *YAML*.
+
+`YAML`_, *YAML no es un lenguaje de marcado*, es un estándar para la serialización de datos amigable con los humanos para todos los lenguajes de programación. YAML es un formato ideal para tus archivos de configuración. Los archivos *YAML* son tan expresivos como los archivos *XML* y tan fáciles de leer como los archivos ``INI``.
+
+El componente *YAML* de *Symfony2* implementa la versión 1.2 de la
+especificación *YAML*.
+
+
+.. tip::
+
+    Aprende más sobre el componente *Yaml* en el artículo :doc:`/components/yaml/yaml_format`.
+
+Instalando
+----------
+
+Puedes instalar el componente de varias maneras diferentes:
+
+* Usando el repositorio *Git* oficial (https://github.com/symfony/Yaml);
+* :doc:`Instalándolo vía Composer </components/using_components>` (``symfony/yaml`` en `Packagist`_).
+
+¿Por qué?
+---------
+
+Rapidez
+~~~~~~~
+
+Uno de los objetivos del componente *YAML* de *Symfony* es encontrar el balance adecuado entre características y velocidad. Es compatible con las características necesarias para manipular archivos de configuración.
+
+Analizador real
+~~~~~~~~~~~~~~~
+
+Este exporta un analizador real y es capaz de analizar un gran subconjunto de especificaciones *YAML*, para todas tus necesidades de configuración. También significa que el analizador es bastante robusto, fácil de entender, y lo suficientemente simple como para ampliarlo.
+
+Borrando mensajes de error
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Cada vez que tienes un problema de sintaxis con tus archivos *YAML*, la biblioteca genera un útil mensaje de ayuda con el nombre y número de línea donde está el problema. Lo cual facilita mucho la depuración.
+
+Compatibilidad con el volcado
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+También es capaz de volcar arreglos de *PHP* a *YAML* con apoyo a objetos, y el nivel de configuración en línea es bastante bueno.
+
+Compatibilidad de tipos
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Es compatible con la mayoría de los tipos *YAML* integrados como fechas, números enteros, octales, booleanos, y mucho más...
+
+Completa compatibilidad con la fusión de claves
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Completa compatibilidad para referencias, alias y completa fusión de claves. No repitas tú mismo haciendo referencia a segmentos de configuración comunes.
+
+Utilizando el componente *YAML* de *Symfony2*
+---------------------------------------------
+
+El componente *YAML* de *Symfony2* es muy simple y consiste de dos clases principales:
+una analiza cadenas *YAML* (:class:`Symfony\\Component\\Yaml\\Parser`), y la otra
+vuelca un array *PHP* en una cadena *YAML* (:class:`Symfony\\Component\\Yaml\\Dumper`).
+
+Además de estas dos clases, la clase :class:`Symfony\\Component\\Yaml\\Yaml` actúa como un delgado contenedor que simplifica los usos más comunes.
+
+Leyendo archivos *YAML*
+~~~~~~~~~~~~~~~~~~~~~~~
+
+El método :method:`Symfony\\Component\\Yaml\\Parser::parse` analiza una cadena *YAML* y la convierte en un arreglo *PHP*:
+
+.. code-block:: php
+
+    use Symfony\Component\Yaml\Parser;
+
+    $yaml = new Parser();
+
+    $value = $yaml->parse(file_get_contents('/ruta/a/file.yml'));
+
+Si ocurre un error durante el análisis, el analizador lanza una excepción :class:`Symfony\\Component\\Yaml\\Exception\\ParseException` que indica el tipo de error y la línea en la cadena *YAML* original en la que ocurrió el error:
+
+.. code-block:: php
+
+    use Symfony\Component\Yaml\Exception\ParseException;
+
+    try {
+        $value = $yaml->parse(file_get_contents('/ruta/a/file.yml'));
+    } catch (ParseException $e) {
+        printf("Unable to parse the YAML string: %s", $e->getMessage());
+    }
+
+.. tip::
+
+    Debido a que el analizador es reentrante, puedes utilizar el mismo objeto analizador para cargar diferentes cadenas *YAML*.
+
+Al cargar un archivo *YAML*, a veces es mejor usar el contenedor del método :method:`Symfony\\Component\\Yaml\\Yaml::parse`:
+
+.. code-block:: php
+
+    use Symfony\Component\Yaml\Yaml;
+
+    $yaml = Yaml::parse('/ruta/a/file.yml');
+
+El método estático :method:`Symfony\\Component\\Yaml\\Yaml::parse` toma una cadena *YAML* o un archivo que contiene *YAML*. Internamente, llama al método :method:`Symfony\\Component\\Yaml\\Parser::parse`, pero mejora el error si algo sale mal, añadiendo el nombre del archivo al mensaje.
+
+Ejecutando *PHP* dentro de los archivos *YAML*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.1
+    El método ``Yaml::enablePhpParsing()`` es nuevo en *Symfony 2.1*. Antes de 2.1, *PHP* *siempre* se ejecuta al llamar a la función ``parse()``.
+
+De manera predeterminada, si incluyes *PHP* dentro de un archivo *YAML*, no se va a analizar.
+Si quiere que *PHP* se analice, debes llamar a ``Yaml::enablePhpParsing()`` antes de analizar el archivo para activar ese modo. Si sólo deseas permitir código *PHP* para un único archivo *YAML*, asegúrate de desactivar el intérprete *PHP* después de analizar ese archivo llamando a ``Yaml::$enablePhpParsing = false;``, (``$enablePhpParsing`` es una propiedad pública).
+
+Escribiendo archivos *YAML*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+El método :method:`Symfony\\Component\\Yaml\\Dumper::dump` vuelca cualquier arreglo *PHP* en su representación *YAML*:
+
+.. code-block:: php
+
+    use Symfony\Component\Yaml\Dumper;
+
+    $array = array(
+        'foo' => 'bar',
+        'bar' => array('foo' => 'bar', 'bar' => 'baz'),
+    );
+
+    $dumper = new Dumper();
+
+    $yaml = $dumper->dump($array);
+
+    file_put_contents('/ruta/a/file.yml', $yaml);
+
+.. note::
+
+    Por supuesto, el vertedor *YAML* de *Symfony2* no es capaz de volcar recursos. Por otra parte, aun y cuando el vertedor es capaz de volcar objetos *PHP*, se considera como una función **No** admitida.
+
+Si ocurre un error durante el volcado, el analizador lanza una excepción :class:`Symfony\\Component\\Yaml\\Exception\\DumpException`.
+
+Si sólo necesitas volcar un arreglo, puedes utilizar el método estático :method:`Symfony\\Component\\Yaml\\Yaml::dump`:
+
+.. code-block:: php
+
+    use Symfony\Component\Yaml\Yaml;
+
+    $yaml = Yaml::dump($array, $inline);
+
+El formato *YAML* admite dos tipos de representación de arreglos, la ampliada, y en línea. Por omisión, el vertedor utiliza la representación en línea:
+
+.. code-block:: yaml
+
+    { foo: bar, bar: { foo: bar, bar: baz } }
+
+El segundo argumento del método :method:`Symfony\\Component\\Yaml\\Dumper::dump` personaliza el nivel en el cual el resultado cambia de la representación ampliada a en línea:
+
+.. code-block:: php
+
+    echo $dumper->dump($array, 1);
+
+.. code-block:: yaml
+
+    foo: bar
+    bar: { foo: bar, bar: baz }
+
+.. code-block:: php
+
+    echo $dumper->dump($array, 2);
+
+.. code-block:: yaml
+
+    foo: bar
+    bar:
+        foo: bar
+        bar: baz
+
+.. _YAML: http://yaml.org/
+.. _`Packagist`: https://packagist.org/packages/symfony/yaml

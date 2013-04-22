@@ -43,10 +43,17 @@ El código anterior imprime recursivamente los nombres de todos los archivos en 
 
 .. tip::
 
-    Una instancia ``Finder`` es un `iterador`_ *PHP*. Por tanto, en lugar de iterar sobre el ``Finder`` con ``foreach``, también lo puedes convertir en un arreglo con el método :phpfunction:`iterator_to_array` u obtener el número de elementos con :phpfunction:`iterator_count`.
+    Una instancia del ``Finder`` es un :phpclass:`Iterator` de *PHP*. Por lo tanto, en lugar de iterar sobre el ``Finder`` con ``foreach``, también lo puedes convertir en un arreglo con el método :phpfunction:`iterator_to_array` u obtener el número de elementos con :phpfunction:`iterator_count`.
+
+.. caution::
+
+    Al buscar a través de múltiples ubicaciones pasadas al método :method:`Symfony\\Component\\Finder\\Finder::in`, internamente se crea un iterador independiente por cada ubicación. Esto significa  que tienes múltiples resultados agregados a uno.
+    Debido a que :phpfunction:`iterator_to_array` de manera predefinida usa el conjunto de claves del resultado, al convertirlo en arreglo, algunas claves se podrían duplicar y por lo tanto sustituir sus valores. Esto se puede evitar pasando ``false`` como segundo argumento a :phpfunction:`iterator_to_array`.
 
 Criterios
 ---------
+
+Hay muchas maneras de filtrar y ordenar tu resultado.
 
 Ubicación
 ~~~~~~~~~
@@ -59,11 +66,20 @@ Busca en varios lugares encadenando llamadas al método :method:`Symfony\\Compon
 
     $finder->files()->in(__DIR__)->in('/elsewhere');
 
+.. versionadded:: 2.2
+   El soporte necesario para el comodín se añadió en la versión 2.2.
+
+Usa caracteres comodín para buscar en los directorios que emparejen un patrón::
+
+    $finder->in('src/Symfony/*/*/Resources');
+
+Cada patrón tiene que resolver cuando menos con una ruta de directorio.
+
 Excluye directorios coincidentes con el método :method:`Symfony\\Component\\Finder\\Finder::exclude`::
 
     $finder->in(__DIR__)->exclude('ruby');
 
-Debido a que ``Finder`` utiliza iteradores *PHP*, puedes pasar cualquier *URL* compatible con `protocolo`_::
+Debido a que ``Finder`` utiliza iteradores *PHP*, puedes pasar cualquier *URL* con un `protocolo`_ compatible::
 
     $finder->in('ftp://ejemplo.com/pub/');
 
@@ -89,7 +105,7 @@ Y también trabaja con flujos definidos por el usuario::
 Archivos o directorios
 ~~~~~~~~~~~~~~~~~~~~~~
 
-De manera predeterminada, ``Finder`` recorre directorios recurrentemente. Pero los métodos :method:`Symfony\\Component\\Finder\\Finder::files` y
+De manera predeterminada, ``Finder`` devuelve archivos y directorios; Pero los métodos :method:`Symfony\\Component\\Finder\\Finder::files` y
 :method:`Symfony\\Component\\Finder\\Finder::directories` controlan::
 
     $finder->files();
@@ -262,7 +278,6 @@ El contenido devuelto de los archivos se puede leer con el método :method:`Symf
     }
 
 .. _`strtotime`:    http://www.php.net/manual/es/datetime.formats.php
-.. _`iterador`:     http://www.php.net/manual/es/spl.iterators.php
 .. _`protocolo`:     http://www.php.net/manual/es/wrappers.php
 .. _`Flujos`:      http://www.php.net/streams
 .. _`estándar IEC`: http://physics.nist.gov/cuu/Units/binary.html

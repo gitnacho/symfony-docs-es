@@ -238,6 +238,11 @@ Es decir, el proveedor verificará si es válido el valor de la cabecera <tt cla
 
     <span class="k">protected</span> <span class="k">function</span> <span class="nf">validateDigest</span><span class="p">(</span><span class="nv">$digest</span><span class="p">,</span> <span class="nv">$nonce</span><span class="p">,</span> <span class="nv">$created</span><span class="p">,</span> <span class="nv">$secret</span><span class="p">)</span>
     <span class="p">{</span>
+        <span class="c1">// Verifica que el momento de la creación no está en el futuro</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">strtotime</span><span class="p">(</span><span class="nv">$created</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">time</span><span class="p">())</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+        <span class="p">}</span>
+
         <span class="c1">// la marca de tiempo caduca después de 5 minutos</span>
         <span class="k">if</span> <span class="p">(</span><span class="nb">time</span><span class="p">()</span> <span class="o">-</span> <span class="nb">strtotime</span><span class="p">(</span><span class="nv">$created</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">300</span><span class="p">)</span> <span class="p">{</span>
                 <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
@@ -338,13 +343,13 @@ La factoría es la que crea estos nuevos servicios.</p>
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/DemoBundle/Resources/config/services.yml
 services:
-  wsse.security.authentication.provider:
-    class:  Acme\DemoBundle\Security\Authentication\Provider\WsseProvider
-    arguments: ['', %kernel.cache_dir%/security/nonces]
+    wsse.security.authentication.provider:
+        class:  Acme\DemoBundle\Security\Authentication\Provider\WsseProvider
+        arguments: ['', %kernel.cache_dir%/security/nonces]
 
-  wsse.security.authentication.listener:
-    class:  Acme\DemoBundle\Security\Firewall\WsseListener
-    arguments: [@security.context, @security.authentication.manager]</pre>
+    wsse.security.authentication.listener:
+        class:  Acme\DemoBundle\Security\Firewall\WsseListener
+        arguments: [@security.context, @security.authentication.manager]</pre>
 </div>
 </li>
 <li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/DemoBundle/Resources/config/services.xml --&gt;</span>
@@ -352,19 +357,19 @@ services:
     <span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
     <span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd&quot;</span><span class="nt">&gt;</span>
 
-       <span class="nt">&lt;services&gt;</span>
-       <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;wsse.security.authentication.provider&quot;</span>
-         <span class="na">class=</span><span class="s">&quot;Acme\DemoBundle\Security\Authentication\Provider\WsseProvider&quot;</span> <span class="na">public=</span><span class="s">&quot;false&quot;</span><span class="nt">&gt;</span>
-           <span class="nt">&lt;argument</span> <span class="nt">/&gt;</span> <span class="c">&lt;!-- User Provider --&gt;</span>
-           <span class="nt">&lt;argument&gt;</span>%kernel.cache_dir%/security/nonces<span class="nt">&lt;/argument&gt;</span>
-       <span class="nt">&lt;/service&gt;</span>
+        <span class="nt">&lt;services&gt;</span>
+        <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;wsse.security.authentication.provider&quot;</span>
+            <span class="na">class=</span><span class="s">&quot;Acme\DemoBundle\Security\Authentication\Provider\WsseProvider&quot;</span> <span class="na">public=</span><span class="s">&quot;false&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;argument</span> <span class="nt">/&gt;</span> <span class="c">&lt;!-- User Provider --&gt;</span>
+            <span class="nt">&lt;argument&gt;</span>%kernel.cache_dir%/security/nonces<span class="nt">&lt;/argument&gt;</span>
+        <span class="nt">&lt;/service&gt;</span>
 
-       <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;wsse.security.authentication.listener&quot;</span>
-         <span class="na">class=</span><span class="s">&quot;Acme\DemoBundle\Security\Firewall\WsseListener&quot;</span> <span class="na">public=</span><span class="s">&quot;false&quot;</span><span class="nt">&gt;</span>
-           <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;security.context&quot;</span><span class="nt">/&gt;</span>
-           <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;security.authentication.manager&quot;</span> <span class="nt">/&gt;</span>
-       <span class="nt">&lt;/service&gt;</span>
-       <span class="nt">&lt;/services&gt;</span>
+        <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;wsse.security.authentication.listener&quot;</span>
+            <span class="na">class=</span><span class="s">&quot;Acme\DemoBundle\Security\Firewall\WsseListener&quot;</span> <span class="na">public=</span><span class="s">&quot;false&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;security.context&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;security.authentication.manager&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;/service&gt;</span>
+        <span class="nt">&lt;/services&gt;</span>
 <span class="nt">&lt;/container&gt;</span>
 </pre></div>
 </div>
@@ -374,17 +379,22 @@ services:
 <span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
 
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;wsse.security.authentication.provider&#39;</span><span class="p">,</span>
-  <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
-    <span class="s1">&#39;Acme\DemoBundle\Security\Authentication\Provider\WsseProvider&#39;</span><span class="p">,</span>
-    <span class="k">array</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;%kernel.cache_dir%/security/nonces&#39;</span><span class="p">)</span>
-<span class="p">));</span>
+    <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+        <span class="s1">&#39;Acme\DemoBundle\Security\Authentication\Provider\WsseProvider&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;%kernel.cache_dir%/security/nonces&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">);</span>
 
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;wsse.security.authentication.listener&#39;</span><span class="p">,</span>
-  <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
-    <span class="s1">&#39;Acme\DemoBundle\Security\Firewall\WsseListener&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-      <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;security.context&#39;</span><span class="p">),</span>
-      <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;security.authentication.manager&#39;</span><span class="p">))</span>
-<span class="p">));</span>
+    <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+        <span class="s1">&#39;Acme\DemoBundle\Security\Firewall\WsseListener&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+            <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;security.context&#39;</span><span class="p">),</span>
+            <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;security.authentication.manager&#39;</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">);</span>
 </pre></div>
 </div>
 </li>
@@ -413,12 +423,36 @@ services:
 </pre></div>
 </div>
 <p>¡Y está listo! Ahora puedes definir las partes de tu aplicación como bajo la protección del <em>WSSE</em>.</p>
-<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">security</span><span class="p-Indicator">:</span>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">security</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">firewalls</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">wsse_secured</span><span class="p-Indicator">:</span>
             <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">/api/.*</span>
             <span class="l-Scalar-Plain">wsse</span><span class="p-Indicator">:</span>      <span class="l-Scalar-Plain">true</span>
 </pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;config&gt;</span>
+    <span class="nt">&lt;firewall</span> <span class="na">name=</span><span class="s">&quot;wsse_secured&quot;</span> <span class="na">pattern=</span><span class="s">&quot;/api/.*&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;wsse</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/firewall&gt;</span>
+<span class="nt">&lt;/config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;firewalls&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;wsse_secured&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;pattern&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;/api/.*&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;wsse&#39;</span>    <span class="o">=&gt;</span> <span class="k">true</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
 </div>
 <p>¡Enhorabuena!  ¡Has escrito tu propio proveedor de autenticación de seguridad!</p>
 </div>
@@ -444,7 +478,7 @@ Por ejemplo, el tiempo permitido antes de que expire la cabecera <tt class="docu
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Ahora, en el método <tt class="docutils literal"><span class="pre">create</span></tt> de la factoría, el argumento <tt class="docutils literal"><span class="pre">$config</span></tt> contendrá una clave &#8220;lifetime&#8221;, establecida en 5 minutos (300 segundos) a menos que se establezca en la configuración. Pasa este argumento a tu proveedor de autenticación a fin de utilizarlo.</p>
+<p>Ahora, en el método <tt class="docutils literal"><span class="pre">create</span></tt> de la factoría, el argumento <tt class="docutils literal"><span class="pre">$config</span></tt> contendrá una clave <tt class="docutils literal"><span class="pre">'lifetime'</span></tt>, establecida en 5 minutos (300 segundos) a menos que se establezca en la configuración. Pasa este argumento a tu proveedor de autenticación a fin de utilizarlo.</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">class</span> <span class="nc">WsseFactory</span> <span class="k">implements</span> <span class="nx">SecurityFactoryInterface</span>
 <span class="p">{</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">create</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">,</span> <span class="nv">$id</span><span class="p">,</span> <span class="nv">$config</span><span class="p">,</span> <span class="nv">$userProvider</span><span class="p">,</span> <span class="nv">$defaultEntryPoint</span><span class="p">)</span>
@@ -467,12 +501,40 @@ Por ejemplo, el tiempo permitido antes de que expire la cabecera <tt class="docu
 <p class="last">También tendrás que añadir un tercer argumento a la configuración del servicio <tt class="docutils literal"><span class="pre">wsse.security.authentication.provider</span></tt>, el cual puede estar en blanco, pero se completará con la vida útil en la factoría. La clase <tt class="docutils literal"><span class="pre">WsseProvider</span></tt> ahora también tiene que aceptar un tercer argumento en el constructor &#8212;<tt class="docutils literal"><span class="pre">lifetime</span></tt>&#8212; el cual se debe utilizar en lugar de los rígidos 300 segundos. Estos dos pasos no se muestran aquí.</p>
 </div>
 <p>La vida útil de cada petición <em>WSSE</em> ahora es configurable y se puede ajustar a cualquier valor deseado por el cortafuegos.</p>
-<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">security</span><span class="p-Indicator">:</span>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">security</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">firewalls</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">wsse_secured</span><span class="p-Indicator">:</span>
             <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>   <span class="l-Scalar-Plain">/api/.*</span>
             <span class="l-Scalar-Plain">wsse</span><span class="p-Indicator">:</span>      <span class="p-Indicator">{</span> <span class="nv">lifetime</span><span class="p-Indicator">:</span> <span class="nv">30</span> <span class="p-Indicator">}</span>
 </pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;config&gt;</span>
+    <span class="nt">&lt;firewall</span> <span class="na">name=</span><span class="s">&quot;wsse_secured&quot;</span>
+        <span class="na">pattern=</span><span class="s">&quot;/api/.*&quot;</span>
+    <span class="nt">&gt;</span>
+        <span class="nt">&lt;wsse</span> <span class="na">lifetime=</span><span class="s">&quot;30&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/firewall&gt;</span>
+<span class="nt">&lt;/config&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;security&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;firewalls&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;wsse_secured&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;pattern&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;/api/.*&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;wsse&#39;</span>    <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+                <span class="s1">&#39;lifetime&#39;</span> <span class="o">=&gt;</span> <span class="mi">30</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
 </div>
 <p>¡El resto depende de ti! Todos los elementos de configuración correspondientes se pueden definir en la factoría y consumirse o pasarse a las otras clases en el contenedor.</p>
 </div>
@@ -513,7 +575,7 @@ Por ejemplo, el tiempo permitido antes de que expire la cabecera <tt class="docu
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

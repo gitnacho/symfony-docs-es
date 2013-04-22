@@ -81,7 +81,7 @@
 <div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span><span class="o">-&gt;</span><span class="na">compile</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>El método de compilación utiliza &#8220;<tt class="docutils literal"><span class="pre">Compiler</span> <span class="pre">Passes</span></tt>&#8221; para la compilación. El componente <em>Inyección de dependencias</em> viene con varios pases que se registran automáticamente para la compilación. Por ejemplo, la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Compiler\CheckDefinitionValidityPass</span></tt> comprueba varios potenciales problemas relacionados con las definiciones que se han establecido en el contenedor. Después de este y varios otros pases que comprueban la validez del contenedor, se utilizan pases adicionales del compilador para optimizar la configuración antes de almacenarla en caché. Por ejemplo, se quitan los servicios privados y abstractos, y se resuelven los alias.</p>
+<p>El método de compilación utiliza «<tt class="docutils literal"><span class="pre">Compiler</span> <span class="pre">Passes</span></tt>» para la compilación. El componente <em>Inyección de dependencias</em> viene con varios pases que se registran automáticamente para la compilación. Por ejemplo, la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Compiler\CheckDefinitionValidityPass</span></tt> comprueba varios potenciales problemas relacionados con las definiciones que se han establecido en el contenedor. Después de este y varios otros pases que comprueban la validez del contenedor, se utilizan pases adicionales del compilador para optimizar la configuración antes de almacenarla en caché. Por ejemplo, se quitan los servicios privados y abstractos, y se resuelven los alias.</p>
 <div class="section" id="gestionando-la-configuracion-con-extensiones">
 <span id="components-dependency-injection-extension"></span><h2>Gestionando la configuración con extensiones<a class="headerlink" href="#gestionando-la-configuracion-con-extensiones" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Así como cargar la configuración directamente en el contenedor como se muestra en <a class="reference internal" href="introduction.html"><em>El componente Inyección de dependencias</em></a>, la puedes gestionar registrando extensiones en el contenedor. El primer paso en el proceso de compilación es cargar en el contenedor la configuración de cualquier clase registrada en la extensión. A diferencia de la configuración cargada directamente, esta sólo se procesa cuándo el contenedor es compilado. Si tu aplicación es modular entonces las extensiones dejan que cada módulo registre y gestione su propio servicio de configuración.</p>
@@ -142,15 +142,20 @@ procesados cuándo el contenedor es compilado en el punto que se cargan las exte
 <span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Loader\YamlFileLoader</span><span class="p">;</span>
 
 <span class="nv">$container</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">registerExtension</span><span class="p">(</span><span class="k">new</span> <span class="nx">AcmeDemoExtension</span><span class="p">);</span>
+
 <span class="nv">$loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">YamlFileLoader</span><span class="p">(</span><span class="nv">$container</span><span class="p">,</span> <span class="k">new</span> <span class="nx">FileLocator</span><span class="p">(</span><span class="nx">__DIR__</span><span class="p">));</span>
 <span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">load</span><span class="p">(</span><span class="s1">&#39;config.yml&#39;</span><span class="p">);</span>
 
-<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">registerExtension</span><span class="p">(</span><span class="k">new</span> <span class="nx">AcmeDemoExtension</span><span class="p">);</span>
 <span class="c1">// ...</span>
 <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">compile</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>Los valores de esas secciones de los archivos de configuración son pasados en el primer
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Al cargar un archivo de configuración que usa un alias de extensión como clave, la extensión ya se debe haber registrado en el constructor del contenedor o se lanzará una excepción.</p>
+</div>
+<p>Los valores de esas secciones de los archivos de configuración se pasan en el primer
 argumento del método <tt class="docutils literal"><span class="pre">load</span></tt> de la extensión:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">load</span><span class="p">(</span><span class="k">array</span> <span class="nv">$configs</span><span class="p">,</span> <span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
 <span class="p">{</span>
@@ -164,7 +169,7 @@ argumento del método <tt class="docutils literal"><span class="pre">load</span>
     <span class="k">array</span><span class="p">(</span>
         <span class="s1">&#39;foo&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;fooValue&#39;</span><span class="p">,</span>
         <span class="s1">&#39;bar&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;barValue&#39;</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="p">),</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -256,6 +261,20 @@ y validar los valores de configuración. Usando el procesamiento de configuraci�
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
+<p>El sólo hecho de registrar una extensión en el contenedor no es suficiente para lograr que se incluya en las extensiones procesadas al compilar el contenedor.
+Al cargar la configuración que utiliza el alias de la extensión como clave como en los ejemplos anteriores te aseguras de que estas estensiones sean cargadas. También puedes instruir al constructor del contenedor para que las cargue con su método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/DependencyInjection/ContainerBuilder.html#method_loadFromExtension" title="Symfony\Component\DependencyInjection\ContainerBuilder::loadFromExtension()"><span class="pre">loadFromExtension()</span></a></tt>:</p>
+<div class="last highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+
+<span class="nv">$container</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+<span class="nv">$extension</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AcmeDemoExtension</span><span class="p">();</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">registerExtension</span><span class="p">(</span><span class="nv">$extension</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="nv">$extension</span><span class="o">-&gt;</span><span class="na">getAlias</span><span class="p">());</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">compile</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
 <p class="last">Si necesitas manipular la configuración cargada por una extensión, entonces no lo puedes hacer desde otra extensión, ya que esta utiliza un contenedor nuevo.
 En su lugar, debes utilizar un pase del compilador que trabaje con el contenedor completo después de haber procesado las extensiones.</p>
 </div>
@@ -264,8 +283,8 @@ En su lugar, debes utilizar un pase del compilador que trabaje con el contenedor
 <span id="components-dependency-injection-compiler-passes"></span><h2>Añadiendo al principio la configuración pasada a la extensión<a class="headerlink" href="#anadiendo-al-principio-la-configuracion-pasada-a-la-extension" title="Enlazar permanentemente con este título">¶</a></h2>
 <p class="versionadded">
 <span class="versionmodified">Nuevo en la versión 2.2: </span>La habilidad para añadir al principio la configuración de un paquete es nueva en <em>Symfony 2.2</em>.</p>
-<p>Una extensión puede añadir al principio la configuración de cualquier paquete antes de invocar al método <tt class="docutils literal"><span class="pre">load()</span></tt> implementando la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Compiler\PrependExtensionInterface</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Compiler\PrependExtensionInterface</span><span class="p">;</span>
+<p>Una Extensión puede prefijar la configuración de cualquier paquete antes del método <tt class="docutils literal"><span class="pre">load()</span></tt> llamada al implementar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface</span><span class="p">;</span>
 <span class="c1">// ...</span>
 
 <span class="k">class</span> <span class="nc">AcmeDemoExtension</span> <span class="k">implements</span> <span class="nx">ExtensionInterface</span><span class="p">,</span> <span class="nx">PrependExtensionInterface</span>
@@ -477,7 +496,7 @@ argumento del constructor. Cuándo la caché no está en modo de depuración sie
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

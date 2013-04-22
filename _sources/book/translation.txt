@@ -73,6 +73,9 @@ Traducción básica
 
 La traducción de texto se hace a través del servicio ``traductor`` (:class:`Symfony\\Component\\Translation\\Translator`). Para traducir un bloque de texto (llamado un *mensaje*), utiliza el método :method:`Symfony\\Component\\Translation\\Translator::trans`. Supongamos, por ejemplo, que estás traduciendo un simple mensaje desde el interior de un controlador::
 
+    // ...
+    use Symfony\Component\HttpFoundation\Response;
+
     public function indexAction()
     {
         $t = $this->get('translator')->trans('Symfony2 is great');
@@ -135,6 +138,9 @@ Marcadores de posición en mensajes
 
 A veces, debes traducir un mensaje que contiene una variable::
 
+    // ...
+    use Symfony\Component\HttpFoundation\Response;
+
     public function indexAction($name)
     {
         $t = $this->get('translator')->trans('Hello '.$name);
@@ -144,6 +150,9 @@ A veces, debes traducir un mensaje que contiene una variable::
 
 Sin embargo, la creación de una traducción de esta cadena es imposible, ya que el traductor tratará de buscar el mensaje exacto, incluyendo las porciones variables (por ejemplo, ``«Hello Ryan»`` o ``«Hello Fabien»``). En lugar de escribir una traducción de cada posible iteración de la variable ``$name``, podemos reemplazar la variable con un «marcador de posición»::
 
+    // ...
+    use Symfony\Component\HttpFoundation\Response;
+
     public function indexAction($name)
     {
         $t = $this->get('translator')->trans(
@@ -151,7 +160,7 @@ Sin embargo, la creación de una traducción de esta cadena es imposible, ya que
             array('%name%' => $name)
         );
 
-        new Response($t);
+        return new Response($t);
     }
 
 *Symfony2* ahora busca una traducción del mensaje en bruto (``Hello %name%``) y *después* reemplaza los marcadores de posición con sus valores. La creación de una traducción se hace igual que antes:
@@ -238,7 +247,7 @@ redefinir la traducción de los mensajes de un paquete en cualquiera de los 2 di
 
 El mecanismo de sustitución trabaja a nivel de claves: sólo es necesario enumerar las claves remplazadas en un archivo de mensajes de alta prioridad. Cuando una clave no se encuentra en un archivo de mensajes, el traductor automáticamente vuelve a los archivos de mensajes de reserva de menor prioridad.
 
-El nombre del archivo de las traducciones también es importante ya que *Symfony2* utiliza una convención para determinar los detalles sobre las traducciones. Cada archivo de mensajes se debe nombrar de acuerdo con el siguiente patrón: ``dominio.región.cargador``:
+El nombre del archivo de las traducciones también es importante ya que *Symfony2* utiliza una convención para determinar los detalles sobre las traducciones. Cada archivo de mensaje se tiene que denominar de acuerdo a la siguiente ruta: ``dominio.región.cargador``:
 
 * **dominio**: Una forma opcional para organizar los mensajes en grupos (por ejemplo, ``admin``, ``navigation`` o el valor predeterminado ``messages``) --- consulta `Usando el dominio de los mensajes`_;
 
@@ -340,7 +349,7 @@ El acto de crear archivos de traducción es una parte importante de la «localiz
             return array(
                 'symfony2' => array(
                     'is' => array(
-                        'great' => 'Symfony2 is great',
+                        'great'   => 'Symfony2 is great',
                         'amazing' => 'Symfony2 is amazing',
                     ),
                     'has' => array(
@@ -424,7 +433,7 @@ Configuración regional predeterminada y reserva
 
 Si la configuración regional no se ha establecido explícitamente en la sesión, el parámetro de configuración ``fallback_locale`` será utilizado por el ``Traductor``. El valor predeterminado del parámetro es ``«en»`` (consulta la sección `Configurando`_).
 
-Alternativamente, puedes garantizar que hay un ``locale`` establecido en cada petición definiendo un ``default_locale`` para la plataforma:
+Alternativamente, puedes garantizar que hay una ``región`` establecida en cada petición definiendo una opción ``default_locale`` en la clave ``framework``:
 
 .. configuration-block::
 
@@ -465,14 +474,14 @@ Una mejor política es incluir la configuración regional en la *URL*. Esto es t
     .. code-block:: yaml
 
         contact:
-            pattern:   /{_locale}/contact
+            path:      /{_locale}/contact
             defaults:  { _controller: AcmeDemoBundle:Contact:index, _locale: en }
             requirements:
                 _locale: en|fr|de
 
     .. code-block:: xml
 
-        <route id="contact" pattern="/{_locale}/contact">
+        <route id="contact" path="/{_locale}/contact">
             <default key="_controller">AcmeDemoBundle:Contact:index</default>
             <default key="_locale">en</default>
             <requirement key="_locale">en|fr|de</requirement>
@@ -500,8 +509,8 @@ Ahora puedes utilizar la configuración regional del usuario para crear rutas ha
 .. index::
    single: Traducciones; Pluralización
 
-Pluralización
--------------
+Pluralizando
+------------
 
 La pluralización de mensajes es un tema difícil puesto que las reglas pueden ser bastante complejas. Por ejemplo, aquí tienes la representación matemática de las reglas de pluralización de Rusia::
 
@@ -588,7 +597,7 @@ Traducciones en plantillas
 
 La mayoría de las veces, la traducción ocurre en las plantillas. *Symfony2* proporciona apoyo nativo para ambas plantillas *Twig* y *PHP*.
 
-.. _book-translation-twig:
+.. _book-translation-tags:
 
 Plantillas *Twig*
 ~~~~~~~~~~~~~~~~~
@@ -621,6 +630,8 @@ También puedes especificar el dominio del mensaje y pasar algunas variables adi
         {0} There is no apples|{1} There is one apple|]1,Inf] There are %count% apples
     {% endtranschoice %}
 
+.. _book-translation-filters:
+
 Los filtros ``trans`` y ``transchoice`` se pueden utilizar para traducir *texto variable* y  expresiones complejas:
 
 .. code-block:: jinja
@@ -635,7 +646,7 @@ Los filtros ``trans`` y ``transchoice`` se pueden utilizar para traducir *texto 
 
 .. tip::
 
-    Usar etiquetas de traducción o filtros tiene el mismo efecto, pero con una sutil diferencia: la salida escapada automáticamente sólo se aplica a las variables traducidas usando un filtro. En otras palabras, si necesitas estar seguro de que tu variable traducida *no* se escapó en la salida, debes aplicar el filtro ``raw`` después del filtro de traducción:
+    Usar etiquetas de traducción o filtros tiene el mismo efecto, pero con una sutil diferencia: la salida escapada automáticamente sólo se aplica a las traducciones usando un filtro. En otras palabras, si necesitas garantizar que tu traducción *no* se escape en la salida, debes aplicar el filtro ``raw`` después del filtro de traducción:
 
     .. code-block:: jinja
 
@@ -646,20 +657,22 @@ Los filtros ``trans`` y ``transchoice`` se pueden utilizar para traducir *texto 
 
             {% set message = '<h3>foo</h3>' %}
 
-            {# por omisión, una variable traducida vía un filtro se escapa #}
+            {# Las cadenas y variables traducidas vía un filtro se escapan por omisión #}
             {{ message|trans|raw }}
+            {{ '<h3>bar</h3>'|trans|raw }}
 
-            {# pero las cadenas estáticas nunca se escapan #}
-            {{ '<h3>foo</h3>'|trans }}
+.. tip::
+
+    Puedes establecer el ámbito de traducción para una plantilla *Twig* entera con una sola etiqueta:
+
+    .. code-block:: jinja
+
+           {% trans_default_domain "app" %}
+
+    Ten en cuenta que esto sólo influye en la plantilla actual, no en las plantillas «incluidas» (con el fin de evitar efectos secundarios).
 
 .. versionadded:: 2.1
-    Ahora puedes establecer el dominio de la traducción de toda una plantilla *Twig* con una sola etiqueta:
-
-     .. code-block:: jinja
-
-            {% trans_default_domain "app" %}
-
-     Ten en cuenta que esto sólo influye en la plantilla actual, no en las plantillas «incluidas» (con el fin de evitar efectos secundarios).
+    La etiqueta ``trans_default_domain`` es nueva en *Symfony2.1*
 
 Plantillas *PHP*
 ~~~~~~~~~~~~~~~~
@@ -818,7 +831,7 @@ Con el componente ``Translation`` de *Symfony2*, la creación de una aplicación
 
 * Traduce cada mensaje en varias configuraciones regionales creando archivos de mensajes traducidos. *Symfony2* descubre y procesa cada archivo porque su nombre sigue una convención específica;
 
-* Administra la configuración regional del usuario, la cual se almacena en la petición, pero también se puede fijar una sola vez en la sesión del usuario.
+* Gestiona la región del usuario, la cual está almacenada en la petición, pero también se puede poner en la sesión del usuario.
 
 .. _`i18n`: http://es.wikipedia.org/wiki/Internacionalizaci%C3%B3n_y_localizaci%C3%B3n
 .. _`L10n`: http://es.wikipedia.org/wiki/Internacionalizaci%C3%B3n_y_localizaci%C3%B3n

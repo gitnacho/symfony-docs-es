@@ -100,8 +100,10 @@ Cada parte se explica en la siguiente sección.
                     access_denied_url: /foo/error403
                     access_denied_handler: un.id.de.servicio
                     entry_point: un.id.de.servicio
-                    provider: una_clave_de_arriba
-                    context: name
+                    provider: some_key_from_above
+                    # manages where each firewall stores session information
+                    # See "Firewall Context" below for more details
+                    context: context_key
                     stateless: false
                     x509:
                         provider: una_clave_de_arriba
@@ -225,12 +227,17 @@ Procesando el formulario de acceso
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *   ``login_path`` (tipo: ``string``, predefinido: ``/login``)
-    Esta es la *URL* a que el usuario será redirigido (a menos que ``use_forward`` se haya fijado en ``true``) cuando intente acceder a un recurso protegido, pero no está totalmente autenticado.
+    This is the route or path that the user will be redirected to (unless
+    ``use_forward`` is set to ``true``) when he/she tries to access a
+    protected resource but isn't fully authenticated.
 
-    Esta URL **debe** ser accesible por un usuario normal, no autenticado, de lo contrario puede crear un bucle de redireccionamiento. Para más información, consulta ":ref:`Evitando errores comunes <book-security-common-pitfalls>`".
+    This path **must** be accessible by a normal, un-authenticated user, else
+    you may create a redirect loop. Para más información, consulta «:ref:`Evitando errores comunes <book-security-common-pitfalls>`».
 
 *   ``check_path`` (tipo: ``string``, predefinido: ``/login_check``)
-    Esta es la *URL* en la cual se debe presentar el formulario de inicio de sesión. El cortafuegos intercepta cualquier petición (sólo las peticiones *POST*, por omisión) a esta *URL* y procesa las credenciales presentadas.
+    This is the route or path that your login form must submit to. The
+    firewall will intercept any requests (``POST`` requests only, by default)
+    to this URL and process the submitted login credentials.
 
     Asegúrate de que esta dirección está cubierta por el cortafuegos principal (es decir, no crees un servidor de seguridad independiente sólo para la *URL* ``check_path``).
 
@@ -254,14 +261,189 @@ Redirigiendo después del inicio de sesión
 * ``target_path_parameter`` (tipo: ``string``, predefinido: ``_target_path``)
 * ``use_referer`` (tipo: ``Boolean``, predefinido: ``false``)
 
-Usando el codificador ``PBKDF2``: seguridad y velocidad
--------------------------------------------------------
+.. _reference-security-pbkdf2:
+
+Usando el codificador ``PBKDF2``: Security and Speed
+--------------------------------------------
+
+.. versionadded:: 2.2
+    The PBKDF2 password encoder was added in Symfony 2.2.
 
 El codificador `PBKDF2`_ proporciona seguridad criptográfica de alto nivel, tal como la recomendada por el Instituto Nacional de Estándares y Tecnología (NIST por *«National Institute of Standards and Technology»*).
+
+You can see an example of the ``pbkdf2`` encoder in the YAML block on this page.
 
 Pero usando ``PBKDF2`` también garantizas un aviso: Usándolo (con un número de iteraciones alto) ralentiza el proceso. Por lo que, ``PBKDF2`` se tendría que utilizar con precaución y muchísimo cuidado.
 
 Una buena configuración está alrededor al menos 1000 iteraciones y ``sha512``
 para el algoritmo de codificación.
+
+.. _reference-security-bcrypt:
+
+Using the BCrypt Password Encoder
+---------------------------------
+
+.. versionadded:: 2.2
+    The BCrypt password encoder was added in Symfony 2.2.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/security.yml
+        security:
+            # ...
+
+            encoders:
+                Symfony\Component\Security\Core\User\User:
+                    algorithm: bcrypt
+                    cost:      15
+
+    .. code-block:: xml
+
+        <!-- app/config/security.xml -->
+        <config>
+            <!-- ... -->
+            <encoder
+                class="Symfony\Component\Security\Core\User\User"
+                algorithm="bcrypt"
+                cost="15"
+            />
+        </config>
+
+    .. code-block:: php
+
+        // app/config/security.php
+        $container->loadFromExtension('security', array(
+            // ...
+            'encoders' => array(
+                'Symfony\Component\Security\Core\User\User' => array(
+                    'algorithm' => 'bcrypt',
+                    'cost'      => 15,
+                ),
+            ),
+        ));
+
+The ``cost`` can be in the range of ``4-31`` and determines how long a password
+will be encoded. Each increment of ``cost`` *doubles* the time it takes to
+encode a password.
+
+If you don't provide the ``cost`` option, the default cost of ``13`` is used.
+
+.. note::
+
+    You can change the cost at any time — even if you already have some
+    passwords encoded using a different cost. New passwords will be encoded
+    using the new cost, while the already encoded ones will be validated
+    using a cost that was used back when they were encoded.
+
+A salt for each new password is generated automatically and need not be
+persisted. Since an encoded password contains the salt used to encode it,
+persisting the encoded password alone is enough.
+
+.. note::
+
+    All the encoded passwords are ``60`` characters long, so make sure to
+    allocate enough space for them to be persisted.
+
+    .. _reference-security-firewall-context:
+
+Firewall Context
+----------------
+
+Most applications will only need one :ref:`firewall<book-security-firewalls>`.
+But if your application *does* use multiple firewalls, you'll notice that
+if you're authenticated in one firewall, you're not automatically authenticated
+in another. In other words, the systems don't share a common "context": each
+firewall acts like a separate security system.
+
+However, each firewall has an optional ``context`` key (which defaults to
+the name of the firewall), which is used when storing and retrieving security
+data to and from the session. If this key were set to the same value across
+multiple firewalls, the "context" could actually be shared:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/security.yml
+        security:
+            # ...
+
+            firewalls:
+                cualquiernombre:
+                    # ...
+                    context: my_context
+                othername:
+                    # ...
+                    context: my_context
+
+    .. code-block:: xml
+
+       <!-- app/config/security.xml -->
+       <security:config>
+          <firewall name="somename" context="my_context">
+            <! ... ->
+          </firewall>
+          <firewall name="othername" context="my_context">
+            <! ... ->
+          </firewall>
+       </security:config>
+
+    .. code-block:: php
+
+       // app/config/security.php
+       $container->loadFromExtension('security', array(
+            'firewalls' => array(
+                'somename' => array(
+                    // ...
+                    'context' => 'my_context'
+                ),
+                'othername' => array(
+                    // ...
+                    'context' => 'my_context'
+                ),
+            ),
+       ));
+
+HTTP-Digest Authentication
+--------------------------
+
+To use HTTP-Digest authentication you need to provide a realm and a key:
+
+.. configuration-block::
+
+   .. code-block:: yaml
+
+      # app/config/security.yml
+      security:
+         firewalls:
+            cualquiernombre:
+              http_digest:
+               key: "a_random_string"
+               realm: "secure-api"
+
+   .. code-block:: xml
+
+      <!-- app/config/security.xml -->
+      <security:config>
+         <firewall name="somename">
+            <http-digest key="a_random_string" realm="secure-api" />
+         </firewall>
+      </security:config>
+
+   .. code-block:: php
+
+      // app/config/security.php
+      $container->loadFromExtension('security', array(
+           'firewalls' => array(
+               'somename' => array(
+                   'http_digest' => array(
+                       'key'   => 'a_random_string',
+                       'realm' => 'secure-api',
+                   ),
+               ),
+           ),
+      ));
 
 .. _`PBKDF2`: http://en.wikipedia.org/wiki/PBKDF2

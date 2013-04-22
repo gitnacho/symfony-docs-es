@@ -32,11 +32,11 @@ Luego, crea una sección de guiones o añádelo a una existente:
     {
         "scripts": {
             "post-install-cmd": [
-                "Symfony\\Cmf\\Bundle\\SymfonyCmfCreateBundle\\Composer\\ScriptHandler::initSubmodules",
+                "Symfony\\Cmf\\Bundle\\CreateBundle\\Composer\\ScriptHandler::initSubmodules",
                 ...
             ],
             "post-update-cmd": [
-                "Symfony\\Cmf\\Bundle\\SymfonyCmfCreateBundle\\Composer\\ScriptHandler::initSubmodules",
+                "Symfony\\Cmf\\Bundle\\CreateBundle\\Composer\\ScriptHandler::initSubmodules",
                 ...
             ]
         }
@@ -55,7 +55,7 @@ Añade este paquete (y sus dependencias, si aún no están) al núcleo de tu apl
             new Symfony\Bundle\AsseticBundle\AsseticBundle(),
             new JMS\SerializerBundle\JMSSerializerBundle($this),
             new FOS\RestBundle\FOSRestBundle(),
-            new Symfony\Cmf\Bundle\SymfonyCmfCreateBundle\SymfonyCmfCreateBundle(),
+            new Symfony\Cmf\Bundle\CreateBundle\SymfonyCmfCreateBundle(),
             // ...
         );
     }
@@ -104,8 +104,6 @@ Configurando
 
             # usa una clase diferente para el controlador REST
             # rest_controller_class: FQN\Classname
-            # Habilita el modo de desarrollo 'hallo' (ve al final de este capítulo)
-            # use_coffee: false
 
             # manejo de imagen
             imagen:
@@ -201,18 +199,6 @@ Por último añade la ruta correspondiente a tu configuración:
         <import resource="@SymfonyCmfCreateBundle/Resources/config/routing/image.xml" type="rest" />
 
 
-Alternativas: Editor ``Aloha``
-++++++++++++++++++++++++++++++
-
-Opcional: El editor ``Aloha`` (:file:`create.js` viene con el editor ``hallo``, pero si lo prefieres, también puedes utilizar el ``aloha``)
-
-        Para usar el editor ``Aloha``, descarga los archivos aqui: https://github.com/alohaeditor/Aloha-Editor/downloads/
-
-        Descomprime el contenido del subdirectorio «aloha» en el archivo «zip» como un directorio en ``vendor/symfony-cmf/create-bundle/Symfony/CMF/Bundle/CreateBundle/vendor/aloha``
-
-        Asegúrate de tener un sólo directorio ``aloha`` con el ``js``, no ``aloha/aloha/...`` ---debes tener ``vendor/symfony-cmf/create-bundle/Symfony/CMF/Bundle/CreateBundle/vendor/aloha/aloha.js``
-
-
 Usando
 ------
 
@@ -254,6 +240,26 @@ O si necesitas más control sobre el *HTML* generado:
     {% endcreatephp %}
 
 
+Editores alternativos
++++++++++++++++++++++
+
+You can write your own templates to load a javascript editor. They have to
+follow the naming pattern ``SymfonyCmfCreateBundle::includejsfiles-%editor%.html.twig``
+to be loaded. In the includeJSFilesAction, you specify the editor parameter.
+
+    {% render "symfony_cmf_create.jsloader.controller:includeJSFilesAction" with {'editor': 'aloha' %}
+
+.. note::
+
+    Create.js has built in support for Aloha and ckeditor, as well as the
+    default hallo editor. Those should be supported by the CreateBundle as well.
+    See these github issue for `ckeditor <https://github.com/symfony-cmf/CreateBundle/issues/33>`_
+    and `alhoa <https://github.com/symfony-cmf/CreateBundle/issues/32>`_ integration.
+
+    If you wrote the necessary code for one of those editors, or another editor
+    that could be useful for others, please send a pull request.
+
+
 Desarrollando el editor ``wysiwyg`` ``hallo``
 ---------------------------------------------
 
@@ -263,9 +269,20 @@ Puedes desarrollar el editor ``hallo`` dentro del ``Crea paquete``. De manera pr
 
     app/console cmf:create:init-hallo-devel
 
-Luego, ajusta la opción ``symfony_cmf_create > use_coffee`` a ``true`` en el archivo :file:`config.yml`. Esto le dice al ``jsloader`` que incluya los archivos del guión ``coffee`` desde ``Resources/public/vendor/hallo/src`` con ``assetic``, en lugar del *javascript*  precompilado en :file:`Resources/public/vendor/create/deps/hallo-min.js`.
-Esto también significa que necesitas añadir una asociación para ``coffeescript`` en tu 
-configuración de ``assetic`` y necesitas tener instalado y configurado correctamente el `compilador de coffee <http://coffeescript.org/#installation>`_.
+
+There is a special template to load the coffee script files. To load this,
+just use the ``hallo-coffee`` editor with the includeJSFilesAction.
+
+.. code-block:: jinja
+
+    {% render "symfony_cmf_create.jsloader.controller:includeJSFilesAction" with {'editor': 'hallo-coffee' %}
+
+
+The hallo-coffee template uses assetic to load the coffee script files from
+``Resources/public/vendor/hallo/src``, rather than the precompiled javascript
+from ``Resources/public/vendor/create/deps/hallo-min.js``. This also means that
+you need to add a mapping for coffeescript in your assetic configuration and
+you need the `coffee compiler set up correctly <http://coffeescript.org/#installation>`_.
 
 .. configuration-block::
 
@@ -279,11 +296,7 @@ configuración de ``assetic`` y necesitas tener instalado y configurado correcta
                     node: %coffee.node%
                     apply_to: %coffee.extension%
 
-        symfony_cmf_create:
-            # pónlo a true si  quieres desarrollar hallo y editar los archivos de coffee
-            use_coffee: true|false
-
-En el recinto de seguridad del ``cmf`` hacemos una pequeña trampa para no provocar la compilación del guión de ``coffee``.
+In the cmf sandbox we did a little hack to not alwas trigger coffee script compiling.
 En el archivo :file:`config.yml` hacemos configurable la extensión de ``coffee``. Ahora si :file:`parameters.yml` pone ``coffee.extension`` a ``\.coffee`` el ``coffeescript`` es compilado y el compilador de ``coffee`` debe estar instalado. Si lo pusiste a cualquier otra cosa tal como ``\.nocoffee`` entonces no es necesario tener instalado el compilador de ``coffee``.
 
 Los valores predefinidos para los tres parámetros son:

@@ -89,10 +89,10 @@ De hecho, la mayoría de las opciones de seguridad estándar son sólo cuestión
         $container->loadFromExtension('security', array(
             'firewalls' => array(
                 'secured_area' => array(
-                    'pattern' => '^/',
-                    'anonymous' => array(),
+                    'pattern'    => '^/',
+                    'anonymous'  => array(),
                     'http_basic' => array(
-                        'realm' => 'Secured Demo Area',
+                        'realm'  => 'Secured Demo Area',
                     ),
                 ),
             ),
@@ -118,7 +118,7 @@ De hecho, la mayoría de las opciones de seguridad estándar son sólo cuestión
 
     Una distribución estándar de *Symfony* separa la configuración de seguridad en un archivo independiente (por ejemplo, ``app/config/security.yml``). Si no tienes un archivo de seguridad autónomo, puedes poner la configuración directamente en el archivo de configuración principal (por ejemplo, :file:`app/config/config.yml`).
 
-El resultado final de esta configuración es un sistema de seguridad totalmente funcional que tiene el siguiente aspecto:
+El resultado final de esta configuración es un sistema de seguridad totalmente operativo que tiene el siguiente aspecto:
 
 * Hay dos usuarios en el sistema (``ryan`` y ``admin``);
 * Los usuarios se autentican a través de la autenticación *HTTP* básica del sistema;
@@ -131,6 +131,8 @@ Cómo funciona la seguridad: autenticación y autorización
 --------------------------------------------------------
 
 El sistema de seguridad de *Symfony* trabaja identificando a un usuario (es decir, la autenticación) y comprobando si ese usuario debe tener acceso a una *URL* o recurso específico.
+
+.. _book-security-firewalls:
 
 Cortafuegos (autenticación)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -224,8 +226,8 @@ En primer lugar, activa el formulario de acceso en el cortafuegos:
                     pattern:    ^/
                     anonymous: ~
                     form_login:
-                        login_path:  /login
-                        check_path:  /login_check
+                        login_path:  login
+                        check_path:  login_check
 
     .. code-block:: xml
 
@@ -241,7 +243,7 @@ En primer lugar, activa el formulario de acceso en el cortafuegos:
             <config>
                 <firewall name="secured_area" pattern="^/">
                     <anonymous />
-                    <form-login login_path="/login" check_path="/login_check" />
+                    <form-login login_path="login" check_path="login_check" />
                 </firewall>
             </config>
         </srv:container>
@@ -252,11 +254,11 @@ En primer lugar, activa el formulario de acceso en el cortafuegos:
         $container->loadFromExtension('security', array(
             'firewalls' => array(
                 'secured_area' => array(
-                    'pattern' => '^/',
-                    'anonymous' => array(),
+                    'pattern'    => '^/',
+                    'anonymous'  => array(),
                     'form_login' => array(
-                        'login_path' => '/login',
-                        'check_path' => '/login_check',
+                        'login_path' => 'login',
+                        'check_path' => 'login_check',
                     ),
                 ),
             ),
@@ -280,7 +282,7 @@ En primer lugar, activa el formulario de acceso en el cortafuegos:
 
             'form_login' => array(),
 
-Ahora, cuando el sistema de seguridad inicia el proceso de autenticación, redirige al usuario al formulario de acceso (predeterminado a ``/login``). La implementación visual de este formulario de acceso es tu trabajo. En primer lugar, crea dos rutas: una que muestre el formulario de acceso (es decir, ``/login``) y una que maneje el envío del formulario de acceso (es decir, ``/login_check``):
+Ahora, cuando el sistema de seguridad inicia el proceso de autenticación, redirige al usuario al formulario de acceso (predeterminado a ``/login``). La implementación visual de este formulario de acceso es tu trabajo. Primero, crea las dos rutas que utilizarás en la configuración de seguridad: La ruta ``login`` mostrará el formulario de inicio de sesión (es decir ``/login``) y la ruta ``login_check`` procesará el formulario enviado (es decir  ``/login_check``):
 
 .. configuration-block::
 
@@ -328,9 +330,9 @@ Ahora, cuando el sistema de seguridad inicia el proceso de autenticación, redir
     *No* necesitas implementar un controlador para la *URL* ``/login_check`` ya que el cortafuegos automáticamente captura y procesa cualquier formulario enviado a esta *URL*.
 
 .. versionadded:: 2.1
-    A partir de *Symfony 2.1*, *debes* tener configuradas las direcciones *URL* para las rutas a ``login_path`` (p. ej. ``/login``), ``check_path`` (p. ej. ``/login_check``) y ``logout`` (p. ej. ``/logout`` --- consulta `Cerrando sesión`_).
+    A partir de *Symfony* 2.1,  *debes* tener configuradas las rutas para tus claves ``login_path``, ``check_path`` y ``logout``. Estas claves pueden ser nombres de ruta (tal como muestra este ejemplo) o las *URL* que tienen rutas configuradas para ello.
 
-Observa que el nombre de la ruta ``login`` no es importante. Lo importante es que la *URL* de la ruta (``/login``) coincida con el valor ``login_path`` configurado, ya que es donde el sistema de seguridad redirige a los usuarios que necesitan acceder.
+Ten en cuenta que el nombre de la ruta ``login`` coincide con el valor ``login_path`` configurado, a donde el sistema de seguridad redirigirá a los usuarios que necesiten ingresar.
 
 A continuación, crea el controlador que mostrará el formulario de acceso::
 
@@ -451,7 +453,7 @@ Para más detalles sobre esto y cómo personalizar el proceso de entrada en gene
 
     **1. Crea las rutas correctas**
 
-    En primer lugar, asegúrate de que has definido las rutas ``/login`` y ``/login_check`` correctamente y que correspondan a los valores de configuración ``login_path`` y ``check_path``. Una mala configuración aquí puede significar que seas redirigido a una página de error 404 en lugar de a la página de acceso, o que al presentar el formulario de acceso no haga nada (sólo verás el formulario de acceso una y otra vez).
+    En primer lugar, asegúrate de que has definido correctamente las rutas ``/login`` y ``/login_check`` y que corresponden a los valores configurados de ``login_path`` y ``check_path``. Una mala configuración aquí puede significar que seas redirigido a una página de error 404 en lugar de a la página de acceso, o que al presentar el formulario de acceso no haga nada (sólo verás el formulario de acceso una y otra vez).
 
     **2. Asegúrate de que la página de inicio de sesión no esté protegida**
 
@@ -527,11 +529,11 @@ Para más detalles sobre esto y cómo personalizar el proceso de entrada en gene
 
             'firewalls' => array(
                 'login_firewall' => array(
-                    'pattern' => '^/login$',
+                    'pattern'   => '^/login$',
                     'anonymous' => array(),
                 ),
                 'secured_area' => array(
-                    'pattern' => '^/',
+                    'pattern'    => '^/',
                     'form_login' => array(),
                 ),
             ),
@@ -542,8 +544,8 @@ Para más detalles sobre esto y cómo personalizar el proceso de entrada en gene
 
     **4. Múltiples cortafuegos no comparten el contexto de seguridad**
 
-    Si estás utilizando múltiples cortafuegos y autenticas contra un cortafuegos, *no* serás autenticado contra ningún otro cortafuegos automáticamente.
-    Diferentes cortafuegos, son como diferentes sistemas de seguridad. Es por eso que, para la mayoría de las aplicaciones, tener un cortafuegos principal es suficiente.
+    Si estás utilizando múltiples cortafuegos y autenticas contra un cortafuegos, *no* serás autenticado automáticamente contra ningún otro cortafuegos.
+    Diferentes cortafuegos, son como diferentes sistemas de seguridad. Para hacerlo debes especificar explícitamente el mismo :ref:`reference-security-firewall-context` para diferentes cortafuegos. Pero normalmente la mayoría de las aplicaciones, tener un cortafuegos principal es suficiente.
 
 Autorizando
 -----------
@@ -566,7 +568,7 @@ La forma más básica para proteger parte de tu aplicación es asegurar un patr�
 
 .. caution::
 
-    Entender exactamente cómo trabaja ``access_control`` es **muy** importante para garantizar que tu aplicación está asegurada correctamente. Ve más adelante :ref:`security-book-access-control-explanation` para información detallada.
+    Entender exactamente cómo trabaja ``access_control`` es **muy** importante para garantizar que tu aplicación está protegida correctamente. Ve más adelante :ref:`security-book-access-control-explanation` para información detallada.
 
 Puedes definir tantos patrones *URL* como necesites ---cada uno es una expresión regular---.
 
@@ -594,7 +596,7 @@ Puedes definir tantos patrones *URL* como necesites ---cada uno es una expresió
 
         // app/config/security.php
         $container->loadFromExtension('security', array(
-            // ...
+            ...,
             'access_control' => array(
                 array('path' => '^/admin/users', 'role' => 'ROLE_SUPER_ADMIN'),
                 array('path' => '^/admin', 'role' => 'ROLE_ADMIN'),
@@ -885,7 +887,7 @@ De hecho, ya lo has visto en algunos ejemplos de este capítulo.
 
         // app/config/security.php
         $container->loadFromExtension('security', array(
-            // ...
+            ...,
             'providers' => array(
                 'default_provider' => array(
                     'memory' => array(
@@ -1066,7 +1068,7 @@ Hasta ahora, por simplicidad, todos los ejemplos tienen las contraseñas de los 
 
 Al establecer las ``iterations`` a ``1`` y ``encode_as_base64`` en ``false``, la contraseña simplemente se corre una vez a través del algoritmo ``sha1`` y sin ninguna codificación adicional. Ahora puedes calcular el ``hash`` de la contraseña mediante programación (por ejemplo, ``hash('sha1', 'ryanpass')``) o a través de alguna herramienta en línea como `functions-online.com`_
 
-Si vas a crear dinámicamente a tus usuarios (y almacenarlos en una base de datos), puedes utilizar algoritmos ``hash`` aún más difíciles y, luego confiar en un objeto codificador de clave real para ayudarte a codificar las contraseñas. Por ejemplo, supongamos que tu objeto usuario es ``Acme\UserBundle\Entity\User`` (como en el ejemplo anterior). Primero, configura el codificador para ese usuario:
+Si vas a crear tus usuarios dinámicamente (y almacenarlos en una base de datos), puedes utilizar algoritmos ``hash`` aún más difíciles y, luego confiar en un objeto codificador de clave real para ayudarte a codificar las contraseñas. Por ejemplo, supongamos que tu objeto usuario es ``Acme\UserBundle\Entity\User`` (como en el ejemplo anterior). Primero, configura el codificador para ese usuario:
 
 .. configuration-block::
 
@@ -1092,8 +1094,7 @@ Si vas a crear dinámicamente a tus usuarios (y almacenarlos en una base de dato
 
         // app/config/security.php
         $container->loadFromExtension('security', array(
-            // ...
-
+            ...,
             'encoders' => array(
                 'Acme\UserBundle\Entity\User' => 'sha512',
             ),
@@ -1102,7 +1103,10 @@ Si vas a crear dinámicamente a tus usuarios (y almacenarlos en una base de dato
 En este caso, estás utilizando el algoritmo ``SHA512`` fuerte. Además, puesto que hemos especificado simplemente el algoritmo (``sha512``) como una cadena, el sistema de manera predeterminada revuelve tu contraseña 5000 veces en una fila y luego la codifica como ``base64``. En otras palabras, la contraseña ha sido fuertemente ofuscada por lo tanto la contraseña revuelta no se puede decodificar (es decir, no se puede determinar la contraseña desde la contraseña ofuscada).
 
 .. versionadded:: 2.2
-    A partir de *Symfony 2.2* también puedes utilizar el codificador de contraseñas *PBKDF2*.
+    A partir de *Symfony* 2.2 también puedes utilizar los codificadores de contraseña :ref:`PBKDF2 <reference-security-pbkdf2>` y :ref:`BCrypt <reference-security-bcrypt>`.
+
+Determinando la contraseña codificada
+.....................................
 
 Si tienes algún formulario de registro para los usuarios, necesitas poder determinar el algoritmo de codificación utilizado en la contraseña, para que lo puedas usar en tu usuario. No importa qué algoritmo configures para tu objeto usuario, desde un controlador siempre puedes determinar el algoritmo de codificación de la contraseña de la siguiente manera::
 
@@ -1298,10 +1302,10 @@ También puedes configurar el cortafuegos o mecanismos de autenticación individ
         $container->loadFromExtension('security', array(
             'firewalls' => array(
                 'secured_area' => array(
-                    // ...
+                    ...,
                     'provider' => 'user_db',
                     'http_basic' => array(
-                        // ...
+                        ...,
                         'provider' => 'in_memory',
                     ),
                     'form_login' => array(),
@@ -1396,7 +1400,7 @@ Por lo general, también quieres que tus usuarios puedan salir. Afortunadamente,
             'firewalls' => array(
                 'secured_area' => array(
                     // ...
-                    'logout' => array('path' => 'logout', 'target' => '/'),
+                    'logout' => array('path' => '/logout', 'target' => '/'),
                 ),
             ),
             // ...
@@ -1430,7 +1434,7 @@ Ten en cuenta que *no* es necesario implementar un controlador para la *URL* ``/
 
         # app/config/routing.yml
         logout:
-            pattern:   /logout
+            path:   /logout
 
     .. code-block:: xml
 
@@ -1441,7 +1445,7 @@ Ten en cuenta que *no* es necesario implementar un controlador para la *URL* ``/
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://symfony.com/schema/routing http://symfony.com/schema/routing/routing-1.0.xsd">
 
-            <route id="logout" pattern="/logout" />
+            <route id="logout" path="/logout" />
 
         </routes>
 
@@ -1534,7 +1538,7 @@ A veces, es útil poder cambiar de un usuario a otro sin tener que iniciar sesi�
         $container->loadFromExtension('security', array(
             'firewalls' => array(
                 'main'=> array(
-                    // ...
+                    ...,
                     'switch_user' => true
                 ),
             ),
@@ -1566,7 +1570,11 @@ llamada ``ROLE_PREVIOUS_ADMIN``. En una plantilla, por ejemplo, este rol se pued
     .. code-block:: html+php
 
         <?php if ($view['security']->isGranted('ROLE_PREVIOUS_ADMIN')): ?>
-            <a href="<?php echo $view['router']->generate('homepage', array('_switch_user' => '_exit') ?>">Exit impersonation</a>
+            <a
+                href="<?php echo $view['router']->generate('homepage', array('_switch_user' => '_exit') ?>"
+            >
+                Exit impersonation
+            </a>
         <?php endif; ?>
 
 Por supuesto, esta función se debe poner a disposición de un pequeño grupo de usuarios.
@@ -1599,7 +1607,7 @@ De forma predeterminada, el acceso está restringido a usuarios que tienen el ro
         $container->loadFromExtension('security', array(
             'firewalls' => array(
                 'main'=> array(
-                    ...,
+                    // ...
                     'switch_user' => array('role' => 'ROLE_ADMIN', 'parameter' => '_want_to_be_this_user'),
                 ),
             ),

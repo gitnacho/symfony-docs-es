@@ -100,20 +100,68 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
         // ...
     }
 
-A continuación, crea esta propiedad en tu clase ``Documento`` y agrega algunas reglas de validación::
+A continuación, crea esta propiedad en tu clase ``Documento`` y añade algunas reglas de validación:
 
-    // src/Acme/DemoBundle/Entity/Document.php
+.. configuration-block::
 
-    // ...
-    class Document
-    {
-        /**
-         * @Assert\File(maxSize="6000000")
-         */
-        public $file;
+    .. code-block:: yaml
+
+        # src/Acme/DemoBundle/Resources/config/validation.yml
+        Acme\DemoBundle\Entity\Document:
+            properties:
+                file:
+                    - File:
+                        maxSize: 6000000
+
+    .. code-block:: php-annotations
+
+        // src/Acme/DemoBundle/Entity/Document.php
+        namespace Acme\DemoBundle\Entity;
 
         // ...
-    }
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Document
+        {
+            /**
+             * @Assert\File(maxSize="6000000")
+             */
+            public $file;
+
+            // ...
+        }
+
+    .. code-block:: xml
+
+        <!-- src/Acme/DemoBundle/Resources/config/validation.yml -->
+        <class name="Acme\DemoBundle\Entity\Document">
+            <property name="file">
+                <constraint name="File">
+                    <option name="maxSize">6000000</option>
+                </constraint>
+            </property>
+        </class>
+
+    .. code-block:: php
+
+        // src/Acme/DemoBundle/Entity/Document.php
+        namespace Acme\DemoBundle\Entity;
+
+        // ...
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Document
+        {
+            // ...
+            
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('file', new Assert\File(array(
+                    'maxSize' => 6000000,
+                )));
+            }
+        }
 
 .. note::
 
@@ -121,6 +169,7 @@ A continuación, crea esta propiedad en tu clase ``Documento`` y agrega algunas 
 
 El siguiente controlador muestra cómo manipular todo el proceso::
 
+    // ...
     use Acme\DemoBundle\Entity\Document;
     use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
     // ...
@@ -145,7 +194,7 @@ El siguiente controlador muestra cómo manipular todo el proceso::
                 $em->persist($document);
                 $em->flush();
 
-                $this->redirect($this->generateUrl(...));
+                return $this->redirect($this->generateUrl(...));
             }
         }
 
@@ -156,15 +205,27 @@ El siguiente controlador muestra cómo manipular todo el proceso::
 
     Al escribir la plantilla, no olvides fijar el atributo ``enctype``:
 
-    .. code-block:: html+jinja
+    .. configuration-block::
 
-        <h1>Upload File</h1>
+        .. code-block:: html+jinja
 
-        <form action="#" method="post" {{ form_enctype(form) }}>
-            {{ form_widget(form) }}
+            <h1>Upload File</h1>
 
-            <input type="submit" value="Upload Document" />
-        </form>
+            <form action="#" method="post" {{ form_enctype(form) }}>
+                {{ form_widget(form) }}
+
+                <input type="submit" value="Upload Document" />
+            </form>
+
+        .. code-block:: html+php
+
+            <h1>Upload File</h1>
+
+            <form action="#" method="post" <?php echo $view['form']->enctype($form) ?>>
+                <?php echo $view['form']->widget($form) ?>
+
+                <input type="submit" value="Upload Document" />
+            </form>
 
 El controlador anterior automáticamente persistirá la entidad ``Documento`` con el nombre presentado, pero no hará nada sobre el archivo y la propiedad ``path`` quedará en blanco.
 
@@ -178,7 +239,7 @@ Una manera fácil de manejar la carga de archivos es que lo muevas justo antes d
         $em->persist($document);
         $em->flush();
 
-        $this->redirect(...);
+        return $this->redirect(...);
     }
 
 El método ``upload()`` tomará ventaja del objeto :class:`Symfony\\Component\\HttpFoundation\\File\\UploadedFile`, el cual es lo que devuelve después de que se presenta un campo ``file``::
@@ -286,7 +347,7 @@ Ahora que la entidad maneja automáticamente el movimiento del archivo, debes qu
         $em->persist($document);
         $em->flush();
 
-        $this->redirect(...);
+        return $this->redirect(...);
     }
 
 .. note::

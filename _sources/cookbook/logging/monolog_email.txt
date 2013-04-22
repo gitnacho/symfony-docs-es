@@ -57,6 +57,31 @@ Puedes configurar a Monolog_ para que envíe un correo electrónico cuando ocurr
                 />
             </monolog:config>
         </container>
+        
+    .. code-block:: php
+            
+        // app/config/config.php
+        $container->loadFromExtension('monolog', array(
+            'handlers' => array(
+                'mail' => array(
+                    'type'         => 'fingers_crossed',
+                    'action_level' => 'critical',
+                    'handler'      => 'buffered',
+                ),    
+                'buffered' => array(
+                    'type'    => 'buffer',
+                    'handler' => 'swift',
+                ),    
+                'swift' => array(
+                    'type'       => 'swift_mailer',
+                    'from_email' => 'error@example.com',
+                    'to_email'   => 'error@example.com',
+                    'subject'    => 'An Error Occurred!',
+                    'level'      => 'debug',
+                ),    
+            ),
+        ));    
+        
 
 El controlador ``mail`` es un controlador ``fingers_crossed`` lo cuál significa que sólo es lanzado cuándo se alcanza el nivel de acción, en este caso ``crítico``.
 Entonces registra todo, incluyendo, los mensajes bajo el nivel de acción.  El nivel ``crítico`` sólo se lanza para códigos de error HTTP 5xx. Establecer el ``handler`` significa que el resultado entonces se pasa al controlador ``buffered``.
@@ -139,6 +164,40 @@ Puedes combinar estos controladores con otros a modo de que los errores todavía
                 />
             </monolog:config>
         </container>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('monolog', array(
+            'handlers' => array(
+                'main' => array(
+                    'type'         => 'fingers_crossed',
+                    'action_level' => 'critical',
+                    'handler'      => 'grouped',
+                ),    
+                'grouped' => array(
+                    'type'    => 'group',
+                    'members' => array('streamed', 'buffered'),
+                ),    
+                'streamed'  => array(
+                    'type'  => 'stream',
+                    'path'  => '%kernel.logs_dir%/%kernel.environment%.log',
+                    'level' => 'debug',
+                ),    
+                'buffered'    => array(
+                    'type'    => 'buffer',
+                    'handler' => 'swift',
+                ),    
+                'swift' => array(
+                    'type'       => 'swift_mailer',
+                    'from_email' => 'error@example.com',
+                    'to_email'   => 'error@example.com',
+                    'subject'    => 'An Error Occurred!',
+                    'level'      => 'debug',
+                ),    
+            ),
+        ));
+
 
 Este utiliza el controlador ``group`` para enviar los mensajes a los dos miembros del grupo, los controladores ``buffered`` y ``stream``. Ahora ambos mensajes serán escritos al archivo de registro y enviados por correo electrónico.
 

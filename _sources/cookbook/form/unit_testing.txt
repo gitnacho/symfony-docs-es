@@ -1,0 +1,215 @@
+.. index::
+   single: Formulario; Probando formularios
+
+Cómo probar tus formularios
+===========================
+
+El componente ``Form`` consta de 3 objetos del núcleo: un tipo ``form`` (implementando la :class:`Symfony\\Component\\Form\\FormTypeInterface`), :class:`Symfony\\Component\\Form\\Form` y :class:`Symfony\\Component\\Form\\FormView`.
+
+La única clase que normalmente manipulan los programadores es la clase del tipo ``form`` que sirve como proyecto del formulario. Se usa para generar el ``Formulario`` y el ``FormView``. La podrías probar directamente simulando sus interacciones con la fábrica pero sería complejo. Es mejor pasarla al ``FormFactory`` tal y como se hace en una aplicación real. Es sencillo arrancarla y puedes confiar en bastantes componentes de *Symfony* para utilizarlos como pruebas base.
+
+Ya hay una clase de la cual te puedes beneficiar para pruebas sencillas de ``FormTypes``: :class:`Symfony\\Component\\Form\\Tests\\Extension\\Core\\Type\\TypeTestCase`.
+Se usa para probar los tipos del núcleo y la puedes utilizar para probar tus tipos también.
+
+.. note::
+
+    Dependiendo de la manera en que instalaste tu *Symfony* o el componente ``Form`` de *Symfony* las pruebas no se pueden descargar. Usa la opción ``--prefer-source`` de ``composer`` si este es el caso.
+
+Fundamentos
+-----------
+
+La más sencilla implementación de ``TypeTestCase`` se parece a la siguiente::
+
+    // src/Acme/TestBundle/Tests/Form/Type/TestedTypeTests.php
+    namespace Acme\TestBundle\Tests\Form\Type;
+
+    use Acme\TestBundle\Form\Type\TestedType;
+    use Acme\TestBundle\Model\TestObject;
+    use Symfony\Component\Form\Tests\Extension\Core\Type\TypeTestCase;
+
+    class TestedTypeTest extends TypeTestCase
+    {
+        public function testBindValidData()
+        {
+            $formData = array(
+                'test' => 'test',
+                'test2' => 'test2',
+            );
+
+            $type = new TestedType();
+            $form = $this->factory->create($type);
+
+            $object = new TestObject();
+            $object->fromArray($formData);
+
+            $form->bind($formData);
+
+            $this->assertTrue($form->isSynchronized());
+            $this->assertEquals($object, $form->getData());
+
+            $view = $form->createView();
+            $children = $view->children;
+
+            foreach (array_keys($formData) as $key) {
+                $this->assertArrayHasKey($key, $children);
+            }
+        }
+    }
+
+Así que, ¿qué hace esta prueba? Permiteme explicarlo línea por línea.
+
+Primero verifica si el ``FormType`` compila. Esto incluye la herencia de clase básica, la función ``buildForm`` y la resolución de opciones. Esta debería ser la primera prueba que escribas::
+
+    $type = new TestedType();
+    $form = $this->factory->create($type);
+
+Esta prueba verifica que ninguno de tus transformadores de datos utilizado por el formulario falló. El método :method:`Symfony\\Component\\Form\\FormInterface::isSynchronized` sólo se pone a ``false`` si un transformador de datos lanza una excepción::
+
+    $form->bind($formData);
+    $this->assertTrue($form->isSynchronized());
+
+.. note::
+
+    No prueba la validación: Está es aplicada por un escucha que no está activo en el caso de prueba y este confía en la configuración de validación.
+    En cambio, tu prueba unitaria personalizada la restringe directamente.
+
+Luego, comprueba la vinculación y asignación del formulario. La prueba de bajo verifica que todos los campos se hayan especificado correctamente::
+
+    $this->assertEquals($object, $form->getData());
+
+Finalmente, comprueba la creación del ``FormView``. Deberías comprobar si todos los elementos gráficos que quieres mostrar están disponibles en la propiedad descendiente::
+
+    $view = $form->createView();
+    $children = $view->children;
+
+    foreach (array_keys($formData) as $key) {
+        $this->assertArrayHasKey($key, $children);
+    }
+
+Añadiendo un tipo del cual depende tu formulario
+------------------------------------------------
+
+Tu formulario puede depender de otros tipos que están definidos como servicios. Puede tener esta apariencia::
+
+    // src/Acme/TestBundle/Form/Type/TestedType.php
+
+    // ... el método buildForm
+    $builder->add('acme_test_child_type');
+
+Para crear tu formulario correctamente, necesitas poner a disposición de la fábrica el tipo de formulario en tu prueba. La manera más fácil es registrándolo a mano antes de crear el formulario padre::
+
+    // src/Acme/TestBundle/Tests/Form/Type/TestedTypeTests.php
+    namespace Acme\TestBundle\Tests\Form\Type;
+
+    use Acme\TestBundle\Form\Type\TestedType;
+    use Acme\TestBundle\Model\TestObject;
+    use Symfony\Component\Form\Tests\Extension\Core\Type\TypeTestCase;
+
+    class TestedTypeTest extends TypeTestCase
+    {
+        public function testBindValidData()
+        {
+            $this->factory->addType(new TestChildType());
+
+            $type = new TestedType();
+            $form = $this->factory->create($type);
+
+            // ... tu prueba
+        }
+    }
+
+.. caution::
+
+    Asegúrate de que el tipo hijo que añades está bien probado. De lo contrario puedes obtener errores que no están relacionados al formulario que estás probando actualmente sino a sus descendientes.
+
+Añadiendo extensiones personalizadas
+------------------------------------
+
+A menudo sucede que utilizas algunas opciones añadidas por las :doc:`extensiones de form <cookbook/form/create_form_type_extension>`. Uno de esos casos puede ser el ``ValidatorExtension`` con su opción ``invalid_message``.
+El ``TypeTestCase`` sólo carga la extensión ``form`` del núcleo así que una excepción de «Opción no válida» será lanzada si intentas utilizarla para probar una clase que depende de otras extensiones. Necesitas añadir esas extensiones al objeto fábrica::
+
+    // src/Acme/TestBundle/Tests/Form/Type/TestedTypeTests.php
+    namespace Acme\TestBundle\Tests\Form\Type;
+
+    use Acme\TestBundle\Form\Type\TestedType;
+    use Acme\TestBundle\Model\TestObject;
+    use Symfony\Component\Form\Tests\Extension\Core\Type\TypeTestCase;
+
+    class TestedTypeTest extends TypeTestCase
+    {
+        protected function setUp()
+        {
+            parent::setUp();
+
+            $this->factory = Forms::createFormFactoryBuilder()
+                ->addTypeExtension(
+                    new FormTypeValidatorExtension(
+                        $this->getMock('Symfony\Component\Validator\ValidatorInterface')
+                    )
+                )
+                ->addTypeGuesser(
+                    $this->getMockBuilder(
+                        'Symfony\Component\Form\Extension\Validator\ValidatorTypeGuesser'
+                    )
+                        ->disableOriginalConstructor()
+                        ->getMock()
+                )
+                ->getFormFactory();
+
+            $this->dispatcher = $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
+            $this->builder = new FormBuilder(null, null, $this->dispatcher, $this->factory);
+        }
+
+        // ... tus pruebas
+    } 
+
+Probando contra diferentes conjuntos de datos
+---------------------------------------------
+
+Si todavía no estás familiarizado con los `proveedores de datos`_ de *PHPUnit*, esta podría ser una magnífica oportunidad para utilizarlos::
+
+    // src/Acme/TestBundle/Tests/Form/Type/TestedTypeTests.php
+    namespace Acme\TestBundle\Tests\Form\Type;
+
+    use Acme\TestBundle\Form\Type\TestedType;
+    use Acme\TestBundle\Model\TestObject;
+    use Symfony\Component\Form\Tests\Extension\Core\Type\TypeTestCase;
+
+    class TestedTypeTest extends TypeTestCase
+    {
+
+        /**
+         * @dataProvider getValidTestData
+         */
+        public function testForm($data)
+        {
+            // ... tu prueba
+        }
+
+        public function getValidTestData()
+        {
+            return array(
+                array(
+                    'data' => array(
+                        'test' => 'test',
+                        'test2' => 'test2',
+                    ),
+                ),
+                array(
+                    'data' => array(),
+                ),
+                array(
+                    'data' => array(
+                        'test' => null,
+                        'test2' => null,
+                    ),
+                ),
+            );
+        }
+    }
+
+El código anterior correrá tres veces tus pruebas con 3 diferentes conjuntos de datos. Esto te permite desacoplar los accesorios de prueba de las pruebas y probar fácilmente contra múltiples conjuntos de datos.
+
+También puedes pasar otro argumento, como un booleano si el formulario se tiene que sincronizar o no con el conjunto de datos dado, etc.
+
+.. _`proveedores de datos`: http://www.phpunit.de/manual/current/en/writing-tests-for-phpunit.html#writing-tests-for-phpunit.data-providers

@@ -86,7 +86,7 @@ El ``enrutador`` trabaja con clases extendidas de ``UrlMatcher`` y ``UrlGenerato
 
 El servicio ``NestedMatcher`` está configurado con un proveedor de rutas. Ve cómo cambiar el ``route_repository_service`` en la sección de configuración y la siguiente sección para más detalles de la implementación predeterminada basada en `PHPCR-ODM`_.
 
-Posiblemente quieras configurar los potenciadores de ruta para decidir qué controlador usar para manejar la petición, para evitar codificar directamente los nombres de controlador en tus documentos de ruta.
+Quzás quieras configurar potenciadores de enrutado para decidir cual controlador usar para manejar la petición, para evitar la codificación directa de los nombres de controlador para enrutar tus documentos.
 
 La configuración mínima requerida para cargar el enrutador dinámico como un servicio ``symfony_cmf_routing_extra.dynamic_router`` es tenerlo como ``enabled: true`` en tu archivo :file:`config.yml` (El enrutador se activa automáticamente apenas añadas cualquier otra configuración a la entrada ``dynamic``). Sin habilitarlo, el servicio enrutador dinámico no será cargado en absoluto, dejándote utilizar la ``ChainRouter`` con tus propios enrutadores:
 
@@ -130,10 +130,12 @@ Los posibles potenciadores son (en orden de precedencia):
 * (Controlador explícito): Si existe un ``_controller`` en ``getRouteDefaults()``, ningún potenciador lo sustituye.
 * Plantilla explícita: Requiere que el documento de ruta regrese un parámetro ``'_template'`` en ``getRouteDefaults``. El controlador genérico configurado está puesto por el potenciador.
 * Controlador por alias: Requiere que el documento de ruta regrese un valor ``'type'`` en ``getRouteDefaults()``
-* Controlador por clase: Requiere que el documento de ruta regrese un objeto para ``getRouteContent()``. Se comprueba que el contenido del documento sea una instancia de los nombres de clase en el mapa y si concuerda se utiliza ese controlador.
+* Controlador por clase: Requiere que el documento de ruta regrese un objeto para ``getRouteContent()``. The content document is checked for being ``instanceof`` the
+    class names in the map and if matched that controller is used.
     Se utiliza ``instanceof`` en vez de compararlo directamente para trabajar con clases delegadas y extender otras clases.
-* Plantilla por clase: Requiere que el documento de ruta regrese un objeto para ``getRouteContent()``. Prueba que el contenido del documento sea una instancia de los nombres de clase en el mapa y si concuerda esa plantilla será puesta como ``'_template'`` en el arreglo ``$defaults`` y como controlador utilizará el controlador genérico.
-
+* Plantilla por clase: Requiere que el documento de ruta regrese un objeto para ``getRouteContent()``. The content document is checked for being ``instanceof`` the
+    class names in the map and if matched that template will be set as
+    '_template' in the $defaults and the generic controller used as controller.
 
 .. configuration-block::
 
@@ -143,7 +145,7 @@ Los posibles potenciadores son (en orden de precedencia):
         symfony_cmf_routing_extra:
             dynamic:
                 generic_controller: symfony_cmf_content.controller:indexAction
-                controllers_by_alias:
+                controllers_by_type:
                     editablestatic: sandbox_main.controller:indexAction
                 controllers_by_class:
                     Symfony\Cmf\Bundle\ContentBundle\Document\StaticContent: symfony_cmf_content.controller::indexAction
@@ -174,6 +176,11 @@ Los posibles potenciadores son (en orden de precedencia):
 
 
 Para ver algunos ejemplos, por favor ve en el `recinto de seguridad del CMF`_, específicamente la carga de accesorios de enrutado.
+
+.. tip::
+
+    You can also define your own RouteEnhancer classes for specific use cases.
+    Consulta :ref:`bundles_routingextra_customize`.
 
 .. _bundles_routingextra_document:
 
@@ -276,9 +283,7 @@ Ve la documentación del `componente enrutador del CMF`_ para información sobre
 Notas:
 
 * RouteObjectInterface: Los documentos proporcionados implementan esta interfaz para asociar contenido a rutas y (opcionalmente) proporcionan un nombre de ruta personalizado en vez del nombre de ruta compatible con el núcleo de *Symfony*.
-* Redirecciones: Este paquete proporciona un ``RedirectController``.
-
-Pendiente: Ve ``DependencyInjection/Configuration.php`` de este paquete. No podría representar cómo poner esta asociación como la asignación predefinida. Entretanto, para hacer redirecciones, necesitas añadir una entrada a tu asociación en la configuración de tu proyecto:
+* Redirecciones: This bundle provides a controller to handle redirections.
 
 .. configuration-block::
 
@@ -289,10 +294,12 @@ Pendiente: Ve ``DependencyInjection/Configuration.php`` de este paquete. No podr
             controllers_by_class:
                 Symfony\Cmf\Component\Routing\RedirectRouteInterface:  symfony_cmf_routing_extra.redirect_controller:redirectAction
 
+.. _bundles_routingextra_customize:
+
 Personalizando
 --------------
 
-Puedes añadir más implementaciones ``ControllerMapperInterface`` si  tienes un caso no manejado por las proporcionadas.
+Puedes añadir más implementaciones de la ``RouteEnhancerInterface`` si tienes un caso no manejado por el proporcionado. Sencillamente define servicios para tus potenciadores y eiquétalos con ``dynamic_router_route_enhancer`` para añadirlos al enrutado.
 
 Si usas un *ODM/ORM* diferente a `PHPCR-ODM`_, probablemente necesites especificar la clase para la entidad ruta (en `PHPCR-ODM`_, la clase es detectada automáticamente). Para necesidades más específicas, dale una mirada al ``DynamicRouter`` y ve si lo quieres extender. También puedes escribir tus propios enrutadores para engancharlos a la cadena.
 

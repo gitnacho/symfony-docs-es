@@ -1,5 +1,5 @@
 .. index::
-   single: Inyección de dependencia; Compilación
+   single: Inyección de dependencias; Compilación
 
 Compilando el contenedor
 ========================
@@ -10,7 +10,7 @@ Se compila ejecutando::
 
     $container->compile();
 
-El método de compilación utiliza "\ ``Compiler Passes``\ " para la compilación. El componente *Inyección de dependencias* viene con varios pases que se registran automáticamente para la compilación. Por ejemplo, la clase :class:`Symfony\\Component\\DependencyInjection\\Compiler\\CheckDefinitionValidityPass` comprueba varios potenciales problemas relacionados con las definiciones que se han establecido en el contenedor. Después de este y varios otros pases que comprueban la validez del contenedor, se utilizan pases adicionales del compilador para optimizar la configuración antes de almacenarla en caché. Por ejemplo, se quitan los servicios privados y abstractos, y se resuelven los alias.
+El método de compilación utiliza «\ ``Compiler Passes``\ » para la compilación. El componente *Inyección de dependencias* viene con varios pases que se registran automáticamente para la compilación. Por ejemplo, la clase :class:`Symfony\\Component\\DependencyInjection\\Compiler\\CheckDefinitionValidityPass` comprueba varios potenciales problemas relacionados con las definiciones que se han establecido en el contenedor. Después de este y varios otros pases que comprueban la validez del contenedor, se utilizan pases adicionales del compilador para optimizar la configuración antes de almacenarla en caché. Por ejemplo, se quitan los servicios privados y abstractos, y se resuelven los alias.
 
 .. _components-dependency-injection-extension:
 
@@ -82,14 +82,19 @@ procesados cuándo el contenedor es compilado en el punto que se cargan las exte
     use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
     $container = new ContainerBuilder();
+    $container->registerExtension(new AcmeDemoExtension);
+
     $loader = new YamlFileLoader($container, new FileLocator(__DIR__));
     $loader->load('config.yml');
 
-    $container->registerExtension(new AcmeDemoExtension);
     // ...
     $container->compile();
 
-Los valores de esas secciones de los archivos de configuración son pasados en el primer
+.. note::
+
+    Al cargar un archivo de configuración que usa un alias de extensión como clave, la extensión ya se debe haber registrado en el constructor del contenedor o se lanzará una excepción.
+
+Los valores de esas secciones de los archivos de configuración se pasan en el primer
 argumento del método ``load`` de la extensión::
 
     public function load(array $configs, ContainerBuilder $container)
@@ -104,7 +109,7 @@ El argumento ``$configs`` es un arreglo conteniendo cada diferente archivo de co
         array(
             'foo' => 'fooValue',
             'bar' => 'barValue',
-        )
+        ),
     )
 
 Si bien puedes gestionar manualmente la fusión de diferentes archivos, es mucho mejor
@@ -197,6 +202,20 @@ Puedes proveer requisitos de configuración más complejos para las clases en la
 
 .. note::
 
+    El sólo hecho de registrar una extensión en el contenedor no es suficiente para lograr que se incluya en las extensiones procesadas al compilar el contenedor.
+    Al cargar la configuración que utiliza el alias de la extensión como clave como en los ejemplos anteriores te aseguras de que estas estensiones sean cargadas. También puedes instruir al constructor del contenedor para que las cargue con su método :method:`Symfony\\Component\\DependencyInjection\\ContainerBuilder::loadFromExtension`::
+
+        use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+        $container = new ContainerBuilder();
+        $extension = new AcmeDemoExtension();
+        $container->registerExtension($extension);
+        $container->loadFromExtension($extension->getAlias());
+        $container->compile();
+
+
+.. note::
+
     Si necesitas manipular la configuración cargada por una extensión, entonces no lo puedes hacer desde otra extensión, ya que esta utiliza un contenedor nuevo.
     En su lugar, debes utilizar un pase del compilador que trabaje con el contenedor completo después de haber procesado las extensiones.
 
@@ -208,9 +227,9 @@ Añadiendo al principio la configuración pasada a la extensión
 .. versionadded:: 2.2
     La habilidad para añadir al principio la configuración de un paquete es nueva en *Symfony 2.2*.
 
-Una extensión puede añadir al principio la configuración de cualquier paquete antes de invocar al método ``load()`` implementando la clase :class:`Symfony\\Component\\DependencyInjection\\Compiler\\PrependExtensionInterface`::
+Una Extensión puede prefijar la configuración de cualquier paquete antes del método ``load()`` llamada al implementar la :class:`Symfony\\Component\\DependencyInjection\\Extension\\PrependExtensionInterface`::
 
-    use Symfony\Component\DependencyInjection\Compiler\PrependExtensionInterface;
+    use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
     // ...
 
     class AcmeDemoExtension implements ExtensionInterface, PrependExtensionInterface

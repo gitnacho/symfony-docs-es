@@ -9,36 +9,43 @@ Cómo utilizar ``Monolog`` para escribir registros
 Usando
 ------
 
-En ``Monolog`` cada registro cronológico define un canal de registro. Cada canal tiene una pila de controladores para escribir los registros (los controladores se pueden compartir).
-
-.. tip::
-
-    Cuando inyectas el registro cronológico en un servicio puedes :ref:`utilizar un canal personalizado <dic_tags-monolog>` para ver fácilmente qué parte de la aplicación registró el mensaje.
-
-El encargado básico es el ``StreamHandler`` el cual escribe los registros en un flujo (por omisión en ``app/logs/prod.log`` en el entorno de producción y ``app/logs/dev.log`` en el entorno de desarrollo).
-
-`Monolog`_ también viene con una potente capacidad integrada para encargarse del registro cronológico de eventos en el entorno de producción: ``FingersCrossedHandler``. Esta te permite almacenar los mensajes en la memoria intermedia y registrarla sólo si un mensaje llega al nivel de acción (ERROR en la configuración prevista en la edición estándar) transmitiendo los mensajes a otro controlador.
-
 Para registrar un mensaje, simplemente consigue el servicio de ``registro cronológico`` del contenedor en tu controlador::
 
-    $logger = $this->get('logger');
-    $logger->info('I just got the logger');
-    $logger->err('An error occurred');
+    public function indexAction()
+    {
+        $logger = $this->get('logger');
+        $logger->info('I just got the logger');
+        $logger->err('An error occurred');
+
+        // ...
+    }
+
+El servicio ``logger`` tiene diferentes métodos para diferentes niveles de registro cronológico de eventos.
+Ve la :class:`Symfony\\Component\\HttpKernel\\Log\\LoggerInterface` para detalles de cuáles métodos están disponibles.
+
+Manejadores y canales: escribiendo registros a diferentes ubicaciones
+---------------------------------------------------------------------
+
+En ``Monolog`` cada cual registrador define un canal para su registro cronológico, el cual organiza tus mensajes de registro en diferentes «categorías». Luego, cada canal tiene una pila de manejadores para escribir los registros (los manejadores se pueden compartir).
 
 .. tip::
 
-    Usar sólo los métodos de la interfaz :class:`Symfony\Component\HttpKernel\Log\LoggerInterface` te permite cambiar la implementación del anotador sin cambiar el código.
+    Cuándo inyectas el registrador en un servicio puedes :ref:`usar un canal personalizado <dic_tags-monolog>` para controlar en qué «canal» deberá llevar el registro cronológico de eventos.
 
-Utilizando varios controladores
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+El manipulador básico es el ``StreamHandler`` el cual escribe los registros en un flujo (por omisión en ``app/logs/prod.log`` en el entorno de producción y ``app/logs/dev.log`` en el entorno de desarrollo).
 
-El registro cronológico de eventos utiliza una pila de controladores que se van llamando sucesivamente. Esto te permite registrar los mensajes de varias formas fácilmente.
+`Monolog`_ también viene con una potente capacidad integrada para encargarse del registro cronológico de eventos en el entorno de producción: ``FingersCrossedHandler``. Esta te permite almacenar los mensajes en la memoria intermedia y registrarla sólo si un mensaje llega al nivel de acción (ERROR en la configuración prevista en la edición estándar) transmitiendo los mensajes a otro manipulador.
+
+Utilizando varios manejadores
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+El registro cronológico de eventos utiliza una pila de manejadores que se van llamando sucesivamente. Esto te permite registrar los mensajes de varias formas fácilmente.
 
 .. configuration-block::
 
     .. code-block:: yaml
 
-        # app/config/config*.yml
+        # app/config/config.yml
         monolog:
             handlers:
                 applog:
@@ -55,8 +62,10 @@ El registro cronológico de eventos utiliza una pila de controladores que se van
                 syslog:
                     type: syslog
                     level: error
+
     .. code-block:: xml
 
+        <!-- app/config/config.xml -->
         <container xmlns="http://symfony.com/schema/dic/services"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:monolog="http://symfony.com/schema/dic/monolog"
@@ -88,6 +97,32 @@ El registro cronológico de eventos utiliza una pila de controladores que se van
                 />
             </monolog:config>
         </container>
+
+    .. code-block:: php
+        
+        // app/config/config.php
+        $container->loadFromExtension('monolog', array(
+            'handlers' => array(
+                'applog' => array(
+                    'type'  => 'stream',
+                    'path'  => '/var/log/symfony.log',
+                    'level' => 'error',
+                ),    
+                'main' => array(
+                    'type'         => 'fingers_crossed',
+                    'action_level' => 'warning',
+                    'handler'      => 'file',
+                ),    
+                'file' => array(
+                    'type'  => 'stream',
+                    'level' => 'debug',
+                ),   
+                'syslog' => array(
+                    'type'  => 'syslog',
+                    'level' => 'error',
+                ),    
+            ),
+        ));        
 
 La configuración anterior define una pila de controladores que se llamarán en el orden en el cual se definen.
 
@@ -121,6 +156,7 @@ El controlador utiliza un ``formateador`` para dar formato al registro del event
 
     .. code-block:: xml
 
+        <!-- app/config/config.xml -->
         <container xmlns="http://symfony.com/schema/dic/services"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xmlns:monolog="http://symfony.com/schema/dic/monolog"
@@ -130,6 +166,7 @@ El controlador utiliza un ``formateador`` para dar formato al registro del event
                 <services>
                 <service id="my_formatter" class="Monolog\Formatter\JsonFormatter" />
                 </services>
+
             <monolog:config>
                 <monolog:handler
                     name="file"
@@ -139,6 +176,22 @@ El controlador utiliza un ``formateador`` para dar formato al registro del event
                 />
             </monolog:config>
         </container>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container
+            ->register('my_formatter', 'Monolog\Formatter\JsonFormatter');
+
+        $container->loadFromExtension('monolog', array(
+            'handlers' => array(
+                'file' => array(
+                    'type'      => 'stream',
+                    'level'     => 'debug',
+                    'formatter' => 'my_formatter',
+                ),
+            ),
+        ));
 
 Agregando algunos datos adicionales en los mensajes de registro
 ---------------------------------------------------------------
@@ -211,6 +264,59 @@ A veces es difícil saber cuál de las entradas en el registro pertenece a cada 
                     path: "%kernel.logs_dir%/%kernel.environment%.log"
                     level: debug
                     formatter: monolog.formatter.session_request
+
+    .. code-block:: xml
+
+        <container xmlns="http://symfony.com/schema/dic/services"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:monolog="http://symfony.com/schema/dic/monolog"
+            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd
+                                http://symfony.com/schema/dic/monolog http://symfony.com/schema/dic/monolog/monolog-1.0.xsd">
+
+                <services>
+                <service id="monolog.formatter.session_request" class="Monolog\Formatter\LineFormatter">
+                    <argument>[%%datetime%%] [%%extra.token%%] %%channel%%.%%level_name%%: %%message%%\n</argument>
+                </service>
+
+                <service id="monolog.processor.session_request" class="Acme\MyBundle\SessionRequestProcessor">
+                    <argument type="service" id="session" />
+                    <tag name="monolog.processor" method="processRecord" />
+                </service>
+                </services>
+
+            <monolog:config>
+                <monolog:handler
+                    name="main"
+                    type="stream"
+                    path="%kernel.logs_dir%/%kernel.environment%.log"
+                    level="debug"
+                    formatter="monolog.formatter.session_request"
+                />
+            </monolog:config>
+        </container>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container
+            ->register('monolog.formatter.session_request', 'Monolog\Formatter\LineFormatter')
+            ->addArgument('[%%datetime%%] [%%extra.token%%] %%channel%%.%%level_name%%: %%message%%\n');
+
+        $container
+            ->register('monolog.processor.session_request', 'Acme\MyBundle\SessionRequestProcessor')
+            ->addArgument(new Reference('session'))
+            ->addTag('monolog.processor', array('method' => 'processRecord'));
+
+        $container->loadFromExtension('monolog', array(
+            'handlers' => array(
+                'main' => array(
+                    'type'      => 'stream',
+                    'path'      => '%kernel.logs_dir%/%kernel.environment%.log',
+                    'level'     => 'debug',
+                    'formatter' => 'monolog.formatter.session_request',
+                ),
+            ),
+        ));
 
 .. note::
 

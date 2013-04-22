@@ -25,7 +25,7 @@
     <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
     <link rel="up" title="Paquetes" href="index.html" />
-    <link rel="next" title="Correo electrónico" href="../email/index.html" />
+    <link rel="next" title="Email" href="../email/index.html" />
     <link rel="prev" title="Cómo exponer la configuración semántica de un paquete" href="extension.html" /> 
   </head>
   <body>
@@ -56,7 +56,7 @@
           <a href="../../genindex.html" title="Índice General"
              accesskey="I">índice</a></li>
         <li class="right" >
-          <a href="../email/index.html" title="Correo electrónico"
+          <a href="../email/index.html" title="Email"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
           <a href="extension.html" title="Cómo exponer la configuración semántica de un paquete"
@@ -79,12 +79,12 @@
 <p>Al crear aplicaciones reutilizables y extensibles, los desarrolladores suelen enfrentarse a una elección: o bien crear un gran paquete único o múltiples paquetes más pequeños. La creación de un único paquete tiene la gran desventaja de que le es imposible a los usuarios optar por eliminar funcionalidad que no estén utilizando. La creación de múltiples paquetes tiene la desventaja que la configuración se vuelve más tediosa y los ajustes a menudo se tienen que repetir para varios paquetes.</p>
 <p>Utilizando el enfoque de abajo, es posible eliminar la desventaja del enfoque de múltiples paquetes, permitiendo a una única extensión anteponer los ajustes para cualquier paquete. Puedes utilizar los ajustes definidos en el archivo <tt class="file docutils literal"><span class="pre">app/config/config.yml</span></tt> anteponiendo los ajustes tal y como si el usuario los hubiera escrito expresamente en la configuración de la aplicación.</p>
 <p>Por ejemplo, esto lo podrías utilizar para configurar el nombre del gestor de entidades a utilizar en múltiples paquetes. O se puede utilizar para activar una función opcional que depende de que otro paquete se cargue también.</p>
-<p>Para posibilitar esto en una extensión, es necesario implementar la <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Compiler\PrependExtensionInterface</span></tt>:</p>
+<p>Para dotar a una Extensión con el poder de hacer esto, necesitas implementar la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/DependencyInjection/AcmeHelloExtension.php</span>
 <span class="k">namespace</span> <span class="nx">Acme\HelloBundle\DependencyInjection</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nx">Symfony\Component\HttpKernel\DependencyInjection\Extension</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\PrependExtensionInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
 
 <span class="k">class</span> <span class="nc">AcmeHelloExtension</span> <span class="k">extends</span> <span class="nx">Extension</span> <span class="k">implements</span> <span class="nx">PrependExtensionInterface</span>
@@ -98,7 +98,7 @@
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Dentro del método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/DependencyInjection/Compiler/PrependExtensionInterface.html#method_prepend" title="Symfony\Component\DependencyInjection\Compiler\PrependExtensionInterface::prepend()"><span class="pre">prepend()</span></a></tt>, los desarrolladores tienen acceso completo a la instancia de la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\ContainerBuilder</span></tt> justo antes de llamar al método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/DependencyInjection/Extension/ExtensionInterface.html#method_load" title="Symfony\Component\DependencyInjection\Extension\ExtensionInterface::load()"><span class="pre">load()</span></a></tt> en cada una de las extensiones registradas en el paquete. Para añadir al principio una configuración los desarrolladores de la extensión del paquete pueden utilizar el método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/DependencyInjection/ContainerBuilder.html#method_prependExtensionConfig" title="Symfony\Component\DependencyInjection\ContainerBuilder::prependExtensionConfig()"><span class="pre">prependExtensionConfig()</span></a></tt> de la instancia de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\ContainerBuilder</span></tt>. Dado que este método sólo añade la configuracion al principio, cualquier otra opción colocada explícitamente dentro del archivo <tt class="file docutils literal"><span class="pre">app/config/config.yml</span></tt> debería reemplazar esta configuración antepuesta.</p>
+<p>Dentro del método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/DependencyInjection/Extension/PrependExtensionInterface.html#method_prepend" title="Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface::prepend()"><span class="pre">prepend()</span></a></tt>, los desarrolladores tienen acceso completo a la instancia de la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\ContainerBuilder</span></tt> justo antes de llamar al método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/DependencyInjection/Extension/ExtensionInterface.html#method_load" title="Symfony\Component\DependencyInjection\Extension\ExtensionInterface::load()"><span class="pre">load()</span></a></tt> en cada una de las extensiones registradas en el paquete. Para añadir al principio una configuración los desarrolladores de la extensión del paquete pueden utilizar el método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/DependencyInjection/ContainerBuilder.html#method_prependExtensionConfig" title="Symfony\Component\DependencyInjection\ContainerBuilder::prependExtensionConfig()"><span class="pre">prependExtensionConfig()</span></a></tt> de la instancia de <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\ContainerBuilder</span></tt>. Dado que este método sólo añade la configuracion al principio, cualquier otra opción colocada explícitamente dentro del archivo <tt class="file docutils literal"><span class="pre">app/config/config.yml</span></tt> debería reemplazar esta configuración antepuesta.</p>
 <p>El siguiente ejemplo muestra cómo añadir al principio una opción de configuración en múltiples paquetes, así como desactivar una bandera en múltiples paquetes en el caso de que otro paquete específico no esté registrado:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">prepend</span><span class="p">(</span><span class="nx">ContainerBuilder</span> <span class="nv">$container</span><span class="p">)</span>
 <span class="p">{</span>
@@ -200,7 +200,7 @@
           <a href="../../genindex.html" title="Índice General"
              >índice</a></li>
         <li class="right" >
-          <a href="../email/index.html" title="Correo electrónico"
+          <a href="../email/index.html" title="Email"
              >siguiente</a> |</li>
         <li class="right" >
           <a href="extension.html" title="Cómo exponer la configuración semántica de un paquete"
@@ -218,7 +218,7 @@
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

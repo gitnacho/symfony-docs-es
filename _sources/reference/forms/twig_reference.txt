@@ -1,10 +1,22 @@
 .. index::
    single: Formularios; Referencia de funciones de formulario Twig
 
-Referencia de funciones de formulario en plantillas *Twig*
-==========================================================
+Funciones de plantillas *Twig* para formularios y referencia de variables
+=========================================================================
 
-Este manual de referencia cubre todas las posibles funciones *Twig* disponibles para reproducir formularios. Hay disponibles muchas funciones diferentes, y cada una es responsable de dibujar una parte diferente de un formulario (por ejemplo, etiquetas, errores, elementos gráficos, etc.).
+Al trabajar con formularios en una plantilla, tienes a tu disposición dos potentes cosas:
+
+* :ref:`Functiones <reference-form-twig-functions>` para pintar cada parte del formulario
+* :ref:`Variables <twig-reference-form-variables>` para conseguir *cualquier* información sobre algún campo
+
+A menudo utilizarás funciones para pintar tus campos. Las variables, por otro lado, generalmente se utilizan menos, pero son infinitamente potentes debido a que puedes acceder a las etiquetas de los campos, los atributo ``id``, errores y cualquier otra información sobre el campo.
+
+.. _reference-form-twig-functions:
+
+Funciones para pintar formularios
+---------------------------------
+
+Este manual de referencia cubre todas las posibles funciones *Twig* disponibles para reproducir formularios. Dispones de muchas funciones diferentes, y cada una es responsable de dibujar una diferente parte de un formulario (por ejemplo, etiquetas, errores, elementos gráficos, etc.).
 
 .. _reference-forms-twig-label:
 
@@ -34,7 +46,7 @@ Reproduce los errores para el campo dado.
 
     {{ form_errors(form.name) }}
 
-    {# reproduce cualquier error "global" #}
+    {# reproduce cualquier error 'global' #}
     {{ form_errors(form) }}
 
 .. _reference-forms-twig-widget:
@@ -60,11 +72,11 @@ Ve «:ref:`twig-reference-form-variables` para aprender más sobre el argumento 
 ``form_row(view, variables)``
 -----------------------------
 
-Pinta la "fila" (``row``) de un determinado campo, el cual es la combinación de la etiqueta del campo, los errores y el elemento gráfico.
+Pinta la «fila» (``row``) de un determinado campo, el cual es la combinación de la etiqueta del campo, los errores y el elemento gráfico.
 
 .. code-block:: jinja
 
-    {# pinta la fila de un campo, pero muestra una etiqueta con el texto "foo" #}
+    {# pinta la fila de un campo, pero muestra una etiqueta con el texto 'foo' #}
     {{ form_row(form.name, {'label': 'foo'}) }}
 
 El segundo argumento de ``form_row`` es un arreglo de variables. Las plantillas provistas en *Symfony* sólo permiten redefinir la etiqueta como muestra el ejemplo anterior.
@@ -88,7 +100,7 @@ Es buena idea tenerlo siempre en alguna parte dentro del formulario ya que debe 
 ``form_enctype(view)``
 ----------------------
 
-Si el formulario contiene al menos un campo para cargar archivos, esta reproducirá el atributo ``"enctype=multipart/form-data"`` requerido. Siempre es una buena idea incluirlo en tu etiqueta de formulario:
+Si el formulario contiene al menos un campo para cargar archivos, esta reproducirá el atributo ``"enctype=multipart/form-data"`` requerido. Es una buena idea incluirlo siempre en tu etiqueta de formulario:
 
 .. code-block:: html+jinja
 
@@ -99,6 +111,10 @@ Si el formulario contiene al menos un campo para cargar archivos, esta reproduci
 Más sobre ``variables`` de formulario
 -------------------------------------
 
+.. tip::
+
+    Para una lista de variables completa, ve: :ref:`reference-form-twig-variables`.
+
 En casi cada una de las funciones *Twig* anteriores, el argumento final es un arreglo de «variables» que se utiliza al dibujar una parte del formulario. Por ejemplo, lo siguiente dibuja el «elemento gráfico» para un campo, y modifica sus atributos
 para incluir una clase especial:
 
@@ -107,7 +123,7 @@ para incluir una clase especial:
     {# pinta un elemento gráfico, pero añadiéndole la clase "foo" #}
     {{ form_widget(form.name, { 'attr': {'class': 'foo'} }) }}
 
-El propósito de estas variables ---qué hacen y de donde vienen--- puede no ser claro inmediatamente, pero son increíblemente potentes. Siempre que dibujas cualquier parte de un formulario, el bloque que estés dibujando usa una serie de variables. De manera predefinida, estos bloques viven en `form_div_layout.html.twig`_.
+El propósito de estas variables ---qué hacen y de donde vienen--- puede no ser claro inmediatamente, pero son increíblemente potentes. Siempre que pintas cualquier parte de un formulario, el bloque que estés dibujando usa una serie de variables. De manera predefinida, estos bloques viven en `form_div_layout.html.twig`_.
 
 Considera la ``form_label`` por ejemplo:
 
@@ -146,5 +162,76 @@ Las variables disponibles exactas a sustituir dependen de en qué parte del form
         {# **no** trabaja  - las variables no son recursivas #}
         {{ form_widget(form, { 'attr': {'class': 'foo'} }) }}
 
+.. _reference-form-twig-variables:
 
-.. _`form_div_layout.html.twig`: https://github.com/symfony/symfony/blob/2.1/src/Symfony/Bridge/Twig/Resources/views/Form/form_div_layout.html.twig
+Referencia de variables de formulario
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Las siguientes variables son comunes a cada tipo de campo. Ciertos tipos de campo incluso pueden tener más variables y aquí algunas variables en realidad sólo aplican a determinados tipos.
+
+Suponiendo que tienes una variable ``form`` en tu plantilla, y quieres hacer una referencia a las variables en el campo ``nombre``, puedes acceder a las variables utilizando la propiedad pública ``vars`` en el objeto de la clase :class:`Symfony\\Component\\Form\\FormView`:
+
+.. configuration-block::
+
+    .. code-block:: html+jinja
+
+        <label for="{{ form.name.vars.id }}"
+            class="{{ form.name.vars.required ? 'required' : '' }}">
+            {{ form.name.label }}
+        </label>
+
+    .. code-block:: html+php
+
+        <label for="<?php echo $view['form']->get('name')->vars['id'] ?>"
+            class="<?php echo $view['form']->get('name')->vars['required'] ? 'required' : '' ?>">
+            <?php echo $view['form']->get('name')->vars['label'] ?>
+        </label>
+
+.. versionadded:: 2.1
+    Las variables ``valid``, ``label_attr``, ``compound`` y ``disabled`` son nuevas en *Symfony 2.1*.
+
++-----------------+-----------------------------------------------------------------------------------------+
+| Variable        | Uso                                                                                     |
++=================+=========================================================================================+
+| ``id``          | El atributo ``id`` de HTML a dibujar                                                    |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``name``        | El nombre del campo (p. ej. ``title``) --- pero no el atributro ``name``                |
+|                 | de *HTML*, el cual es ``full_name``                                                     |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``full_name``   | El atributo ``name`` de *HTML* a reproducir                                             |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``errors``      | Un arreglo de cualquier error asociado a *este* campo específico (p. ej.                |
+|                 | ``form.title.errors``). Ten en cuenta que no puedes usar ``form.errors`` para           |
+|                 | determinar si un formulario es válido, debido a que únicamente devuelve errores         | 
+|                 | globales algunos campos individuales pueden tener errores. En su lugar, usa la opción   |
+|                 | ``valid``                                                                               |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``valid``       | Devuelve ``true`` o ``false`` dependiendo en si el formulario completo es válido        |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``value``       | El valor que se debe usar al dibujarlo (comúnmente el atributo ``value`` de *HTML*)     |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``read_only``   | Si es ``true``, se añade ``readonly="readonly"`` al campo                               |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``disabled``    | Si es ``true``, se añade ``disabled="disabled"`` al campo                               |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``required``    | Si es ``true``, un atributo ``required`` se añade al campo para activar la validación   |
+|                 | HTML5.      Adicionalmene, una clase ``required`` se añade a la etiqueta.                   |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``max_length``  | Añade un atributo *HTML* ``maxlength`` al elemento                                      |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``pattern``     | Añade un atributo ``pattern`` de *HTML* al elemento                                     |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``label``       | La cadena de la etiqueta a reproducir                                                   |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``multipart``   | Si es ``true``, ``form_enctype`` debe reproducir ``enctype="multipart/form-data"``.            |
+|                 | Esto únicamente aplica al elemento ``root`` del formulario.                                             |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``attr``        | Un arreglo clave valor que será dibujado como atributos *HTML* en el campo              |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``label_attr``  | Un arreglo clave valor que será dibujado como atriburos *HTML* en la etiqueta           |
++-----------------+-----------------------------------------------------------------------------------------+
+| ``compound``    | Si o no un campo realmente es un soporte para un grupo de campos descendientes (por     |
+|                 | ejemplo, un campo ``choice``, el cual en realidad es un grupo de cajas de comprobación) |
++-----------------+-----------------------------------------------------------------------------------------+
+
+.. _`form_div_layout.html.twig`: https://github.com/symfony/symfony/blob/master/src/Symfony/Bridge/Twig/Resources/views/Form/form_div_base.html.twig

@@ -45,12 +45,11 @@ Luego, inicia los paquetes en el archivo :file:`app/AppKernel.php` añadiéndolo
         $bundles = array(
             // ...
 
-            // soporte para el admin
-            new Symfony\Cmf\Bundle\TreeBundle\SymfonyCmfTreeBundle(),
+            // soporte para la administración
             new Symfony\Cmf\Bundle\TreeBrowserBundle\SymfonyCmfTreeBrowserBundle(),
             new Sonata\jQueryBundle\SonatajQueryBundle(),
-            new Sonata\AdminBundle\SonataAdminBundle(),
             new Sonata\BlockBundle\SonataBlockBundle(),
+            new Sonata\AdminBundle\SonataAdminBundle(),
             new Sonata\DoctrinePHPCRAdminBundle\SonataDoctrinePHPCRAdminBundle(),
             new FOS\JsRoutingBundle\FOSJsRoutingBundle(),
         );
@@ -99,26 +98,26 @@ Añade los paquetes de ``sonata`` a la configuración de tu aplicación
                         - Symfony\Cmf\Bundle\RoutingExtraBundle\Document\RedirectRoute
                 Symfony\Cmf\Bundle\RoutingExtraBundle\Document\RedirectRoute:
                     valid_children: []
-                Symfony\Cmf\Bundle\MenuBundle\Document\MenuItem:
+                Symfony\Cmf\Bundle\MenuBundle\Document\MenuNode:
                     valid_children:
-                        - Symfony\Cmf\Bundle\MenuBundle\Document\MenuItem
-                        - Symfony\Cmf\Bundle\MenuBundle\Document\MultilangMenuItem
-                Symfony\Cmf\Bundle\MenuBundle\Document\MultilangMenuItem:
+                        - Symfony\Cmf\Bundle\MenuBundle\Document\MenuNode
+                        - Symfony\Cmf\Bundle\MenuBundle\Document\MultilangMenuNode
+                Symfony\Cmf\Bundle\MenuBundle\Document\MultilangMenuNode:
                     valid_children:
-                        - Symfony\Cmf\Bundle\MenuBundle\Document\MenuItem
-                        - Symfony\Cmf\Bundle\MenuBundle\Document\MultilangMenuItem
+                        - Symfony\Cmf\Bundle\MenuBundle\Document\MenuNode
+                        - Symfony\Cmf\Bundle\MenuBundle\Document\MultilangMenuNode
 
         fos_js_routing:
             routes_to_expose:
                 - admin_sandbox_main_editablestaticcontent_create
                 - admin_sandbox_main_editablestaticcontent_delete
                 - admin_sandbox_main_editablestaticcontent_edit
-                - admin_bundle_menu_menuitem_create
-                - admin_bundle_menu_menuitem_delete
-                - admin_bundle_menu_menuitem_edit
-                - admin_bundle_menu_multilangmenuitem_create
-                - admin_bundle_menu_multilangmenuitem_delete
-                - admin_bundle_menu_multilangmenuitem_edit
+                - admin_bundle_menu_menunode_create
+                - admin_bundle_menu_menunode_delete
+                - admin_bundle_menu_menunode_edit
+                - admin_bundle_menu_multilangmenunode_create
+                - admin_bundle_menu_multilangmenunode_delete
+                - admin_bundle_menu_multilangmenunode_edit
                 - admin_bundle_content_multilangstaticcontent_create
                 - admin_bundle_content_multilangstaticcontent_delete
                 - admin_bundle_content_multilangstaticcontent_edit
@@ -144,19 +143,82 @@ Añade la ruta a la configuración de enrutado:
             resource: '@SonataAdminBundle/Resources/config/routing/sonata_admin.xml'
             prefix: /admin
 
-        _sonata_admin:
+        sonata_admin:
             resource: .
             type: sonata_admin
             prefix: /admin
 
+        doctrine_phpcr_admin_bundle_odm_browser:
+            resource: "@SonataDoctrinePHPCRAdminBundle/Resources/config/routing/phpcrodmbrowser.xml"
+
         fos_js_routing:
             resource: "@FOSJsRoutingBundle/Resources/config/routing/routing.xml"
 
-        phpcrbrowser:
-            resource: @SymfonyCmfTreeBrowserBundle/Resources/config/routing/phpcrbrowser.xml
-            prefix: /admin/browser
+        symfony_cmf_tree:
+            resource: .
+            type: 'symfony_cmf_tree'
 
-        phpcrodmbrowser:
-            resource: @SonataDoctrinePHPCRAdminBundle/Resources/config/routing/phpcrodmbrowser.xml
-            prefix: /admin/browser
 
+Activos de ``Sonata``
+---------------------
+
+.. code-block:: bash
+
+    app/console assets:install --symlink
+
+
+Defining own Admin classes
+--------------------------
+
+The CMF bundles come with predefined admin classes which will be activated
+automatically if Sonata PHPCR-ODM Admin is loaded. If you need to write
+different admins and do not want to load the defaults, you can deactivate the
+loading - see the documentation of the respective bundles.
+
+To load your own Admin service, you need to declare it as a service, tag with
+``sonata.admin`` with ``manager_type="doctrine_phpcr"``. For the admin to work
+properly, you need to add a call for method ``setRouteBuilder`` to set it to
+the service ``sonata.admin.route.path_info_slashes``, or your Admin will not
+work.
+
+The constructor expects three arguments, code, document class and controller
+name. You can pass an empty argument for the code, the document class must be
+the fully qualified class name of the document this admin is for and the third
+argument can be used to set a custom controller that does additional operations
+over the default sonata CRUD controller.
+
+.. configuration-block::
+
+    .. code-block:: xml
+
+        <service id="my_bundle.admin" class="%my_bundle.admin_class%">
+            <tag name="sonata.admin" manager_type="doctrine_phpcr" group="dashboard.group_content" label_catalogue="MyBundle" label="dashboard.label_my_admin" label_translator_strategy="sonata.admin.label.strategy.underscore" />
+            <argument/>
+            <argument>%my_bundle.document_class%</argument>
+            <argument>SonataAdminBundle:CRUD</argument>
+
+            <call method="setRouteBuilder">
+                <argument type="service" id="sonata.admin.route.path_info_slashes" />
+            </call>
+        </service>
+
+
+Finalmente
+----------
+
+Ahora ``Sonata`` está configurado para trabajar con *PHPCR*, puedes acceder al panel vía ``/admin/dashboard`` de tu sitio.
+
+
+Tree Problems
+-------------
+
+If you have not yet added anything to the content repository, the tree view will not load as it
+cannot find a root node. To fix this, load some data as fixtures by following this doc:
+
+- :doc:`using-blockbundle-and-contentbundle`
+
+Lectura complementaria
+----------------------
+
+* :doc:`../bundles/doctrine_phpcr_admin`
+* :doc:`handling-multilang-documents`

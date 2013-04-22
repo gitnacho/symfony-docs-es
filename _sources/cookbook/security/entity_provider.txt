@@ -162,7 +162,7 @@ Para más detalles sobre cada uno de ellos, consulta la :class:`Symfony\\Compone
 
     public function isEqualTo(UserInterface $user)
     {
-        return $this->username === $user->getUsername();
+        return $this->id === $user->getId();
     }
 
 .. note::
@@ -223,9 +223,67 @@ A continuación se muestra un ejemplo de configuración donde el usuario podrá 
             access_control:
                 - { path: ^/admin, roles: ROLE_ADMIN }
 
+    .. code-block:: xml
+
+        <!-- app/config/security.xml -->
+        <config>
+            <encoder class="Acme\UserBundle\Entity\User"
+                algorithm="sha1"
+                encode-as-base64="false"
+                iterations="1"
+            />
+
+            <role id="ROLE_ADMIN">ROLE_USER</role>
+            <role id="ROLE_SUPER_ADMIN">ROLE_USER, ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH</role>
+
+            <provider name="administrators">
+                <entity class="AcmeUserBundle:User" property="username" />
+            </provider>
+
+            <firewall name="admin_area" pattern="^/admin">
+                <http-basic />
+            </firewall>
+
+            <rule path="^/admin" role="ROLE_ADMIN" />
+        </config>
+
+    .. code-block:: php
+
+        // app/config/security.php
+        $container->loadFromExtension('security', array(
+            'encoders' => array(
+                'Acme\UserBundle\Entity\User' => array(
+                    'algorithm'         => 'sha1',
+                    'encode_as_base64'  => false,
+                    'iterations'        => 1,
+                ),
+            ),
+            'role_hierarchy' => array(
+                'ROLE_ADMIN'       => 'ROLE_USER',
+                'ROLE_SUPER_ADMIN' => array('ROLE_USER', 'ROLE_ADMIN', 'ROLE_ALLOWED_TO_SWITCH'),
+            ),
+            'providers' => array(
+                'administrator' => array(
+                    'entity' => array(
+                        'class'    => 'AcmeUserBundle:User',
+                        'property' => 'username',
+                    ),
+                ),
+            ),
+            'firewalls' => array(
+                'admin_area' => array(
+                    'pattern' => '^/admin',
+                    'http_basic' => null,
+                ),
+            ),
+            'access_control' => array(
+                array('path' => '^/admin', 'role' => 'ROLE_ADMIN'),
+            ),
+        ));
+
 La sección ``encoders`` asocia el codificador de contraseña ``sha1`` a la clase entidad. Esto significa que *Symfony* espera que la contraseña en la base de datos esté cifrada usando este algoritmo. Para más información sobre cómo crear un nuevo objeto ``usuario`` con una contraseña cifrada correctamente, consulta la sección :ref:`book-security-encoding-user-password` del capítulo de seguridad.
 
-La sección  ``proveedores`` define un proveedor de usuario ``administradores``. A proveedor de usuario es una "fuente" de donde se cargan los usuarios durante la autenticación.
+La sección  ``proveedores`` define un proveedor de usuario ``administradores``. A proveedor de usuario es la «fuente» de donde se cargan los usuarios durante la autenticación.
 En este caso, la palabra clave ``entidad`` significa que *Symfony* utilizará la entidad proveedor de usuarios de *Doctrine* para cargar los objetos entidad de usuario desde la base de datos usando el campo único ``username``. En otras palabras, esto le dice a *Symfony* cómo buscar al usuario en la base de datos antes de comprobar la validez de la contraseña.
 
 Este código y configuración funciona, pero no es suficiente para asegurar la aplicación para usuarios **activos**. A partir de ahora, todavía puedes autenticar con ``maxime``. La siguiente sección explica cómo negar el acceso a usuarios no activos.
@@ -319,7 +377,11 @@ El siguiente código muestra la implementación de la :class:`Symfony\\Component
                 // si no hay algún registro que coincida con los criterios.
                 $user = $q->getSingleResult();
             } catch (NoResultException $e) {
-                throw new UsernameNotFoundException(sprintf('Unable to find an active admin AcmeUserBundle:User object identified by "%s".', $username), 0, $e);
+                $message = sprintf(
+                    'Unable to find an active admin AcmeUserBundle:User object identified by "%s".',
+                    $username
+                );
+                throw new UsernameNotFoundException($message,, 0, $e);
             }
 
             return $user;
@@ -329,7 +391,12 @@ El siguiente código muestra la implementación de la :class:`Symfony\\Component
         {
             $class = get_class($user);
             if (!$this->supportsClass($class)) {
-                throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $class));
+                throw new UnsupportedUserException(
+                    sprintf(
+                        'Instances of "%s" are not supported.',
+                        $class
+                    )
+                );
             }
 
             return $this->find($user->getId());
@@ -337,7 +404,8 @@ El siguiente código muestra la implementación de la :class:`Symfony\\Component
 
         public function supportsClass($class)
         {
-            return $this->getEntityName() === $class || is_subclass_of($class, $this->getEntityName());
+            return $this->getEntityName() === $class
+                || is_subclass_of($class, $this->getEntityName());
         }
     }
 
@@ -354,6 +422,34 @@ Para finalizar la implementación, debes cambiar la configuración de la capa de
                 administrators:
                     entity: { class: AcmeUserBundle:User }
             # ...
+    
+    .. code-block:: xml
+
+        <!-- app/config/security.xml -->
+        <config>
+            <!-- ... -->
+
+            <provider name="administrator">
+                <entity class="AcmeUserBundle:User" />
+            </provider>
+
+            <!-- ... -->
+        </config>
+
+    .. code-block:: php
+
+        // app/config/security.php
+        $container->loadFromExtension('security', array(
+            ...,
+            'providers' => array(
+                'administrator' => array(
+                    'entity' => array(
+                        'class' => 'AcmeUserBundle:User',
+                    ),
+                ),
+            ),
+            ...,
+        ));
 
 De esta manera, la capa de seguridad utilizará una instancia del :dfn:`UserRepository` y llamará a su método ``loadUserByUsername()`` para recuperar un usuario de la base de datos si llenó su nombre de usuario o dirección de correo electrónico.
 

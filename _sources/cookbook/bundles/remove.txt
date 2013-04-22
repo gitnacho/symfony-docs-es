@@ -1,0 +1,78 @@
+.. index::
+    single: Paquete; Eliminando el AcmeDemoBundle
+
+Cómo eliminar el ``AcmeDemoBundle``
+===================================
+
+La *edición estándar de Symfony2* viene con una demo completa que vive dentro de un paquete llamado ``AcmeDemoBundle``. Es un gran texto modelo al cual referirte mientras empiezas un proyecto, pero probablemente quieras eliminarlo finalmente.
+
+.. tip::
+
+    Este artículo utiliza el ``AcmeDemoBundle`` como ejemplo, pero puedes utilizar estos pasos para eliminar cualquier paquete.
+
+1. Desregistrar el paquete en el :file:`AppKernel`
+-----------------------------------------------
+
+Para desconectar el paquete de la plataforma, lo deberías quitar del método ``Appkernel::registerBundles()``. El paquete normalmente se encuentra en el arreglo ``$bundles pero el ``AcmeDemoBundle`` sólo se registra en un entorno de desarrollo y lo puedes encontrar en la siguiente declaración ``if``::
+
+    // app/AppKernel.php
+
+    // ...
+    class AppKernel extends Kernel
+    {
+        public function registerBundles()
+        {
+            $bundles = array(...);
+
+            if (in_array($this->getEnvironment(), array('dev', 'test'))) {
+                // comenta o elimina esta línea:
+                // $bundles[] = new Acme\DemoBundle\AcmeDemoBundle();
+                // ...
+            }
+        }
+    }
+
+2. Quita la configuración del paquete
+-------------------------------------
+
+Ahora que *Symfony* no sabe sobre el paquete, necesitas quitar toda su configuración y enrutado dentro del directorio :file:`app/config` que refiera al paquete.
+
+2.1 Quita el enrutado del paquete
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+El enrutado para el ``AcmeDemoBundle`` se puede encontrar en :file:`app/config/routing_dev.yml`. Las rutas son ``_welcome``, ``_demo_secured`` y ``_demo``. Quita esas tres entradas.
+
+2.2 Quita la configuración del paquete
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Algunos paquetes contienen configuración en uno de los archivos en :file:`app/config/config*.yml`. Asegúrate de sacar la configuración relacionada de esos archivos. Rápidamente puedes determinar la configuración del paquete en el sitio buscando una cadena ``acme_demo`` (o alguna cosa que nombre el paquete, p. ej. ``fos_user`` para el ``FOSUserBundle``) en los archivos de configuración.
+
+El ``AcmeDemoBundle`` no tiene configuración. Sin embargo, se utiliza el paquete en la configuración del archivo :file:`app/config/security.yml`. Lo puedes utilizar como texto modelo para tu propia seguridad, pero también *puedes* quitar todo: A *Symfony* no le importa si lo quitas o no.
+
+3. Elimina el paquete del sistema de archivos
+---------------------------------------------
+
+Ahora que has quitado toda referencia al paquete en tu aplicación, deberías quitar el paquete del *sistema de archivos*. El paquete se localiza en el directorio :file:`src/Acme/DemoBundle`. Deberías quitar ese directorio y también puedes quitar el directorio ``Acme``.
+
+.. tip::
+
+    Si no sabes la ubicación de un paquete, puedes utilizar el método :method:`Symfony\\Bundle\\FrameworkBundle\\Bundle\\Bundle::getPath` para conseguir la ruta del paquete::
+
+        echo $this->container->get('kernel')->getBundle('AcmeDemoBundle')->getPath();
+
+4. Quita la integración en otros paquetes
+-----------------------------------------
+
+.. note::
+
+    Esto no aplica al ``AcmeDemoBundle`` --- ningún otro paquete depende de él, así que puedes omitir este paso.
+
+Algunos paquetes dependen de otros paquetes, si quitas uno de los dos, el otro probablemente no trabaje. Asegúrate que ningún otro paquete, de terceros o personalizado, dependa del paquete que estás a punto de quitar.
+
+.. tip::
+
+    Si un paqute depende de otro, significa que este utiliza algunos servicios del paquete. Buscar una cadena ``acme_demo`` te puede ayudar descubrirlos.
+
+.. tip::
+
+    Si un paquete de terceros depende de otro, puedes encontrar ese paquete mencionado en el archivo :file:`composer.json` incluido en el directorio :file:`bundle`.

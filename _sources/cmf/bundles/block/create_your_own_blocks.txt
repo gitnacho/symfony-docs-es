@@ -1,0 +1,95 @@
+Creando tus propios bloques
+===========================
+
+Sigue estos pasos para crear un bloque:
+
+* Crea un bloque documento
+* Crea un bloque servicio y decláralo (opcional)
+* Crea un objeto de datos que represente tu bloque en el repositorio, ve :ref:`block-document`
+* dibuja el bloque, ve :ref:`block-rendering`
+
+Digamos que estás trabajando en un proyecto donde tienes que integrar los datos recibidos de varios alimentadores ``RSS``.
+Por supuesto podrías crear un ``ActionBlock`` para cada uno de estos alimentadores, ¿pero no es tonto eso? De hecho todas estas acciones se verían similares: Recibes los datos desde un alimentador, los saneas y los pasas a una plantilla. En su lugar decides crear tu propio bloque, el ``RSSBlock``.
+
+Creando un bloque documento
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+La primer cosa que necesitas es un documento que contenga el dato. Es recomendable extender el ``Symfony\Cmf\Bundle\BlockBundle\Document\BaseBlock``
+contenido en este paquete (aun así no estás forzado a hacerlo, siempre y cuando implementes la ``Sonata\BlockBundle\Model\BlockInterface``). En tu documento, necesitas definir el método ``getType`` que únicamente regresa 'acme_main.block.rss'.
+
+.. code-block:: php
+
+    namespace Acme\MainBundle\Document;
+
+    use Doctrine\ODM\PHPCR\Mapping\Annotations as PHPCRODM;
+    use Symfony\Cmf\Bundle\BlockBundle\Document\BaseBlock;
+
+    /**
+     * Rss Block
+     *
+     * @PHPCRODM\Document(referenceable=true)
+     */
+    class RssBlock extends BaseBlock
+    {
+        public function getType()
+        {
+            return 'acme_main.block.rss';
+        }
+    }
+
+Creando un servicio bloque
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Podrías elegir utilizar un servicio de bloque existente porque su configuración y lógica ya satisfacen tus necesidades. Para nuestro bloque *rss* creamos un servicio que sabe cómo manejar los ``RSSBlocks``:
+
+* El método ``getDefaultSettings`` configura un título, una *URL* y la cantidad máxima de elementos
+
+  .. code-block:: php
+
+      // ...
+      public function getDefaultSettings()
+      {
+          return array(
+              'url'      => false,
+              'title'    => 'Insert the rss title',
+              'maxItems' => 10,
+          );
+      }
+      // ..
+
+* el método ``execute`` pasa las opciones a un servicio lector de *rss* y envía los elementos del alimentador a una plantilla, ve :ref:`block-execute`
+
+Asegúrate de implementar la ``Sonata\BlockBundle\Block\BlockServiceInterface`` o un servicio bloque existente tal cómo ``Sonata\BlockBundle\Block\BaseBlockService``.
+
+Define el servicio en un archivo de configuración. Es importante etiquetar tu ``BlockService`` con  ``'sonata.block'``, de lo contrario el paquete no lo reconocerá.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # services.yml
+        acme_main.rss_reader:
+            class: Acme\MainBundle\Feed\SimpleReader
+
+        sandbox_main.block.rss:
+            class: Acme\MainBundle\Block\RssBlockService
+            arguments:
+                - "acme_main.block.rss"
+                - "@templating"
+                - "@sonata.block.renderer"
+                - "@acme_main.rss_reader"
+            tags:
+                - {name: "sonata.block"}
+
+    .. code-block:: xml
+
+        <!-- services.xml -->
+        <service id="acme_main.rss_reader" class="Acme\MainBundle\Feed\SimpleReader" />
+
+        <service id="sandbox_main.block.rss" class="Acme\MainBundle\Block\RssBlockService">
+            <tag name="sonata.block" />
+            <argument>acme_main.block.rss</argument>
+            <argument type="service" id="templating" />
+            <argument type="service" id="sonata.block.renderer" />
+            <argument type="service" id="acme_main.block.rss_reader" />
+        </service>

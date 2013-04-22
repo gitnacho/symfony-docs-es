@@ -26,7 +26,7 @@
     <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
     <link rel="up" title="Plantillas" href="index.html" />
     <link rel="next" title="Cómo escribir una extensión Twig personalizada" href="twig_extension.html" />
-    <link rel="prev" title="Cómo inyectar variables en todas las plantillas (es decir, Variables globales)" href="global_variables.html" /> 
+    <link rel="prev" title="Cómo utilizar y rutas Twig con espacios de nombres" href="namespaced_paths.html" /> 
   </head>
   <body>
   <div class="imalogo">
@@ -59,7 +59,7 @@
           <a href="twig_extension.html" title="Cómo escribir una extensión Twig personalizada"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
-          <a href="global_variables.html" title="Cómo inyectar variables en todas las plantillas (es decir, Variables globales)"
+          <a href="namespaced_paths.html" title="Cómo utilizar y rutas Twig con espacios de nombres"
              accesskey="P">anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
           <li><a href="../index.html" >Recetario</a> &raquo;</li>
@@ -100,8 +100,9 @@
 </div>
 </li>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$container</span><span class="o">-&gt;</span><span class="na">loadFromExtension</span><span class="p">(</span><span class="s1">&#39;framework&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
-    <span class="o">...</span><span class="p">,</span>
-    <span class="s1">&#39;templating&#39;</span>      <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+    <span class="c1">// ...</span>
+
+    <span class="s1">&#39;templating&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
         <span class="s1">&#39;engines&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;twig&#39;</span><span class="p">,</span> <span class="s1">&#39;php&#39;</span><span class="p">),</span>
     <span class="p">),</span>
 <span class="p">));</span>
@@ -226,7 +227,10 @@ Hello <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="
 Eso es muy útil cuando se trabaja con <em>Ajax</em>, o cuando la plantilla incrustada necesita alguna variable que no está disponible en la plantilla principal.</p>
 <p>Si creas una acción <tt class="docutils literal"><span class="pre">fancy</span></tt>, y quieres incluirla en la plantilla <tt class="docutils literal"><span class="pre">index.html.php</span></tt>, basta con utilizar el siguiente código:</p>
 <div class="highlight-html+php"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/HelloBundle/Resources/views/Hello/index.html.php --&gt;</span>
-<span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeHelloBundle:Hello:fancy&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;name&#39;</span> <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;green&#39;</span><span class="p">))</span> <span class="cp">?&gt;</span>
+<span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="p">[</span><span class="s1">&#39;actions&#39;</span><span class="p">]</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeHelloBundle:Hello:fancy&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;name&#39;</span>  <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">,</span>
+    <span class="s1">&#39;color&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;green&#39;</span>
+<span class="p">))</span> <span class="cp">?&gt;</span>
 </pre></div>
 </div>
 <p>Aquí, la cadena <tt class="docutils literal"><span class="pre">AcmeHelloBundle:Hello:fancy</span></tt> se refiere a la acción <tt class="docutils literal"><span class="pre">fancy</span></tt> del controlador
@@ -240,7 +244,10 @@ Eso es muy útil cuando se trabaja con <em>Ajax</em>, o cuando la plantilla incr
         <span class="c1">// crea algún objeto, basándose en la variable $color</span>
         <span class="nv">$object</span> <span class="o">=</span> <span class="o">...</span><span class="p">;</span>
 
-        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeHelloBundle:Hello:fancy.html.php&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;name&#39;</span> <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span> <span class="o">=&gt;</span> <span class="nv">$object</span><span class="p">));</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">render</span><span class="p">(</span><span class="s1">&#39;AcmeHelloBundle:Hello:fancy.html.php&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;name&#39;</span>   <span class="o">=&gt;</span> <span class="nv">$name</span><span class="p">,</span>
+            <span class="s1">&#39;object&#39;</span> <span class="o">=&gt;</span> <span class="nv">$object</span>
+        <span class="p">));</span>
     <span class="p">}</span>
 
     <span class="c1">// ...</span>
@@ -263,7 +270,7 @@ Eso es muy útil cuando se trabaja con <em>Ajax</em>, o cuando la plantilla incr
 <p>El método <tt class="docutils literal"><span class="pre">generate()</span></tt> toma el nombre de la ruta y un arreglo de parámetros como argumentos. El nombre de la ruta es la clave principal en la cual son referidas las rutas y los parámetros son los valores de los marcadores de posición definidos en el patrón de la ruta:</p>
 <div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/HelloBundle/Resources/config/routing.yml</span>
 <span class="l-Scalar-Plain">hello</span><span class="p-Indicator">:</span> <span class="c1"># El nombre de la ruta</span>
-    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">/hello/{name}</span>
+    <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span>  <span class="l-Scalar-Plain">/hello/{name}</span>
     <span class="l-Scalar-Plain">defaults</span><span class="p-Indicator">:</span> <span class="p-Indicator">{</span> <span class="nv">_controller</span><span class="p-Indicator">:</span> <span class="nv">AcmeHelloBundle</span><span class="p-Indicator">:</span><span class="nv">Hello</span><span class="p-Indicator">:</span><span class="nv">index</span> <span class="p-Indicator">}</span>
 </pre></div>
 </div>
@@ -312,7 +319,7 @@ Eso es muy útil cuando se trabaja con <em>Ajax</em>, o cuando la plantilla incr
           <a href="twig_extension.html" title="Cómo escribir una extensión Twig personalizada"
              >siguiente</a> |</li>
         <li class="right" >
-          <a href="global_variables.html" title="Cómo inyectar variables en todas las plantillas (es decir, Variables globales)"
+          <a href="namespaced_paths.html" title="Cómo utilizar y rutas Twig con espacios de nombres"
              >anterior</a> |</li>
         <li><a href="../../index.html">en Español</a> &raquo;</li>
           <li><a href="../index.html" >Recetario</a> &raquo;</li>
@@ -327,7 +334,7 @@ Eso es muy útil cuando se trabaja con <em>Ajax</em>, o cuando la plantilla incr
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Jan 18, 2013.
+      Actualizado por última vez en Mar 19, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
