@@ -536,9 +536,7 @@ Debido a que el contenido integrado proviene de otra página (o controlador para
 
     .. code-block:: jinja
 
-        {{ render_hinclude(controller('...')) }}
-
-        {{ render_hinclude(url('...')) }}
+        {% render url('...') with {}, {'standalone': 'js'} %}
 
     .. code-block:: php
 
@@ -1060,7 +1058,7 @@ Cuando generas *HTML* a partir de una plantilla, siempre existe el riesgo de que
 
 .. configuration-block::
 
-    .. code-block:: jinja
+    .. code-block:: html+jinja
 
         Hello {{ name }}
 
@@ -1068,17 +1066,23 @@ Cuando generas *HTML* a partir de una plantilla, siempre existe el riesgo de que
 
         Hello <?php echo $name ?>
 
-Imagina que el usuario introduce el siguiente código como su nombre::
+Imagina que el usuario introduce el siguiente código como su nombre:
+
+.. code-block:: text
 
     <script>alert('hello!')</script>
 
-Sin ningún tipo de mecanismo de escape, la plantilla resultante provocaría que aparezca un cuadro de alerta *JavaScript*::
+Sin ningún tipo de mecanismo de escape, la plantilla resultante provocaría que aparezca un cuadro de alerta *JavaScript*:
+
+.. code-block:: html
 
     Hello <script>alert('hello!')</script>
 
 Y aunque esto parece inofensivo, si un usuario puede llegar hasta aquí, ese mismo usuario también será capaz de escribir código *JavaScript* malicioso que subrepticiamente realice acciones dentro de la zona segura de un usuario legítimo.
 
-La respuesta al problema es el mecanismo de escape. Con el mecanismo de escape, reproduces la misma plantilla sin causar daño alguno, y, literalmente, imprimes en pantalla la etiqueta ``script``::
+La respuesta al problema es el mecanismo de escape. Con el mecanismo de escape, reproduces la misma plantilla sin causar daño alguno, y literalmente, imprimes en pantalla la etiqueta ``script``:
+
+.. code-block:: html
 
     Hello &lt;script&gt;alert(&#39;helloe&#39;)&lt;/script&gt;
 
@@ -1092,21 +1096,29 @@ Mecanismo de escape en *Twig*
 Si estás utilizando las plantillas de *Twig*, entonces el mecanismo de escape está activado por omisión. Esto significa que estás protegido fuera de la caja de las consecuencias no intencionales del código presentado por los usuarios. De forma predeterminada, el mecanismo de escape asume que el contenido se escapó para salida *HTML*.
 
 En algunos casos, tendrás que desactivar el mecanismo de escape cuando estás reproduciendo una variable de confianza y marcado que no se debe escapar.
-Supongamos que los usuarios administrativos están autorizados para escribir artículos que contengan código *HTML*. De forma predeterminada, *Twig* debe escapar el cuerpo del artículo. Para reproducirlo normalmente, agrega el filtro ``raw``: ``{{ article.body|raw }}``.
+Supongamos que los usuarios administrativos están autorizados para escribir artículos que contengan código *HTML*. De forma predeterminada, *Twig* debe escapar el cuerpo del artículo.
+
+Para reproducirlo normalmente, agrega el filtro ``raw``: 
+
+.. code-block:: jinja
+
+    {{ article.body|raw }}
 
 También puedes desactivar el mecanismo de escape dentro de una área ``{% block %}`` o para una plantilla completa. Para más información, consulta la documentación de *Twig* sobre el `Mecanismo de escape`_.
 
 Mecanismo de escape en *PHP*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-El mecanismo de escape no es automático cuando utilizas plantillas *PHP*. Esto significa que a menos que escapes una variable expresamente, no estás protegido. Para utilizar el mecanismo de escape, usa el método especial de la vista ``escape()``::
+El mecanismo de escape no es automático cuando utilizas plantillas *PHP*. Esto significa que a menos que escapes una variable expresamente, no estás protegido. Para utilizar el mecanismo de escape, usa el método especial de la vista ``escape()``:
+
+.. code-block:: html+php
 
     Hello <?php echo $view->escape($name) ?>
 
 De forma predeterminada, el método ``escape()`` asume que la variable se está reproduciendo en un contexto *HTML* (y por tanto la variable se escapa para que sea *HTML* seguro).
 El segundo argumento te permite cambiar el contexto. Por ejemplo, para mostrar algo en una cadena *JavaScript*, utiliza el contexto ``js``:
 
-.. code-block:: js
+.. code-block:: html+php
 
     var myMsg = 'Hello <?php echo $view->escape($name, 'js') ?>';
 

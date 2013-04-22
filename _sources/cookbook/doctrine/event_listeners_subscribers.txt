@@ -12,6 +12,8 @@ Esto podría ser útil, por ejemplo, para crear un índice de búsqueda independ
 *Doctrine* define dos tipos de objetos que pueden escuchar los eventos de *Doctrine*:
 escuchas y suscriptores. Ambos son muy similares, pero los escuchas son un poco más sencillos. Para más información, consulta el `Sistema de eventos`_ en el sitio web de *Doctrine*.
 
+The Doctrine website also explains all existing events that can be listened to.
+
 Configurando escuchas/suscriptores
 ----------------------------------
 
@@ -109,7 +111,8 @@ Para registrar un servicio para que actúe como un escucha o suscriptor de event
 Creando la clase Escucha
 ------------------------
 
-En el ejemplo anterior, se configuró un servicio ``my.listener`` como un escucha de *Doctrine* del evento ``postPersist``. Que detrás de la clase de ese servicio debe tener un método ``postPersist``, que se llama cuando se lanza el evento::
+En el ejemplo anterior, se configuró un servicio ``my.listener`` como un escucha de *Doctrine* del evento ``postPersist``. The class behind that service must have
+a ``postPersist`` method, which will be called when the event is dispatched::
 
     // src/Acme/SearchBundle/EventListener/SearchIndexer.php
     namespace Acme\SearchBundle\EventListener;
@@ -133,6 +136,65 @@ En el ejemplo anterior, se configuró un servicio ``my.listener`` como un escuch
 
 En cada caso, tienes acceso a un objeto ``LifecycleEventArgs``, el cual te da acceso tanto al objeto entidad del evento como al mismo gestor de la entidad.
 
-Una cosa importante a resaltar es que un escucha debe estar atento a *todas* las entidades en tu aplicación. Por lo tanto, si estás interesado sólo en manejar un tipo de entidad específico (por ejemplo, una entidad ``Producto``, pero no en una entidad ``BlogPost``), debes verificar el nombre de clase de la entidad en tu método (como se muestra arriba).
+Una cosa importante a resaltar es que un escucha debe estar atento a *todas* las entidades en tu aplicación. So, if you're interested in only handling a
+specific type of entity (e.g. a ``Product`` entity but not a ``BlogPost``
+entity), you should check for the entity's class type in your method
+(as shown above).
+
+Creating the Subscriber Class
+-----------------------------
+
+A doctrine event subscriber must implement the ``Doctrine\Common\EventSubscriber``
+interface and have an event method for each event it subscribes to::
+
+    // src/Acme/SearchBundle/EventListener/SearchIndexerSubscriber.php
+    namespace Acme\SearchBundle\EventListener;
+
+    use Doctrine\Common\EventSubscriber;
+    use Doctrine\ORM\Event\LifecycleEventArgs;
+    // for doctrine 2.4: Doctrine\Common\Persistence\Event\LifecycleEventArgs;
+    use Acme\StoreBundle\Entity\Product;
+
+    class SearchIndexerSubscriber implements EventSubscriber
+    {
+        public function getSubscribedEvents()
+        {
+            return array(
+                'postPersist',
+                'postUpdate',
+            );
+        }
+
+        public function postUpdate(LifecycleEventArgs $args)
+        {
+            $this->index($args);
+        }
+
+        public function postPersist(LifecycleEventArgs $args)
+        {
+            $this->index($args);
+        }
+
+        public function index(LifecycleEventArgs $args)
+        {
+            $entity = $args->getEntity();
+            $entityManager = $args->getEntityManager();
+
+            // tal vez sólo quieres actuar en alguna entidad "producto"
+            if ($entity instanceof Product) {
+                // ... haz algo con el Producto
+            }
+        }
+    }
+
+.. tip::
+
+    Doctrine event subscribers can not return a flexible array of methods to
+    call for the events like the :ref:`Symfony event subscriber <event_dispatcher-using-event-subscribers>`
+    can. Doctrine event subscribers must return a simple array of the event
+    names they subscribe to. Doctrine will then expect methods on the subscriber
+    with the same name as each subscribed event, just as when using an event listener.
+
+For a full reference, see chapter `The Event System`_ in the Doctrine documentation.
 
 .. _`Sistema de eventos`: http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html

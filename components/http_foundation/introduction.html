@@ -201,7 +201,9 @@ una <tt class="docutils literal"><span class="pre">Petición</span></tt>:</p>
 <span class="p">);</span>
 </pre></div>
 </div>
-<p>El método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpFoundation/Request.html#method_create" title="Symfony\Component\HttpFoundation\Request::create()"><span class="pre">create()</span></a></tt> crea una petición basándose en la información de una ruta, un método y algunos parámetros (los parámetros de consulta o los de la petición en función del método <em>HTTP</em>); y, por supuesto, también puedes sustituir todas las otras variables (de manera predeterminada, <em>Symfony</em> crea parámetros predeterminados apropiados para todas las variables globales de <em>PHP</em>).</p>
+<p>El método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpFoundation/Request.html#method_create" title="Symfony\Component\HttpFoundation\Request::create()"><span class="pre">create()</span></a></tt> crea una petición basándose en la información de una ruta, un método y algunos parámetros (los parámetros de consulta o los de la petición en función del método <em>HTTP</em>); and of
+course, you can also override all other variables as well (by default, Symfony
+creates sensible defaults for all the PHP global variables).</p>
 <p>En base a dicha petición, puedes sustituir las variables globales de <em>PHP</em> a través de <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpFoundation/Request.html#method_overrideGlobals" title="Symfony\Component\HttpFoundation\Request::overrideGlobals()"><span class="pre">overrideGlobals()</span></a></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="nv">$request</span><span class="o">-&gt;</span><span class="na">overrideGlobals</span><span class="p">();</span>
 </pre></div>
@@ -360,18 +362,53 @@ devuelve la lista de juegos de caracteres («charsets») aceptados ordenados des
 <span class="nv">$response</span><span class="o">-&gt;</span><span class="na">send</span><span class="p">();</span>
 </pre></div>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>The <tt class="docutils literal"><span class="pre">flush()</span></tt> function does not flush buffering. If <tt class="docutils literal"><span class="pre">ob_start()</span></tt> has
+been called before or the <tt class="docutils literal"><span class="pre">output_buffering</span></tt> php.ini option is enabled,
+you must call <tt class="docutils literal"><span class="pre">ob_flush()</span></tt> before <tt class="docutils literal"><span class="pre">flush()</span></tt>.</p>
+<p class="last">Additionally, PHP isn&#8217;t the only layer that can buffer output. Your web
+server might also buffer based on its configuration. Even more, if you
+use fastcgi, buffering can&#8217;t be disabled at all.</p>
 </div>
-<div class="section" id="descargando-archivos">
-<h3>Descargando archivos<a class="headerlink" href="#descargando-archivos" title="Enlazar permanentemente con este título">¶</a></h3>
+</div>
+<div class="section" id="serving-files">
+<span id="component-http-foundation-serving-files"></span><h3>Serving Files<a class="headerlink" href="#serving-files" title="Enlazar permanentemente con este título">¶</a></h3>
 <p class="versionadded">
 <span class="versionmodified">Nuevo en la versión 2.1: </span>El método <tt class="docutils literal"><span class="pre">makeDisposition</span></tt> fue añadido en <em>Symfony 2.1</em>.</p>
-<p>Al cargar un archivo, debes agregar una cabecera <tt class="docutils literal"><span class="pre">Content-Disposition</span></tt> a tu respuesta. Es fácil crear esta cabecera básica para descargar archivos, utilizando nombres de archivo
+<p>When sending a file, you must add a <tt class="docutils literal"><span class="pre">Content-Disposition</span></tt> header to your
+response. Es fácil crear esta cabecera básica para descargar archivos, utilizando nombres de archivo
 no <em>ASCII</em> más envolventes. El método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpFoundation/Response.html#method_makeDisposition" title="Symfony\Component\HttpFoundation\Response::makeDisposition()"><span class="pre">makeDisposition()</span></a></tt> abstrae el trabajo pesado detrás de una sencilla <em>API</em>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\ResponseHeaderBag</span><span class="p">;</span>
 
 <span class="nv">$d</span> <span class="o">=</span> <span class="nv">$response</span><span class="o">-&gt;</span><span class="na">headers</span><span class="o">-&gt;</span><span class="na">makeDisposition</span><span class="p">(</span><span class="nx">ResponseHeaderBag</span><span class="o">::</span><span class="na">DISPOSITION_ATTACHMENT</span><span class="p">,</span> <span class="s1">&#39;foo.pdf&#39;</span><span class="p">);</span>
 
 <span class="nv">$response</span><span class="o">-&gt;</span><span class="na">headers</span><span class="o">-&gt;</span><span class="na">set</span><span class="p">(</span><span class="s1">&#39;Content-Disposition&#39;</span><span class="p">,</span> <span class="nv">$d</span><span class="p">);</span>
+</pre></div>
+</div>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.2: </span>The <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\BinaryFileResponse</span></tt>
+class was added in Symfony 2.2.</p>
+<p>Alternatively, if you are serving a static file, you can use a
+<tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\BinaryFileResponse</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\BinaryFileResponse</span>
+
+<span class="nv">$file</span> <span class="o">=</span> <span class="s1">&#39;path/to/file.txt&#39;</span><span class="p">;</span>
+<span class="nv">$response</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">BinaryFileResponse</span><span class="p">(</span><span class="nv">$file</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">BinaryFileResponse</span></tt> will automatically handle <tt class="docutils literal"><span class="pre">Range</span></tt> and
+<tt class="docutils literal"><span class="pre">If-Range</span></tt> headers from the request. It also supports <tt class="docutils literal"><span class="pre">X-Sendfile</span></tt>
+(see for <a class="reference external" href="http://wiki.nginx.org/XSendfile">Nginx</a> and <a class="reference external" href="https://tn123.org/mod_xsendfile/">Apache</a>). To make use of it, you need to determine
+whether or not the <tt class="docutils literal"><span class="pre">X-Sendfile-Type</span></tt> header should be trusted and call
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpFoundation/BinaryFileResponse.html#method_trustXSendfileTypeHeader" title="Symfony\Component\HttpFoundation\BinaryFileResponse::trustXSendfileTypeHeader()"><span class="pre">trustXSendfileTypeHeader()</span></a></tt>
+if it should:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$response</span><span class="o">::</span><span class="na">trustXSendfileTypeHeader</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>You can still set the <tt class="docutils literal"><span class="pre">Content-Type</span></tt> of the sent file, or change its <tt class="docutils literal"><span class="pre">Content-Disposition</span></tt>:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$response</span><span class="o">-&gt;</span><span class="na">headers</span><span class="o">-&gt;</span><span class="na">set</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s1">&#39;text/plain&#39;</span><span class="p">)</span>
+<span class="nv">$response</span><span class="o">-&gt;</span><span class="na">setContentDisposition</span><span class="p">(</span><span class="nx">ResponseHeaderBag</span><span class="o">::</span><span class="na">DISPOSITION_ATTACHMENT</span><span class="p">,</span> <span class="s1">&#39;filename.txt&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -388,7 +425,8 @@ no <em>ASCII</em> más envolventes. El método <tt class="docutils literal"><a c
 </pre></div>
 </div>
 <p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>La clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\JsonResponse</span></tt> fue añadida en <em>Symfony 2.1</em>.</p>
+<span class="versionmodified">Nuevo en la versión 2.1: </span>The <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\JsonResponse</span></tt>
+class was added in Symfony 2.1.</p>
 <p>Además, hay una muy útil clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\JsonResponse</span></tt>, la cual incluso, puede hacer esto mucho más fácil:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\JsonResponse</span><span class="p">;</span>
 
@@ -449,7 +487,7 @@ contenido de respuesta tendrá esta apariencia:</p>
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Mar 19, 2013.
+      Actualizado por última vez en Apr 22, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

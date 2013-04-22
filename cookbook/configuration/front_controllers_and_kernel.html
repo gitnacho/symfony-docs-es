@@ -1,0 +1,269 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Understanding how the Front Controller, Kernel and Environments work together &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Configurando" href="index.html" />
+    <link rel="next" title="Cómo configurar parámetros externos en el contenedor de servicios" href="external_parameters.html" />
+    <link rel="prev" title="Cómo sustituir la estructura de directorios predeterminada de Symfony" href="override_dir_structure.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="external_parameters.html" title="Cómo configurar parámetros externos en el contenedor de servicios"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="override_dir_structure.html" title="Cómo sustituir la estructura de directorios predeterminada de Symfony"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Configurando</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="understanding-how-the-front-controller-kernel-and-environments-work-together">
+<span id="index-0"></span><h1>Understanding how the Front Controller, Kernel and Environments work together<a class="headerlink" href="#understanding-how-the-front-controller-kernel-and-environments-work-together" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>The section <a class="reference internal" href="environments.html"><em>Cómo dominar y crear nuevos entornos</em></a> explained the basics
+on how Symfony uses environments to run your application with different configuration
+settings. This section will explain a bit  more in-depth what happens when
+your application is bootstrapped. To hook into this process, you need to understand
+three parts that work together:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#the-front-controller">The Front Controller</a></li>
+<li><a class="reference internal" href="#the-kernel-class">The Kernel Class</a></li>
+<li><a class="reference internal" href="#the-environments">The Environments</a></li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>Usually, you will not need to define your own front controller or
+<tt class="docutils literal"><span class="pre">AppKernel</span></tt> class as the <a href="#id1"><span class="problematic" id="id2">`Symfony2 Standard Edition`_</span></a> provides
+sensible default implementations.</p>
+<p class="last">This documentation section is provided to explain what is going on behind
+the scenes.</p>
+</div>
+<div class="section" id="the-front-controller">
+<h2>The Front Controller<a class="headerlink" href="#the-front-controller" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>The <a class="reference external" href="http://en.wikipedia.org/wiki/Front_Controller_pattern">front controller</a> is a well-known design pattern; it is a section of
+code that <em>all</em> requests served by an application run through.</p>
+<p>In the <a href="#id3"><span class="problematic" id="id4">`Symfony2 Standard Edition`_</span></a>, this role is taken by the <a class="reference external" href="https://github.com/symfony/symfony-standard/blob/master/web/app.php">app.php</a>
+and <a class="reference external" href="https://github.com/symfony/symfony-standard/blob/master/web/app_dev.php">app_dev.php</a> files in the <tt class="docutils literal"><span class="pre">web/</span></tt> directory. These are the very
+first PHP scripts executed when a request is processed.</p>
+<p>The main purpose of the front controller is to create an instance of the
+<tt class="docutils literal"><span class="pre">AppKernel</span></tt> (more on that in a second), make it handle the request
+and return the resulting response to the browser.</p>
+<p>Because every request is routed through it, the front controller can be
+used to perform global initializations prior to setting up the kernel or
+to <em>`decorate`_</em> the kernel with additional features. Examples include:</p>
+<ul class="simple">
+<li>Configuring the autoloader or adding additional autoloading mechanisms;</li>
+<li>Adding HTTP level caching by wrapping the kernel with an instance of
+<a class="reference internal" href="../../book/http_cache.html#symfony-gateway-cache"><em>AppCache</em></a>;</li>
+<li>Enabling the <a class="reference internal" href="../../components/debug.html"><em>El componente Debug</em></a>.</li>
+</ul>
+<p>The front controller can be chosen by requesting URLs like:</p>
+<div class="highlight-text"><div class="highlight"><pre>http://localhost/app_dev.php/some/path/...
+</pre></div>
+</div>
+<p>As you can see, this URL contains the PHP script to be used as the front
+controller. You can use that to easily switch the front controller or use
+a custom one by placing it in the <tt class="docutils literal"><span class="pre">web/</span></tt> directory (e.g. <tt class="docutils literal"><span class="pre">app_cache.php</span></tt>).</p>
+<p>When using Apache and the <a class="reference external" href="https://github.com/symfony/symfony-standard/blob/master/web/.htaccess)">RewriteRule shipped with the Standard Edition</a>,
+you can omit the filename from the URL and the RewriteRule will use <tt class="docutils literal"><span class="pre">app.php</span></tt>
+as the default one.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Pretty much every other web server should be able to achieve a
+behavior similar to that of the RewriteRule described above.
+Check your server documentation for details or see
+<a class="reference internal" href="web_server_configuration.html"><em>Configuring a web server</em></a>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">Make sure you appropriately secure your front controllers against unauthorized
+access. For example, you don&#8217;t want to make a debugging environment
+available to arbitrary users in your production environment.</p>
+</div>
+<p>Technically, the <a class="reference external" href="https://github.com/symfony/symfony-standard/blob/master/app/console">app/console</a> script used when running Symfony on the command
+line is also a front controller, only that is not used for web, but for command
+line requests.</p>
+</div>
+<div class="section" id="the-kernel-class">
+<h2>The Kernel Class<a class="headerlink" href="#the-kernel-class" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>The <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\Kernel</span></tt> is the core of
+Symfony2. It is responsible for setting up all the bundles that make up
+your application and providing them with the application&#8217;s configuration.
+It then creates the service container before serving requests in its
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpKernel/HttpKernelInterface.html#method_handle" title="Symfony\Component\HttpKernel\HttpKernelInterface::handle()"><span class="pre">handle()</span></a></tt>
+method.</p>
+<p>There are two methods declared in the
+<tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\KernelInterface</span></tt> that are
+left unimplemented in <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\Kernel</span></tt>
+and thus serve as <a class="reference external" href="http://en.wikipedia.org/wiki/Template_method_pattern">template methods</a>:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpKernel/KernelInterface.html#method_registerBundles" title="Symfony\Component\HttpKernel\KernelInterface::registerBundles()"><span class="pre">registerBundles()</span></a></tt>,
+which must return an array of all bundles needed to run the
+application;</li>
+<li><tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpKernel/KernelInterface.html#method_registerContainerConfiguration" title="Symfony\Component\HttpKernel\KernelInterface::registerContainerConfiguration()"><span class="pre">registerContainerConfiguration()</span></a></tt>,
+which loads the application configuration.</li>
+</ul>
+<p>To fill these (small) blanks, your application needs to subclass the
+Kernel and implement these methods. The resulting class is conventionally
+called the <tt class="docutils literal"><span class="pre">AppKernel</span></tt>.</p>
+<p>Again, the Symfony2 Standard Edition provides an <a class="reference external" href="https://github.com/symfony/symfony-standard/blob/master/app/AppKernel.php">AppKernel</a> in the <tt class="docutils literal"><span class="pre">app/</span></tt>
+directory. This class uses the name of the environment - which is passed to
+the Kernel&#8217;s <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpKernel/Kernel.html#method___construct" title="Symfony\Component\HttpKernel\Kernel::__construct()"><span class="pre">constructor</span></a></tt>
+method and is available via <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpKernel/Kernel.html#method_getEnvironment" title="Symfony\Component\HttpKernel\Kernel::getEnvironment()"><span class="pre">getEnvironment()</span></a></tt> -
+to decide which bundles to create. The logic for that is in <tt class="docutils literal"><span class="pre">registerBundles()</span></tt>,
+a method meant to be extended by you when you start adding bundles to your
+application.</p>
+<p>You are, of course, free to create your own, alternative or additional
+<tt class="docutils literal"><span class="pre">AppKernel</span></tt> variants. All you need is to adapt your (or add a new) front
+controller to make use of the new kernel.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">The name and location of the <tt class="docutils literal"><span class="pre">AppKernel</span></tt> is not fixed. When
+putting multiple Kernels into a single application,
+it might therefore make sense to add additional sub-directories,
+for example <tt class="docutils literal"><span class="pre">app/admin/AdminKernel.php</span></tt> and
+<tt class="docutils literal"><span class="pre">app/api/ApiKernel.php</span></tt>. All that matters is that your front
+controller is able to create an instance of the appropriate
+kernel.</p>
+</div>
+<p>Having different <tt class="docutils literal"><span class="pre">AppKernels</span></tt> might be useful to enable different front
+controllers (on potentially different servers) to run parts of your application
+independently (for example, the admin UI, the frontend UI and database migrations).</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">There&#8217;s a lot more the <tt class="docutils literal"><span class="pre">AppKernel</span></tt> can be used for, for example
+<a class="reference internal" href="override_dir_structure.html"><em>overriding the default directory structure</em></a>.
+But odds are high that you don&#8217;t need to change things like this on the
+fly by having several <tt class="docutils literal"><span class="pre">AppKernel</span></tt> implementations.</p>
+</div>
+</div>
+<div class="section" id="the-environments">
+<h2>The Environments<a class="headerlink" href="#the-environments" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>We just mentioned another method the <tt class="docutils literal"><span class="pre">AppKernel</span></tt> has to implement -
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpKernel/KernelInterface.html#method_registerContainerConfiguration" title="Symfony\Component\HttpKernel\KernelInterface::registerContainerConfiguration()"><span class="pre">registerContainerConfiguration()</span></a></tt>.
+This method is responsible for loading the application&#8217;s
+configuration from the right <em>environment</em>.</p>
+<p>Environments have been covered extensively
+<a class="reference internal" href="environments.html"><em>in the previous chapter</em></a>,
+and you probably remember that the Standard Edition comes with three
+of them - <tt class="docutils literal"><span class="pre">dev</span></tt>, <tt class="docutils literal"><span class="pre">prod</span></tt> and <tt class="docutils literal"><span class="pre">test</span></tt>.</p>
+<p>More technically, these names are nothing more than strings passed from the
+front controller to the <tt class="docutils literal"><span class="pre">AppKernel</span></tt>&#8216;s constructor. This name can then be
+used in the <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/HttpKernel/KernelInterface.html#method_registerContainerConfiguration" title="Symfony\Component\HttpKernel\KernelInterface::registerContainerConfiguration()"><span class="pre">registerContainerConfiguration()</span></a></tt>
+method to decide which configuration files to load.</p>
+<p>The Standard Edition&#8217;s <a class="reference external" href="https://github.com/symfony/symfony-standard/blob/master/app/AppKernel.php">AppKernel</a> class implements this method by simply
+loading the <tt class="docutils literal"><span class="pre">app/config/config_*environment*.yml</span></tt> file. You are, of course,
+free to implement this method differently if you need a more sophisticated
+way of loading your configuration.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="external_parameters.html" title="Cómo configurar parámetros externos en el contenedor de servicios"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="override_dir_structure.html" title="Cómo sustituir la estructura de directorios predeterminada de Symfony"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Recetario</a> &raquo;</li>
+          <li><a href="index.html" >Configurando</a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Apr 22, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

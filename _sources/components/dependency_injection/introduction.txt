@@ -140,7 +140,6 @@ Aún así, si quieres entonces el contenedor puede llamar al método definidor::
 A continuación, puedes obtener tu servicio ``newsletter_manager`` desde el contenedor de esta manera::
 
     use Symfony\Component\DependencyInjection\ContainerBuilder;
-    use Symfony\Component\DependencyInjection\Reference;
 
     $container = new ContainerBuilder();
 
@@ -161,7 +160,13 @@ Tendrás que conseguir un servicio desde el contenedor en algún momento, pero e
 Configurando el contenedor con archivos de configuración
 --------------------------------------------------------
 
-Así como la creación de los servicios utilizando *PHP* ---como arriba--- también puedes utilizar archivos de configuración. Para ello además, necesitas instalar el :doc:`componente Config</components/config/introduction>`.
+As well as setting up the services using PHP as above you can also use
+configuration files. This allows you to use XML or Yaml to write the definitions
+for the services rather than using PHP to define the services as in the above
+examples. In anything but the smallest applications it make sense to organize
+the service definitions by moving them into one or more configuration files.
+To do this you also need to install
+:doc:`the Config Component</components/config/introduction>`.
 
 Cargando un archivo de configuración *XML*::
 
@@ -187,13 +192,24 @@ Cargando un archivo de configuración *YAML*::
 
     Si  quieres cargar archivos de configuración *YAML* entonces también necesitarás instalar el :doc:`componente YAML </components/yaml/introduction>`.
 
-Puedes configurar los servicios ``newsletter_manager`` y ``mailer`` usando archivos de configuración:
+If you *do* want to use PHP to create the services then you can move this
+into a separate config file and load it in a similar way::
+
+    use Symfony\Component\DependencyInjection\ContainerBuilder;
+    use Symfony\Component\Config\FileLocator;
+    use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+
+    $container = new ContainerBuilder();
+    $loader = new PhpFileLoader($container, new FileLocator(__DIR__));
+    $loader->load('services.php');
+
+You can now set up the ``newsletter_manager`` and ``mailer`` services using
+config files:
 
 .. configuration-block::
 
     .. code-block:: yaml
 
-        # src/Acme/HelloBundle/Resources/config/services.yml
         parameters:
             # ...
             mailer.transport: sendmail
@@ -201,15 +217,14 @@ Puedes configurar los servicios ``newsletter_manager`` y ``mailer`` usando archi
         services:
             mailer:
                 class:     Mailer
-                arguments: [%mailer.transport%]
+                arguments: ["%mailer.transport%"]
             newsletter_manager:
                 class:     NewsletterManager
                 calls:
-                    - [ setMailer, [ @mailer ] ]
+                    - [setMailer, ["@mailer"]]
 
     .. code-block:: xml
 
-        <!-- src/Acme/HelloBundle/Resources/config/services.xml -->
         <parameters>
             <!-- ... -->
             <parameter key="mailer.transport">sendmail</parameter>

@@ -230,6 +230,71 @@
 <h3>Presencia y ausencia de campos<a class="headerlink" href="#presencia-y-ausencia-de-campos" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>De manera predeterminada, esta restricción valida más que simplemente si o no los campos individuales de la colección pasan sus restricciones asignadas. De hecho, si falta cualquiera de las claves de una colección o si hay alguna clave desconocida en la colección, lanzará errores de validación.</p>
 <p>Si deseas permitir que las claves de la colección estén ausentes o si quisieras permitir claves «extra» en la colección, puedes modificar las opciones <a class="reference internal" href="#allowmissingfields">allowMissingFields</a> y <a class="reference internal" href="#allowextrafields">allowExtraFields</a>, respectivamente. En el ejemplo anterior, la opción <tt class="docutils literal"><span class="pre">allowMissingFields</span></tt> se fijó en <tt class="docutils literal"><span class="pre">true</span></tt>, lo cual significa que si cualquiera de las propiedades <tt class="docutils literal"><span class="pre">personal_email</span></tt> o <tt class="docutils literal"><span class="pre">short_bio</span></tt> no estuviera en <tt class="docutils literal"><span class="pre">$personalData</span></tt>, no ocurrirá ningún error de validación.</p>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>The <tt class="docutils literal"><span class="pre">Required</span></tt> and <tt class="docutils literal"><span class="pre">Optional</span></tt> constraints are new to Symfony 2.1.</p>
+</div>
+<div class="section" id="required-and-optional-field-constraints">
+<h3>Required and Optional Field Constraints<a class="headerlink" href="#required-and-optional-field-constraints" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Constraints for fields within a collection can be wrapped in the <tt class="docutils literal"><span class="pre">Required</span></tt> or
+<tt class="docutils literal"><span class="pre">Optional</span></tt> constraint to control whether they should always be applied (<tt class="docutils literal"><span class="pre">Required</span></tt>)
+or only applied when the field is present (<tt class="docutils literal"><span class="pre">Optional</span></tt>).</p>
+<p>For instance, if you want to require that the <tt class="docutils literal"><span class="pre">personal_email</span></tt> field of the
+<tt class="docutils literal"><span class="pre">profileData</span></tt> array is not blank and is a valid email but the <tt class="docutils literal"><span class="pre">alternate_email</span></tt>
+field is optional but must be a valid email if supplied, you can do the following:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>Annotations</em><div class="highlight-php-annotations"><div class="highlight"><pre><span class="c1">// src/Acme/BlogBundle/Entity/Author.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\BlogBundle\Entity</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Autor</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @Assert\Collection(</span>
+<span class="sd">     *     fields={</span>
+<span class="sd">     *         &quot;personal_email&quot;  = @Assert\Collection\Required({@Assert\NotBlank, @Assert\Email}),</span>
+<span class="sd">     *         &quot;alternate_email&quot; = @Assert\Collection\Optional({@Assert\Email}),</span>
+<span class="sd">     *     }</span>
+<span class="sd">     * )</span>
+<span class="sd">     */</span>
+     <span class="k">protected</span> <span class="nv">$profileData</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+         <span class="s1">&#39;personal_email&#39;</span><span class="p">,</span>
+     <span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/BlogBundle/Entity/Author.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\BlogBundle\Entity</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Mapping\ClassMetadata</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Validator\Constraints</span> <span class="k">as</span> <span class="nx">Assert</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Autor</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$profileData</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;personal_email&#39;</span><span class="p">);</span>
+
+    <span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">loadValidatorMetadata</span><span class="p">(</span><span class="nx">ClassMetadata</span> <span class="nv">$metadata</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$metadata</span><span class="o">-&gt;</span><span class="na">addPropertyConstraint</span><span class="p">(</span><span class="s1">&#39;profileData&#39;</span><span class="p">,</span> <span class="k">new</span> <span class="nx">Assert\Collection</span><span class="p">(</span><span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;fields&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+                <span class="s1">&#39;personal_email&#39;</span>  <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">Assert\Collection\Required</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="k">new</span> <span class="nx">Assert\NotBlank</span><span class="p">(),</span> <span class="k">new</span> <span class="nx">Assert\Email</span><span class="p">())),</span>
+                <span class="s1">&#39;alternate_email&#39;</span> <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">Assert\Collection\Optional</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="k">new</span> <span class="nx">Assert\Email</span><span class="p">())),</span>
+            <span class="p">),</span>
+        <span class="p">)));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Even without <tt class="docutils literal"><span class="pre">allowMissingFields</span></tt> set to true, you can now omit the <tt class="docutils literal"><span class="pre">alternate_email</span></tt>
+property completely from the <tt class="docutils literal"><span class="pre">profileData</span></tt> array, since it is <tt class="docutils literal"><span class="pre">Optional</span></tt>.
+However, if the the <tt class="docutils literal"><span class="pre">personal_email</span></tt> field does not exist in the array,
+the <tt class="docutils literal"><span class="pre">NotBlank</span></tt> constraint will still be applied (since it is wrapped in
+<tt class="docutils literal"><span class="pre">Required</span></tt>) and you will receive a constraint violation.</p>
 </div>
 </div>
 <div class="section" id="opciones">
@@ -296,7 +361,7 @@
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Mar 19, 2013.
+      Actualizado por última vez en Apr 22, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

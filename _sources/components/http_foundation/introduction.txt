@@ -162,7 +162,9 @@ una ``Petición``::
         array('name' => 'Fabien')
     );
 
-El método :method:`Symfony\\Component\\HttpFoundation\\Request::create` crea una petición basándose en la información de una ruta, un método y algunos parámetros (los parámetros de consulta o los de la petición en función del método *HTTP*); y, por supuesto, también puedes sustituir todas las otras variables (de manera predeterminada, *Symfony* crea parámetros predeterminados apropiados para todas las variables globales de *PHP*).
+El método :method:`Symfony\\Component\\HttpFoundation\\Request::create` crea una petición basándose en la información de una ruta, un método y algunos parámetros (los parámetros de consulta o los de la petición en función del método *HTTP*); and of
+course, you can also override all other variables as well (by default, Symfony
+creates sensible defaults for all the PHP global variables).
 
 En base a dicha petición, puedes sustituir las variables globales de *PHP* a través de :method:`Symfony\\Component\\HttpFoundation\\Request::overrideGlobals`::
 
@@ -333,13 +335,26 @@ La clase :class:`Symfony\\Component\\HttpFoundation\\StreamedResponse` te permit
     });
     $response->send();
 
-Descargando archivos
-~~~~~~~~~~~~~~~~~~~~
+.. note::
+
+    The ``flush()`` function does not flush buffering. If ``ob_start()`` has
+    been called before or the ``output_buffering`` php.ini option is enabled,
+    you must call ``ob_flush()`` before ``flush()``.
+
+    Additionally, PHP isn't the only layer that can buffer output. Your web
+    server might also buffer based on its configuration. Even more, if you
+    use fastcgi, buffering can't be disabled at all.
+
+.. _component-http-foundation-serving-files:
+
+Serving Files
+~~~~~~~~~~~~~
 
 .. versionadded:: 2.1
     El método ``makeDisposition`` fue añadido en *Symfony 2.1*.
 
-Al cargar un archivo, debes agregar una cabecera ``Content-Disposition`` a tu respuesta. Es fácil crear esta cabecera básica para descargar archivos, utilizando nombres de archivo
+When sending a file, you must add a ``Content-Disposition`` header to your
+response. Es fácil crear esta cabecera básica para descargar archivos, utilizando nombres de archivo
 no *ASCII* más envolventes. El método :method:`Symfony\\Component\\HttpFoundation\\Response::makeDisposition` abstrae el trabajo pesado detrás de una sencilla *API*::
 
     use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -347,6 +362,33 @@ no *ASCII* más envolventes. El método :method:`Symfony\\Component\\HttpFoundat
     $d = $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'foo.pdf');
 
     $response->headers->set('Content-Disposition', $d);
+
+.. versionadded:: 2.2
+    The :class:`Symfony\\Component\\HttpFoundation\\BinaryFileResponse`
+    class was added in Symfony 2.2.
+
+Alternatively, if you are serving a static file, you can use a
+:class:`Symfony\\Component\\HttpFoundation\\BinaryFileResponse`::
+
+    use Symfony\Component\HttpFoundation\BinaryFileResponse
+    
+    $file = 'path/to/file.txt';
+    $response = new BinaryFileResponse($file);
+
+The ``BinaryFileResponse`` will automatically handle ``Range`` and
+``If-Range`` headers from the request. It also supports ``X-Sendfile``
+(see for `Nginx`_ and `Apache`_). To make use of it, you need to determine
+whether or not the ``X-Sendfile-Type`` header should be trusted and call
+:method:`Symfony\\Component\\HttpFoundation\\BinaryFileResponse::trustXSendfileTypeHeader`
+if it should::
+
+    $response::trustXSendfileTypeHeader();
+
+You can still set the ``Content-Type`` of the sent file, or change its ``Content-Disposition``::
+
+    $response->headers->set('Content-Type', 'text/plain')
+    $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, 'filename.txt');
+    
 
 .. _component-http-foundation-json-response:
 
@@ -364,7 +406,8 @@ Puedes crear cualquier tipo de respuesta vía la clase :class:`Symfony\\Componen
     $response->headers->set('Content-Type', 'application/json');
 
 .. versionadded:: 2.1
-    La clase :class:`Symfony\\Component\\HttpFoundation\\JsonResponse` fue añadida en *Symfony 2.1*.
+    The :class:`Symfony\\Component\\HttpFoundation\\JsonResponse`
+    class was added in Symfony 2.1.
 
 Además, hay una muy útil clase :class:`Symfony\\Component\\HttpFoundation\\JsonResponse`, la cual incluso, puede hacer esto mucho más fácil::
 
@@ -392,3 +435,5 @@ contenido de respuesta tendrá esta apariencia:
 La información de la sesión está en su propio documento: :doc:`/components/http_foundation/sessions`.
 
 .. _`Packagist`: https://packagist.org/packages/symfony/http-foundation
+.. _Nginx: http://wiki.nginx.org/XSendfile
+.. _Apache: https://tn123.org/mod_xsendfile/

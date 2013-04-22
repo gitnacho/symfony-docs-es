@@ -541,9 +541,7 @@ Los controladores se ejecutan rápidamente y promueven la buena organización y 
 Debido a que el contenido integrado proviene de otra página (o controlador para el caso), <em>Symfony2</em> utiliza el ayudante <tt class="docutils literal"><span class="pre">render</span></tt> estándar para configurar las etiquetas <tt class="docutils literal"><span class="pre">hinclude</span></tt>:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">render_hinclude</span><span class="o">(</span><span class="nv">controller</span><span class="o">(</span><span class="s1">&#39;...&#39;</span><span class="o">))</span> <span class="cp">}}</span><span class="x"></span>
-
-<span class="cp">{{</span> <span class="nv">render_hinclude</span><span class="o">(</span><span class="nv">url</span><span class="o">(</span><span class="s1">&#39;...&#39;</span><span class="o">))</span> <span class="cp">}}</span><span class="x"></span>
+<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">render</span> <span class="nv">url</span><span class="o">(</span><span class="s1">&#39;...&#39;</span><span class="o">)</span> <span class="k">with</span> <span class="o">{},</span> <span class="o">{</span><span class="s1">&#39;standalone&#39;</span><span class="o">:</span> <span class="s1">&#39;js&#39;</span><span class="o">}</span> <span class="cp">%}</span><span class="x"></span>
 </pre></div>
 </div>
 </li>
@@ -1019,7 +1017,7 @@ Este es el modelo común de la herencia de tres niveles.</p>
 <p>Cuando generas <em>HTML</em> a partir de una plantilla, siempre existe el riesgo de que una variable de plantilla pueda producir <em>HTML</em> involuntario o código peligroso de lado del cliente. El resultado es que el contenido dinámico puede romper el código <em>HTML</em> de la página resultante o permitir a un usuario malicioso realizar un ataque de <a class="reference external" href="http://es.wikipedia.org/wiki/Cross-site_scripting">Explotación de vulnerabilidades del sistema</a> (<em>Cross Site Scripting XSS</em>). Considera este ejemplo clásico:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>Twig</em><div class="highlight-jinja"><div class="highlight"><pre><span class="x">Hello </span><span class="cp">{{</span> <span class="nv">name</span> <span class="cp">}}</span><span class="x"></span>
+<li><em>Twig</em><div class="highlight-html+jinja"><div class="highlight"><pre>Hello <span class="cp">{{</span> <span class="nv">name</span> <span class="cp">}}</span>
 </pre></div>
 </div>
 </li>
@@ -1030,16 +1028,16 @@ Este es el modelo común de la herencia de tres niveles.</p>
 </ul>
 </div>
 <p>Imagina que el usuario introduce el siguiente código como su nombre:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;</span><span class="nx">script</span><span class="o">&gt;</span><span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;hello!&#39;</span><span class="p">)</span><span class="o">&lt;/</span><span class="nx">script</span><span class="o">&gt;</span>
+<div class="highlight-text"><div class="highlight"><pre>&lt;script&gt;alert(&#39;hello!&#39;)&lt;/script&gt;
 </pre></div>
 </div>
 <p>Sin ningún tipo de mecanismo de escape, la plantilla resultante provocaría que aparezca un cuadro de alerta <em>JavaScript</em>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="nx">Hello</span> <span class="o">&lt;</span><span class="nx">script</span><span class="o">&gt;</span><span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;hello!&#39;</span><span class="p">)</span><span class="o">&lt;/</span><span class="nx">script</span><span class="o">&gt;</span>
+<div class="highlight-html"><div class="highlight"><pre>Hello <span class="nt">&lt;script&gt;</span><span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;hello!&#39;</span><span class="p">)</span><span class="nt">&lt;/script&gt;</span>
 </pre></div>
 </div>
 <p>Y aunque esto parece inofensivo, si un usuario puede llegar hasta aquí, ese mismo usuario también será capaz de escribir código <em>JavaScript</em> malicioso que subrepticiamente realice acciones dentro de la zona segura de un usuario legítimo.</p>
-<p>La respuesta al problema es el mecanismo de escape. Con el mecanismo de escape, reproduces la misma plantilla sin causar daño alguno, y, literalmente, imprimes en pantalla la etiqueta <tt class="docutils literal"><span class="pre">script</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="nx">Hello</span> <span class="o">&amp;</span><span class="nx">lt</span><span class="p">;</span><span class="nx">script</span><span class="o">&amp;</span><span class="nx">gt</span><span class="p">;</span><span class="nx">alert</span><span class="p">(</span><span class="o">&amp;</span><span class="c1">#39;helloe&amp;#39;)&amp;lt;/script&amp;gt;</span>
+<p>La respuesta al problema es el mecanismo de escape. Con el mecanismo de escape, reproduces la misma plantilla sin causar daño alguno, y literalmente, imprimes en pantalla la etiqueta <tt class="docutils literal"><span class="pre">script</span></tt>:</p>
+<div class="highlight-html"><div class="highlight"><pre>Hello <span class="ni">&amp;lt;</span>script<span class="ni">&amp;gt;</span>alert(<span class="ni">&amp;#39;</span>helloe<span class="ni">&amp;#39;</span>)<span class="ni">&amp;lt;</span>/script<span class="ni">&amp;gt;</span>
 </pre></div>
 </div>
 <p><em>Twig</em> y los sistemas de plantillas <em>PHP</em> abordan el problema de diferentes maneras.
@@ -1049,18 +1047,22 @@ En <em>PHP</em>, el mecanismo de escape no es automático, lo cual significa que
 <h3>Mecanismo de escape en <em>Twig</em><a class="headerlink" href="#mecanismo-de-escape-en-twig" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>Si estás utilizando las plantillas de <em>Twig</em>, entonces el mecanismo de escape está activado por omisión. Esto significa que estás protegido fuera de la caja de las consecuencias no intencionales del código presentado por los usuarios. De forma predeterminada, el mecanismo de escape asume que el contenido se escapó para salida <em>HTML</em>.</p>
 <p>En algunos casos, tendrás que desactivar el mecanismo de escape cuando estás reproduciendo una variable de confianza y marcado que no se debe escapar.
-Supongamos que los usuarios administrativos están autorizados para escribir artículos que contengan código <em>HTML</em>. De forma predeterminada, <em>Twig</em> debe escapar el cuerpo del artículo. Para reproducirlo normalmente, agrega el filtro <tt class="docutils literal"><span class="pre">raw</span></tt>: <tt class="docutils literal"><span class="pre">{{</span> <span class="pre">article.body|raw</span> <span class="pre">}}</span></tt>.</p>
+Supongamos que los usuarios administrativos están autorizados para escribir artículos que contengan código <em>HTML</em>. De forma predeterminada, <em>Twig</em> debe escapar el cuerpo del artículo.</p>
+<p>Para reproducirlo normalmente, agrega el filtro <tt class="docutils literal"><span class="pre">raw</span></tt>:</p>
+<div class="highlight-jinja"><div class="highlight"><pre><span class="cp">{{</span> <span class="nv">article.body</span><span class="o">|</span><span class="nf">raw</span> <span class="cp">}}</span><span class="x"></span>
+</pre></div>
+</div>
 <p>También puedes desactivar el mecanismo de escape dentro de una área <tt class="docutils literal"><span class="pre">{%</span> <span class="pre">block</span> <span class="pre">%}</span></tt> o para una plantilla completa. Para más información, consulta la documentación de <em>Twig</em> sobre el <a class="reference external" href="http://gitnacho.github.com/Twig/api.html#extension-escaper">Mecanismo de escape</a>.</p>
 </div>
 <div class="section" id="mecanismo-de-escape-en-php">
 <h3>Mecanismo de escape en <em>PHP</em><a class="headerlink" href="#mecanismo-de-escape-en-php" title="Enlazar permanentemente con este título">¶</a></h3>
 <p>El mecanismo de escape no es automático cuando utilizas plantillas <em>PHP</em>. Esto significa que a menos que escapes una variable expresamente, no estás protegido. Para utilizar el mecanismo de escape, usa el método especial de la vista <tt class="docutils literal"><span class="pre">escape()</span></tt>:</p>
-<div class="highlight-php"><div class="highlight"><pre><span class="nx">Hello</span> <span class="o">&lt;?</span><span class="nx">php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">escape</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="cp">?&gt;</span><span class="x"></span>
+<div class="highlight-html+php"><div class="highlight"><pre>Hello <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">escape</span><span class="p">(</span><span class="nv">$name</span><span class="p">)</span> <span class="cp">?&gt;</span>
 </pre></div>
 </div>
 <p>De forma predeterminada, el método <tt class="docutils literal"><span class="pre">escape()</span></tt> asume que la variable se está reproduciendo en un contexto <em>HTML</em> (y por tanto la variable se escapa para que sea <em>HTML</em> seguro).
 El segundo argumento te permite cambiar el contexto. Por ejemplo, para mostrar algo en una cadena <em>JavaScript</em>, utiliza el contexto <tt class="docutils literal"><span class="pre">js</span></tt>:</p>
-<div class="highlight-js"><div class="highlight"><pre><span class="kd">var</span> <span class="nx">myMsg</span> <span class="o">=</span> <span class="s1">&#39;Hello &lt;?php echo $view-&gt;escape($name, &#39;</span><span class="nx">js</span><span class="s1">&#39;) ?&gt;&#39;</span><span class="p">;</span>
+<div class="highlight-html+php"><div class="highlight"><pre>var myMsg = &#39;Hello <span class="cp">&lt;?php</span> <span class="k">echo</span> <span class="nv">$view</span><span class="o">-&gt;</span><span class="na">escape</span><span class="p">(</span><span class="nv">$name</span><span class="p">,</span> <span class="s1">&#39;js&#39;</span><span class="p">)</span> <span class="cp">?&gt;</span>&#39;;
 </pre></div>
 </div>
 </div>
@@ -1227,7 +1229,7 @@ Y aunque las plantillas son una manera común de generar contenido en un control
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Mar 19, 2013.
+      Actualizado por última vez en Apr 22, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

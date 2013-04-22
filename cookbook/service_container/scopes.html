@@ -84,8 +84,15 @@
 <li><tt class="docutils literal"><span class="pre">container</span></tt> (la opción predeterminada): Usa la misma instancia cada vez que la solicites desde el contenedor.</li>
 <li><tt class="docutils literal"><span class="pre">prototype</span></tt>: Crea una nueva instancia cada vez que solicitas el servicio.</li>
 </ul>
-<p>El <tt class="docutils literal"><span class="pre">FrameworkBundle</span></tt> también define un tercer ámbito: <tt class="docutils literal"><span class="pre">request</span></tt>. Este ámbito está ligado a la petición, lo cual significa que se crea una nueva instancia para cada subpetición y no está disponible fuera de la petición (por ejemplo, en la <em>CLI</em>).</p>
-<p>Los ámbitos agregan una restricción en las dependencias de un servicio: un servicio no puede depender de los servicios de un ámbito más estrecho. Por ejemplo, si creas un servicio genérico <tt class="docutils literal"><span class="pre">mi_foo</span></tt>, pero tratas de inyectar el componente <tt class="docutils literal"><span class="pre">Petición</span></tt>, al compilar el contenedor recibirás una <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Exception\ScopeWideningInjectionException</span></tt>. Lee la barra lateral más adelante para más detalles.</p>
+<p>The
+<tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpKernel\DependencyInjection\ContainerAwareHttpKernel</span></tt>
+also defines a third scope: <tt class="docutils literal"><span class="pre">request</span></tt>. This scope is tied to the request,
+meaning a new instance is created for each subrequest and is unavailable
+outside the request (for instance in the CLI).</p>
+<p>Los ámbitos agregan una restricción en las dependencias de un servicio: un servicio no puede depender de los servicios de un ámbito más estrecho. For example, if you create a generic
+<tt class="docutils literal"><span class="pre">my_foo</span></tt> service, but try to inject the <tt class="docutils literal"><span class="pre">request</span></tt> service, you will receive
+a <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\DependencyInjection\Exception\ScopeWideningInjectionException</span></tt>
+when compiling the container. Lee la barra lateral más adelante para más detalles.</p>
 <div class="sidebar">
 <p class="first sidebar-title">Ámbitos y dependencias</p>
 <p>Imagina que has configurado un servicio <tt class="docutils literal"><span class="pre">my_mailer</span></tt>. No has configurado el ámbito del servicio, por lo tanto el predeterminado es el <tt class="docutils literal"><span class="pre">contenedor</span></tt>. En otras palabras, cada vez que solicitas al contenedor el servicio <tt class="docutils literal"><span class="pre">my_mailer</span></tt>, obtienes el mismo objeto. Esta, por lo general, es la forma en que deseas que trabajen tus servicios.</p>
@@ -107,22 +114,158 @@ Esto sucede en segundo plano, y es totalmente normal.</p>
 <p class="last">Un servicio puede, por supuesto, depender de un servicio desde un ámbito más amplio sin ningún problema.</p>
 </div>
 </div>
-<div class="section" id="estableciendo-el-ambito-en-la-definicion">
-<h2>Estableciendo el ámbito en la definición<a class="headerlink" href="#estableciendo-el-ambito-en-la-definicion" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>El ámbito de un servicio se establece en la definición del servicio:</p>
+<div class="section" id="usando-un-servicio-de-menor-ambito">
+<h2>Usando un servicio de menor ámbito<a class="headerlink" href="#usando-un-servicio-de-menor-ambito" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>If your service has a dependency on a scoped service (like the <tt class="docutils literal"><span class="pre">request</span></tt>),
+you have three ways to deal with it:</p>
+<ul class="simple">
+<li>Use setter injection if the dependency is &#8220;synchronized&#8221;; this is the
+recommended way and the best solution for the <tt class="docutils literal"><span class="pre">request</span></tt> instance as it is
+synchronized with the <tt class="docutils literal"><span class="pre">request</span></tt> scope (see
+<a class="reference internal" href="#using-synchronized-service"><em>Using a synchronized Service</em></a>).</li>
+<li>Put your service in the same scope as the dependency (or a narrower one). If
+you depend on the <tt class="docutils literal"><span class="pre">request</span></tt> service, this means putting your new service
+in the <tt class="docutils literal"><span class="pre">request</span></tt> scope (see <a class="reference internal" href="#changing-service-scope"><em>Changing the Scope of your Service</em></a>);</li>
+<li>Pass the entire container to your service and retrieve your dependency from
+the container each time you need it to be sure you have the right instance
+&#8211; your service can live in the default <tt class="docutils literal"><span class="pre">container</span></tt> scope (see
+<a class="reference internal" href="#passing-container"><em>Passing the Container as a Dependency of your Service</em></a>);</li>
+</ul>
+<p>Each scenario is detailed in the following sections.</p>
+<div class="section" id="using-a-synchronized-service">
+<span id="using-synchronized-service"></span><h3>Using a synchronized Service<a class="headerlink" href="#using-a-synchronized-service" title="Enlazar permanentemente con este título">¶</a></h3>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.3: </span>Synchronized services are new in Symfony 2.3.</p>
+<p>Injecting the container or setting your service to a narrower scope have
+drawbacks. For synchronized services (like the <tt class="docutils literal"><span class="pre">request</span></tt>), using setter
+injection is the best option as it has no drawbacks and everything works
+without any special code in your service or in your definition:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Mail/Mailer.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Mail</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\Request</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">Mailer</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="nv">$request</span><span class="p">;</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setRequest</span><span class="p">(</span><span class="nx">Request</span> <span class="nv">$request</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">request</span> <span class="o">=</span> <span class="nv">$request</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">sendEmail</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">request</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// throw an error?</span>
+        <span class="p">}</span>
+
+        <span class="c1">// ... haz algo con la respuesta de redirección</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Whenever the <tt class="docutils literal"><span class="pre">request</span></tt> scope is entered or left, the service container will
+automatically call the <tt class="docutils literal"><span class="pre">setRequest()</span></tt> method with the current <tt class="docutils literal"><span class="pre">request</span></tt>
+instance.</p>
+<p>You might have noticed that the <tt class="docutils literal"><span class="pre">setRequest()</span></tt> method accepts <tt class="docutils literal"><span class="pre">null</span></tt> as a
+valid value for the <tt class="docutils literal"><span class="pre">request</span></tt> argument. That&#8217;s because when leaving the
+<tt class="docutils literal"><span class="pre">request</span></tt> scope, the <tt class="docutils literal"><span class="pre">request</span></tt> instance can be <tt class="docutils literal"><span class="pre">null</span></tt> (for the master
+request for instance). Of course, you should take care of this possibility in
+your code. This should also be taken into account when declaring your service:</p>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/HelloBundle/Resources/config/services.yml</span>
 <span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">greeting_card_manager</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Acme\HelloBundle\Mail\GreetingCardManager</span>
-        <span class="l-Scalar-Plain">scope</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">request</span>
+        <span class="l-Scalar-Plain">calls</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="nv">setRequest</span><span class="p-Indicator">,</span> <span class="p-Indicator">[</span><span class="s">&#39;@?request&#39;</span><span class="p-Indicator">]]</span>
 </pre></div>
 </div>
 </li>
 <li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;</span>
     <span class="nt">&lt;services&gt;</span>
-    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;greeting_card_manager&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\HelloBundle\Mail\GreetingCardManager&quot;</span> <span class="na">scope=</span><span class="s">&quot;request&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;greeting_card_manager&quot;</span>
+        <span class="na">class=</span><span class="s">&quot;Acme\HelloBundle\Mail\GreetingCardManager&quot;</span>
+    <span class="nt">/&gt;</span>
+    <span class="nt">&lt;call</span> <span class="na">method=</span><span class="s">&quot;setRequest&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;request&quot;</span> <span class="na">on-invalid=</span><span class="s">&quot;null&quot;</span> <span class="na">strict=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/call&gt;</span>
+    <span class="nt">&lt;/services&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Resources/config/services.php</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerInterface</span><span class="p">;</span>
+
+<span class="nv">$definition</span> <span class="o">=</span> <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span>
+    <span class="s1">&#39;greeting_card_manager&#39;</span><span class="p">,</span>
+    <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;Acme\HelloBundle\Mail\GreetingCardManager&#39;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="o">-&gt;</span><span class="na">addMethodCall</span><span class="p">(</span><span class="s1">&#39;setRequest&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+    <span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;request&#39;</span><span class="p">,</span> <span class="nx">ContainerInterface</span><span class="o">::</span><span class="na">NULL_ON_INVALID_REFERENCE</span><span class="p">,</span> <span class="k">false</span><span class="p">)</span>
+<span class="p">));</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p>You can declare your own <tt class="docutils literal"><span class="pre">synchronized</span></tt> services very easily; here is
+the declaration of the <tt class="docutils literal"><span class="pre">request</span></tt> service for reference:</p>
+<div class="last configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">request</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">scope</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">request</span>
+        <span class="l-Scalar-Plain">synthetic</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+        <span class="l-Scalar-Plain">synchronized</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;services&gt;</span>
+<span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;request&quot;</span> <span class="na">scope=</span><span class="s">&quot;request&quot;</span> <span class="na">synthetic=</span><span class="s">&quot;true&quot;</span> <span class="na">synchronized=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/services&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerInterface</span><span class="p">;</span>
+
+<span class="nv">$definition</span> <span class="o">=</span> <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;request&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">setScope</span><span class="p">(</span><span class="s1">&#39;request&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">setSynthetic</span><span class="p">(</span><span class="k">true</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">setSynchronized</span><span class="p">(</span><span class="k">true</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="changing-the-scope-of-your-service">
+<span id="changing-service-scope"></span><h3>Changing the Scope of your Service<a class="headerlink" href="#changing-the-scope-of-your-service" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Changing the scope of a service should be done in its definition:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
+services:
+    greeting_card_manager:
+        class: Acme\HelloBundle\Mail\GreetingCardManager
+        scope: request
+        arguments: [@request]</pre>
+</div>
+</li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;</span>
+    <span class="nt">&lt;services&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;greeting_card_manager&quot;</span>
+        <span class="na">class=</span><span class="s">&quot;Acme\HelloBundle\Mail\GreetingCardManager&quot;</span>
+        <span class="na">scope=</span><span class="s">&quot;request&quot;</span>
+    <span class="nt">/&gt;</span>
+    <span class="nt">&lt;argument</span> <span class="na">type=</span><span class="s">&quot;service&quot;</span> <span class="na">id=</span><span class="s">&quot;request&quot;</span> <span class="nt">/&gt;</span>
     <span class="nt">&lt;/services&gt;</span>
 </pre></div>
 </div>
@@ -130,22 +273,25 @@ Esto sucede en segundo plano, y es totalmente normal.</p>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Resources/config/services.php</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
 
-<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span>
+<span class="nv">$definition</span> <span class="o">=</span> <span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span>
     <span class="s1">&#39;greeting_card_manager&#39;</span><span class="p">,</span>
-    <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;Acme\HelloBundle\Mail\GreetingCardManager&#39;</span><span class="p">)</span>
+    <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span>
+        <span class="s1">&#39;Acme\HelloBundle\Mail\GreetingCardManager&#39;</span><span class="p">,</span>
+        <span class="k">array</span><span class="p">(</span><span class="k">new</span> <span class="nx">Reference</span><span class="p">(</span><span class="s1">&#39;request&#39;</span><span class="p">),</span>
+    <span class="p">))</span>
 <span class="p">)</span><span class="o">-&gt;</span><span class="na">setScope</span><span class="p">(</span><span class="s1">&#39;request&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </li>
 </ul>
 </div>
-<p>Si no especificas el ámbito, el valor predeterminado es <tt class="docutils literal"><span class="pre">container</span></tt>, el cual es el que quieres la mayor parte del tiempo. A menos que tu servicio dependa de otro servicio que aplica su ámbito más restringido (por lo general, el servicio <tt class="docutils literal"><span class="pre">Petición</span></tt>), probablemente no sea necesario definir el ámbito.</p>
 </div>
-<div class="section" id="usando-un-servicio-de-menor-ambito">
-<h2>Usando un servicio de menor ámbito<a class="headerlink" href="#usando-un-servicio-de-menor-ambito" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Si tu servicio depende del ámbito de un servicio, la mejor solución es ponerlo en el mismo ámbito (o uno más estrecho). Normalmente, esto significa poner tu nuevo servicio en el ámbito de la <tt class="docutils literal"><span class="pre">Petición</span></tt>.</p>
-<p>Pero esto no siempre es posible (por ejemplo, una extensión de <em>Twig</em> debe estar en el ámbito del <tt class="docutils literal"><span class="pre">contenedor</span></tt> puesto que el entorno <em>Twig</em> lo necesita como dependencia).
-En estos casos, debes pasar todo el contenedor en tu servicio y recuperar tu dependencia desde el contenedor cada vez que lo necesites para asegurarte de que tienes la instancia correcta:</p>
+<div class="section" id="passing-the-container-as-a-dependency-of-your-service">
+<span id="passing-container"></span><h3>Passing the Container as a Dependency of your Service<a class="headerlink" href="#passing-the-container-as-a-dependency-of-your-service" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>Setting the scope to a narrower one is not always possible (for instance, a
+twig extension must be in the <tt class="docutils literal"><span class="pre">container</span></tt> scope as the Twig environment
+needs it as a dependency). In these cases, you can pass the entire container
+into your service:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/HelloBundle/Mail/Mailer.php</span>
 <span class="k">namespace</span> <span class="nx">Acme\HelloBundle\Mail</span><span class="p">;</span>
 
@@ -182,8 +328,7 @@ En estos casos, debes pasar todo el contenedor en tu servicio y recuperar tu dep
 <span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">my_mailer</span><span class="p-Indicator">:</span>
         <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span>     <span class="s">&quot;%my_mailer.class%&quot;</span>
-        <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span>
-            <span class="p-Indicator">-</span> <span class="s">&quot;@service_container&quot;</span>
+        <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&quot;@service_container&quot;</span><span class="p-Indicator">]</span>
         <span class="c1"># scope: el contenedor se puede omitir como si fuera el predefinido</span>
 </pre></div>
 </div>
@@ -220,9 +365,16 @@ En estos casos, debes pasar todo el contenedor en tu servicio y recuperar tu dep
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Nota</p>
-<p class="last">Inyectar el contenedor completo en un servicio generalmente no es una buena idea (inyecta sólo lo que necesitas). En algunos raros casos, es necesario cuando tienes un servicio en el entorno del <tt class="docutils literal"><span class="pre">Contenedor</span></tt> que necesita un servicio del ámbito de la <tt class="docutils literal"><span class="pre">Petición</span></tt>.</p>
+<p class="last">Inyectar el contenedor completo en un servicio generalmente no es una buena idea (inyecta sólo lo que necesitas).</p>
 </div>
-<p>Si defines un controlador como servicio entonces puedes obtener el objeto <tt class="docutils literal"><span class="pre">Petición</span></tt> sin inyectar el contenedor pasándolo como argumento de tu método acción. Ve los detalles en <a class="reference internal" href="../../book/controller.html#book-controller-request-argument"><em>La Petición como argumento para el controlador</em></a>.</p>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">If you define a controller as a service then you can get the <tt class="docutils literal"><span class="pre">Request</span></tt>
+object without injecting the container by having it passed in as an
+argument of your action method. See
+<a class="reference internal" href="../../book/controller.html#book-controller-request-argument"><em>La Petición como argumento para el controlador</em></a> for details.</p>
+</div>
+</div>
 </div>
 </div>
 
@@ -260,7 +412,7 @@ En estos casos, debes pasar todo el contenedor en tu servicio y recuperar tu dep
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Mar 19, 2013.
+      Actualizado por última vez en Apr 22, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

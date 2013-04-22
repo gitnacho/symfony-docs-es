@@ -77,8 +77,8 @@ Para hacer una orden de consola que dé la bienvenida desde la línea de ordenes
 También necesitas crear el archivo para ejecutar la línea de ordenes, el cual crea una ``Application`` y le agrega ordenes::
 
     #!/usr/bin/env php
-    # app/console
     <?php
+    // app/console
 
     use Acme\DemoBundle\Command\GreetCommand;
     use Symfony\Component\Console\Application;
@@ -149,6 +149,35 @@ También puedes configurar estos colores y opciones dentro del nombre de la etiq
     // text negro en fondo amarillo
     $output->writeln('<bg=yellow;options=bold>foo</bg=yellow;options=bold>');
 
+Niveles de verbosidad
+~~~~~~~~~~~~~~~~~~~~~
+
+La consola tiene 3 niveles de verbosidad. Estos están definidos en
+la clase :class:`Symfony\\Component\\Console\\Output\\OutputInterface`:
+
+==================================  =======================================
+Opción                              Valor
+==================================  =======================================
+OutputInterface::VERBOSITY_QUIET    No muestra ningún mensaje
+OutputInterface::VERBOSITY_NORMAL   El nivel de verbosidad predeterminado
+OutputInterface::VERBOSITY_VERBOSE  Incrementa la verbosidd de los mensajes
+==================================  =======================================
+
+Puedes especificar el nivel de verbosidad tranquilo con la opción ``--quiet`` o ``-q``. La opción ``--verbose`` o ``-v`` se utiliza cuando quieres aumentar el nivel de verbosidad.
+
+.. tip::
+
+    La traza completa de la excepción se imprime si utilizas el nivel de verbosidad ``VERBOSITY_VERBOSE``.
+
+Es posible imprimir un mensaje en una orden para únicamente un nivel de verbosidad
+específico. Por ejemplo::
+
+    if (OutputInterface::VERBOSITY_VERBOSE === $output->getVerbosity()) {
+        $output->writeln(...);
+    }
+
+Cuándo se utiliza el nivel tranquilo, toda la producción es suprimida como la regresa el método predeterminado :method:`Symfony\Component\Console\Output::write<Symfony\\Component\\Console\\Output::write>`
+sin de hecho imprimirla.
 
 Utilizando argumentos de ordenes
 --------------------------------
@@ -319,7 +348,7 @@ Puedes probar enviando argumentos y opciones a la orden pasándolos como un arre
 Llamando una orden existente
 ----------------------------
 
-Si una orden depende de que se ejecute otra antes, en lugar de obligar al usuario a recordar el orden de ejecución, puedes llamarla directamente tú mismo.
+Si una orden depende de que se ejecute otra antes, en lugar de obligar al usuario a recordar el orden de ejecución, la puedes llamar tú mismo directamente.
 Esto también es útil si deseas crear una «metaorden» que ejecute un montón de otras ordenes (por ejemplo, todas las ordenes que se deben ejecutar cuando el código del proyecto ha cambiado en los servidores de producción: vaciar la caché, generar delegados *Doctrine2*, volcar activos ``Assetic``, ...).
 
 Llamar a una orden desde otra es sencillo::

@@ -1,0 +1,602 @@
+
+<!DOCTYPE html> 
+<html lang="es">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>RoutingAutoBundle &mdash; Manual de Symfony2 en Español</title>
+    
+    <link rel="stylesheet" href="../../_static/tnp.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.0.15',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/translations.js"></script>
+    <link rel="shortcut icon" href="../../_static/icotnp.ico"/>
+    <link rel="top" title="Manual de Symfony2 en Español" href="../../index.html" />
+    <link rel="up" title="Documentación del CMF de Symfony" href="../index.html" />
+    <link rel="next" title="SearchBundle" href="search.html" />
+    <link rel="prev" title="RoutingExtraBundle" href="routing-extra.html" /> 
+  </head>
+  <body>
+  <div class="imalogo">
+    
+  <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/img/sf/logo-big.gif" alt="Edición estándar de Symfony2" />
+  
+    <a href="../../index.html"><img src="http://gitnacho.github.com/tnp/_static/normaltnp.png" alt="Traducciones de Nacho Pacheco" /></a>
+    <div class="social">
+      <a href="https://twitter.com/share" class="twitter-share-button" data-via="esymfony" data-lang="es">Tweet</a>
+      <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+    </div>
+    <div id="searchbox">
+      <form class="searc " action="../../search.html" method="get">
+      <input type="search" name="q" placeholder="Término a buscar" />
+      <input type="submit" value="Ir" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <script type="text/javascript">$('#searchbox').show(0);</script>
+    </div>
+    
+
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             accesskey="I">índice</a></li>
+        <li class="right" >
+          <a href="search.html" title="SearchBundle"
+             accesskey="N">siguiente</a> |</li>
+        <li class="right" >
+          <a href="routing-extra.html" title="RoutingExtraBundle"
+             accesskey="P">anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="routingautobundle">
+<h1>RoutingAutoBundle<a class="headerlink" href="#routingautobundle" title="Enlazar permanentemente con este título">¶</a></h1>
+<p>The <tt class="docutils literal"><span class="pre">RoutingAutoBundle</span></tt> allows you to define automatically created routes
+for documents. This implies a separation of the <tt class="docutils literal"><span class="pre">Route</span></tt> and <tt class="docutils literal"><span class="pre">Content</span></tt>
+documents. If your needs are simple this bundle may not be for you and you
+should have a look at <a class="reference internal" href="simple-cms.html"><em>SimpleCmsBundle</em></a>.</p>
+<p>For the sake of example, we will imagine a  blog application
+that has two routeable contents, the blog itself, and the posts for the blog.
+We will call these documents <tt class="docutils literal"><span class="pre">Blog</span></tt> and <tt class="docutils literal"><span class="pre">Post</span></tt>, and we will class them as
+<em>content documents</em>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">In our example we add an auto route for the blog, but in reality, as a blog
+is something you create rarely, you will probably want to create routes for
+your blog manually, but its up to you.</p>
+</div>
+<p>If we create a new <tt class="docutils literal"><span class="pre">Blog</span></tt> with the title &#8220;My New Blog&#8221; the bundle could automatically
+create the route <tt class="docutils literal"><span class="pre">/blogs/my-new-blog</span></tt>. For each new <tt class="docutils literal"><span class="pre">Post</span></tt> it could create a route
+such as <tt class="docutils literal"><span class="pre">/blogs/my-new-blog/my-posts-title</span></tt>. This URL resolves to a special type of
+route that we will call the <em>auto route</em>.</p>
+<p>By default, when we update a content document that has an auto route the
+corresponding auto route will also be updated, when deleting a content document
+the corresponding auto route will also be deleted.</p>
+<p>If required, the bundle can also be configured to do extra stuff, like, for example,
+leaving a <tt class="docutils literal"><span class="pre">RedirectRoute</span></tt> when the location of a content document changes or
+automatically displaying an index page when an unconfigured intermediate path is
+accessed (for example, listing all the children under <tt class="docutils literal"><span class="pre">/blogs</span></tt> instead of returning
+a <tt class="docutils literal"><span class="pre">404</span></tt>).</p>
+<div class="section" id="why-not-simply-use-a-single-route">
+<h2>Why not simply use a single route?<a class="headerlink" href="#why-not-simply-use-a-single-route" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Of course, our fictional blog application could use a single route with a pattern
+<tt class="docutils literal"><span class="pre">/blogs/my-new-blog/{slug}</span></tt> which could be handled by a controller. Why not just
+do this?</p>
+<ol class="arabic simple">
+<li>By having a route for each page in the system the application has a knowledge of
+which URLs are accessible, this can be very useful, for example, when specifying
+endpoints for menu items are generating a site map.</li>
+<li>By separating the route from the content we allow the route to be customized independently
+of the content, for example, a blog post may have the same title as another post but might
+need a different URL.</li>
+<li>Separate route documents are translateable - this means we can have a URL for
+<em>each language</em>, &#8220;/welcome&#8221; and &#8220;/bienvenue&#8221; would each reference
+the same document in English and French respectively. This would be difficult if
+the slug were embedded in the content document.</li>
+<li>By decoupling route and content the application doesn&#8217;t care <em>what</em> is referenced in
+the route document. This means that we can easily replace the class of document referenced.</li>
+</ol>
+</div>
+<div class="section" id="anatomy-of-an-automatic-url">
+<h2>Anatomy of an automatic URL<a class="headerlink" href="#anatomy-of-an-automatic-url" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>The diagram below shows a fictional URL for a blog post. The first 6 elements
+of the URL are what we will call the <em>content path</em>. The last element we will call
+the <em>content name</em>.</p>
+<img alt="../../_images/routing_auto_post_schema.png" src="../../_images/routing_auto_post_schema.png" />
+<p>The content path is further broken down into <em>route stacks</em> and <em>routes</em>. A route
+stack is a group of routes and routes are simply documents in the PHPCR tree.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p>Although routes in this case can be of any document class, only objects which
+extend the <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Routing\Route</span></tt> object will be considered when matching a URL.</p>
+<p class="last">The default behavior is to use Generic documents when generating a content path, and
+these documents will result in a 404 when accessed directly.</p>
+</div>
+<p>Internally each route stack is built up by a <em>builder unit</em>. Builder units contain
+one <em>path provider</em> class and two actions classes one action to take if the provided
+path exists in the PHPCR tree, the other if it does not. The goal
+of each builder unit is to generate a path and then provide a route object for each
+element in that path.</p>
+<p>The configuration for the example above could be as follows:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">symfony_cmf_routing_auto</span><span class="p-Indicator">:</span>
+
+    <span class="l-Scalar-Plain">auto_route_mapping</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">My\Namespace\Bundle\BlogBundle\Document\Post</span><span class="p-Indicator">:</span>
+            <span class="l-Scalar-Plain">content_path</span><span class="p-Indicator">:</span>
+                <span class="c1"># corresponds first route stack in diagram: my, blog, my-blog</span>
+                <span class="l-Scalar-Plain">blog_path</span><span class="p-Indicator">:</span>
+                    <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span>
+                        <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">content_object</span>
+                        <span class="l-Scalar-Plain">method</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">getBlog</span>
+                    <span class="l-Scalar-Plain">exists_action</span><span class="p-Indicator">:</span>
+                        <span class="l-Scalar-Plain">strategy</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">use</span>
+                    <span class="l-Scalar-Plain">not_exists_action</span><span class="p-Indicator">:</span>
+                        <span class="l-Scalar-Plain">strategy</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">throw_exception</span>
+
+                <span class="c1"># corresponds to second route stack: 2013,04,06</span>
+                <span class="l-Scalar-Plain">date</span><span class="p-Indicator">:</span>
+                    <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span>
+                        <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">content_datetime</span>
+                        <span class="l-Scalar-Plain">method</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">getPublishedDate</span>
+                    <span class="l-Scalar-Plain">exists_action</span><span class="p-Indicator">:</span>
+                        <span class="l-Scalar-Plain">strategy</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">use</span>
+                    <span class="l-Scalar-Plain">not_exists_action</span><span class="p-Indicator">:</span>
+                        <span class="l-Scalar-Plain">strategy</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">create</span>
+
+            <span class="c1"># corresponds to the content name: My Post Title</span>
+            <span class="l-Scalar-Plain">content_name</span><span class="p-Indicator">:</span>
+                <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span>
+                    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">content_method</span>
+                    <span class="l-Scalar-Plain">method</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">getTitle</span>
+                <span class="l-Scalar-Plain">exists_action</span><span class="p-Indicator">:</span>
+                    <span class="l-Scalar-Plain">strategy</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">auto_increment</span>
+                    <span class="l-Scalar-Plain">pattern</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">-%d</span>
+                <span class="l-Scalar-Plain">not_exists_action</span><span class="p-Indicator">:</span>
+                    <span class="l-Scalar-Plain">strategy</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">create</span>
+</pre></div>
+</div>
+<p>The <tt class="docutils literal"><span class="pre">Post</span></tt> document would then need to implement the methods named above as follows:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="k">class</span> <span class="nc">Post</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getBlog</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="c1">// return the blog object associated with the post</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">blog</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getPublishedDate</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="nx">\DateTime</span><span class="p">(</span><span class="s1">&#39;2013/04/06&#39;</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getTitle</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="s2">&quot;My post title&quot;</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="path-providers">
+<h2>Path Providers<a class="headerlink" href="#path-providers" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>Path providers specify a target path which is used by the subsequent path actions to provide
+the actual route documents.</p>
+<p><strong>Base</strong> providers must be the first configured as the first builder in the content path chain.
+This is because the paths that they provide correspond directly to an existing path, i.e. they
+have an absolute reference.</p>
+<div class="section" id="specified-base-provider">
+<h3>specified (base provider)<a class="headerlink" href="#specified-base-provider" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>This is the most basic path provider and allows you to specify an exact (fixed) path.</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">path_provider</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">specified</span>
+    <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">this/is/a/path</span>
+</pre></div>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">path</span></tt> - <strong>required</strong> The path to provide.</li>
+</ul>
+</div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">We never specifiy absolute paths in the auto route system. If the builder unit
+is the first content path chain it is understood that it is the base of an absolute
+path.</p>
+</div>
+</div>
+<div class="section" id="content-object-base-provider">
+<h3>content_object (base provider)<a class="headerlink" href="#content-object-base-provider" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>The content object provider will try and provide a path from an object implementing
+<tt class="docutils literal"><span class="pre">RouteAwareInterface</span></tt> provided by a designated method on the content document. For
+example, if you have a <tt class="docutils literal"><span class="pre">Post</span></tt> class, which has a <tt class="docutils literal"><span class="pre">getBlog</span></tt> method, using
+this provider you can tell the <tt class="docutils literal"><span class="pre">Post</span></tt> auto route to use the route of the blog as a
+base.</p>
+<p>So basically, if your blog content has a path of <tt class="docutils literal"><span class="pre">/this/is/my/blog</span></tt> you can use this
+path as the base of your <tt class="docutils literal"><span class="pre">Post</span></tt> auto-route.</p>
+<p>Ejemplo:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">content_object</span>
+    <span class="l-Scalar-Plain">method</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">getBlog</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">At the time of writing translated objects are not supported. This isn&#8217;t hard to do, but well, I just
+havn&#8217;t done it yet.</p>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">method</span></tt>: <strong>required</strong> Method used to return the document whose route path we wish to use.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="content-method">
+<h3>content_method<a class="headerlink" href="#content-method" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">content_method</span></tt> provider allows the content object (e.g. a blog <tt class="docutils literal"><span class="pre">Post</span></tt>) to specify
+a path using one of its methods. This is quite a powerful method as it allows the content
+document to do whatever it can to produce the route, the disadvantage is that your content
+document will have extra code in it.</p>
+<p>Example 1:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">path_provider</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">content_method</span>
+    <span class="l-Scalar-Plain">method</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">getTitle</span>
+</pre></div>
+</div>
+<p>This example will use the existing method &#8220;getTitle&#8221; of the <tt class="docutils literal"><span class="pre">Post</span></tt> document to retrieve the
+title. By default all strings are <em>slugified</em>.</p>
+<p>The method can return the path either as a single string or an array of path elements
+as shown in the following example:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="k">class</span> <span class="nc">Post</span>
+<span class="p">{</span>
+     <span class="k">public</span> <span class="k">function</span> <span class="nf">getTitle</span><span class="p">()</span>
+     <span class="p">{</span>
+        <span class="k">return</span> <span class="s2">&quot;This is a post&quot;</span><span class="p">;</span>
+     <span class="p">}</span>
+
+     <span class="k">public</span> <span class="k">function</span> <span class="nf">getPathElements</span><span class="p">()</span>
+     <span class="p">{</span>
+        <span class="k">return</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;this&#39;</span><span class="p">,</span> <span class="s1">&#39;is&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">);</span>
+     <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">method</span></tt>: <strong>required</strong> Method used to return the route name / path / path elements.</li>
+<li><tt class="docutils literal"><span class="pre">slugify</span></tt>: If we should use the slugifier, default is <tt class="docutils literal"><span class="pre">true</span></tt>.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="content-datetime">
+<h3>content_datetime<a class="headerlink" href="#content-datetime" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">content_datettime</span></tt> provider will provide a path from a <tt class="docutils literal"><span class="pre">DateTime</span></tt> object provided by a designated
+method on the content document.</p>
+<p>Example 1:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">content_datetime</span>
+    <span class="l-Scalar-Plain">method</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">getDate</span>
+</pre></div>
+</div>
+<p>Example 2:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">content_datetime</span>
+    <span class="l-Scalar-Plain">method</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">getDate</span>
+    <span class="l-Scalar-Plain">date_format</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Y/m/d</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">This method extends <cite>content_method</cite> and inherits the slugify feature. Internally we return a string using
+the <cite>DateTime-&gt;format()</cite> method. This means that you can specify your date in anyway you like and it will be
+automatically slugified, also, by adding path separators in the <cite>date_format</cite> you are effectively creating
+routes for each date component as slugify applies to <strong>each element</strong> of the path.</p>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><ul class="simple">
+<li><tt class="docutils literal"><span class="pre">method</span></tt>: <strong>required</strong> Method used to return the route name / path / path elements.</li>
+<li><tt class="docutils literal"><span class="pre">slugify</span></tt>: If we should use the slugifier, default is <tt class="docutils literal"><span class="pre">true</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">date_format</span></tt>: Any date format accepted by the <cite>DateTime</cite> class, default <tt class="docutils literal"><span class="pre">Y-m-d</span></tt>.</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="path-exists-actions">
+<h2>Path Exists Actions<a class="headerlink" href="#path-exists-actions" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>These are the default actions available to take if the path provided by a <cite>path_provider</cite> already exists and
+so creating a new path would create a conflict.</p>
+<div class="section" id="auto-increment">
+<h3>auto_increment<a class="headerlink" href="#auto-increment" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">auto_increment</span></tt> action will add a numerical suffix to the path, for example <tt class="docutils literal"><span class="pre">my/path</span></tt> would first become
+<tt class="docutils literal"><span class="pre">my/path-1</span></tt> and if that path <em>also</em> exists it will try <tt class="docutils literal"><span class="pre">my/path-2</span></tt>, <tt class="docutils literal"><span class="pre">my/path-3</span></tt> and so on into infinity until
+it finds a path which <em>doesn&#8217;t</em> exist.</p>
+<p>This action should typically be used in the <tt class="docutils literal"><span class="pre">content_name</span></tt> builder unit to resolve conflicts. Using it in the
+<tt class="docutils literal"><span class="pre">content_path</span></tt> builder chain would not make much sense (I can&#8217;t imagine any use cases at the moment).</p>
+<p>Ejemplo:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">exists_action</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">auto_increment</span>
+</pre></div>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><ul class="simple">
+<li>None.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="use">
+<h3>use<a class="headerlink" href="#use" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">use</span></tt> action will simply take the existing path and use it. For example, in our post example the first
+builder unit must first determine the blogs path, <tt class="docutils literal"><span class="pre">/my/blog</span></tt>, if this path exists (and it should) then we
+will <em>use</em> it in the stack.</p>
+<p>This action should typically be used in one of the content path builder units to specify that we should use
+the existing route, on the other hand, using this as the content name builder action should cause the old
+route to be overwritten.</p>
+<p>Ejemplo:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">exists_action</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">use</span>
+</pre></div>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><ul class="simple">
+<li>None.</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="path-not-exists-actions">
+<h2>Path not exists actions<a class="headerlink" href="#path-not-exists-actions" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>These are the default actions available to take if the path provided by a <tt class="docutils literal"><span class="pre">path_provider</span></tt> does not exist.</p>
+<div class="section" id="create">
+<h3>create<a class="headerlink" href="#create" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>The <tt class="docutils literal"><span class="pre">create</span></tt> action will create the path. <strong>currently</strong> all routes provided by the content path build units
+will be created as <tt class="docutils literal"><span class="pre">Generic</span></tt> documents, whilst the content name route will be created as an <tt class="docutils literal"><span class="pre">AutoRoute</span></tt> document.</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">not_exists_action</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">create</span>
+</pre></div>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><ul class="simple">
+<li>None.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="throw-exception">
+<h3>throw_exception<a class="headerlink" href="#throw-exception" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>This action will throw an exception if the route provided by the path provider does not exist. You should take
+this action if you are sure that the route <em>should</em> exist.</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">not_exists_action</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">create</span>
+</pre></div>
+</div>
+<p>Options:</p>
+<blockquote>
+<div><ul class="simple">
+<li>None.</li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+<div class="section" id="personalizando">
+<h2>Personalizando<a class="headerlink" href="#personalizando" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="section" id="adding-path-providers">
+<span id="routingauto-customization-pathproviders"></span><h3>Adding Path Providers<a class="headerlink" href="#adding-path-providers" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>The goal of a <tt class="docutils literal"><span class="pre">PathProvider</span></tt> class is to add one or several path elements to
+the route stack. For example, the following provider will add the path &#8220;foo/bar&#8221;
+to the route stack:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Cmf\Bundle\RoutingAutoBundle\AutoRoute\PathProviderInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Cmf\Bundle\RoutingAutoBundle\AutoRoute\RouteStack</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">FoobarProvider</span> <span class="k">implements</span> <span class="nx">PathProviderInterface</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">providePath</span><span class="p">(</span><span class="nx">RouteStack</span> <span class="nv">$routeStack</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$routeStack</span><span class="o">-&gt;</span><span class="na">addPathElements</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>To use the path provider you must register it in the <strong>DIC</strong> and add the
+<tt class="docutils literal"><span class="pre">symfony_cmf_routing_auto.provider</span></tt> tag and set the <strong>alias</strong> accordingly.</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span>
+    <span class="na">id=</span><span class="s">&quot;my_cms.some_bundle.path_provider.foobar&quot;</span>
+    <span class="na">class=</span><span class="s">&quot;FoobarProvider&quot;</span>
+    <span class="na">scope=</span><span class="s">&quot;prototype&quot;</span>
+<span class="nt">&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;symfony_cmf_routing_auto.provider&quot;</span> <span class="na">alias=</span><span class="s">&quot;foobar&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/service&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">my_cms.some_bundle.path_provider.foobar</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span> <span class="s">&quot;FoobarProvider&quot;</span>
+    <span class="l-Scalar-Plain">scope</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">prototype</span>
+    <span class="l-Scalar-Plain">tags</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="p-Indicator">{</span> <span class="nv">name</span><span class="p-Indicator">:</span> <span class="nv">symfony_cmf_routing_auto.provider</span><span class="p-Indicator">,</span> <span class="nv">alias</span><span class="p-Indicator">:</span> <span class="s">&quot;foobar&quot;</span><span class="p-Indicator">}</span>
+</pre></div>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$definition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;FooBarProvider&#39;</span><span class="p">);</span>
+<span class="nv">$definition</span><span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;symfony_cmf_routing_auto.provider&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;alias&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;foobar&#39;</span><span class="p">));</span>
+<span class="nv">$definition</span><span class="o">-&gt;</span><span class="na">setScope</span><span class="p">(</span><span class="s1">&#39;prototype&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_cms.some_bundle.path_provider.foobar&#39;</span><span class="p">,</span> <span class="nv">$definition</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>The <strong>foobar</strong> path provider is now available as <strong>foobar</strong>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">The that both path providers and path actions need to be defined with a
+scope of &#8220;prototype&#8221;. This ensures that each time the auto routing system
+requests the class a new one is given and we do not have any state problems.</p>
+</div>
+</div>
+<div class="section" id="adding-path-actions">
+<h3>Adding Path Actions<a class="headerlink" href="#adding-path-actions" title="Enlazar permanentemente con este título">¶</a></h3>
+<p>In the auto routing system, a &#8220;path action&#8221; is an action to take if the path provided
+by the &#8220;path provider&#8221; exists or not.</p>
+<p>You can add a path action by extending the <tt class="docutils literal"><span class="pre">PathActionInterface</span></tt> and registering your
+new class correctly in the DI configuration.</p>
+<p>This is a very simple implementation from the bundle - it is used to throw an exception
+when a path already exists:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="k">namespace</span> <span class="nx">Symfony\Cmf\Bundle\RoutingAutoBundle\AutoRoute\PathNotExists</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Symfony\Cmf\Bundle\RoutingAutoBundle\AutoRoute\PathActionInterface</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Cmf\Bundle\RoutingAutoBundle\AutoRoute\Exception\CouldNotFindRouteException</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Cmf\Bundle\RoutingAutoBundle\AutoRoute\RouteStack</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">ThrowException</span> <span class="k">implements</span> <span class="nx">PathActionInterface</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">init</span><span class="p">(</span><span class="k">array</span> <span class="nv">$options</span><span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">execute</span><span class="p">(</span><span class="nx">RouteStack</span> <span class="nv">$routeStack</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nx">CouldNotFindRouteException</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="nv">$routeStack</span><span class="o">-&gt;</span><span class="na">getFullPath</span><span class="p">());</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>It is registered in the DI configuration as follows:</p>
+<div class="configuration-block">
+<ul class="simple">
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;service</span>
+    <span class="na">id=</span><span class="s">&quot;my_cms.not_exists_action.throw_exception&quot;</span>
+    <span class="na">class=</span><span class="s">&quot;My\Cms\AutoRoute\PathNotExists\ThrowException&quot;</span>
+    <span class="na">scope=</span><span class="s">&quot;prototype&quot;</span>
+    <span class="nt">&gt;</span>
+    <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;symfony_cmf_routing_auto.not_exists_action&quot;</span> <span class="na">alias=</span><span class="s">&quot;throw_exception&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/service&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><em>YAML</em><div class="highlight-yaml"><pre>symfony_cmf_routing_auto.not_exists_action.throw_exception
+    class: "My\Cms\AutoRoute\PathNotExists\ThrowException"
+    scope: prototype
+    tags:
+            - { name: symfony_cmf_routing_auto.provider, alias: "throw_exception"}</pre>
+</div>
+</li>
+<li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="nv">$definition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;My\Cms\AutoRoute\PathNotExists\ThrowException&#39;</span><span class="p">);</span>
+<span class="nv">$definition</span><span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;symfony_cmf_routing_auto.provider&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;alias&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;throw_exception&#39;</span><span class="p">));</span>
+<span class="nv">$definition</span><span class="o">-&gt;</span><span class="na">setScope</span><span class="p">(</span><span class="s1">&#39;prototype&#39;</span><span class="p">);</span>
+<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;my_cms.some_bundle.path_provider.throw_exception&#39;</span><span class="p">,</span> <span class="nv">$definition</span><span class="p">);</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<p>Note the following:</p>
+<ul>
+<li><p class="first"><strong>Scope</strong>: Must <em>always</em> be set to <em>prototype</em>;</p>
+</li>
+<li><dl class="first docutils">
+<dt><strong>Tag</strong>: The tag registers the service with the auto routing system, it can be one of the following;</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">symfony_cmf_routing_auto.exists.action</span></tt> - if the action is to be used when a path exists;</li>
+<li><tt class="docutils literal"><span class="pre">symfony_cmf_routing_auto.not_exists.action</span></tt> - if the action is to be used when a path does not exist;</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first"><strong>Alias</strong>: The alias of the tag is the name by which you will reference this action in the auto routing schema.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  <a href="https://github.com/symfony/symfony-standard"><img style="position: fixed; top: 0; right: 0; border: 0;" src="http://gitnacho.github.com/tnp/img/comun/bifurcame.png" alt="Bifúrcame en GitHub" /></a>
+  
+  <div style="width:740px;margin:10px auto;">
+    <div class="related">
+      <h3>Navegación</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="Índice General"
+             >índice</a></li>
+        <li class="right" >
+          <a href="search.html" title="SearchBundle"
+             >siguiente</a> |</li>
+        <li class="right" >
+          <a href="routing-extra.html" title="RoutingExtraBundle"
+             >anterior</a> |</li>
+        <li><a href="../../index.html">en Español</a> &raquo;</li>
+          <li><a href="../index.html" >Documentación del <tt class="docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal docutils literal"><span class="pre">CMF</span></tt> de <em>Symfony</em></a> &raquo;</li> 
+      </ul>
+    </div>
+  </div>
+
+
+   <div style="width: 740px; margin: 0 auto;">
+     <div id="disqus_thread"></div>
+     
+    <div class="footer">
+        &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
+      Actualizado por última vez en Apr 22, 2013.
+      Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+   </div>
+   <script type="text/javascript">
+    var disqus_shortname = 'documentos-mx';
+    var disqus_developer = 1;
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+   </script>
+   <noscript>
+     Por favor activa JavaScript para ver los <a href="http://disqus.com/?ref_noscript">comentarios accionados por Disqus.</a>
+   </noscript>
+
+  </body>
+</html>

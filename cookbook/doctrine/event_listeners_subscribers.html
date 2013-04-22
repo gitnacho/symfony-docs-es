@@ -80,6 +80,7 @@
 Esto podría ser útil, por ejemplo, para crear un índice de búsqueda independiente cuando se guarde un objeto en tu base de datos.</p>
 <p><em>Doctrine</em> define dos tipos de objetos que pueden escuchar los eventos de <em>Doctrine</em>:
 escuchas y suscriptores. Ambos son muy similares, pero los escuchas son un poco más sencillos. Para más información, consulta el <a class="reference external" href="http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/events.html">Sistema de eventos</a> en el sitio web de <em>Doctrine</em>.</p>
+<p>The Doctrine website also explains all existing events that can be listened to.</p>
 <div class="section" id="configurando-escuchas-suscriptores">
 <h2>Configurando escuchas/suscriptores<a class="headerlink" href="#configurando-escuchas-suscriptores" title="Enlazar permanentemente con este título">¶</a></h2>
 <p>Para registrar un servicio para que actúe como un escucha o suscriptor de eventos sólo lo tienes que <a class="reference internal" href="../../book/service_container.html#book-service-container-tags"><em>etiquetar</em></a> con el nombre apropiado. Dependiendo de tu caso de uso, puedes enganchar un escucha en cada conexión <em>DBAL</em> y gestor de entidad <em>ORM</em> o simplemente en una conexión <em>DBAL</em> específica y todos los gestores de entidad que utilicen esta conexión.</p>
@@ -177,7 +178,8 @@ escuchas y suscriptores. Ambos son muy similares, pero los escuchas son un poco 
 </div>
 <div class="section" id="creando-la-clase-escucha">
 <h2>Creando la clase Escucha<a class="headerlink" href="#creando-la-clase-escucha" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>En el ejemplo anterior, se configuró un servicio <tt class="docutils literal"><span class="pre">my.listener</span></tt> como un escucha de <em>Doctrine</em> del evento <tt class="docutils literal"><span class="pre">postPersist</span></tt>. Que detrás de la clase de ese servicio debe tener un método <tt class="docutils literal"><span class="pre">postPersist</span></tt>, que se llama cuando se lanza el evento:</p>
+<p>En el ejemplo anterior, se configuró un servicio <tt class="docutils literal"><span class="pre">my.listener</span></tt> como un escucha de <em>Doctrine</em> del evento <tt class="docutils literal"><span class="pre">postPersist</span></tt>. The class behind that service must have
+a <tt class="docutils literal"><span class="pre">postPersist</span></tt> method, which will be called when the event is dispatched:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/SearchBundle/EventListener/SearchIndexer.php</span>
 <span class="k">namespace</span> <span class="nx">Acme\SearchBundle\EventListener</span><span class="p">;</span>
 
@@ -200,7 +202,65 @@ escuchas y suscriptores. Ambos son muy similares, pero los escuchas son un poco 
 </pre></div>
 </div>
 <p>En cada caso, tienes acceso a un objeto <tt class="docutils literal"><span class="pre">LifecycleEventArgs</span></tt>, el cual te da acceso tanto al objeto entidad del evento como al mismo gestor de la entidad.</p>
-<p>Una cosa importante a resaltar es que un escucha debe estar atento a <em>todas</em> las entidades en tu aplicación. Por lo tanto, si estás interesado sólo en manejar un tipo de entidad específico (por ejemplo, una entidad <tt class="docutils literal"><span class="pre">Producto</span></tt>, pero no en una entidad <tt class="docutils literal"><span class="pre">BlogPost</span></tt>), debes verificar el nombre de clase de la entidad en tu método (como se muestra arriba).</p>
+<p>Una cosa importante a resaltar es que un escucha debe estar atento a <em>todas</em> las entidades en tu aplicación. So, if you&#8217;re interested in only handling a
+specific type of entity (e.g. a <tt class="docutils literal"><span class="pre">Product</span></tt> entity but not a <tt class="docutils literal"><span class="pre">BlogPost</span></tt>
+entity), you should check for the entity&#8217;s class type in your method
+(as shown above).</p>
+</div>
+<div class="section" id="creating-the-subscriber-class">
+<h2>Creating the Subscriber Class<a class="headerlink" href="#creating-the-subscriber-class" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>A doctrine event subscriber must implement the <tt class="docutils literal"><span class="pre">Doctrine\Common\EventSubscriber</span></tt>
+interface and have an event method for each event it subscribes to:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/SearchBundle/EventListener/SearchIndexerSubscriber.php</span>
+<span class="k">namespace</span> <span class="nx">Acme\SearchBundle\EventListener</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nx">Doctrine\Common\EventSubscriber</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Doctrine\ORM\Event\LifecycleEventArgs</span><span class="p">;</span>
+<span class="c1">// for doctrine 2.4: Doctrine\Common\Persistence\Event\LifecycleEventArgs;</span>
+<span class="k">use</span> <span class="nx">Acme\StoreBundle\Entity\Product</span><span class="p">;</span>
+
+<span class="k">class</span> <span class="nc">SearchIndexerSubscriber</span> <span class="k">implements</span> <span class="nx">EventSubscriber</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getSubscribedEvents</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
+            <span class="s1">&#39;postPersist&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;postUpdate&#39;</span><span class="p">,</span>
+        <span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">postUpdate</span><span class="p">(</span><span class="nx">LifecycleEventArgs</span> <span class="nv">$args</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">index</span><span class="p">(</span><span class="nv">$args</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">postPersist</span><span class="p">(</span><span class="nx">LifecycleEventArgs</span> <span class="nv">$args</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">index</span><span class="p">(</span><span class="nv">$args</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">index</span><span class="p">(</span><span class="nx">LifecycleEventArgs</span> <span class="nv">$args</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$entity</span> <span class="o">=</span> <span class="nv">$args</span><span class="o">-&gt;</span><span class="na">getEntity</span><span class="p">();</span>
+        <span class="nv">$entityManager</span> <span class="o">=</span> <span class="nv">$args</span><span class="o">-&gt;</span><span class="na">getEntityManager</span><span class="p">();</span>
+
+        <span class="c1">// tal vez sólo quieres actuar en alguna entidad &quot;producto&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$entity</span> <span class="nx">instanceof</span> <span class="nx">Product</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// ... haz algo con el Producto</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="first admonition-title">Truco</p>
+<p class="last">Doctrine event subscribers can not return a flexible array of methods to
+call for the events like the <a class="reference internal" href="../../components/event_dispatcher/introduction.html#event-dispatcher-using-event-subscribers"><em>Symfony event subscriber</em></a>
+can. Doctrine event subscribers must return a simple array of the event
+names they subscribe to. Doctrine will then expect methods on the subscriber
+with the same name as each subscribed event, just as when using an event listener.</p>
+</div>
+<p>For a full reference, see chapter <a href="#id1"><span class="problematic" id="id2">`The Event System`_</span></a> in the Doctrine documentation.</p>
 </div>
 </div>
 
@@ -238,7 +298,7 @@ escuchas y suscriptores. Ambos son muy similares, pero los escuchas son un poco 
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Mar 19, 2013.
+      Actualizado por última vez en Apr 22, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

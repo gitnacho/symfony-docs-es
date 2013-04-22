@@ -13,9 +13,10 @@ Configurando
 ------------
 
 * `secret`_
+* `http_method_override`_
 * `ide`_
 * `test`_
-* `trust_proxy_headers`_
+* `trusted_proxies`_
 * `form`_
     * `enabled`
 * `csrf_protection`_
@@ -31,6 +32,8 @@ Configurando
     * `gc_probability`_
     * `gc_maxlifetime`_
     * `save_path`_
+* `serializer`_
+    * `enabled`_
 * `templating`_
     * `assets_base_urls`_
     * `assets_version`_
@@ -43,12 +46,29 @@ Configurando
 
 Esta es una cadena que debe ser única para tu aplicación. En la práctica, se utiliza para generar los segmentos *CSRF*, pero se podría utilizar en cualquier otro contexto donde una cadena única sea útil. Se convierte en el parámetro llamado ``kernel.secret`` del contenedor de servicios.
 
+.. _configuration-framework-http_method_override:
+
+http_method_override
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 2.3
+    The ``http_method_override`` option is new in Symfony 2.3.
+
+**tipo**: ``Boolean`` **predeterminado**: ``true``
+
+This determines whether the ``_method`` request parameter is used as the intended
+HTTP method on POST requests. If enabled, the
+:method:`Request::enableHttpMethodParameterOverride <Symfony\\Component\\HttpFoundation\\Request::enableHttpMethodParameterOverride>`
+gets called automatically. It becomes the service container parameter named
+``kernel.http_method_override``. For more information, see
+:doc:`/cookbook/routing/method_parameters`.
+
 ``ide``
 ~~~~~~~
 
 **tipo**: ``string`` **predefinido**: ``null``
 
-Si estás utilizando un *IDE* como *TextMate* o *Vim Mac*, *Symfony* puede convertir todas las rutas de archivo en un mensaje de excepción en un enlace, el cual abrirá el archivo en el *IDE*.
+Si estás utilizando un *IDE* como *TextMate* o *Vim Mac*, *Symfony* puede convertir todas las rutas de archivo de un mensaje de excepción en un enlace, el cual abrirá el archivo en el *IDE*.
 
 Si usas *TextMate* o *Vim Mac*, simplemente puedes utilizar uno de los siguientes valores integrados:
 
@@ -100,19 +120,6 @@ Configura la dirección *IP* en que se debería confiar como delegada. Para más
             'trusted_proxies' => array('192.0.0.1'),
         ));
 
-``trust_proxy_headers``
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. caution::
-
-    La opción ``trust_proxy_headers`` está depreciada y será removida en *Symfony* 2.3. Ve `trusted_proxies`_ y :doc:`/components/http_foundation/trusting_proxies` para detalles sobre cómo confiar correctamente en los datos del delegado.
-
-**tipo**: ``Boolean``
-
-Configura si las cabeceras *HTTP* (tal como ``HTTP_X_FORWARDED_FOR``, ``X_FORWARDED_PROTO`` y ``X_FORWARDED_HOST``) son de confianza como una indicación para una conexión *SSL*. De forma predeterminada, se establece a ``false``, y sólo las conexiones *SSL_HTTPS* se indican como seguras.
-
-Debes habilitar esta opción si tu aplicación está detrás de un servidor delegado inverso.
-
 .. _reference-framework-form:
 
 ``form``
@@ -127,18 +134,12 @@ Debes habilitar esta opción si tu aplicación está detrás de un servidor dele
 ``cookie_lifetime``
 ...................
 
-.. versionadded:: 2.1
-    Esta opción anteriormente era conocida como ``lifetime``
-
 **tipo**: ``integer`` **predeterminado**: ``0``
 
 Esta determina la duración de la sesión --- en segundos. De manera predeterminada se utiliza ``0``, lo cual significa que la :dfn:`cookie` es válida para la duración de la sesión del navegador.
 
 ``cookie_path``
 ...............
-
-.. versionadded:: 2.1
-    Esta opción anteriormente fue conocida como ``path``
 
 **tipo**: ``string`` **predefinido**: ``/``
 
@@ -147,18 +148,12 @@ Esto determina la ruta a poner en la galleta de sesión. De manera predeterminad
 ``cookie_domain``
 .................
 
-.. versionadded:: 2.1
-    Esta opción anteriormente era conocida como ``domain``
-
 **tipo**: ``string`` **predefinido**: ``''``
 
 Esta determina el domino a poner en la galleta de sesión. De manera predeterminada es un espacio en blanco, el cual significa el nombre del servidor que generó la galleta acorde a la especificación de la galleta.
 
 ``cookie_secure``
 .................
-
-.. versionadded:: 2.1
-    Esta opción anteriormente era conocida como ``secure``
 
 **tipo**: ``Boolean`` **predeterminado**: ``false``
 
@@ -167,13 +162,11 @@ Esta determina si las galletas sólo se deberían enviar sobre conexiones segura
 ``cookie_httponly``
 ...................
 
-.. versionadded:: 2.1
-    Esta opción anteriormente era conocida como ``httponly``
-
 **tipo**: ``Boolean`` **predeterminado**: ``false``
 
-Esta determina si las galletas sólo deben ser accesibles a través del protocolo *HTTP*.
-Lo cual significa que la galleta no será accesible por lenguajes de programación, tal como *JavaScript*. Esta opción efectivamente te puede ayudar para reducir el robo de identidad a través de ataques *XSS*.
+This determines whether cookies should only accessible through the HTTP protocol.
+This means that the cookie won't be accessible by scripting languages, such
+as JavaScript. Esta opción efectivamente te puede ayudar para reducir el robo de identidad a través de ataques *XSS*.
 
 ``gc_probability``
 ..................
@@ -210,7 +203,48 @@ Esta determina el número de segundos después de que los datos se han visto com
 
 **tipo**: ``string`` **predefinido**: ``%kernel.cache.dir%/sessions``
 
-Esta determina el argumento a pasar al salvar el manejador. Si escoges el manejador de archivos predeterminado, esta es la ruta a dónde serán creados los archivos.
+Esta determina el argumento a pasar al salvar el manejador. Si escoges el manejador de archivos predeterminado, esta es la ruta a dónde serán creados los archivos. You can
+also set this value to the ``save_path`` of your ``php.ini`` by setting the
+value to ``null``:
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        # app/config/config.yml
+        framework:
+            session:
+                save_path: null
+
+    .. code-block:: xml
+
+        <!-- app/config/config.xml -->
+        <framework:config>
+            <framework:session save-path="null" />
+        </framework:config>
+
+    .. code-block:: php
+
+        // app/config/config.php
+        $container->loadFromExtension('framework', array(
+            'session' => array(
+                'save_path' => null,
+            ),
+        ));
+
+.. _configuration-framework-serializer:
+
+serializer
+~~~~~~~~~~
+
+enabled
+.......
+
+**tipo**: ``boolean`` **default**: ``false``
+
+Whether to enable the ``serializer`` service or not in the service container.
+
+For more details, see :doc:`/cookbook/serializer`.
 
 ``templating``
 ~~~~~~~~~~~~~~
@@ -220,10 +254,15 @@ Esta determina el argumento a pasar al salvar el manejador. Si escoges el maneja
 
 **predeterminado**: ``{ http: [], ssl: [] }``
 
-Esta opción te permite definir direcciones *URL* base que se utilizarán para referirte a los recursos desde las páginas ``http`` y ``ssl`` (``https``). Puedes proporcionar un valor de cadena en vez de un arreglo de un solo elemento. Si proporcionas varias *URL* base, *Symfony2* seleccionará una de la colección cada vez que genere una ruta de activo.
+This option allows you to define base URLs to be used for assets referenced
+from ``http`` and ``ssl`` (``https``) pages. Puedes proporcionar un valor de cadena en vez de un arreglo de un solo elemento. If multiple base URLs are provided, Symfony2
+will select one from the collection each time it generates an asset's path.
 
-Para tu comodidad, puedes establecer directamente ``assets_base_urls`` con una cadena o un arreglo de cadenas, que se organizan automáticamente en colecciones de *URL* base para peticiones ``http`` y ``https``. Si una *URL* comienza con ``https://`` o
-está `relacionada al protocolo`_ (es decir empieza con ``//``) esta se debe añadir en ambas colecciones. las *URL* que empiezan con ``http://`` sólo se agregarán a la colección ``http``.
+For your convenience, ``assets_base_urls`` can be set directly with a string or
+array of strings, which will be automatically organized into collections of base
+URLs for ``http`` and ``https`` requests. Si una *URL* comienza con ``https://`` o
+está `relacionada al protocolo`_ (es decir empieza con ``//``) esta se debe añadir en ambas colecciones. URLs starting with ``http://`` will only be added to the
+``http`` collection.
 
 .. versionadded:: 2.1
     A diferencia de la mayoría de los bloques de configuración, los valores sucesivos de ``assets_base_urls`` se deben sobrescribir unos a otros en lugar de fusionarse. Este comportamiento fue elegido porque los desarrolladores típicamente definen la *URL* base para cada entorno.
@@ -312,9 +351,8 @@ Configuración predeterminada completa
     .. code-block:: yaml
 
         framework:
-            charset:              ~
             secret:               ~
-            trust_proxy_headers:  false
+            http_method_override: true
             trusted_proxies:      []
             ide:                  ~
             test:                 ~
@@ -340,7 +378,7 @@ Configuración predeterminada completa
             profiler:
                 enabled:              false
                 only_exceptions:      false
-                only_master_requests:  false
+                only_master_requests: false
                 dsn:                  file:%kernel.cache_dir%/profiler
                 username:
                 password:
@@ -352,7 +390,7 @@ Configuración predeterminada completa
                     path:                 ~ # Ejemplo: ^/ruta al recurso/
                     service:              ~
 
-            # configuración de enrutador
+            # configuración del enrutador
             router:
                 resource:             ~ # Requerido
                 type:                 ~
@@ -367,8 +405,6 @@ Configuración predeterminada completa
 
             # configuración de sesión
             session:
-                # ¡DEPRECIADO! Inicia la sesión bajo demanda
-                auto_start:           false
                 storage_id:           session.storage.native
                 handler_id:           session.handler.native_file
                 name:                 ~
@@ -382,20 +418,9 @@ Configuración predeterminada completa
                 gc_maxlifetime:       ~
                 save_path:            %kernel.cache_dir%/sessions
 
-                # ¡DEPRECIADO! Por favor usa: cookie_lifetime
-                lifetime:             ~
-
-                # ¡DEPRECIADO! Por favor usa: cookie_path
-                path:                 ~
-
-                # ¡DEPRECIADO! Por favor usa: cookie_domain
-                domain:               ~
-
-                # ¡DEPRECIADO! Por favor usa: cookie_secure
-                secure:               ~
-
-                # ¡DEPRECIADO! Por favor usa: cookie_httponly
-                httponly:             ~
+            # serializer configuration
+            serializer:
+               enabled: false
 
             # configuración de plantillas
             templating:
@@ -443,9 +468,5 @@ Configuración predeterminada completa
                 caché:                file
                 file_cache_dir:       %kernel.cache_dir%/annotations
                 debug:                %kernel.debug%
-
-
-.. versionadded:: 2.1
-    La opción ``framework.session.auto_start`` se quitó en *Symfony2.1*, ahora empieza bajo demanda.
 
 .. _`relacionada al protocolo`: http://tools.ietf.org/html/rfc3986#section-4.2

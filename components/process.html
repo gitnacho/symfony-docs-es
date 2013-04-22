@@ -26,7 +26,7 @@
     <link rel="top" title="Manual de Symfony2 en Español" href="../index.html" />
     <link rel="up" title="Componentes" href="index.html" />
     <link rel="next" title="Propiedad Access" href="property_access/index.html" />
-    <link rel="prev" title="El componente Locale" href="locale.html" /> 
+    <link rel="prev" title="The OptionsResolver Component" href="options_resolver.html" /> 
   </head>
   <body>
   <div class="imalogo">
@@ -59,7 +59,7 @@
           <a href="property_access/index.html" title="Propiedad Access"
              accesskey="N">siguiente</a> |</li>
         <li class="right" >
-          <a href="locale.html" title="El componente Locale"
+          <a href="options_resolver.html" title="The OptionsResolver Component"
              accesskey="P">anterior</a> |</li>
         <li><a href="../index.html">en Español</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Componentes</a> &raquo;</li> 
@@ -91,8 +91,9 @@
 <div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Process\Process</span><span class="p">;</span>
 
 <span class="nv">$process</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Process</span><span class="p">(</span><span class="s1">&#39;ls -lsa&#39;</span><span class="p">);</span>
-<span class="nv">$process</span><span class="o">-&gt;</span><span class="na">setTimeout</span><span class="p">(</span><span class="mi">3600</span><span class="p">);</span>
 <span class="nv">$process</span><span class="o">-&gt;</span><span class="na">run</span><span class="p">();</span>
+
+<span class="c1">// executes after the command finishes</span>
 <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nv">$process</span><span class="o">-&gt;</span><span class="na">isSuccessful</span><span class="p">())</span> <span class="p">{</span>
     <span class="k">throw</span> <span class="k">new</span> <span class="nx">\RuntimeException</span><span class="p">(</span><span class="nv">$process</span><span class="o">-&gt;</span><span class="na">getErrorOutput</span><span class="p">());</span>
 <span class="p">}</span>
@@ -100,7 +101,8 @@
 <span class="k">print</span> <span class="nv">$process</span><span class="o">-&gt;</span><span class="na">getOutput</span><span class="p">();</span>
 </pre></div>
 </div>
-<p>El método <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Process/Process:run(.html#method_ymfony\Component\Process\Process:run()" title="Symfony\Component\Process\Process:run(::ymfony\Component\Process\Process:run()()"><span class="pre">ymfony\Component\Process\Process:run()()</span></a></tt> se encarga de las sutiles diferencias entre las diferentes plataformas cuando ejecuta la orden.</p>
+<p>The component takes care of the subtle differences between the different platforms
+when executing the command.</p>
 <p class="versionadded">
 <span class="versionmodified">Nuevo en la versión 2.2: </span>Los métodos <tt class="docutils literal"><span class="pre">getIncrementalOutput()</span></tt> y <tt class="docutils literal"><span class="pre">getIncrementalErrorOutput()</span></tt> fueron añadidos en <em>Symfony 2.2</em>.</p>
 <p>El método <tt class="docutils literal"><span class="pre">getOutput()</span></tt> siempre regresa el contenido entero de la salida estándar de la orden y <tt class="docutils literal"><span class="pre">getErrorOutput()</span></tt> el contenido de la salida de error. Alternativamente, los métodos <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Process/Process.html#method_getIncrementalOutput" title="Symfony\Component\Process\Process::getIncrementalOutput()"><span class="pre">getIncrementalOutput()</span></a></tt>
@@ -110,6 +112,40 @@ y <tt class="docutils literal"><a class="reference external" href="http://api.sy
 
 <span class="nv">$process</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Process</span><span class="p">(</span><span class="s1">&#39;ls -lsa&#39;</span><span class="p">);</span>
 <span class="nv">$process</span><span class="o">-&gt;</span><span class="na">run</span><span class="p">(</span><span class="k">function</span> <span class="p">(</span><span class="nv">$type</span><span class="p">,</span> <span class="nv">$buffer</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;err&#39;</span> <span class="o">===</span> <span class="nv">$type</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">echo</span> <span class="s1">&#39;ERR &gt; &#39;</span><span class="o">.</span><span class="nv">$buffer</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="k">echo</span> <span class="s1">&#39;OUT &gt; &#39;</span><span class="o">.</span><span class="nv">$buffer</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">});</span>
+</pre></div>
+</div>
+<p class="versionadded">
+<span class="versionmodified">Nuevo en la versión 2.1: </span>The non-blocking feature was added in 2.1.</p>
+<p>You can also start the subprocess and then let it run asynchronously, retrieving
+output and the status in your main process whenever you need it. Use the
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Process/Process.html#method_start" title="Symfony\Component\Process\Process::start()"><span class="pre">start()</span></a></tt> method to start an asynchronous
+process, the <tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Process/Process.html#method_isRunning" title="Symfony\Component\Process\Process::isRunning()"><span class="pre">isRunning()</span></a></tt> method
+to check if the process is done and the
+<tt class="docutils literal"><a class="reference external" href="http://api.symfony.com/master/Symfony/Component/Process/Process.html#method_getOutput" title="Symfony\Component\Process\Process::getOutput()"><span class="pre">getOutput()</span></a></tt> method to get the output:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$process</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Process</span><span class="p">(</span><span class="s1">&#39;ls -lsa&#39;</span><span class="p">);</span>
+<span class="nv">$process</span><span class="o">-&gt;</span><span class="na">start</span><span class="p">();</span>
+
+<span class="k">while</span> <span class="p">(</span><span class="nv">$process</span><span class="o">-&gt;</span><span class="na">isRunning</span><span class="p">())</span> <span class="p">{</span>
+    <span class="c1">// waiting for process to finish</span>
+<span class="p">}</span>
+
+<span class="k">echo</span> <span class="nv">$process</span><span class="o">-&gt;</span><span class="na">getOutput</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>You can also wait for a process to end if you started it asynchronously and
+are done doing other stuff:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$process</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Process</span><span class="p">(</span><span class="s1">&#39;ls -lsa&#39;</span><span class="p">);</span>
+<span class="nv">$process</span><span class="o">-&gt;</span><span class="na">start</span><span class="p">();</span>
+
+<span class="c1">// ... do other things</span>
+
+<span class="nv">$process</span><span class="o">-&gt;</span><span class="na">wait</span><span class="p">(</span><span class="k">function</span> <span class="p">(</span><span class="nv">$type</span><span class="p">,</span> <span class="nv">$buffer</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;err&#39;</span> <span class="o">===</span> <span class="nv">$type</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">echo</span> <span class="s1">&#39;ERR &gt; &#39;</span><span class="o">.</span><span class="nv">$buffer</span><span class="p">;</span>
     <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
@@ -129,12 +165,41 @@ y <tt class="docutils literal"><a class="reference external" href="http://api.sy
 </pre></div>
 </div>
 <p class="versionadded">
-<span class="versionmodified">Nuevo en la versión 2.1: </span>La clase <tt class="docutils literal"><span class="pre">ProcessBuilder</span></tt> existe desde 2.1.</p>
+<span class="versionmodified">Nuevo en la versión 2.1: </span>The <tt class="docutils literal"><span class="pre">ProcessBuilder</span></tt> class was added in Symfony 2.1.</p>
 <p>Para hacer que tu código trabaje mejor en todas las plataformas, posiblemente en su lugar quieras usar la clase <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\Process\ProcessBuilder</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Process\ProcessBuilder</span><span class="p">;</span>
 
 <span class="nv">$builder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ProcessBuilder</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;ls&#39;</span><span class="p">,</span> <span class="s1">&#39;-lsa&#39;</span><span class="p">));</span>
 <span class="nv">$builder</span><span class="o">-&gt;</span><span class="na">getProcess</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">run</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="process-timeout">
+<h2>Process Timeout<a class="headerlink" href="#process-timeout" title="Enlazar permanentemente con este título">¶</a></h2>
+<p>You can limit the amount of time a process takes to complete by setting a
+timeout (in seconds):</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\Process\Process</span><span class="p">;</span>
+
+<span class="nv">$process</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Process</span><span class="p">(</span><span class="s1">&#39;ls -lsa&#39;</span><span class="p">);</span>
+<span class="nv">$process</span><span class="o">-&gt;</span><span class="na">setTimeout</span><span class="p">(</span><span class="mi">3600</span><span class="p">);</span>
+<span class="nv">$process</span><span class="o">-&gt;</span><span class="na">run</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>If the timeout is reached, a
+<tt class="xref php php-class docutils literal"><span class="pre">Symfony\Process\Exception\RuntimeException</span></tt> is thrown.</p>
+<p>For long running commands, it is your responsibility to perform the timeout
+check regularly:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="nv">$process</span><span class="o">-&gt;</span><span class="na">setTimeout</span><span class="p">(</span><span class="mi">3600</span><span class="p">);</span>
+<span class="nv">$process</span><span class="o">-&gt;</span><span class="na">start</span><span class="p">();</span>
+
+<span class="k">while</span> <span class="p">(</span><span class="nv">$condition</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+
+    <span class="c1">// check if the timeout is reached</span>
+    <span class="nv">$process</span><span class="o">-&gt;</span><span class="na">checkTimeout</span><span class="p">();</span>
+
+    <span class="nb">usleep</span><span class="p">(</span><span class="mi">200000</span><span class="p">);</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -159,7 +224,7 @@ y <tt class="docutils literal"><a class="reference external" href="http://api.sy
           <a href="property_access/index.html" title="Propiedad Access"
              >siguiente</a> |</li>
         <li class="right" >
-          <a href="locale.html" title="El componente Locale"
+          <a href="options_resolver.html" title="The OptionsResolver Component"
              >anterior</a> |</li>
         <li><a href="../index.html">en Español</a> &raquo;</li>
           <li><a href="index.html" >Componentes</a> &raquo;</li> 
@@ -173,7 +238,7 @@ y <tt class="docutils literal"><a class="reference external" href="http://api.sy
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Mar 19, 2013.
+      Actualizado por última vez en Apr 22, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

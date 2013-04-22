@@ -166,7 +166,39 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>A continuación, crea esta propiedad en tu clase <tt class="docutils literal"><span class="pre">Documento</span></tt> y añade algunas reglas de validación:</p>
+<p>A continuación, crea esta propiedad en tu clase <tt class="docutils literal"><span class="pre">Documento</span></tt> y agrega algunas reglas de validación:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\HttpFoundation\File\UploadedFile</span><span class="p">;</span>
+
+<span class="c1">// ...</span>
+<span class="k">class</span> <span class="nc">Document</span>
+<span class="p">{</span>
+    <span class="sd">/**</span>
+<span class="sd">     * @Assert\File(maxSize=&quot;6000000&quot;)</span>
+<span class="sd">     */</span>
+    <span class="k">private</span> <span class="nv">$file</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * Sets file.</span>
+<span class="sd">     *</span>
+<span class="sd">     * @param UploadedFile $file</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setFile</span><span class="p">(</span><span class="nx">UploadedFile</span> <span class="nv">$file</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span> <span class="o">=</span> <span class="nv">$file</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * Get file.</span>
+<span class="sd">     *</span>
+<span class="sd">     * @return UploadedFile</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">getFile</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 <div class="configuration-block">
 <ul class="simple">
 <li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/DemoBundle/Resources/config/validation.yml</span>
@@ -189,7 +221,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
     <span class="sd">/**</span>
 <span class="sd">     * @Assert\File(maxSize=&quot;6000000&quot;)</span>
 <span class="sd">     */</span>
-    <span class="k">public</span> <span class="nv">$file</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$file</span><span class="p">;</span>
 
     <span class="c1">// ...</span>
 <span class="p">}</span>
@@ -313,23 +345,23 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <p>El método <tt class="docutils literal"><span class="pre">upload()</span></tt> tomará ventaja del objeto <tt class="xref php php-class docutils literal"><span class="pre">Symfony\Component\HttpFoundation\File\UploadedFile</span></tt>, el cual es lo que devuelve después de que se presenta un campo <tt class="docutils literal"><span class="pre">file</span></tt>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">public</span> <span class="k">function</span> <span class="nf">upload</span><span class="p">()</span>
 <span class="p">{</span>
-    <span class="c1">// la propiedad file puede estar vacía si el campo no es obligatorio</span>
-    <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// the file property can be empty if the field is not required</span>
+    <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">())</span> <span class="p">{</span>
         <span class="k">return</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="c1">// aquí usa el nombre de archivo original pero lo debes</span>
     <span class="c1">// sanear al menos para evitar cualquier problema de seguridad</span>
 
-    <span class="c1">// lo mueve tomando el directorio destino y luego</span>
-    <span class="c1">// el nombre de archivo al cual moverlo</span>
-    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">move</span><span class="p">(</span>
+    <span class="c1">// move takes the target directory and then the</span>
+    <span class="c1">// target filename to move to</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">move</span><span class="p">(</span>
         <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">(),</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">getClientOriginalName</span><span class="p">()</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getClientOriginalName</span><span class="p">()</span>
     <span class="p">);</span>
 
-    <span class="c1">// configura la propiedad &#39;path&#39; al nombre de archivo en que lo guardaste</span>
-    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">getClientOriginalName</span><span class="p">()</span>
+    <span class="c1">// set the path property to the filename where you&#39;ve saved the file</span>
+    <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">getClientOriginalName</span><span class="p">();</span>
 
     <span class="c1">// limpia la propiedad «file» ya que no la necesitas más</span>
     <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
@@ -360,16 +392,36 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="sd"> */</span>
 <span class="k">class</span> <span class="nc">Document</span>
 <span class="p">{</span>
+    <span class="k">private</span> <span class="nv">$temp</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * Sets file.</span>
+<span class="sd">     *</span>
+<span class="sd">     * @param UploadedFile $file</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setFile</span><span class="p">(</span><span class="nx">UploadedFile</span> <span class="nv">$file</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span> <span class="o">=</span> <span class="nv">$file</span><span class="p">;</span>
+        <span class="c1">// check if we have an old image path</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">))</span> <span class="p">{</span>
+            <span class="c1">// store the old name to delete after the update</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">;</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="s1">&#39;initial&#39;</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
     <span class="sd">/**</span>
 <span class="sd">     * @ORM\PrePersist()</span>
 <span class="sd">     * @ORM\PreUpdate()</span>
 <span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">preUpload</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">!==</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">!==</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">())</span> <span class="p">{</span>
             <span class="c1">// haz lo que quieras para generar un nombre único</span>
             <span class="nv">$filename</span> <span class="o">=</span> <span class="nb">sha1</span><span class="p">(</span><span class="nb">uniqid</span><span class="p">(</span><span class="nb">mt_rand</span><span class="p">(),</span> <span class="k">true</span><span class="p">));</span>
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="nv">$filename</span><span class="o">.</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">guessExtension</span><span class="p">();</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="nv">$filename</span><span class="o">.</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">guessExtension</span><span class="p">();</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -379,16 +431,23 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">upload</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">())</span> <span class="p">{</span>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
         <span class="c1">// si hay un error al mover el archivo, move() automáticamente</span>
-        <span class="c1">// envía una excepción. Esta impedirá que la entidad se persista</span>
-        <span class="c1">// en la base de datos en caso de error</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">move</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">(),</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">);</span>
+        <span class="c1">// envía una excepción. This will properly prevent</span>
+        <span class="c1">// the entity from being persisted to the database on error</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">move</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">(),</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">);</span>
 
-        <span class="nb">unset</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">);</span>
+        <span class="c1">// check if we have an old image</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span><span class="p">))</span> <span class="p">{</span>
+            <span class="c1">// delete the old image</span>
+            <span class="nb">unlink</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">()</span><span class="o">.</span><span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span><span class="p">);</span>
+            <span class="c1">// clear the temp image path</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
     <span class="p">}</span>
 
     <span class="sd">/**</span>
@@ -435,8 +494,24 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="sd"> */</span>
 <span class="k">class</span> <span class="nc">Document</span>
 <span class="p">{</span>
-    <span class="c1">// una propiedad usada temporalmente al eliminar</span>
-    <span class="k">private</span> <span class="nv">$filenameForRemove</span><span class="p">;</span>
+    <span class="k">private</span> <span class="nv">$temp</span><span class="p">;</span>
+
+    <span class="sd">/**</span>
+<span class="sd">     * Sets file.</span>
+<span class="sd">     *</span>
+<span class="sd">     * @param UploadedFile $file</span>
+<span class="sd">     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">setFile</span><span class="p">(</span><span class="nx">UploadedFile</span> <span class="nv">$file</span> <span class="o">=</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span> <span class="o">=</span> <span class="nv">$file</span><span class="p">;</span>
+        <span class="c1">// check if we have an old image path</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">is_file</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getAbsolutePath</span><span class="p">()))</span> <span class="p">{</span>
+            <span class="c1">// store the old name to delete after the update</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getAbsolutePath</span><span class="p">();</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="s1">&#39;initial&#39;</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
 
     <span class="sd">/**</span>
 <span class="sd">     * @ORM\PrePersist()</span>
@@ -444,8 +519,8 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">preUpload</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">!==</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">guessExtension</span><span class="p">();</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">!==</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">())</span> <span class="p">{</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">path</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">guessExtension</span><span class="p">();</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -455,19 +530,27 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">upload</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="k">null</span> <span class="o">===</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">())</span> <span class="p">{</span>
             <span class="k">return</span><span class="p">;</span>
         <span class="p">}</span>
 
-        <span class="c1">// aquí debes lanzar una excepción si el archivo no se puede mover</span>
-        <span class="c1">// para que la entidad no se persista en la base de datos</span>
-        <span class="c1">// lo cual hace el método move() del archivo subido</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">move</span><span class="p">(</span>
+        <span class="c1">// check if we have an old image</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span><span class="p">))</span> <span class="p">{</span>
+            <span class="c1">// delete the old image</span>
+            <span class="nb">unlink</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span><span class="p">);</span>
+            <span class="c1">// clear the temp image path</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span> <span class="o">=</span> <span class="k">null</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c1">// you must throw an exception here if the file cannot be moved</span>
+        <span class="c1">// so that the entity is not persisted to the database</span>
+        <span class="c1">// which the UploadedFile move() method does</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">move</span><span class="p">(</span>
             <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getUploadRootDir</span><span class="p">(),</span>
-            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="o">.</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="o">-&gt;</span><span class="na">guessExtension</span><span class="p">()</span>
+            <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">id</span><span class="o">.</span><span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getFile</span><span class="p">()</span><span class="o">-&gt;</span><span class="na">guessExtension</span><span class="p">()</span>
         <span class="p">);</span>
 
-        <span class="nb">unset</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">file</span><span class="p">);</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">setFile</span><span class="p">(</span><span class="k">null</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="sd">/**</span>
@@ -475,7 +558,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">storeFilenameForRemove</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">filenameForRemove</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getAbsolutePath</span><span class="p">();</span>
+        <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">getAbsolutePath</span><span class="p">();</span>
     <span class="p">}</span>
 
     <span class="sd">/**</span>
@@ -483,8 +566,8 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
 <span class="sd">     */</span>
     <span class="k">public</span> <span class="k">function</span> <span class="nf">removeUpload</span><span class="p">()</span>
     <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">filenameForRemove</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nb">unlink</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">filenameForRemove</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nb">unlink</span><span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="na">temp</span><span class="p">);</span>
         <span class="p">}</span>
     <span class="p">}</span>
 
@@ -535,7 +618,7 @@ Por ejemplo, si estás construyendo tu formulario directamente en un controlador
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Mar 19, 2013.
+      Actualizado por última vez en Apr 22, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

@@ -11,10 +11,17 @@ La creación de una extensión también hace una mejor separación del código q
 
 .. tip::
 
-    Antes de escribir tus propias extensiones, echa un vistazo al `Repositorio oficial de extensiones Twig`_:
+    Before writing your own extensions, have a look at the
+    `Twig official extension repository`_.
 
 Creando la clase de la extensión
 --------------------------------
+
+.. note::
+
+    This cookbook describes how to write a custom Twig extension as of
+    Twig 1.12. If you are using an older version, please read
+    `Twig extensions documentation legacy`_.
 
 Para obtener la funcionalidad personalizada primero debes crear la clase para la extensión *Twig*.
 Como ejemplo vas a crear un filtro para dar formato a un precio suministrando un número en el precio::
@@ -27,14 +34,14 @@ Como ejemplo vas a crear un filtro para dar formato a un precio suministrando un
         public function getFilters()
         {
             return array(
-                'price' => new \Twig_Filter_Method($this, 'priceFilter'),
+                new \Twig_SimpleFilter('price', array($this, 'priceFilter')),
             );
         }
 
         public function priceFilter($number, $decimals = 0, $decPoint = '.', $thousandsSep = ',')
         {
             $price = number_format($number, $decimals, $decPoint, $thousandsSep);
-            $price = '$' . $price;
+            $price = '$'.$price;
 
             return $price;
         }
@@ -47,23 +54,15 @@ Como ejemplo vas a crear un filtro para dar formato a un precio suministrando un
 
 .. tip::
 
-    Junto con los filtros personalizados, también puedes añadir `funciones`_ personalizadas y registrar `variables globales`_.
+    Along with custom filters, you can also add custom `functions` and register
+    `global variables`.
 
 Registrando una extensión como servicio
 ---------------------------------------
 
-Ahora, debes permitir que el contenedor de servicios conozca la existencia de la nueva extensión *Twig*:
+Now you must let the Service Container know about your newly created Twig Extension:
 
 .. configuration-block::
-
-    .. code-block:: xml
-
-        <!-- src/Acme/DemoBundle/Resources/config/services.xml -->
-            <services>
-            <service id="acme.twig.acme_extension" class="Acme\DemoBundle\Twig\AcmeExtension">
-                <tag name="twig.extension" />
-            </service>
-            </services>
 
     .. code-block:: yaml
 
@@ -74,14 +73,23 @@ Ahora, debes permitir que el contenedor de servicios conozca la existencia de la
                 tags:
                         - { name: twig.extension }
 
+    .. code-block:: xml
+
+        <!-- src/Acme/DemoBundle/Resources/config/services.xml -->
+            <services>
+            <service id="acme.twig.acme_extension" class="Acme\DemoBundle\Twig\AcmeExtension">
+                <tag name="twig.extension" />
+            </service>
+            </services>
+
     .. code-block:: php
 
         // src/Acme/DemoBundle/Resources/config/services.php
         use Symfony\Component\DependencyInjection\Definition;
 
-        $acmeDefinition = new Definition('\Acme\DemoBundle\Twig\AcmeExtension');
-        $acmeDefinition->addTag('twig.extension');
-        $container->setDefinition('acme.twig.acme_extension', $acmeDefinition);
+        $container
+            ->register('acme.twig.acme_extension', '\Acme\DemoBundle\Twig\AcmeExtension')
+            ->addTag('twig.extension');
 
 .. note::
 
@@ -108,9 +116,11 @@ Pasando otros argumentos a tu filtro:
 Aprendiendo más
 ---------------
 
-Para un análisis más detallado échale un vistazo a las extensiones *Twig*, por favor, ve la `documentación de las extensiones Twig`_.
+For a more in-depth look into Twig Extensions, please take a look at the
+`Twig extensions documentation`_.
 
 .. _`Repositorio oficial de extensiones Twig`: https://github.com/fabpot/Twig-extensions
 .. _`documentación de las extensiones Twig`: http://gitnacho.github.com/Twig/advanced.html#creando-una-extension
 .. _`variables globales`: http://gitnacho.github.com/Twig/advanced.html#id1
-.. _`funciones`: http://gitnacho.github.com/Twig/advanced.html#id2
+.. _`funciones`: http://twig.sensiolabs.org/doc/advanced.html#id2
+.. _`Twig extensions documentation legacy`: http://twig.sensiolabs.org/doc/advanced_legacy.html#creating-an-extension

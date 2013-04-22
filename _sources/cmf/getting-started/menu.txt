@@ -1,3 +1,6 @@
+.. index::
+    single: Menu, SymfonyCmfMenuBundle
+
 Menú
 ====
 
@@ -12,7 +15,9 @@ El sistema de menús del ``CMS`` de *Symfony*
 
 La *EE* del ``CMF`` de *Symfony* incluye el ``MenuBundle``, una herramienta que te permite definir tus menús dinámicamente. It extends `KnpMenuBundle <https://github.com/knplabs/KnpMenuBundle>`_,
 with a set of hierarchical, multi language menu elements, along with the tools
-to load and store them from/to a database. También incluye las definiciones de la interfaz de administración y servicios relacionados necesarios para integrarlo con el `SonataDoctrinePHPCRAdminBundle <https://github.com/sonata-project/SonataDoctrinePhpcrAdminBundle>`_.
+to load and store them from/to a database. It also includes the administration
+panel definitions and related services needed for integration with
+`SonataDoctrinePhpcrAdminBundle <https://github.com/sonata-project/SonataDoctrinePhpcrAdminBundle>`_
 
 .. note::
 
@@ -25,19 +30,52 @@ Usando
 
 De manera predeterminada el ``MenuBundle`` usa los reproductores y ayudantes del ``KnpMenuBundle`` para imprimir tus menús. Puedes consultar la `página de documentación respectiva <https://github.com/KnpLabs/KnpMenuBundle/blob/master/Resources/doc/index.md#rendering-menus>`_ para más información sobre el tema, pero una llamada básica sería:
 
-.. code-block:: jinja
+.. configuration-block::
 
-    {{ knp_menu_render('simple') }}
+    .. code-block:: jinja
+
+        {{ knp_menu_render('simple') }}
+
+    .. code-block:: php
+
+        <?php echo $view['knp_menu']->render('simple') ?>
 
 El nombre del menú proporcionado será pasado a la implementación de la ``MenuProviderInterface``, la cual lo utilizará para identificar qué menú quieres dibujar en esa sección específica.
-
 
 El proveedor
 ~~~~~~~~~~~~
 
-El núcleo del ``MenuBundle`` es ``PHPCRMenuProvider``, una implementación de la ``MenuProviderInterface`` que es responsable de cargar menús dinámicamente desde una base de datos *PHPCR*. It does so based on the menu root's ``path`` value, by combining
-a preconfigured ``basepath`` value with a ``name`` given by the developer
-when instantiating the menu rendering call. Esto permite al ``PHPCRMenuProvider`` manejar varias jerarquías del menú utilizando un sólo mecanismo de almacenamiento.
+El núcleo del ``MenuBundle`` es ``PHPCRMenuProvider``, una implementación de la ``MenuProviderInterface`` que es responsable de cargar menús dinámicamente desde una base de datos *PHPCR*. The default provider service is configured with a ``menu_basepath`` to
+know where in the PHPCR tree it will find menus. The menu ``name`` is given when
+rendering the menu and must be a direct child of the menu base path. This allows the
+``PHPCRMenuProvider`` to handle several menu hierarchies using a single
+storage mechanism.
+
+To give a concrete example, if we have the configuration as given below and render the
+menu ``simple``, the menu root node must be stored at ``/cms/menu/simple``.
+
+.. configuration-block::
+
+    .. code-block:: yaml
+
+        symfony_cmf_menu:
+            menu_basepath: /cms/menu
+
+    .. code-block:: xml
+
+        <symfony-cmf-menu:config>
+            <symfony-cmf-menu:menu-basepath>/cms/menu</symfony-cmf-menu:menu-basepath>
+        </symfony-cmf-menu:config>
+
+    .. code-block:: php
+
+        $container->loadFromExtension('symfony_cmf_menu', array(
+            'menu_basepath' => '/cms/menu',
+        ));
+
+If you need multiple menu roots, you can create further PHPCRMenuProvider instances
+and register them with KnpMenu - see the CMF MenuBundle DependencyInjection code
+for the details.
 
 El elemento del menú recuperado usando este proceso se utiliza como el nodo raíz del menú, y sus hijos serán cargados progresivamente conforme el ``MenuFactory`` vaya dibujando la estructura del menú completo.
 
@@ -46,18 +84,19 @@ La factoría
 ~~~~~~~~~~~
 
 The ``ContentAwareFactory`` is a ``FactoryInterface`` implementation, which
-generates the full ``MenuNode`` hierarchy from the provided data. Los datos generados de este modo se utilizan más tarde para generar la representación *HTML* real del menú. 
+generates the full ``MenuItem`` hierarchy from the provided MenuNode. Los datos generados de este modo se utilizan más tarde para generar la representación *HTML* real del menú.
 
-The included implementation focuses on generating ``MenuNode`` instances
-from ``NodeInterface`` instances, as it is the best approach to handle tree-like
-structures like the ones typically used by CMS. Otros planteamientos están implementados en la extensión de clases, y sus respectivas páginas de documentación se pueden encontrar en la página del `KnpMenuBundle`_.
+La implementación incluida se enfoca en generar instancias de ``MenuItem`` a partir de instancias de ``NodeInterface``, puesto que esa es la mejor aproximación para manejar estructuras estilo árbol como las utilizadas típicamente por los *CMS*. Other approaches are implemented
+in the base classes, and their respective documentation pages can be found
+in `KnpMenuBundle`_'s page.
 
-``ContentAwareFactory`` is responsible for getting the full menu hierarchy
-and rendering the respective ``MenuNode`` instances from the root node it
+``ContentAwareFactory`` is responsible for loading the full menu hierarchy
+and transforming the ``MenuNode`` instances from the root node it
 receives from the ``MenuProviderInterface`` implementation. También es responsable de determinar cuál elemento del menú (si lo hay) está viendo el usuario actualmente. ``KnpMenu`` ya incluye una factoría específica apuntada en el componente de enrutado de *Symfony2*, la cual extiende este paquete, para añadir el soporte necesario para:
 
-- Almacenar instancias de ``Ruta`` en la base de datos (consulta la sección de :ref:`paquetes y proveedores de enrutado <routing-getting-route-object>` para más detalles sobre esto)
-- Instancias de ``Ruta`` con contenido asociado (más sobre esto en la respectiva sección del  :ref:`RoutingBundle <routing-linking-a-route-with-a-model-instance>`)
+- Databased stored ``Route`` instances (refer to :ref:`RoutingBundle's RouteProvider <start-routing-getting-route-object>` for more details
+  on this)
+- ``Route`` instances with associated content (more on this on respective :ref:`RoutingBundle's section <start-routing-linking-a-route-with-a-model-instance>`)
 
 Como se mencionó antes, la ``ContentAwareFactory`` es responsable de cargar todos los nodos del menú a partir del elemento raíz proporcionado. Los nodos cargados realmente pueden ser de cualquier clase, incluso si son diferentes de la clase del nodo raíz, pero todos tienen que implementar la ``NodeInterface`` para poder incluirlos en el menú generado.
 
@@ -76,29 +115,26 @@ También especifica la estrategia utilizada para almacenar múltiples traduccion
 
 .. configuration-block::
 
-    .. code-block:: php
+    .. code-block:: php-annotations
 
        /**
-       * @PHPCRODM\Document(translator="attribute")
-       */
+        * @PHPCRODM\Document(translator="attribute")
+        */
 
 For information on the available translation strategies, refer to the Doctrine
 page regarding `Multi language support in PHPCR-ODM <http://docs.doctrine-project.org/projects/doctrine-phpcr-odm/en/latest/reference/multilang.html>`_
 
-.. note::
 
-    The ``MenuNode`` and ``MultilangMenuNode`` content types exist to preserve
-    backwards compatibility with previous versions of the bundle, but they
-    simply extend their Node counterparts. Estas clases están depreciadas, y serán removidas en una versión posterior.
-
-Soporte para la administración
-------------------------------
+Admin Support
+-------------
 
 ``MenuBundle`` also includes the administration panels and respective services
-needed for integration with `SonataDoctrinePHPCRAdminBundle <https://github.com/sonata-project/SonataDoctrinePhpcrAdminBundle>`_,
-a back office generation tool that can be installed with Symfony CMF. Para más información sobre esta, por favor consulta la sección de documentación del `paquete <https://github.com/sonata-project/SonataDoctrinePhpcrAdminBundle/tree/master/Resources/doc>`_.
+needed for integration with the backend admin tool :doc:`SonataDoctrinePhpcrAdminBundle <../bundles/doctrine_phpcr_admin>`
 
-Las interfaces de administración incluidas serán cargadas automáticamente si instalas el ``SonataDoctrinePHPCRAdminBundle`` (consulta :doc:`../tutorials/creating-cms-using-cmf-and-sonata` para instrucciones sobre cómo hacerlo).
+The included administration panels will automatically available but need to be
+explicitly put on the dashboard if you want to use them. See :doc:`../tutorials/creating-cms-using-cmf-and-sonata`
+for instructions on how to install SonataDoctrinePhpcrAdminBundle.
+
 
 Configurando
 ------------
@@ -106,11 +142,11 @@ Configurando
 Este paquete se configura usando un conjunto de parámetros, pero todos ellos son opcionales. You can go to the :doc:`../bundles/menu` reference page for the
 full configuration options list and additional information.
 
-Notas adicionales
------------------
+Further Notes
+-------------
 
 Para más información sobre el ``MenuBundle`` del ``CMF`` de *Symfony*, por favor consulta:
 
 - :doc:`../bundles/menu` for advanced details and configuration reference
-- `KnpMenuBundle`_ page for information on the bundle on which ``MenuBundle`` relies 
+- `KnpMenuBundle`_ page for information on the bundle on which ``MenuBundle`` relies
 - `KnpMenu <https://github.com/knplabs/KnpMenu>`_ page for information on the underlying library used by ``KnpMenuBundle``

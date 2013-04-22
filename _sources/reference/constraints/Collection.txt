@@ -147,6 +147,73 @@ De manera predeterminada, esta restricción valida más que simplemente si o no 
 
 Si deseas permitir que las claves de la colección estén ausentes o si quisieras permitir claves «extra» en la colección, puedes modificar las opciones `allowMissingFields`_ y `allowExtraFields`_, respectivamente. En el ejemplo anterior, la opción ``allowMissingFields`` se fijó en ``true``, lo cual significa que si cualquiera de las propiedades ``personal_email`` o ``short_bio`` no estuviera en ``$personalData``, no ocurrirá ningún error de validación.
 
+.. versionadded:: 2.1
+    The ``Required`` and ``Optional`` constraints are new to Symfony 2.1.
+
+Required and Optional Field Constraints
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Constraints for fields within a collection can be wrapped in the ``Required`` or
+``Optional`` constraint to control whether they should always be applied (``Required``)
+or only applied when the field is present (``Optional``).
+
+For instance, if you want to require that the ``personal_email`` field of the
+``profileData`` array is not blank and is a valid email but the ``alternate_email``
+field is optional but must be a valid email if supplied, you can do the following:
+
+.. configuration-block::
+
+    .. code-block:: php-annotations
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        namespace Acme\BlogBundle\Entity;
+
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            /**
+             * @Assert\Collection(
+             *     fields={
+             *         "personal_email"  = @Assert\Collection\Required({@Assert\NotBlank, @Assert\Email}),
+             *         "alternate_email" = @Assert\Collection\Optional({@Assert\Email}),
+             *     }
+             * )
+             */
+             protected $profileData = array(
+                 'personal_email',
+             );
+        }
+
+    .. code-block:: php
+
+        // src/Acme/BlogBundle/Entity/Author.php
+        namespace Acme\BlogBundle\Entity;
+
+        use Symfony\Component\Validator\Mapping\ClassMetadata;
+        use Symfony\Component\Validator\Constraints as Assert;
+
+        class Autor
+        {
+            protected $profileData = array('personal_email');
+
+            public static function loadValidatorMetadata(ClassMetadata $metadata)
+            {
+                $metadata->addPropertyConstraint('profileData', new Assert\Collection(array(
+                    'fields' => array(
+                        'personal_email'  => new Assert\Collection\Required(array(new Assert\NotBlank(), new Assert\Email())),
+                        'alternate_email' => new Assert\Collection\Optional(array(new Assert\Email())),
+                    ),
+                )));
+            }
+        }
+
+Even without ``allowMissingFields`` set to true, you can now omit the ``alternate_email``
+property completely from the ``profileData`` array, since it is ``Optional``.
+However, if the the ``personal_email`` field does not exist in the array,
+the ``NotBlank`` constraint will still be applied (since it is wrapped in
+``Required``) and you will receive a constraint violation.
+
 Opciones
 --------
 

@@ -1,0 +1,103 @@
+.. index::
+    single: Console; Eventos
+
+Usando eventos
+==============
+
+.. versionadded:: 2.3
+    Los eventos de consola se añadieron en *Symfony 2.3*.
+
+La clase ``Application`` del componente ``Console`` te permite engancharla opcionalmente al ciclo de vida de una aplicación de consola a través de eventos. En vez de reinventar la rueda, esta utiliza el componente ``EventDispatcher`` de *Symfony* para hacer el trabajo::
+
+    use Symfony\Component\Console\Application;
+    use Symfony\Component\EventDispatcher\EventDispatcher;
+
+    $application = new Application();
+    $application->setDispatcher($dispatcher);
+    $application->run();
+
+El evento ``ConsoleEvents::COMMAND``
+------------------------------------
+
+**Propósito típico**: Hacer algo antes de ejecutar cualquier orden (tal como registrar qué orden se va a ejecutar), o mostrar algo sobre el evento a ejecutar.
+
+Justo antes de ejecutar cualquier orden, se despacha el evento ``ConsoleEvents::COMMAND``. Lo escuchas reciben un evento :class:`Symfony\\Component\\Console\\Event\\ConsoleCommandEvent`::
+
+    use Symfony\Component\Console\Event\ConsoleCommandEvent;
+    use Symfony\Component\Console\ConsoleEvents;
+
+    $dispatcher->addListener(ConsoleEvents::COMMAND, function (ConsoleCommandEvent $event) {
+        // consigue la instancia de entrada
+        $input = $event->getInput();
+
+        // consigue la instancia de salida
+        $output = $event->getOutput();
+
+        // consigue la orden a ejecutar
+        $command = $event->getCommand();
+
+        // escribe algo sobre la orden
+        $output->writeln(sprintf('Before running command <info>%s</info>', $command->getName()));
+
+        // consigue la aplicación
+        $application = $command->getApplication();
+    });
+
+El evento ``ConsoleEvents::TERMINATE``
+--------------------------------------
+
+**Propósito típico**: Para realizar alguna limpieza en las acciones después de ejecutar la orden.
+
+Después de ejecutar la orden, se despacha el evento``ConsoleEvents::TERMINATE``. Este se puede se puede usar para hacer cualquier acción que se deba ejecutar para todas las 
+órdenes o para limpiar lo que iniciaste en un escucha de ``ConsoleEvents::COMMAND`` (como enviar registros, cerrar una conexión de base de datos, enviar correos electrónicos, ...). Un escucha también podría cambiar el código de salida.
+
+Los escuchas reciben un evento :class:`Symfony\\Component\\Console\\Event\\ConsoleTerminateEvent`::
+
+    use Symfony\Component\Console\Event\ConsoleTerminateEvent;
+    use Symfony\Component\Console\ConsoleEvents;
+
+    $dispatcher->addListener(ConsoleEvents::TERMINATE, function (ConsoleTerminateEvent $event) {
+        // consigue la salida
+        $output = $event->getOutput();
+
+        // consigue la orden que se ha ejecutado
+        $command = $event->getCommand();
+
+        // muestra algo
+        $output->writeln(sprintf('After running command <info>%s</info>', $command->getName()));
+
+        // cambia el código de salida
+        $event->setExitCode(128);
+    });
+
+.. tip::
+
+    Este evento también se despacha cuando la orden lanza una excepción.
+    Este entonces se despacha justo antes del evento ``ConsoleEvents::EXCEPTION``.
+    El código de salida recibido en este caso es el código de la excepción.
+
+El evento ``ConsoleEvents::EXCEPTION``
+--------------------------------------
+
+**Propósito típico**: manejar excepciones lanzadas durante la ejecución de una orden.
+
+Siempre que una orden lanza una excepción, se lanza el evento ``ConsoleEvents::EXCEPTION``. Un escucha puede envolver o cambiar la excepción o hacer cualquier cosa útil antes de que la aplicación lance la excepción.
+
+Los escuchas reciben un evento :class:`Symfony\\Component\\Console\\Event\\ConsoleForExceptionEvent`::
+
+    use Symfony\Component\Console\Event\ConsoleForExceptionEvent;
+    use Symfony\Component\Console\ConsoleEvents;
+
+    $dispatcher->addListener(ConsoleEvents::EXCEPTION, function (ConsoleForExceptionEvent $event) {
+        $output = $event->getOutput();
+
+        $output->writeln(sprintf('Oops, exception thrown while running command <info>%s</info>', $command->getName()));
+
+        // consigue el código de salida actual (el código de la excepción
+        // o el código de salida establecido por el evento
+        // ConsoleEvents::TERMINATE)
+        $exitCode = $event->getExitCode();
+
+        // cambia la excepción por otra
+        $event->setException(new \LogicException('Caught exception', $exitCode, $event->getException()));
+    });

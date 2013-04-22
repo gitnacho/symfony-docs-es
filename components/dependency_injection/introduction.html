@@ -207,7 +207,6 @@ Aún así, si quieres entonces el contenedor puede llamar al método definidor:<
 </div>
 <p>A continuación, puedes obtener tu servicio <tt class="docutils literal"><span class="pre">newsletter_manager</span></tt> desde el contenedor de esta manera:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
-<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Reference</span><span class="p">;</span>
 
 <span class="nv">$container</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
 
@@ -225,7 +224,13 @@ Podríamos haber inyectado el contenedor y recuperar el servicio <tt class="docu
 </div>
 <div class="section" id="configurando-el-contenedor-con-archivos-de-configuracion">
 <span id="components-dependency-injection-loading-config"></span><h2>Configurando el contenedor con archivos de configuración<a class="headerlink" href="#configurando-el-contenedor-con-archivos-de-configuracion" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Así como la creación de los servicios utilizando <em>PHP</em> &#8212;como arriba&#8212; también puedes utilizar archivos de configuración. Para ello además, necesitas instalar el <a class="reference internal" href="../config/introduction.html"><em>componente Config</em></a>.</p>
+<p>As well as setting up the services using PHP as above you can also use
+configuration files. This allows you to use XML or Yaml to write the definitions
+for the services rather than using PHP to define the services as in the above
+examples. In anything but the smallest applications it make sense to organize
+the service definitions by moving them into one or more configuration files.
+To do this you also need to install
+<a class="reference internal" href="../config/introduction.html"><em>the Config Component</em></a>.</p>
 <p>Cargando un archivo de configuración <em>XML</em>:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\Config\FileLocator</span><span class="p">;</span>
@@ -250,26 +255,37 @@ Podríamos haber inyectado el contenedor y recuperar el servicio <tt class="docu
 <p class="first admonition-title">Nota</p>
 <p class="last">Si  quieres cargar archivos de configuración <em>YAML</em> entonces también necesitarás instalar el <a class="reference internal" href="../yaml/introduction.html"><em>componente YAML</em></a>.</p>
 </div>
-<p>Puedes configurar los servicios <tt class="docutils literal"><span class="pre">newsletter_manager</span></tt> y <tt class="docutils literal"><span class="pre">mailer</span></tt> usando archivos de configuración:</p>
+<p>If you <em>do</em> want to use PHP to create the services then you can move this
+into a separate config file and load it in a similar way:</p>
+<div class="highlight-php"><div class="highlight"><pre><span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\ContainerBuilder</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\Config\FileLocator</span><span class="p">;</span>
+<span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Loader\PhpFileLoader</span><span class="p">;</span>
+
+<span class="nv">$container</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ContainerBuilder</span><span class="p">();</span>
+<span class="nv">$loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">PhpFileLoader</span><span class="p">(</span><span class="nv">$container</span><span class="p">,</span> <span class="k">new</span> <span class="nx">FileLocator</span><span class="p">(</span><span class="nx">__DIR__</span><span class="p">));</span>
+<span class="nv">$loader</span><span class="o">-&gt;</span><span class="na">load</span><span class="p">(</span><span class="s1">&#39;services.php&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>You can now set up the <tt class="docutils literal"><span class="pre">newsletter_manager</span></tt> and <tt class="docutils literal"><span class="pre">mailer</span></tt> services using
+config files:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>YAML</em><div class="highlight-yaml"><pre># src/Acme/HelloBundle/Resources/config/services.yml
-parameters:
-    # ...
-    mailer.transport: sendmail
+<li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="l-Scalar-Plain">parameters</span><span class="p-Indicator">:</span>
+    <span class="c1"># ...</span>
+    <span class="l-Scalar-Plain">mailer.transport</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">sendmail</span>
 
-services:
-    mailer:
-        class:     Mailer
-        arguments: [%mailer.transport%]
-    newsletter_manager:
-        class:     NewsletterManager
-        calls:
-            - [ setMailer, [ @mailer ] ]</pre>
+<span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
+    <span class="l-Scalar-Plain">mailer</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">Mailer</span>
+        <span class="l-Scalar-Plain">arguments</span><span class="p-Indicator">:</span> <span class="p-Indicator">[</span><span class="s">&quot;%mailer.transport%&quot;</span><span class="p-Indicator">]</span>
+    <span class="l-Scalar-Plain">newsletter_manager</span><span class="p-Indicator">:</span>
+        <span class="l-Scalar-Plain">class</span><span class="p-Indicator">:</span>     <span class="l-Scalar-Plain">NewsletterManager</span>
+        <span class="l-Scalar-Plain">calls</span><span class="p-Indicator">:</span>
+            <span class="p-Indicator">-</span> <span class="p-Indicator">[</span><span class="nv">setMailer</span><span class="p-Indicator">,</span> <span class="p-Indicator">[</span><span class="s">&quot;@mailer&quot;</span><span class="p-Indicator">]]</span>
+</pre></div>
 </div>
 </li>
-<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/HelloBundle/Resources/config/services.xml --&gt;</span>
-<span class="nt">&lt;parameters&gt;</span>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="nt">&lt;parameters&gt;</span>
     <span class="c">&lt;!-- ... --&gt;</span>
     <span class="nt">&lt;parameter</span> <span class="na">key=</span><span class="s">&quot;mailer.transport&quot;</span><span class="nt">&gt;</span>sendmail<span class="nt">&lt;/parameter&gt;</span>
 <span class="nt">&lt;/parameters&gt;</span>
@@ -341,7 +357,7 @@ services:
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Mar 19, 2013.
+      Actualizado por última vez en Apr 22, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>

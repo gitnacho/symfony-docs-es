@@ -81,10 +81,17 @@ Una extensión puede definir etiquetas, filtros, pruebas, operadores, variables 
 <p>La creación de una extensión también hace una mejor separación del código que se ejecuta en tiempo de compilación y el código necesario en tiempo de ejecución. Por lo tanto, hace que tu código sea más rápido.</p>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
-<p class="last">Antes de escribir tus propias extensiones, echa un vistazo al <a class="reference external" href="https://github.com/fabpot/Twig-extensions">Repositorio oficial de extensiones Twig</a>:</p>
+<p class="last">Before writing your own extensions, have a look at the
+<a href="#id1"><span class="problematic" id="id2">`Twig official extension repository`_</span></a>.</p>
 </div>
 <div class="section" id="creando-la-clase-de-la-extension">
 <h2>Creando la clase de la extensión<a class="headerlink" href="#creando-la-clase-de-la-extension" title="Enlazar permanentemente con este título">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Nota</p>
+<p class="last">This cookbook describes how to write a custom Twig extension as of
+Twig 1.12. If you are using an older version, please read
+<a class="reference external" href="http://twig.sensiolabs.org/doc/advanced_legacy.html#creating-an-extension">Twig extensions documentation legacy</a>.</p>
+</div>
 <p>Para obtener la funcionalidad personalizada primero debes crear la clase para la extensión <em>Twig</em>.
 Como ejemplo vas a crear un filtro para dar formato a un precio suministrando un número en el precio:</p>
 <div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Twig/AcmeExtension.php</span>
@@ -95,14 +102,14 @@ Como ejemplo vas a crear un filtro para dar formato a un precio suministrando un
     <span class="k">public</span> <span class="k">function</span> <span class="nf">getFilters</span><span class="p">()</span>
     <span class="p">{</span>
         <span class="k">return</span> <span class="k">array</span><span class="p">(</span>
-            <span class="s1">&#39;price&#39;</span> <span class="o">=&gt;</span> <span class="k">new</span> <span class="nx">\Twig_Filter_Method</span><span class="p">(</span><span class="nv">$this</span><span class="p">,</span> <span class="s1">&#39;priceFilter&#39;</span><span class="p">),</span>
+            <span class="k">new</span> <span class="nx">\Twig_SimpleFilter</span><span class="p">(</span><span class="s1">&#39;price&#39;</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span><span class="nv">$this</span><span class="p">,</span> <span class="s1">&#39;priceFilter&#39;</span><span class="p">)),</span>
         <span class="p">);</span>
     <span class="p">}</span>
 
     <span class="k">public</span> <span class="k">function</span> <span class="nf">priceFilter</span><span class="p">(</span><span class="nv">$number</span><span class="p">,</span> <span class="nv">$decimals</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nv">$decPoint</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="nv">$thousandsSep</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="nv">$price</span> <span class="o">=</span> <span class="nb">number_format</span><span class="p">(</span><span class="nv">$number</span><span class="p">,</span> <span class="nv">$decimals</span><span class="p">,</span> <span class="nv">$decPoint</span><span class="p">,</span> <span class="nv">$thousandsSep</span><span class="p">);</span>
-        <span class="nv">$price</span> <span class="o">=</span> <span class="s1">&#39;$&#39;</span> <span class="o">.</span> <span class="nv">$price</span><span class="p">;</span>
+        <span class="nv">$price</span> <span class="o">=</span> <span class="s1">&#39;$&#39;</span><span class="o">.</span><span class="nv">$price</span><span class="p">;</span>
 
         <span class="k">return</span> <span class="nv">$price</span><span class="p">;</span>
     <span class="p">}</span>
@@ -116,23 +123,15 @@ Como ejemplo vas a crear un filtro para dar formato a un precio suministrando un
 </div>
 <div class="admonition tip">
 <p class="first admonition-title">Truco</p>
-<p class="last">Junto con los filtros personalizados, también puedes añadir <a class="reference external" href="http://gitnacho.github.com/Twig/advanced.html#id2">funciones</a> personalizadas y registrar <a class="reference external" href="http://gitnacho.github.com/Twig/advanced.html#id1">variables globales</a>.</p>
+<p class="last">Along with custom filters, you can also add custom <cite>functions</cite> and register
+<cite>global variables</cite>.</p>
 </div>
 </div>
 <div class="section" id="registrando-una-extension-como-servicio">
 <h2>Registrando una extensión como servicio<a class="headerlink" href="#registrando-una-extension-como-servicio" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Ahora, debes permitir que el contenedor de servicios conozca la existencia de la nueva extensión <em>Twig</em>:</p>
+<p>Now you must let the Service Container know about your newly created Twig Extension:</p>
 <div class="configuration-block">
 <ul class="simple">
-<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/DemoBundle/Resources/config/services.xml --&gt;</span>
-    <span class="nt">&lt;services&gt;</span>
-    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;acme.twig.acme_extension&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\DemoBundle\Twig\AcmeExtension&quot;</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;twig.extension&quot;</span> <span class="nt">/&gt;</span>
-    <span class="nt">&lt;/service&gt;</span>
-    <span class="nt">&lt;/services&gt;</span>
-</pre></div>
-</div>
-</li>
 <li><em>YAML</em><div class="highlight-yaml"><div class="highlight"><pre><span class="c1"># src/Acme/DemoBundle/Resources/config/services.yml</span>
 <span class="l-Scalar-Plain">services</span><span class="p-Indicator">:</span>
     <span class="l-Scalar-Plain">acme.twig.acme_extension</span><span class="p-Indicator">:</span>
@@ -142,12 +141,21 @@ Como ejemplo vas a crear un filtro para dar formato a un precio suministrando un
 </pre></div>
 </div>
 </li>
+<li><em>XML</em><div class="highlight-xml"><div class="highlight"><pre><span class="c">&lt;!-- src/Acme/DemoBundle/Resources/config/services.xml --&gt;</span>
+    <span class="nt">&lt;services&gt;</span>
+    <span class="nt">&lt;service</span> <span class="na">id=</span><span class="s">&quot;acme.twig.acme_extension&quot;</span> <span class="na">class=</span><span class="s">&quot;Acme\DemoBundle\Twig\AcmeExtension&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;tag</span> <span class="na">name=</span><span class="s">&quot;twig.extension&quot;</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/service&gt;</span>
+    <span class="nt">&lt;/services&gt;</span>
+</pre></div>
+</div>
+</li>
 <li><em>PHP</em><div class="highlight-php"><div class="highlight"><pre><span class="c1">// src/Acme/DemoBundle/Resources/config/services.php</span>
 <span class="k">use</span> <span class="nx">Symfony\Component\DependencyInjection\Definition</span><span class="p">;</span>
 
-<span class="nv">$acmeDefinition</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Definition</span><span class="p">(</span><span class="s1">&#39;\Acme\DemoBundle\Twig\AcmeExtension&#39;</span><span class="p">);</span>
-<span class="nv">$acmeDefinition</span><span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;twig.extension&#39;</span><span class="p">);</span>
-<span class="nv">$container</span><span class="o">-&gt;</span><span class="na">setDefinition</span><span class="p">(</span><span class="s1">&#39;acme.twig.acme_extension&#39;</span><span class="p">,</span> <span class="nv">$acmeDefinition</span><span class="p">);</span>
+<span class="nv">$container</span>
+    <span class="o">-&gt;</span><span class="na">register</span><span class="p">(</span><span class="s1">&#39;acme.twig.acme_extension&#39;</span><span class="p">,</span> <span class="s1">&#39;\Acme\DemoBundle\Twig\AcmeExtension&#39;</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="na">addTag</span><span class="p">(</span><span class="s1">&#39;twig.extension&#39;</span><span class="p">);</span>
 </pre></div>
 </div>
 </li>
@@ -174,7 +182,8 @@ Para obtener más información, échale un vistazo a <a class="reference interna
 </div>
 <div class="section" id="aprendiendo-mas">
 <h2>Aprendiendo más<a class="headerlink" href="#aprendiendo-mas" title="Enlazar permanentemente con este título">¶</a></h2>
-<p>Para un análisis más detallado échale un vistazo a las extensiones <em>Twig</em>, por favor, ve la <a class="reference external" href="http://gitnacho.github.com/Twig/advanced.html#creando-una-extension">documentación de las extensiones Twig</a>.</p>
+<p>For a more in-depth look into Twig Extensions, please take a look at the
+<a href="#id3"><span class="problematic" id="id4">`Twig extensions documentation`_</span></a>.</p>
 </div>
 </div>
 
@@ -212,7 +221,7 @@ Para obtener más información, échale un vistazo a <a class="reference interna
      
     <div class="footer">
         &copy; Copyright 2011-2013, Traducido por Nacho Pacheco.
-      Actualizado por última vez en Mar 19, 2013.
+      Actualizado por última vez en Apr 22, 2013.
       Creado con <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
    </div>
